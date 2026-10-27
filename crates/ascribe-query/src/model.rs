@@ -1288,19 +1288,34 @@ pub(crate) fn entries(model: &ContentModel, section: Section) -> Vec<String> {
     )
 }
 
-/// A line of Markdown for each page type, as the summary lists them, saying
-/// what the type is for: its own `purpose`, else its entry in `summaries`.
+/// Two lines of Markdown for each page type, saying what the type is for:
+/// its own `purpose`, else its entry in `summaries`. The first is as the
+/// summary lists it; the second is short, its name and what it's for, or,
+/// for a type that says nothing of that, its line without its template and
+/// guide.
 pub(crate) fn type_entries(
     model: &ContentModel,
     summaries: &std::collections::BTreeMap<String, String>,
-) -> Vec<String> {
+) -> Vec<(String, String)> {
     types(model)
         .into_iter()
         .map(|mut t| {
             if t.purpose.is_none() {
                 t.purpose = summaries.get(&t.name).cloned();
             }
-            type_line(&t, false)
+            let long = type_line(&t, false);
+            let short = match &t.purpose {
+                Some(purpose) => format!("`{}`: {}", t.name, one_line(purpose)),
+                None => type_line(
+                    &ModelType {
+                        template: None,
+                        guide: Vec::new(),
+                        ..t
+                    },
+                    false,
+                ),
+            };
+            (long, short)
         })
         .collect()
 }
@@ -1647,12 +1662,16 @@ fn type_line(t: &ModelType, sources: bool) -> String {
         text.push_str(&format!(": frontmatter {}", fields.join(", ")));
     }
     if let Some(purpose) = &t.purpose {
-        // One line, so a `purpose` written over several can't end the list
-        // item it's in.
-        let purpose = purpose.split_whitespace().collect::<Vec<_>>().join(" ");
-        text.push_str(&format!(". {}", purpose.trim_end_matches('.')));
+        text.push_str(&format!(". {}", one_line(purpose)));
     }
     text
+}
+
+/// A type's `purpose` as one line without its last full stop, so a purpose
+/// written over several can't end the list item it's in.
+fn one_line(purpose: &str) -> String {
+    let purpose = purpose.split_whitespace().collect::<Vec<_>>().join(" ");
+    purpose.trim_end_matches('.').to_owned()
 }
 
 /// A field, as a section other than the page types' lists it.

@@ -61,7 +61,7 @@ The files the lock gives are held to the same rules, and a problem with one is t
 purpose = "One task, done step by step, for someone who knows why they're doing it."
 ```
 
-The rules for agents say it at the end of the type's line. A type `ascribe templates eject` added and that has no `purpose` says their index's summary instead, from the `templates.lock` beside its template. When the rules' lines don't fit in their 4,000 characters, the page types' are cut first, and the cut says `ascribe model --section types` lists the rest.
+The rules for agents say it at the end of the type's line. A type `ascribe templates eject` added and that has no `purpose` says their index's summary instead, from the `templates.lock` beside its template. When the rules don't fit in their 4,000 characters, a type's line keeps its name and what it's for after the rest of it is cut, and the page types are [the last thing cut](../../agents/instructions.md#when-the-rules-are-long), with `ascribe model --section types` named for the rest.
 
 **A page that still has its template's text.** On a page of a type with a template, `ascribe check` reports each of the template's placeholders the page still has word for word, and a frontmatter field with the template's value: as advice in a draft (`template-placeholder-left`), and as an error in a page that publishes (`template-placeholder-published`). The [guide to page templates](../../templates/index.md#whats-left-to-fill-in) says what it finds and what it can't.
 

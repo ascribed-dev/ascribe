@@ -642,6 +642,44 @@ fn the_rules_fit_their_budget() {
 }
 
 #[test]
+fn ascribes_own_rules_list_every_page_type_with_what_it_is_for() {
+    // Ascribe's docs run over the budget, with a long `--command`, so this
+    // holds that the types are the last thing cut (#1002, #1177).
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let rules = read(&root.join("docs/AGENTS.md"));
+    let model = run(
+        &root,
+        &[
+            "model",
+            "--config",
+            "docs",
+            "--section",
+            "types",
+            "--format",
+            "json",
+        ],
+        0,
+    );
+    let model: serde_json::Value = serde_json::from_slice(&model.stdout).unwrap();
+    let types = model["types"].as_array().unwrap();
+    assert_eq!(types.len(), 6, "{model}");
+    for t in types {
+        let name = t["name"].as_str().unwrap();
+        let line = rules
+            .lines()
+            .find(|l| l.starts_with(&format!("- `{name}`")))
+            .unwrap_or_else(|| panic!("no line for `{name}`:\n{rules}"));
+        if let Some(purpose) = t["purpose"].as_str() {
+            assert!(
+                line.ends_with(purpose.trim_end_matches('.')),
+                "{line}\n{purpose}"
+            );
+        }
+    }
+    assert!(!rules.contains("more: `cargo run"), "{rules}");
+}
+
+#[test]
 fn outside_a_repository_the_projects_folder_is_the_root() {
     let dir = tempfile::tempdir().unwrap();
     copy_dir(&examples().join("monorepo/handbook"), dir.path());
