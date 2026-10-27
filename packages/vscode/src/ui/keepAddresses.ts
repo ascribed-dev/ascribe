@@ -112,8 +112,16 @@ export class KeepAddresses implements vscode.Disposable {
     const content = (page: string) => path.posix.join(root, page);
     try {
       await run(binary, project, ["addresses", "init"]);
+      // `--force`: the file `init` just made isn't committed yet, so the git
+      // guard would refuse to record the moves in it.
       for (const page of pages) {
-        await run(binary, project, ["addresses", "move", content(page.from), content(page.to)]);
+        await run(binary, project, [
+          "addresses",
+          "move",
+          "--force",
+          content(page.from),
+          content(page.to),
+        ]);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
