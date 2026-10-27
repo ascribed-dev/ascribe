@@ -7332,7 +7332,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1176"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Check: report a phrase's value written out on a page instead of the phrase"
     },
     {
@@ -7437,7 +7437,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Agent rules: keep the page types, and cut what the skill already says, when the rules run over 4,000 characters"
     },
     {
@@ -8073,7 +8073,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1114"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Agent-facing wording: small things that mislead an agent in check, the rules, and the new-page prompt"
     },
     {
@@ -8565,7 +8565,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1179"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "versions release fails on the docs: archiving the current line changes the agents' preamble"
     },
     {
