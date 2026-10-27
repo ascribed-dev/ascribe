@@ -26,7 +26,7 @@ Beside the files snippets name, it copies the repository's [tested examples](tes
 
 @include: ../_generated/cli-sources-fetch-options.md
 
-It lists each copy it wrote or removed. The first time a source's files are copied, it says so, on standard error: the copies are committed with the docs, so everyone who can read the docs repository can read them. In a new project with one snippet from `api`:
+It lists each copy it wrote or removed. It changes a copy or `ascribe.lock` only when git could put it back, as every [command that writes](../command/index.md#commands-that-write) does: one with changes not committed is refused, and named, unless you pass `--force`. `update` does the same. With `--dry-run`, each says what it would write and remove, and writes nothing; `update` then doesn't compare the pages. The first time a source's files are copied, it says so, on standard error: the copies are committed with the docs, so everyone who can read the docs repository can read them. In a new project with one snippet from `api`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/sources-fetch.txt
 
@@ -37,7 +37,7 @@ With `--format json`, it writes what it did for each source, the files it couldn
 |---|---|
 | `0` | The copies match the lock |
 | `1` | A file a snippet names couldn't be copied: it isn't in the repository at the pin, it's over 1 MB, or it isn't text. The reason goes to standard error, and `ascribe check` reports the snippet. |
-| `2` | It couldn't run: no `ascribe.toml`, a content model with errors, an `ascribe.lock` it can't read, a name that isn't a source in another repository, or `git` failing (no network, no access), with the source named and `git`'s own message |
+| `2` | It couldn't run: no `ascribe.toml`, a content model with errors, an `ascribe.lock` it can't read, a name that isn't a source in another repository, without `--force`, a file git couldn't put back, or `git` failing (no network, no access), with the source named and `git`'s own message |
 
 ### `ascribe sources update`
 @id {permalink=true}: cli-sources-update

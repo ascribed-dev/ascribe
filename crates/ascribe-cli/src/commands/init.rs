@@ -18,8 +18,8 @@ use crate::answer::{self, Format, FromDisk, from_here, path_from_here};
 use crate::cli::Global;
 use crate::commands::check;
 use crate::commands::templates::{write_added, write_refused};
-use crate::exit;
 use crate::report::{Counts, tally, text};
+use crate::{exit, guard};
 
 /// Arguments of `ascribe init`.
 #[derive(Debug, ClapArgs)]
@@ -42,6 +42,12 @@ pub struct Args {
     /// run next. `--templates` declares types, so it's refused there.
     #[arg(long, value_name = "DIR")]
     pub content_root: Option<String>,
+
+    /// `--dry-run` and `--force`. `init` adds files, and changes one that's
+    /// there only to add the templates to it, so the git guard has little
+    /// to refuse.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what was written.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -89,6 +95,25 @@ fn run_init(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Wri
         templates: args.templates,
         content_root: content_root.as_deref(),
         ascribe_version: env!("ASCRIBE_VERSION"),
+        dry_run: true,
+    };
+    // A dry run first: what it would write, which the guard is asked about.
+    let planned = match ascribe_templates::init(&request) {
+        Ok(planned) => planned,
+        // The project found, as it's typed from here.
+        Err(InitError::Project { found }) => {
+            let found = PathBuf::from(path_from_here(&found));
+            return answer::fail(err, &InitError::Project { found });
+        }
+        Err(e) => return answer::fail(err, &e),
+    };
+    let paths: Vec<PathBuf> = planned.written.iter().map(|p| root.join(p)).collect();
+    if let Err(e) = args.guard.allow(&paths) {
+        return answer::fail(err, &e);
+    }
+    let request = ascribe_templates::Init {
+        dry_run: args.guard.dry_run,
+        ..request
     };
     let started = match ascribe_templates::init(&request) {
         Ok(started) => started,
@@ -122,6 +147,19 @@ fn write_init(
 ) -> io::Result<()> {
     if let Some(ejected) = started.templates.as_ref().filter(|t| !t.refused.is_empty()) {
         return write_refused(err, ejected);
+    }
+    if started.dry_run {
+        for path in &started.written {
+            writeln!(out, "would write {}", from_here(root, path))?;
+        }
+        if started.content_root_made {
+            writeln!(
+                out,
+                "would make {}/, the folder the pages go in",
+                from_here(root, &started.content_root)
+            )?;
+        }
+        return Ok(());
     }
     for path in &started.written {
         if path == ADDRESSES_FILE {

@@ -1793,6 +1793,10 @@ fn templates() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     run(root, &["init"], 0);
+    // In a repository, with the project committed, so the git guard lets
+    // eject change `ascribe.toml`.
+    git(root, &["init", "-q"]);
+    commit(root, "Start the docs");
     expect(
         "templates-list.txt",
         &stdout(&run(root, &["templates", "list"], 0)),
@@ -1802,7 +1806,12 @@ fn templates() {
         &json(&run(root, &["templates", "list", "--format", "json"], 0)),
     );
     let copy = tempfile::tempdir().unwrap();
-    copy_tree(root, copy.path());
+    git(
+        root,
+        &["clone", "-q", ".", &copy.path().display().to_string()],
+    );
+    // git keeps no empty folder: the content root `init` made.
+    fs::create_dir_all(copy.path().join("docs")).unwrap();
     expect(
         "templates-eject.txt",
         &stdout(&run(root, &["templates", "eject", "how-to"], 0)),

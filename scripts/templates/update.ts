@@ -251,7 +251,9 @@ function writeCopies(files: Map<string, string>): void {
       path.join(dir, "ascribe.toml"),
       'spec = "0.1"\n\n[project]\ncontent-root = "docs"\n',
     );
-    run(ascribe, ["templates", "eject"], dir);
+    // A folder of its own, in no repository: `--force` gets eject past the
+    // git guard, which has nothing there to protect.
+    run(ascribe, ["templates", "eject", "--force"], dir);
     rmSync(path.join(example, "templates"), { recursive: true, force: true });
     cpSync(path.join(dir, "templates"), path.join(example, "templates"), { recursive: true });
     cpSync(path.join(dir, "ascribe.toml"), path.join(example, "ascribe.toml"));

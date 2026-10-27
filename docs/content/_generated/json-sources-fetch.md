@@ -107,11 +107,16 @@
         "type": "string"
       },
       "type": "array"
+    },
+    "written": {
+      "description": "Whether the copies and the lock were written: false with\n`--dry-run`, which says what it would copy, remove, and write.",
+      "type": "boolean"
     }
   },
   "required": [
     "schema_version",
     "ascribe_version",
+    "written",
     "sources",
     "unpinned",
     "lock_written"
