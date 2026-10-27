@@ -1,4 +1,4 @@
-//! `ascribe_lsp::rename`, what `ascribe rename` calls: renaming by name
+//! `ascribe_edit::rename`, what `ascribe rename` calls: renaming by name
 //! what the editor renames at a position. That its edits are the editor's
 //! for a phrase and a dimension's value is held in `model_edits.rs`; this
 //! file holds what only renaming by name does: a heading's id named by the
@@ -10,7 +10,7 @@
 use std::collections::BTreeMap;
 
 use ascribe_core::RelPath;
-use ascribe_lsp::{RenameError, Renaming, rename};
+use ascribe_edit::{RenameError, Renaming, rename};
 
 use crate::support::{Fixture, MODEL};
 

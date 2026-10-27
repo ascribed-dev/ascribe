@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 import { command, rewrites } from "./bless.ts";
+import { steps } from "./check.ts";
 import { writers } from "./repo-docs/generated.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -77,4 +78,18 @@ test("a command's environment is its leading assignments", () => {
     env: {},
     argv: ["node", "scripts/design/assets.ts"],
   });
+  expect(command('ascribe agents sync --command "cargo run --"')).toEqual({
+    env: {},
+    argv: ["ascribe", "agents", "sync", "--command", "cargo run --"],
+  });
+});
+
+test("the docs' agent files are written as rust.yml checks them", () => {
+  const sync = rewrites.find((rewrite) => rewrite.writer === "ascribe agents sync")?.run ?? "";
+  const workflow = readFileSync(path.join(root, ".github/workflows/rust.yml"), "utf8");
+  const checked = /ascribe agents sync --check (.+?) \|\|/.exec(workflow)?.[1];
+  expect(checked).toBeDefined();
+  expect(sync.replace("cargo run -q -p ascribe-cli -- agents sync ", "")).toBe(checked);
+  const step = steps.find((s) => s.ci === "Check the docs' agent files are up to date")?.run;
+  expect(step).toEqual(["ascribe", "agents", "sync", "--check", ...command(checked ?? "").argv]);
 });
