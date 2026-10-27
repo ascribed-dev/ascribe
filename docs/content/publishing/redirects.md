@@ -2,7 +2,6 @@
 type: how-to
 title: Keep the addresses you've published
 description: "Record where a page went when it moves or goes, so a link to its old address still leads somewhere: `ascribe.addresses`, the check that compares with the base, and the redirects the build writes."
-available: ascribe 0.4.4
 ---
 
 A link to a page outlives the page's place in the docs: a bookmark, a search result, a product's help menu, an answer on a forum. Rename a folder or merge two pages, and every one of those links stops working unless someone decided where it should lead. `ascribe.addresses` is where that decision is written. With it, a move records itself, `ascribe check` reports an [address](../glossary.md#address) the docs published that nothing accounts for, and the build writes the redirects the host needs.
@@ -83,14 +82,12 @@ $ git rm content/guides/teams/share-a-loom.md && ascribe check --base main --den
 Each is reported at `ascribe.addresses`. The comparison runs when `ascribe check` checks the whole project, not for a page or a file named. In the editor, see [below](#in-the-editor).
 
 ## In the editor
-@available: ascribe 0.4.4
 
 The language server compares the addresses with the base's between checks, not as you type in a page: when the project loads, after a save, after a change on disk, as a page deleted in the Explorer or a `git checkout` is, and as you edit `ascribe.addresses`. Delete a page, and within seconds its lost addresses are in the Problems panel at `ascribe.addresses`, as [Check Every Build](../editor/problems.md#the-problems-panel) would put them, with their quick fixes, and the Project view's Health counts them under [Against the base](../editor/sidebar.md#addresses-lost). Check Every Build replaces them with its own when it runs. The server keeps the base's addresses for each base commit and version of Ascribe, so a comparison after the first doesn't read the base again.
 
 Moving a page in the editor puts its entry in the same edit as the links it updates, unsaved in `ascribe.addresses` until you save: an entry you haven't saved counts, and **Undo** before you save takes back the move and its entry together. A page moved back after its entry is saved, as `git mv` would, leaves the entry, which [`addresses-entry-live`](../checks/diagnostics/project-files.md#ASC266) reports. On a page that old addresses lead to, This page's About lists each under [Also answers at](../editor/sidebar.md#old-addresses).
 
 ## Fix a lost address
-@available: ascribe 0.4.4
 
 Each lost address has a fix, an edit to `ascribe.addresses`, offered by the check, by `ascribe check --fix` where it's safe, and as quick fixes on the problem in the editor:
 
@@ -112,7 +109,6 @@ Recorded 1 move git sees: guides/setup.md → start/setup.md.
 `--format json` lists every fix of each problem, with its edits.
 
 ## The file's checks
-@available: ascribe 0.4.4
 
 With the base read, `ascribe check` also checks that each entry of `ascribe.addresses` still does what it says. Each is reported at its entry:
 
@@ -133,7 +129,6 @@ Retiring a page that entries lead to retires them with it, for the same reason, 
 To stop keeping the addresses on purpose, delete the file in a pull request of its own, whose check compares with its own head, `ascribe check --base HEAD`.
 
 ## A settings change
-@available: ascribe 0.4.4
 
 Changing a setting that every address is made with moves every address at once: `base-path`, `permalink-path`, or `agents` in `[consumer]`, or a build's name. The check says so once, as `address-lost`'s settings message, naming the setting, its old and new values, and how many addresses it moved, in place of a warning for each page. Its fix records the old value in `[former]`. It's safe, since changing the setting is the decision, so `ascribe check --fix` applies it:
 
@@ -187,7 +182,6 @@ The same file forwards each [permalink](../permalinks/index.md)'s address, as [b
 **On another host,** read `_ascribe/redirects.json` after the build and give each pair to the host's own configuration.
 
 ## A retired address's page
-@available: ascribe 0.4.4
 
 A reader who follows a link to a retired address gets a page that says what was there was removed, and why, with a link to the docs' home, answering 404, so search engines drop it. `@ascribed/astro` adds one for each address in `redirects.json`'s `gone`, marked `noindex`, in `_ascribe/gone/` under the build's base path, at the address from there, and the build's Netlify `_redirects` serves it at the old address:
 

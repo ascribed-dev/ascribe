@@ -11,7 +11,8 @@
 //!
 //! It also checks the docs' phrases whose values come from another file, such
 //! as the version, against that file, and that the `ascribe.toml` reference
-//! and its contract share their text only through fragments.
+//! and its contract share their text only through fragments, and that no
+//! mark in the docs names a release of Ascribe before 1.0 (decision #973).
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -280,6 +281,131 @@ fn the_docs_phrases_match_their_sources() {
     );
 
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+/// Before 1.0, the docs don't say which release a feature arrived in
+/// (decision #973): a mark for `ascribe` in `docs/content/` is `planned`, for
+/// what `main` has and no release does, or a lifecycle state, as `ascribe
+/// deprecated`, never a released version or a bare `ascribe`. Every reader is
+/// on the live line, so "since 0.4.4" tells them nothing.
+#[test]
+fn the_docs_name_no_released_version_before_1_0() {
+    let docs: toml::Table = read("docs/ascribe.toml").parse().unwrap();
+    let live = docs["releases"]["ascribe"]["live"][0].as_str().unwrap();
+    assert!(
+        live.starts_with("0."),
+        "Ascribe's live line is {live}: revisit decision #973 \
+         (project-docs/decisions/973-no-release-marks-before-1-0.md), which holds only before 1.0, \
+         and this test with it"
+    );
+    let mut files = Vec::new();
+    markdown_files(&repo().join("docs/content"), &mut files);
+    let mut wrong = Vec::new();
+    for path in files {
+        let text = std::fs::read_to_string(&path).unwrap();
+        let shown = path.strip_prefix(repo()).unwrap().display().to_string();
+        for (line, spec) in availability_specs(&text) {
+            let Ok(parsed) = ascribe_core::availability::parse_availability(&spec, 0) else {
+                continue;
+            };
+            let says_something = |entry: &ascribe_core::availability::Entry| {
+                use ascribe_core::availability::{Detail, PLANNED};
+                match &entry.detail {
+                    Detail::None => false,
+                    Detail::State { state, version: None } => state.text != "ga",
+                    Detail::Version(v)
+                    | Detail::State {
+                        version: Some(v), ..
+                    } => v.text == PLANNED,
+                    Detail::History(steps) => {
+                        steps.last().is_some_and(|s| s.version.text == PLANNED)
+                    }
+                }
+            };
+            if parsed
+                .entries
+                .iter()
+                .any(|e| e.target.text == "ascribe" && !says_something(e))
+            {
+                wrong.push(format!("{shown}:{line}: {spec}"));
+            }
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "before 1.0, a docs mark for `ascribe` is `ascribe planned` or names a lifecycle state, \
+         never a released version or a bare `ascribe` (decision #973): remove the mark, or, for \
+         one with a state, its version, as `ascribe preview 0.2.0` becomes `ascribe preview`. A \
+         generated table's mark comes from crates/ascribe-cli/src/docs.rs, \
+         crates/ascribe-cli/src/docs/builtins.rs, or packages/vscode/test/unit/docs.test.ts:\n{}",
+        wrong.join("\n")
+    );
+}
+
+/// Every Markdown file under `dir`, at any depth.
+fn markdown_files(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            markdown_files(&path, out);
+        } else if path.extension().is_some_and(|e| e == "md") {
+            out.push(path);
+        }
+    }
+}
+
+/// The availability specs a page writes, each with its line: an `@available`
+/// line, the frontmatter's `available`, and an `{available=…}` attribute,
+/// outside code blocks and code spans.
+fn availability_specs(text: &str) -> Vec<(usize, String)> {
+    let mut specs = Vec::new();
+    let mut fence: Option<String> = None;
+    let mut frontmatter = text.starts_with("---\n");
+    for (i, line) in text.lines().enumerate() {
+        let number = i + 1;
+        if frontmatter {
+            if i > 0 && line == "---" {
+                frontmatter = false;
+            } else if let Some(value) = line.strip_prefix("available:") {
+                specs.push((number, value.trim().trim_matches('"').to_owned()));
+            }
+            continue;
+        }
+        let trimmed = line.trim_start();
+        if let Some(open) = &fence {
+            if trimmed.starts_with(open.as_str()) {
+                fence = None;
+            }
+            continue;
+        }
+        if let Some(open) = ["```", "~~~"].into_iter().find(|f| trimmed.starts_with(f)) {
+            fence = Some(open.to_owned());
+            continue;
+        }
+        if let Some(spec) = trimmed.strip_prefix("@available:") {
+            specs.push((number, spec.trim().to_owned()));
+        }
+        // An attribute, outside code spans: every other run between
+        // backticks is code.
+        for (j, part) in line.split('`').enumerate() {
+            if j % 2 == 1 {
+                continue;
+            }
+            let mut rest = part;
+            while let Some(at) = rest.find("available=") {
+                rest = &rest[at + "available=".len()..];
+                let value = match rest.strip_prefix('"') {
+                    Some(quoted) => quoted.split('"').next().unwrap_or(""),
+                    None => rest
+                        .split(|c: char| c == '}' || c == ',' || c.is_whitespace())
+                        .next()
+                        .unwrap_or(""),
+                };
+                specs.push((number, value.to_owned()));
+            }
+        }
+    }
+    specs
 }
 
 /// A page, from the repository's root, and its parts: the pages in the folder

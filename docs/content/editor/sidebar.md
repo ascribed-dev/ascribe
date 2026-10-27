@@ -79,7 +79,6 @@ The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says wh
 Each first says how much it changes and asks: "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you save them." Each opens the files it changes, unsaved, so you can read them first. **File: Save All** saves them, and **Undo** takes the edit back. [How the whole-project edits apply](#how-the-whole-project-edits-apply) has the rest.
 
 ### Addresses lost
-@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), Health has a group after **Every build**, **Against the base**, with one count:
 
@@ -131,7 +130,6 @@ The head at the top shows the page's title, its type ("fragment" for a fragment)
 A fragment has no builds, listing, or size of its own: it's published only where it's included. [This page's rows](#this-pages-rows) has what each row measures and when it warns.
 
 ### Old addresses
-@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), About has an **Also answers at** row after **Markdown** for each old address an entry of `ascribe.addresses` leads to the page. These are the redirects the build writes to it, such as `/docs/guides/my-setup` on a page moved from `guides/my-setup.md`. Its tooltip names the entry. A row goes when the entry does, and an entry you've added and not saved counts.
 
@@ -213,7 +211,6 @@ The view never checks every build by itself, since that can take a few seconds o
 About's builds and content types are the language server's, so they're known once it runs. Its sources are what `ascribe model` says.
 
 ### When Addresses lost updates
-@available: ascribe 0.4.4
 
 The language server compares the addresses with the base's on its own, between checks: when the project loads, after a save, after a change on disk such as a page deleted in the Explorer or a `git checkout`, and as you edit `ascribe.addresses`, so a move's entry counts before you save it. It doesn't compare as you type in a page. While the server is starting, or when the base can't be read, the count is a dash and the head says why, with the reason in the Problems panel.
 

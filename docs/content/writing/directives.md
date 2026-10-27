@@ -384,7 +384,6 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
 
 ## `@operation`
-@available: ascribe 0.4.4
 
 ([SPEC §4.13]({repo}/blob/main/SPEC.md#413-operation))
 
