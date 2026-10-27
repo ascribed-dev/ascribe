@@ -101,6 +101,15 @@ fn directives_in_every_container() {
         "@note:\ntext\n\n  \n",
         "> @note:\n> text\n>\n",
         "@details: x\n@memo:\n",
+        // An unclosed container or group ends where its last block does,
+        // whitespace and all (#1194).
+        "@note:\n~~~\n \n",
+        "@note:\n    code\n \n",
+        "@note:\n- a \n",
+        "@note:\n> ~~~\n> \n",
+        "@note:\n| a |\n| - |\n| b | \n",
+        "@variant {pm=npm}:\nA.\n@variant {pm=yarn}:\n- b \n",
+        "@note {t\u{19}pe=tip}  \nA paragraph.\n\n@steps  \n1. \0\0\0\0\0\0\0\rO\nPne.\n\n@note:\nTe-\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0 ph---\ntitrue\nnd {product}\n~~~\n \n",
         // A table takes its header line back out of a paragraph after any line ending (#1139).
         "cc8\r\n8\n:-",
         "cc8\r\n8\r\n:-",
