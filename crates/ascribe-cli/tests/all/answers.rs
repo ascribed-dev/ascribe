@@ -1886,7 +1886,11 @@ fn concise_is_text_where_an_answer_has_no_one_line_form() {
         &["refs", "site/docs/keys.md"][..],
     ] {
         let text = stdout(&run(dir.path(), &[args, &["--format", "text"]].concat(), 0));
-        let concise = stdout(&run(dir.path(), &[args, &["--format", "concise"]].concat(), 0));
+        let concise = stdout(&run(
+            dir.path(),
+            &[args, &["--format", "concise"]].concat(),
+            0,
+        ));
         assert_eq!(concise, text, "{args:?}");
     }
 }
