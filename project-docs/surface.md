@@ -831,6 +831,9 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/addresses-list.schema.json` | AddressesListReport | What `ascribe addresses list --format json` writes. |
 | `schemas/addresses-record.schema.json` | AddressesRecordReport | What `ascribe addresses move` and `retire` write with `--format json`. |
 | `schemas/agents-index.schema.json` | AgentsIndexReport | What `ascribe agents index --format json` answers. |
+| `schemas/agents-prompt-list.schema.json` | AgentsPromptListReport | What `ascribe agents prompt --list --format json` writes: every prompt, with its arguments. |
+| `schemas/agents-prompt.schema.json` | AgentsPromptReport | What `ascribe agents prompt <NAME> --format json` writes: the prompt. |
+| `schemas/agents-sync.schema.json` | AgentsSyncReport | What `ascribe agents sync --format json` writes: each file it writes, and what it has to say. |
 | `schemas/baseline-prune.schema.json` | BaselinePruneReport | What `ascribe baseline prune --format json` writes. |
 | `schemas/baseline-write.schema.json` | BaselineWriteReport | What `ascribe baseline write --format json` writes. |
 | `schemas/check.schema.json` | CheckReport | What `ascribe check --format json` and `ascribe build --format json` write: one document, whatever the outcome. |
@@ -871,10 +874,13 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/resolve-permalink.schema.json` | ResolvePermalinkReport | What `ascribe resolve go:<name> --format json` answers: the name's entry as the build's `_ascribe/help.json` writes it, with the file's `version`, `build`, and `line`. |
 | `schemas/resolve.schema.json` | ResolveReport | What `ascribe resolve <PAGE> --format json` answers. |
 | `schemas/search.schema.json` | SearchReport | What `ascribe search <QUERY>` answers: what `--format json` writes. |
+| `schemas/sources-fetch.schema.json` | SourcesFetchReport | What `ascribe sources fetch --format json` writes: what was copied and removed for each source, and the files that couldn't be copied. |
 | `schemas/sources-status.schema.json` | SourcesStatusReport | What `ascribe sources status --format json` writes: each source's pin and the state of its copies, read from the files alone. |
 | `schemas/sources-update.schema.json` | SourcesUpdateReport | What `ascribe sources update --format json` writes: how each source's pin moved, and the pages whose examples the new copies change. |
 | `schemas/templates-eject.schema.json` | TemplatesEjectReport | What `ascribe templates eject` did: the files it wrote and the types it added, or, when it refused anything, what it refused, and then it wrote nothing. |
+| `schemas/templates-list.schema.json` | TemplatesListReport | What `ascribe templates list --format json` writes: the templates Ascribe carries, and where they're from. |
 | `schemas/templates-status.schema.json` | TemplatesStatusReport | What `ascribe templates status` found: for each template the project took, whether the set and the project have changed it since the copy, and each template of the set it doesn't have. |
+| `schemas/vale-eject.schema.json` | ValeEjectReport | What `ascribe vale eject --format json` writes: the preset written out, and the files written. |
 | `schemas/versions-changes.schema.json` | VersionsChangesReport | What differs between two lines of one target. |
 | `schemas/versions-export.schema.json` | VersionsExportReport | What `ascribe versions export --format json` writes: the line, the folder, and what's in it. |
 | `schemas/versions-list.schema.json` | VersionsListReport | Every target's release lines. |
@@ -946,6 +952,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/content-model/variation.md` | `ascribe.toml` format contract: how content varies | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
 | `contracts/json-reports/addresses.md` | JSON reports: `ascribe permalinks` and `ascribe addresses` | reference |
+| `contracts/json-reports/agents.md` | JSON reports: `ascribe agents` | reference |
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
 | `contracts/json-reports/model.md` | JSON reports: `ascribe init` and `ascribe model` | reference |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
