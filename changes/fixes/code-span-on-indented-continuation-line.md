@@ -1,1 +1,1 @@
-- **Fixed:** a code span that starts on an indented continuation line and ends on the next line has the position of its own text. Its end was off by the indent, so the text after it overlapped it.
+- **Fixed:** a code span that runs from an indented line onto the next ends where its text does. The text after it overlapped it.
