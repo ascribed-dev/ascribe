@@ -28,7 +28,7 @@ use std::io::{self, BufRead, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 
-use ascribe_check::{Diagnostic, Project, apply_levels, unread_config_issue};
+use ascribe_check::{Diagnostic, apply_levels, unread_config_issue};
 use ascribe_core::path::relative_path;
 use ascribe_core::{FileId, LineIndex};
 use ascribe_model::examples::{
@@ -480,8 +480,8 @@ fn say_changes(out: &mut dyn Write, changes: Option<Changes>) {
 /// project, it can't be loaded, a source reads the config, or `[checks]`
 /// turns the check off.
 fn unread_warning(folder: &Path) -> Option<String> {
-    let config = Project::find_config(folder)?;
-    let file = Project::load_model(&config).ok()?;
+    let config = ascribe_workspace::find_config(folder)?;
+    let file = ascribe_check::LOADER.load_model(&config).ok()?;
     // Outside FileSystem: the folder `ascribe observe` is run in, and the
     // project's, made comparable before the project's file system exists.
     let root = fs::canonicalize(&file.root).ok()?;

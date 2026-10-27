@@ -262,7 +262,10 @@ mod tests {
     #[test]
     fn the_site_form_is_the_site_outputs_file() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
-        let loaded = ascribe_check::Project::load(&root.join("ascribe.toml")).expect("Quill loads");
+        let loaded = ascribe_check::LOADER
+            .load(&root.join("ascribe.toml"))
+            .map(ascribe_check::Project::from_loaded)
+            .expect("Quill loads");
         let index = loaded.index();
         let mut compared = 0;
         for build in &loaded.model().builds {
@@ -302,8 +305,10 @@ mod tests {
     #[test]
     fn the_plain_form_links_to_pages_by_their_html_address() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
-        let loaded =
-            ascribe_check::Project::load(&root.join("ascribe.toml")).expect("the example loads");
+        let loaded = ascribe_check::LOADER
+            .load(&root.join("ascribe.toml"))
+            .map(ascribe_check::Project::from_loaded)
+            .expect("the example loads");
         let index = loaded.index();
         let build = &loaded.model().builds[0];
         let path = RelPath::parse("Reference/Options.md").unwrap();

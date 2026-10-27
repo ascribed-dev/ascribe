@@ -5,9 +5,10 @@
 use std::path::PathBuf;
 
 use ascribe_check::{
-    Diagnostic, Project, SourceFile, check_all_builds, check_builds, check_files, check_project,
+    Diagnostic, Project, check_all_builds, check_builds, check_files, check_project,
 };
 use ascribe_core::{FileId, RelPath};
+use ascribe_workspace::SourceFile;
 
 /// Three builds: `site` keeps everything, `cloud` and `self-managed` each
 /// select one deployment. `edge` is a value that no build selects.

@@ -809,7 +809,7 @@ fn commands_of(given: Option<&str>, here: &Path, root: &Path) -> (String, String
         return (runs.clone(), runs);
     }
     // Outside FileSystem: the repository's other projects.
-    let mut projects = Project::find_below(root, usize::MAX);
+    let mut projects = ascribe_workspace::find_below(root, usize::MAX);
     if root.join(ascribe_check::MODEL_FILE).is_file() {
         projects.push(root.to_owned());
     }

@@ -6,13 +6,14 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{LoadError, Project};
+use ascribe_check::Project;
 use ascribe_core::Coded;
 use ascribe_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
 use ascribe_sources::{
     CopyState, ExampleState, FetchReport, FileChange, Options, SourceUpdate, StatusReport,
     UpdateReport, Workspace, short,
 };
+use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 
@@ -128,9 +129,9 @@ fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace
     let project = load_project(global).map_err(|failure| {
         let message = match failure {
             Failure::Config(e) => e.to_string(),
-            Failure::Load(LoadError::Model { diagnostics, .. }) => {
+            Failure::Load(LoadError::Model { issues, .. }) => {
                 let mut text = format!("{} has errors", ascribe_check::MODEL_FILE);
-                for d in diagnostics {
+                for d in issues.iter().map(ascribe_check::Diagnostic::from_issue) {
                     text.push_str(&format!("\n  {}", d.message));
                 }
                 text
@@ -681,8 +682,8 @@ fn write_update_summary(
 
 #[cfg(test)]
 mod tests {
-    use ascribe_check::LoadError;
     use ascribe_diff::DiffError;
+    use ascribe_workspace::LoadError;
 
     use super::{PagesUnavailable, code_span, compare_url};
     use crate::context::Failure;

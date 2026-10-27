@@ -8,7 +8,6 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{LoadError, LocateError, Project};
 use ascribe_core::Coded;
 use ascribe_core::RelPath;
 use ascribe_core::path::{normalize, relative_path};
@@ -17,6 +16,7 @@ use ascribe_templates::{
     Change, EjectAnswer, FileStatus, Record, SectionChangeKind, StatusAnswer, TEMPLATES_DIR,
     TemplateStatus, Upstream, UpstreamChange,
 };
+use ascribe_workspace::{LoadError, LocateError};
 use clap::{Args as ClapArgs, Subcommand};
 
 use crate::answer::{self, Format, from_here};
@@ -189,7 +189,7 @@ fn run_eject(global: &Global, args: &EjectArgs, out: &mut dyn Write, err: &mut d
         }
         Err(e) => return answer::fail(err, &Failure::Config(e)),
     };
-    let file = match Project::load_model(&config) {
+    let file = match ascribe_check::LOADER.load_model(&config) {
         Ok(file) => file,
         Err(e) => return answer::report_failure(err, &Failure::Load(e)),
     };
@@ -407,9 +407,9 @@ fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut
     // A template or guide that's gone is something status reports, so the
     // check of the types' files (`type_files::check`) doesn't stop it; every
     // other rule of the loader, the folders it names included, still does.
-    let model = match Project::load_model(&config) {
+    let model = match ascribe_check::LOADER.load_model(&config) {
         Ok(file) => file.model,
-        Err(LoadError::Model { text, diagnostics }) => {
+        Err(LoadError::Model { text, issues }) => {
             let taking = DiskFs::new(
                 &root,
                 &Layout {
@@ -426,7 +426,7 @@ fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut
             ) {
                 Ok(model) => model,
                 Err(_) => {
-                    let failure = Failure::Load(LoadError::Model { text, diagnostics });
+                    let failure = Failure::Load(LoadError::Model { text, issues });
                     return answer::report_failure(err, &failure);
                 }
             }

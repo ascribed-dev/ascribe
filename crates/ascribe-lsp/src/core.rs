@@ -1898,7 +1898,7 @@ fn is_git_ref(path: &Path) -> bool {
 fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
     folders
         .iter()
-        .find_map(|folder| ascribe_check::Project::find_config(folder))
+        .find_map(|folder| ascribe_workspace::find_config(folder))
 }
 
 /// The line logged at startup: the project chosen, or why there is none.

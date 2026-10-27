@@ -22,6 +22,7 @@ serde.workspace = true
 serde_json.workspace = true
 serde_yaml_ng.workspace = true
 ascribe-check.workspace = true
+ascribe-workspace.workspace = true
 ascribe-core.workspace = true
 ascribe-diff.workspace = true
 ascribe-edit.workspace = true

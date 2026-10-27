@@ -18,7 +18,7 @@
 
 use std::path::{Path, PathBuf};
 
-use ascribe_check::{MODEL_FILE, Project};
+use ascribe_check::MODEL_FILE;
 use ascribe_core::RelPath;
 use ascribe_model::{ADDRESSES_FILE, AddressFile};
 use ascribe_resolve::{DiskFs, FileSystem as _, Layout};
@@ -207,7 +207,7 @@ pub struct Init<'a> {
 /// nothing is written.
 pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
     let root = request.root;
-    if let Some(found) = Project::find_config(root) {
+    if let Some(found) = ascribe_workspace::find_config(root) {
         return Err(InitError::Project { found });
     }
     // Outside FileSystem: the folder a project is to start in, before there's

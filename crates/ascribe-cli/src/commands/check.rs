@@ -11,10 +11,11 @@ use ascribe_check::fix;
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::prose;
 use ascribe_check::{
-    Acknowledged, BaselineError, Diagnostic, Found, LoadError, Project, Reported, Request, Scope,
-    ScopeError, Severity, locate_for,
+    Acknowledged, BaselineError, Diagnostic, Found, Project, Reported, Request, Scope, ScopeError,
+    Severity, locate_for,
 };
 use ascribe_core::{Coded, diagnostics};
+use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{FromDisk, Loaded, Projects};
@@ -1072,13 +1073,13 @@ fn report_failure(
             FileTable::of_model(String::new()),
             Vec::new(),
         ),
-        Failure::Load(LoadError::Model { text, diagnostics }) => (
+        Failure::Load(LoadError::Model { text, issues }) => (
             format!(
                 "{} has errors, so nothing can be checked",
                 ascribe_check::MODEL_FILE
             ),
             FileTable::of_model(text),
-            diagnostics,
+            issues.iter().map(Diagnostic::from_issue).collect(),
         ),
         Failure::Load(e @ LoadError::Read { .. }) => (
             e.to_string(),

@@ -13,8 +13,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::support::{Client, Fixture};
-use ascribe_check::{Project, SourceFile, check_project};
+use ascribe_check::{Project, check_project};
 use ascribe_core::{FileId, LineIndex, WideEncoding, WideLineCol};
+use ascribe_workspace::SourceFile;
 use serde_json::{Value, json};
 
 const MODEL: &str = r#"# The model.

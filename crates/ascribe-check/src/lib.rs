@@ -84,9 +84,8 @@ pub use page::{
     PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
 };
 pub use project::{
-    ADDRESSES_FILE_ID, FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError,
-    MEMO_FILE_IDS, MODEL_FILE, ModelFile, NAV_FILE_ID, PERMALINKS_FILE_ID, Project, ReadFailure,
-    SourceFile,
+    ADDRESSES_FILE_ID, FileEntry, IMAGE_FILE_IDS, LOADER, LOCK_FILE_ID, MEMO_FILE_IDS, MODEL_FILE,
+    NAV_FILE_ID, PERMALINKS_FILE_ID, Project,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};

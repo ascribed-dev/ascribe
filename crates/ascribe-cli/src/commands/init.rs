@@ -73,7 +73,7 @@ fn run_init(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Wri
     }
     let cwd = match std::env::current_dir() {
         Ok(cwd) => cwd,
-        Err(e) => return answer::fail(err, &ascribe_check::LocateError::CurrentDir(e)),
+        Err(e) => return answer::fail(err, &ascribe_workspace::LocateError::CurrentDir(e)),
     };
     let root = normalize(&cwd.join(args.dir.as_deref().unwrap_or(Path::new("."))));
     // `--content-root` is written as `ascribe.toml` writes it, with `/`.

@@ -4,8 +4,9 @@
 use std::io::IsTerminal;
 use std::path::PathBuf;
 
-use ascribe_check::{LoadError, LocateError, Project};
+use ascribe_check::Project;
 use ascribe_core::Coded;
+use ascribe_workspace::{LoadError, LocateError};
 
 use crate::cli::{Color, Global};
 
@@ -41,7 +42,7 @@ pub fn load_project(global: &Global) -> Result<Project, Failure> {
 
 /// The content model `--config` names, or the nearest one.
 pub fn locate(global: &Global) -> Result<PathBuf, LocateError> {
-    Project::locate(global.config.as_deref())
+    ascribe_workspace::locate(global.config.as_deref())
 }
 
 /// Whether to color output written to `stream_is_terminal`.

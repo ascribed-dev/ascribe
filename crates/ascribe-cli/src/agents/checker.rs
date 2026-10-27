@@ -23,7 +23,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use ascribe_check::{Project, Reported, Request, Severity, prose};
+use ascribe_check::{Reported, Request, Severity, prose};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{RelPath, diagnostics};
 use ascribe_resolve::is_source_path;
@@ -172,7 +172,7 @@ pub fn is_source(config: &Path, file: &Path) -> bool {
 /// content model doesn't load, and so can't be checked file by file (the
 /// full check says why).
 fn content_dir(config: &Path) -> Option<PathBuf> {
-    let model = Project::load_model(config).ok()?;
+    let model = ascribe_check::LOADER.load_model(config).ok()?;
     let content = RelPath::parse(&model.model.project.content_root).ok()?;
     let root = normalize(&std::path::absolute(&model.root).unwrap_or(model.root));
     Some(normalize(&root.join(content.as_str())))
@@ -182,7 +182,7 @@ fn in_content(config: &Path, content: &Path, file: &Path) -> bool {
     relative_path(content, file).is_some_and(|rel| is_source_path(&rel))
         && file
             .parent()
-            .and_then(Project::find_config)
+            .and_then(ascribe_workspace::find_config)
             .is_some_and(|c| normalize(&c) == normalize(config))
 }
 
@@ -899,7 +899,7 @@ impl Kept {
 /// The files of the project of `config` a check reads, as the MCP server
 /// lists them; nothing when its content model doesn't load.
 fn listing(config: &Path) -> Vec<Stamp> {
-    let Ok(model) = Project::load_model(config) else {
+    let Ok(model) = ascribe_check::LOADER.load_model(config) else {
         return Vec::new();
     };
     let layout = ascribe_resolve::Layout::from_model(&model.model);

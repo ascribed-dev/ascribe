@@ -21,11 +21,12 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use ascribe_check::{Project, SourceFile, check_file};
+use ascribe_check::{Project, check_file};
 use ascribe_core::{FileId, LineCol, LineIndex, RelPath, Span};
 use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
 };
+use ascribe_workspace::SourceFile;
 use serde::Serialize;
 
 /// Diagnostics that are about a project's files existing, not about what the

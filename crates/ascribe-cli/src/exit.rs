@@ -41,9 +41,7 @@ mod tests {
     use std::path::PathBuf;
 
     use ascribe_check::prose::EjectError;
-    use ascribe_check::{
-        BaselineError, DiagnoseError, LoadError, LocateError, ScopeError, UnknownBuild,
-    };
+    use ascribe_check::{BaselineError, DiagnoseError, ScopeError, UnknownBuild};
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
     use ascribe_edit::{ReleaseError, RenameError, RetireError};
@@ -53,6 +51,7 @@ mod tests {
     use ascribe_query::QueryError;
     use ascribe_resolve::reading::BadQuery;
     use ascribe_sources::SourcesError;
+    use ascribe_workspace::{LoadError, LocateError};
 
     use crate::agents::markers::Damage;
     use crate::agents::sync::SyncError;
@@ -691,7 +690,7 @@ mod tests {
         };
         let model_invalid = || LoadError::Model {
             text: text(),
-            diagnostics: Vec::new(),
+            issues: Vec::new(),
         };
         let not_a_repository = || DiffError::NotARepository {
             dir: text(),

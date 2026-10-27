@@ -18,10 +18,11 @@ use ascribe_model::{CheckLevel, ContentModel};
 use ascribe_syntax::{
     Block, BlockKind, Bound, ParseOptions, PrimaryValue, bound_block, bound_heading, parse,
 };
+use ascribe_workspace::SourceFile;
 use serde_yaml_ng::Value;
 
 use crate::yaml::YamlIndex;
-use crate::{Diagnostic, Project, SourceFile};
+use crate::{Diagnostic, Project};
 
 /// The key a page's acknowledgements are under in its frontmatter.
 pub const FRONTMATTER_KEY: &str = "intended";

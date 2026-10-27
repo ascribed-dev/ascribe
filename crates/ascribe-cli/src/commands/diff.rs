@@ -10,14 +10,15 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::rc::Rc;
 
+use ascribe_check::Diagnostic;
 use ascribe_check::prompt::Builds;
-use ascribe_check::{Diagnostic, LoadError};
 use ascribe_core::{RelPath, percent_decode};
 use ascribe_diff::{
     Anchor, BuildDiff, Change, ChangeKind, DiffError, DiffOptions, PageDiff, ProjectDiff, Report,
     diff_project,
 };
 use ascribe_model::ContentModel;
+use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{self, FromDisk, Loaded, Projects};
@@ -666,9 +667,11 @@ fn write_build(out: &mut dyn Write, build: &BuildDiff, listed: &Listed<'_>) -> i
 pub(crate) fn failure_message(failure: Failure) -> String {
     match failure {
         Failure::Config(e) => e.to_string(),
-        Failure::Load(LoadError::Model { diagnostics, .. }) => model_errors(
+        Failure::Load(LoadError::Model { issues, .. }) => model_errors(
             &format!("{} has errors", ascribe_check::MODEL_FILE),
-            diagnostics.iter().map(|d| d.message.clone()),
+            issues
+                .iter()
+                .map(|i| ascribe_check::Diagnostic::from_issue(i).message),
         ),
         Failure::Load(e @ LoadError::Read { .. }) => e.to_string(),
     }

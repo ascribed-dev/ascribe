@@ -27,13 +27,14 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::identity::Identity;
 use ascribe_check::{
-    Acknowledgements, Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity,
-    SourceFile, apply_levels, check_file,
+    Acknowledgements, Diagnostic, PageChecker, Project, Registry, Severity, apply_levels,
+    check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
+use ascribe_workspace::{ReadFailure, SourceFile};
 use lsp_types::{
     CodeDescription, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString,
 };
