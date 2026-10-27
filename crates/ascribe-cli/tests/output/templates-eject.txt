@@ -4,4 +4,4 @@ wrote templates/how-to.ascribe.md
 wrote templates/templates.lock
 wrote ascribe.toml
 added [types.how-to] to ascribe.toml
-To start a page, copy templates/how-to.md to where the page goes, and read templates/how-to.guide.md and templates/how-to.ascribe.md first. The page names its type in its frontmatter, as the template does.
+To start a page, run `ascribe new how-to <PATH>`, which writes the template there as a draft, and read templates/how-to.guide.md and templates/how-to.ascribe.md first.

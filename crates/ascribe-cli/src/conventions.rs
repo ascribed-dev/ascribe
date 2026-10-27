@@ -23,6 +23,7 @@ use crate::cli::Cli;
 /// `.ascribe/`, or standard output, isn't writing.
 const WRITES: &[&str] = &[
     "init",
+    "new",
     "check",
     "fmt",
     "rename",

@@ -57,6 +57,9 @@ struct Ctx<'a> {
     /// The text of the file's first paragraph, for a prompt about its
     /// description.
     first_paragraph: Option<String>,
+    /// Whether the page is a draft, `draft: true` (SPEC §2.1), once the
+    /// frontmatter is checked: no build publishes it.
+    draft: bool,
     /// The page's content type, once the frontmatter is checked: `None` for
     /// a fragment, and for a page whose type is missing or unknown.
     page_type: Option<&'a ContentType>,
@@ -119,6 +122,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
+        draft: false,
         page_type: None,
         mark_scopes: Vec::new(),
         marked_examples: false,

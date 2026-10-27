@@ -26,7 +26,7 @@ use ascribe_syntax::{Block, BlockKind, DirectiveLine};
 
 use super::availability::{page_availability, spec_allows, spec_in_line};
 use super::tree::{
-    Availability, DRAFT, DropReason, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedKind,
+    Availability, DropReason, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedKind,
 };
 use crate::expand::PageProblem;
 use crate::index::FileIndex;
@@ -39,7 +39,7 @@ pub(crate) fn drop_reason(
     index: &FileIndex,
     build: &Build,
 ) -> Option<DropReason> {
-    if !build.drafts && is_draft(index) {
+    if !build.drafts && index.is_draft() {
         return Some(DropReason::Draft);
     }
     if let VariantMode::Select(selection) = &build.variants
@@ -54,17 +54,6 @@ pub(crate) fn drop_reason(
         return Some(DropReason::Unavailable);
     }
     None
-}
-
-/// Whether the page's frontmatter has `draft: true` (SPEC §2.1). Any other
-/// value, a string included, isn't a draft; `check` reports it.
-pub(crate) fn is_draft(index: &FileIndex) -> bool {
-    index
-        .frontmatter
-        .as_ref()
-        .and_then(|f| f.get(DRAFT))
-        .and_then(serde_yaml_ng::Value::as_bool)
-        .unwrap_or(false)
 }
 
 /// What a build's availability keeps: content available for a filter's

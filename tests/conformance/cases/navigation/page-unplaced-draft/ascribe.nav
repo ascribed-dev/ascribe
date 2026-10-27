@@ -1,0 +1,8 @@
+version = 1
+
+[[sections]]
+folder = "Reference/"
+pages = ["Options.md"]
+
+[[sections]]
+folder = "Guides/"

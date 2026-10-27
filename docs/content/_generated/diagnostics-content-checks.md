@@ -87,11 +87,11 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 
 ### ASC195 `template-placeholder-left`
 @id {permalink=true}: ASC195
-@summary: A page of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
+@summary: A draft of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
 
 Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
+**When:** A draft (a page with `draft: true`) of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. In a page that publishes it's `template-placeholder-published`, an error. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
 
 **Message:** this page still has its template's placeholder `{placeholder}`; write what it asks for in its place
 
@@ -238,6 +238,20 @@ Advice, off by default · page level · next step: write · configurable in `[ch
 **Fix:** Shorten the summary to a sentence or two that say what the section is for. A product shows it in a tooltip or beside an error, where there's room for little more. Its length is counted as `description-too-long` counts a description's: as plain text on one line, with phrases replaced and formatting dropped. The check is off unless the project names it in `[checks]`; the limit is 300 characters, and `[checks.summary-long] limit = 200` turns it on with another.
 
 **Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.
+
+### ASC286 `template-placeholder-published`
+@id {permalink=true}: ASC286
+@summary: A page that publishes, of a content type that names a template, still has one of the template's placeholders, or a frontmatter field with the template's value.
+
+Error · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
+
+**When:** A page that publishes, one without `draft: true`, of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value, found as `template-placeholder-left` finds them. In a draft, it's that advice instead, so a page being written isn't covered in errors.
+
+**Message:** this page publishes with its template's placeholder `{placeholder}`; write what it asks for in its place, or mark the page `draft: true` until it's ready
+
+**Fix:** Write the page's own text where the template's placeholder is, the text in braces, and the page's own value in each field the template fills in, such as `title`. A placeholder in a page that publishes is never meant: readers see the template's words. While the page isn't ready, mark it `draft: true` in its frontmatter: no build publishes it, and what's left to fill in is advice. `ascribe new` starts a page that way.
+
+**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
 ## Across the project
 
@@ -469,11 +483,11 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC235 `nav-page-unplaced`
 @id {permalink=true}: ASC235
-@summary: `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page, which no sidebar shows.
+@summary: `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page or a draft, which no sidebar shows.
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
-**When:** `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page, which no sidebar shows.
+**When:** `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page or a draft, which no sidebar shows.
 
 **Message:** `{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title
 
