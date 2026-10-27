@@ -9,10 +9,11 @@ output-dir = ".ascribe/build"
 # has the fields in `[frontmatter]`. Titles can show code ("`ascribe.toml`
 # reference"); the site's layout uses the formatted title for the heading and
 # the sidebar. A field named `description` is the page's description, which
-# the checks and llms.txt read.
+# the checks and llms.txt read as plain text; it can show code too, and the
+# site's layout uses its formatted form for the lead under the title.
 [frontmatter]
 title = { type = "string", inline = "code" }
-description = "string"
+description = { type = "string", inline = "code" }
 
 # The home page, a list of the other pages. No template is for a landing page,
 # so the type has nothing of its own.

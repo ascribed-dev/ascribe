@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Check external links
-description: Find the links to other sites that broke or moved, with ascribe report links and lychee, and fix, acknowledge, or leave out each one.
+description: "Find the links to other sites that broke or moved, with `ascribe report links` and lychee, and fix, acknowledge, or leave out each one."
 ---
 
 `ascribe check` never reaches the network, so it doesn't see a link to another site break or move. `ascribe report links` does: it hands every `http` and `https` address in your sources, once each, to [lychee](https://lychee.cli.rs), and reports each link that fails at its place in the source.

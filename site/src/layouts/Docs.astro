@@ -5,6 +5,7 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import Availability from "@ascribed/astro/Availability.astro";
 import { neighbors, type Formatted } from "@ascribed/astro/content";
 import Toc from "../components/Toc.astro";
+import { curlQuotes } from "../lead.ts";
 import { contentDir, repo } from "../site.ts";
 import Base from "./Base.astro";
 
@@ -27,7 +28,10 @@ const escape = (text: string) =>
 const labelHtml = (of: { label: string; formatted?: Formatted }) =>
   of.formatted?.label ?? escape(of.label);
 // The description is in llms.txt and not in the page's Markdown, so it's
-// marked for the delivery spec's parity check (`data-markdown-ignore`).
+// marked for the delivery spec's parity check (`data-markdown-ignore`). Its
+// formatted form, with its code spans as <code> (`inline = "code"` too), is
+// the lead under the title, with its quotes curled as the body's are.
+const lead = formatted.description ?? (description && escape(description));
 ---
 
 <Base entry={entry} current={entry.id} docs>
@@ -35,7 +39,7 @@ const labelHtml = (of: { label: string; formatted?: Formatted }) =>
     <article data-pagefind-body>
       <h1 set:html={formatted.title} />
       <Availability available={available} />
-      {description && <p class="description" data-markdown-ignore>{description}</p>}
+      {lead && <p class="description" data-markdown-ignore set:html={curlQuotes(lead)} />}
       <slot />
     </article>
     {

@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Link to your API reference
-description: "Declare your OpenAPI spec in ascribe.toml, link a guide to an operation by its operationId, and have the link checked against the spec and written as the operation's address in Redoc or another renderer."
+description: "Declare your OpenAPI spec in `ascribe.toml`, link a guide to an operation by its `operationId`, and have the link checked against the spec and written as the operation's address in Redoc or another renderer."
 available: ascribe 0.4.4
 ---
 
