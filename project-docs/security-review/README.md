@@ -20,7 +20,8 @@ Checked against `main` on 26 October 2026, so a phase doesn't spend time re-find
 - **The extension's webviews** have a content security policy with a nonce (`packages/vscode/src/webview/viewShell.ts`), and the extension runs nothing in Restricted Mode (`packages/vscode/src/extension.ts`, `ui/tasks.ts`); it runs a project's own `node_modules/.bin/ascribe` before its bundled binary.
 - **CI:** every third-party action is pinned to a commit, every workflow sets `permissions`, and `cargo deny` checks advisories, bans, licences, and sources (`.github/workflows/rust.yml`). Nothing audits the JavaScript dependencies. `report.yml` and `site-npm.yml` are triggered by a schedule and by `workflow_run`.
 - **Releases:** npm packages are published with trusted publishing and provenance (`release.yml`, `canary.yml`); no package runs an install script.
-- **Nothing is fuzzed.**
+- **Three fuzz targets exist,** `fuzz/fuzz_targets/` (`parse`, `model`, `format`), run nightly by `fuzz.yml`, which opens an issue per distinct crash (decision #1020). Frontmatter, the OpenAPI reader, and the example validator aren't fuzzed.
+- **An earlier pass on 26 October landed decisions 75 to 80** in `project-docs/decisions.md` (`git` options, document link schemes, webview messages, the output directory and links, include limits, the GitHub token's host). The threat model lists them.
 
 ## Decisions
 
@@ -32,6 +33,7 @@ Settled for every phase. If one can't be met, stop and report.
 4. **An author writing HTML in a page is trusted,** since the site output passes it through by design. A finding about raw HTML is about where a page's HTML reaches someone the author isn't, such as the review overlay or the editor's preview, not about raw HTML itself.
 5. **Each fix comes with a regression test** at the layer that proves it, and a fuzz target is kept in the repository and run in CI on a schedule, not on every pull request.
 6. **No surface is redesigned by this review.** A finding recommends one change; a change that needs a design gets a proposal of its own.
+7. **The trust boundaries are the threat model's eight** ([threat-model.md](threat-model.md)): the CLI in CI, the CLI on a writer's machine, the language server inside the editor, the MCP server under an agent, the agents' hook, the extension's webviews, the published site and its review overlay, and the release pipeline, each with the untrusted side its table names. `ascribe observe`'s shell line is trusted input run by a person's command, and in scope only where a workflow runs `observe` on a pull request's checkout. _Proposed by phase 0 on 27 October 2026, for the maintainer to settle; a plan's decisions stay in its README while it runs ([decisions/README.md](../decisions/README.md))._
 
 ## Phases
 
