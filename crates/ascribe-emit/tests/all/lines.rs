@@ -132,6 +132,11 @@ fn a_page_s_markdown_says_which_version_it_documents() {
         "{current}"
     );
     assert_eq!(lines.nth(1), Some("> Documentation for Self-managed 3.5."));
+    // The pointer leaves the line to the line after it (decision #1028).
+    assert!(
+        !current.contains("This documentation describes"),
+        "{current}"
+    );
     // An older line names itself, says when its support ends, and where the
     // same page is in the current line, or the page that replaced it.
     let older = plain(&project, "site@3.4", "install.md");
@@ -152,5 +157,18 @@ fn a_page_s_markdown_says_which_version_it_documents() {
     assert!(
         alone.contains("3.5: <https://docs.example.com/docs/>."),
         "{alone}"
+    );
+}
+
+#[test]
+fn a_line_s_llms_txt_says_it_describes_the_line() {
+    let project = memory_project(MODEL, FILES);
+    let llms = plain(&project, "site", "llms.txt");
+    assert!(
+        llms.starts_with(
+            "# Home (Self-managed 3.5)\n\n> Every page of this documentation, each linked \
+             to its Markdown version. This documentation describes Self-managed 3.5.\n"
+        ),
+        "{llms}"
     );
 }

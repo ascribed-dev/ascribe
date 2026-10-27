@@ -19,6 +19,10 @@
 //! still longer than the limit is reported by `ascribe check`
 //! (`llms-section-large`); it is written all the same.
 //!
+//! For a project with `[releases]`, an index's summary ends with the
+//! releases the build describes ([`releases_described`]), which each
+//! page's Markdown version says too (decision #1028).
+//!
 //! In a versioned build with more than one live line, each line has its
 //! own: its heading names the line, `Loom (Self-managed 3.4)`, and an older
 //! line's opens with a line pointing at the current line's index.
@@ -27,7 +31,7 @@
 //! same ones, so what is reported is what is published.
 
 use ascribe_core::RelPath;
-use ascribe_model::{Build, ContentModel, Field, FieldRole};
+use ascribe_model::{AvailabilityMode, Build, ContentModel, Field, FieldRole};
 use ascribe_syntax::{BlockKind, ParseOptions};
 use serde_yaml_ng::Value;
 
@@ -323,20 +327,29 @@ fn sections<'a>(entries: Vec<Entry<'a>>, navigation: &BuildNavigation<'_>) -> Ve
 /// What an index of a line of a versioned build says about the line: the
 /// words after its name, ` (Self-managed 3.4)`, which the compact index's
 /// heading has too ([`compact_index`]), and in an older line, a paragraph
-/// pointing at the current line's index. Empty for a build that
-/// isn't versioned, or has one live line.
+/// pointing at the current line's index, both empty for a build that
+/// isn't versioned, or has one live line; and the releases the build
+/// describes ([`releases_described`]), which its summary ends with.
 #[derive(Default)]
 struct LineHeader {
     suffix: String,
     pointer: Option<String>,
+    releases: Option<String>,
 }
 
 fn line_header(model: &ContentModel, build: &Build) -> LineHeader {
+    let releases = releases_described(model, build);
     let (Some(target), Some(line)) = (&build.versions, &build.line) else {
-        return LineHeader::default();
+        return LineHeader {
+            releases,
+            ..LineHeader::default()
+        };
     };
     if line.current && line.oldest.text == line.line.text {
-        return LineHeader::default();
+        return LineHeader {
+            releases,
+            ..LineHeader::default()
+        };
     }
     let label = model.value_label(target).unwrap_or(target);
     let suffix = format!(" ({label} {})", line.line.text);
@@ -353,7 +366,83 @@ fn line_header(model: &ContentModel, build: &Build) -> LineHeader {
         }
         _ => None,
     };
-    LineHeader { suffix, pointer }
+    LineHeader {
+        suffix,
+        pointer,
+        releases,
+    }
+}
+
+/// The sentences that say which releases `build` describes, for an agent
+/// that has to know whether what it reads is in the release its user is on
+/// (decision #1028): `This documentation describes Self-managed 3.5 and
+/// 3.4.`, for each target `[releases]` lists, by its label. A line of a
+/// versioned build describes its line, and a build that filters for a
+/// version that version alone, with nothing of another target's; any other
+/// build describes each target's live lines, and when a target has a
+/// planned line, a second sentence says that what's marked with the planned
+/// label is in none of them yet. `None` for a project without `[releases]`,
+/// and for a build that filters for a target it lists no lines of.
+pub fn releases_described(model: &ContentModel, build: &Build) -> Option<String> {
+    let label = |target: &str| model.value_label(target).unwrap_or(target).to_owned();
+    let mut described: Vec<(String, Vec<&str>)> = Vec::new();
+    let mut planned = false;
+    match &build.availability {
+        AvailabilityMode::Filter { target, version } => {
+            let version = version.as_ref()?;
+            model.releases_of(target)?;
+            described.push((label(target), vec![version.text.as_str()]));
+        }
+        AvailabilityMode::Badge => {
+            for releases in &model.releases {
+                let line = build
+                    .line
+                    .as_ref()
+                    .filter(|_| build.versions.as_deref() == Some(releases.target.as_str()));
+                let lines: Vec<&str> = match line {
+                    Some(line) => vec![line.line.text.as_str()],
+                    None => {
+                        planned |= !releases.planned.is_empty() && !releases.live.is_empty();
+                        releases.live.iter().map(|v| v.text.as_str()).collect()
+                    }
+                };
+                if !lines.is_empty() {
+                    described.push((label(&releases.target), lines));
+                }
+            }
+        }
+    }
+    if described.is_empty() {
+        return None;
+    }
+    let count: usize = described.iter().map(|(_, lines)| lines.len()).sum();
+    let targets: Vec<String> = described
+        .iter()
+        .map(|(label, lines)| format!("{label} {}", in_words(lines)))
+        .collect();
+    let mut text = format!(
+        "This documentation describes {}.",
+        in_words(&targets.iter().map(String::as_str).collect::<Vec<_>>())
+    );
+    if planned {
+        let planned_label = &model.planned_label;
+        text.push_str(&if count == 1 {
+            format!(" Anything marked {planned_label} isn't in that release yet.")
+        } else {
+            format!(" Anything marked {planned_label} isn't in any of those releases yet.")
+        });
+    }
+    Some(text)
+}
+
+/// A list in words: `a`, `a and b`, `a, b, and c`.
+fn in_words(items: &[&str]) -> String {
+    match items {
+        [] => String::new(),
+        [one] => (*one).to_owned(),
+        [first, second] => format!("{first} and {second}"),
+        [rest @ .., last] => format!("{}, and {last}", rest.join(", ")),
+    }
 }
 
 /// A whole index: the header, then each section.
@@ -366,8 +455,13 @@ fn index(line: &LineHeader, name: &str, summary: &str, sections: &[&Section<'_>]
 }
 
 fn header(line: &LineHeader, name: &str, summary: &str) -> String {
+    let releases = line
+        .releases
+        .as_ref()
+        .map(|r| format!(" {r}"))
+        .unwrap_or_default();
     let mut text = format!(
-        "# {}{}\n\n> {}\n",
+        "# {}{}\n\n> {}{releases}\n",
         one_line(name),
         line.suffix,
         one_line(summary)
@@ -738,5 +832,12 @@ mod tests {
     #[test]
     fn link_text_escapes_brackets_and_folds_lines() {
         assert_eq!(link_text("a [b]\n c\\"), "a \\[b\\] c\\\\");
+    }
+
+    #[test]
+    fn in_words_joins_a_list_as_a_sentence_does() {
+        assert_eq!(in_words(&["a"]), "a");
+        assert_eq!(in_words(&["a", "b"]), "a and b");
+        assert_eq!(in_words(&["a", "b", "c"]), "a, b, and c");
     }
 }
