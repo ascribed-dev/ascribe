@@ -77,8 +77,8 @@ pub struct Updated {
     /// back problems in every file changed
     /// ([`ascribe_resolve::side_file::Stale::every_file`]).
     pub every_file: bool,
-    /// Whether the changes made a new snapshot. A batch with nothing for
-    /// the source index that changes nothing keeps the one there was.
+    /// Whether the changes made a new snapshot. A batch that changes
+    /// nothing keeps the one there was.
     pub changed: bool,
 }
 
@@ -219,7 +219,7 @@ impl Workspace {
                 side_list: side_files,
                 fs,
             },
-            failed,
+            Some(failed),
         )));
         Workspace {
             index,
@@ -278,10 +278,9 @@ impl Workspace {
     /// [`Updated`] says when the checks across the project, or every file's,
     /// are stale. A memo file, an image, or a code file drops what the
     /// snapshot read of its kind on demand, to be read again when it's asked
-    /// for. A batch with nothing for the index that changes nothing keeps
-    /// the snapshot there was; one with anything for the index makes a new
-    /// one, since the snapshot lets go of the index while it's updated, so
-    /// the update changes it in place rather than copying it.
+    /// for. A batch that changes nothing keeps the snapshot there was. The
+    /// snapshot lets go of the index while it's updated, so the update
+    /// changes it in place rather than copying it.
     ///
     /// What's read again is read through the file system the project was
     /// loaded with, which must show the files as they are now: one a command
@@ -408,12 +407,21 @@ impl Workspace {
             Err(e) => {
                 // Nothing changed: the snapshot is the one there was, with
                 // the index it had.
-                if let_go && let Some(inner) = Arc::get_mut(&mut self.snapshot.0) {
-                    inner.index = Some(self.index.snapshot().shared_project());
-                }
+                self.take_back(let_go);
                 return Err(e);
             }
         };
+        if affected.is_empty() && !side_changed && !next.changes_anything() {
+            // The index is as it was, so the snapshot there was still
+            // describes it.
+            self.take_back(let_go);
+            return Ok(Updated {
+                across,
+                every_file,
+                changed: false,
+                index: affected,
+            });
+        }
         self.snapshot = next.assemble(self.index.snapshot().shared_project());
         Ok(Updated {
             across: across || drop.memos || !affected.is_empty(),
@@ -421,6 +429,13 @@ impl Workspace {
             changed: true,
             index: affected,
         })
+    }
+
+    /// Gives the snapshot back the index it let go of, if it did.
+    fn take_back(&mut self, let_go: bool) {
+        if let_go && let Some(inner) = Arc::get_mut(&mut self.snapshot.0) {
+            inner.index = Some(self.index.snapshot().shared_project());
+        }
     }
 }
 
@@ -445,6 +460,13 @@ struct Next {
 }
 
 impl Next {
+    /// Whether the next snapshot differs from the one before apart from
+    /// its index: the model changed, or something read on demand is
+    /// dropped.
+    fn changes_anything(&self) -> bool {
+        self.new_model.is_some() || self.drop.any()
+    }
+
     fn of(
         old: &Inner,
         model: Option<(Arc<ContentModel>, String)>,
@@ -470,8 +492,6 @@ impl Next {
     /// The next snapshot, of `index`.
     fn assemble(self, index: Arc<ascribe_resolve::Project>) -> WorkspaceSnapshot {
         let (model, model_text) = self.new_model.unwrap_or((self.model, self.model_text));
-        let mut failed = unreadable(&index);
-        failed.sort_by(|a, b| a.0.cmp(&b.0));
         let mut inner = Inner::assemble(
             Parts {
                 root: self.root,
@@ -482,7 +502,7 @@ impl Next {
                 side_list: self.side_list,
                 fs: self.fs,
             },
-            failed,
+            None,
         );
         if !self.drop.code {
             inner.code = self.code;
@@ -602,8 +622,9 @@ struct Inner {
     root: PathBuf,
     model: Arc<ContentModel>,
     model_text: String,
-    /// The sources that couldn't be read, in their order.
-    failed: Vec<(RelPath, ReadFailure)>,
+    /// The sources that couldn't be read, in their order; `None` for the
+    /// index's, in path order, found when the sources are first asked for.
+    failed: Option<Vec<(RelPath, ReadFailure)>>,
     /// Whether the sources are listed in path order, the files that
     /// couldn't be read among the others, rather than after them.
     by_path: bool,
@@ -685,9 +706,19 @@ impl Inner {
                 .map(|s| s.id.index())
                 .max()
                 .map_or(1, |max| max + 1);
+            let in_index;
+            let failed = match &self.failed {
+                Some(failed) => failed,
+                None => {
+                    let mut failed = unreadable(index);
+                    failed.sort_by(|a, b| a.0.cmp(&b.0));
+                    in_index = failed;
+                    &in_index
+                }
+            };
             sources.extend(
                 (first..)
-                    .zip(&self.failed)
+                    .zip(failed)
                     .map(|(id, (path, failure))| SourceFile {
                         id: FileId::new(id),
                         path: path.clone(),
@@ -718,7 +749,7 @@ impl Inner {
     /// The snapshot of `parts`, with the index's files as its sources in
     /// path order, then `failed`, the sources that couldn't be read, with
     /// ids past every other.
-    fn assemble(parts: Parts, failed: Vec<(RelPath, ReadFailure)>) -> Inner {
+    fn assemble(parts: Parts, failed: Option<Vec<(RelPath, ReadFailure)>>) -> Inner {
         let Parts {
             root,
             model,
@@ -775,7 +806,7 @@ impl WorkspaceSnapshot {
                 side_list: side_files,
                 fs,
             },
-            failed,
+            Some(failed),
         );
         inner.by_path = true;
         WorkspaceSnapshot(Arc::new(inner))
@@ -992,7 +1023,7 @@ impl WorkspaceSnapshot {
                 side_list: self.0.side_list,
                 fs: self.0.fs.clone(),
             },
-            failed,
+            Some(failed),
         );
         // A page's text doesn't change the memo files.
         inner.memos = self.0.memos.clone();

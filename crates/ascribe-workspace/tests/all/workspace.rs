@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_model::ContentModel;
-use ascribe_resolve::{FileSystem, Layout, MemoryFs, Probe, Sources};
+use ascribe_resolve::{Change, FileSystem, Layout, MemoryFs, Probe, Sources};
 use ascribe_workspace::{Changed, ModelFile, SharedFs, Workspace, WorkspaceSnapshot};
 
 const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[builds.site]\n";
@@ -266,4 +266,43 @@ fn a_memo_file_read_again_is_read_when_its_asked_for_next() {
         .expect("applies");
     assert!(updated.changed && updated.across);
     assert_eq!(text(&workspace), "After.\n");
+}
+
+#[test]
+fn a_source_rewritten_with_its_own_text_keeps_the_snapshot() {
+    let mut workspace = load(Arc::new(memory()));
+    let same = || {
+        Changed::Index(Change::Edited {
+            path: path("guide.md"),
+            text: PAGES[1].1.to_owned(),
+        })
+    };
+    let before = workspace.snapshot();
+    let updated = workspace.apply([same()]).expect("applies");
+    assert!(!updated.changed && updated.index.is_empty());
+    assert!(workspace.snapshot().same_as(&before));
+    // With nothing else holding the snapshot, it lets go of the index while
+    // it's updated, and has it back after.
+    drop(before);
+    let updated = workspace.apply([same()]).expect("applies");
+    assert!(!updated.changed);
+    assert_eq!(
+        dump(workspace.snapshot().index()),
+        dump(load(Arc::new(memory())).snapshot().index())
+    );
+    let updated = workspace
+        .apply([Changed::Index(Change::Edited {
+            path: path("guide.md"),
+            text: "# Guide\n".to_owned(),
+        })])
+        .expect("applies");
+    assert!(updated.changed);
+    assert_eq!(
+        &*workspace
+            .snapshot()
+            .source_at(&path("guide.md"))
+            .expect("a source")
+            .text,
+        "# Guide\n"
+    );
 }
