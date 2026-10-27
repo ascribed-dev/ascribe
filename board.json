@@ -7021,8 +7021,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1182"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "`ascribe observe` runs the config's commands without asking when there's no terminal"
     },
     {
@@ -7221,7 +7224,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1173"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Move the edits the CLI shares with the language server into an ascribe-edit crate"
     },
     {
@@ -7275,7 +7278,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1172"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Warn on a GitHub alert (`> [!NOTE]`), and offer the `@note` that replaces it"
     },
     {
@@ -7545,7 +7548,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1171"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Docs: run `ascribe agents sync` on our own docs, and hold it in CI"
     },
     {
@@ -7619,7 +7622,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1105"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Libraries return what to write: route cache and history writes through the caller, and group the FileSystem exceptions"
     },
     {
@@ -7802,7 +7805,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1135"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Check: annotate a pull request's lines in GitHub Actions"
     },
     {
@@ -7879,8 +7882,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1181"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Docs: have the CI recipe run the ascribe version the project pins"
     },
     {
@@ -8222,8 +8228,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1084"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDpurI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1180"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Split the long diagnostics pages, then link each word of an entry's header line"
     },
     {
@@ -8546,9 +8555,46 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1175"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDxisY",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1179"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "versions release fails on the docs: archiving the current line changes the agents' preamble"
+    },
+    {
+      "content": {
+        "body": "Two gaps in what `ascribe agents sync` writes for a project in a subfolder, found running it on our own `docs/` in #1171 (for #1008).\n\n## The page types get cut first\n\n`docs/AGENTS.md` lists none of the docs' six page types. All it says is \"…and 6 more: `cargo run -q -p ascribe-cli -- model docs --section types`\". The 4,000-character budget cuts the types before anything else, and a long `--command` uses more of the budget. Types are what an agent needs most before it writes a page, since every page names one with `type:`.\n\n## The skill's commands assume the project is where the agent runs\n\nStep 4 of the skill's loop, `… check` with no file, and `… model` with no `--config` both exit 2 from this repository's root, which has no `ascribe.toml`. `docs/AGENTS.md` gets this right with `--config docs`. Sync could pass the `--config` it was given into the skill's commands too, as it already does for `AGENTS.md`. This only works when every project in the repository shares the skill, so it needs the same care that `--command` gets in `commands_of`.\n\n## Done looks like\n\n- The page types are cut last, after the sentences that are cut now, or a type's line gets shorter, so that `docs/AGENTS.md` lists all six types.\n- In a repository whose only project is in a subfolder, the skill's commands work from the root.\n- `crates/ascribe-cli/tests/all/agents.rs` covers both, and the docs' files are synced again.",
+        "number": 1177,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`agents sync`: keep the page types in AGENTS.md, and give the skill's commands the project's `--config`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1177"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDx2xs",
+      "labels": [
+        "agents"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "versions release fails on the docs: archiving the current line changes the agents' preamble"
+      "title": "`agents sync`: keep the page types in AGENTS.md, and give the skill's commands the project's `--config`"
+    },
+    {
+      "content": {
+        "body": "Say a `CLAUDE.md` already imports `AGENTS.md` with its own `@AGENTS.md` line, outside Ascribe's markers, as this repository's root did before #1171. `ascribe agents sync --target claude` then appends its marked block, which holds another `@AGENTS.md`, so the file imports it twice. #1171 worked around this by replacing the hand-written line with the block.\n\n`claude_md` and the `add` call in `crates/ascribe-cli/src/agents/sync.rs` place the block whatever the file already says. The `CLAUDE.local.md` branch already checks `contains(\"@AGENTS.md\")`.\n\n## Done looks like\n\n- When a `CLAUDE.md` already imports `AGENTS.md` outside the markers, sync writes no block there. It leaves the file as it is and says the file already loads `AGENTS.md`. `--check` counts that file as up to date.\n- A test in `crates/ascribe-cli/tests/all/agents.rs` covers this, beside the test that already checks a `CLAUDE.md` with text of its own.",
+        "number": 1178,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`agents sync --target claude` adds a second `@AGENTS.md` to a CLAUDE.md that already imports it",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1178"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDx23M",
+      "labels": [
+        "agents"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`agents sync --target claude` adds a second `@AGENTS.md` to a CLAUDE.md that already imports it"
     }
   ]
 }
