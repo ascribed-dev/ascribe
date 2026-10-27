@@ -159,7 +159,7 @@ A second change composes with the first: under `base-path = ["/docs/", "/guide/"
 
 The base is what the docs published before: the merge base of the repository's default branch and `HEAD`, as a pull request shows its changes, or the revision `--base` names. `--base-exact` compares with that revision itself. It's read as [`ascribe diff`](../review/diff.md) reads it, so the checkout needs the history: in CI, `fetch-depth: 0`, as [Checks in CI](../checks/ci.md#keep-the-addresses-youve-published) sets up.
 
-When the base can't be read, because the revision isn't there, as in a shallow clone, or there's history but no default branch to compare with, or `--base` names a base outside a repository, the rest of the check runs and [`addresses-base-unreadable`](../checks/diagnostics/content-checks.md#ASC257), a warning, says why, so a check that compared nothing never passes silently. A base with no project, as a project's first pull request has, published nothing to keep, and that's advice. Before the first commit, with no `--base`, nothing can have been published: a project outside a git repository, or in one with no commit yet, compares nothing, and the check doesn't say so, so a project `ascribe init` just started checks clean.
+When the base can't be read, because the revision isn't there, as in a shallow clone, or there's history but no default branch to compare with, or `--base` names a base outside a repository, the rest of the check runs and [`addresses-base-unreadable`](../checks/diagnostics/project-checks.md#ASC257), a warning, says why, so a check that compared nothing never passes silently. A base with no project, as a project's first pull request has, published nothing to keep, and that's advice. Before the first commit, with no `--base`, nothing can have been published: a project outside a git repository, or in one with no commit yet, compares nothing, and the check doesn't say so, so a project `ascribe init` just started checks clean.
 
 ## What the build writes
 
@@ -237,6 +237,8 @@ Records that a page, or a heading's id, moved, after a move made without Ascribe
 $ ascribe addresses move guides/keys.md security/keys.md
 Recorded in ascribe.addresses: guides/keys.md moved to security/keys.md.
 ```
+
+Each page's path is from the current folder or from the content root, and the entry is from the content root. So, from a repository's root whose project is in `docs/` with its content in `docs/content/`, `ascribe addresses move --config docs docs/content/guides/keys.md docs/content/security/keys.md` records the same entry, and so does `ascribe addresses retire` given such a path.
 
 **`--from-git`** records every move git sees between the base and the working tree whose old path is gone, one entry for each page, so a reorganization made with `git mv` is recorded at once. The base is chosen as `ascribe check` chooses it, with `--base` and `--base-exact`. Git sees a file that's renamed and added, as `git mv` leaves it, and only when the old and new files are mostly the same: a page rewritten as it moved is forwarded with `ascribe addresses move <old> <new>`.
 

@@ -9,14 +9,16 @@ Every problem Ascribe reports, with its code, its name, and how to fix it. `ascr
 
 A *problem* is what Ascribe found in your project, at one place. A *diagnostic* is the kind of problem, with a code, that this page and `ascribe explain` describe. In the messages below, `{name}` stands for a value filled in from your source.
 
-The diagnostics are on six pages, by what they're about:
+The diagnostics are on nine pages, by what they're about:
 
 - [Directives](diagnostics/directives.md): attributes, directives and their containers, binding, titles, ids, includes, variants, availability, steps, details, and widgets.
-- [Links, pages, and sources](diagnostics/pages.md): links, images, phrases, headings, frontmatter, lists, files, snippets, source copies, acknowledgements, permalinks, memo files, navigation, and the glossary.
+- [Links and pages](diagnostics/pages.md): links, images, phrases, headings, frontmatter, and lists.
+- [Sources, memo files, and navigation](diagnostics/sources.md): files, snippets, source copies, acknowledgements, permalinks, memo files, navigation, the glossary, and summaries.
 - [The addresses file and API specs](diagnostics/project-files.md): `ascribe.addresses`, the addresses a base published, and the specs `[apis]` declares.
-- [The content model](diagnostics/content-model.md): `ascribe.toml`: the file, `[project]`, `[sources]`, content types, names, `[releases]`, phrases, and widgets.
-- [The content model's builds and site](diagnostics/content-model-builds.md): the rest of `ascribe.toml`: the consumer, builds, the editor, `[permalinks]`, `[crawlers]`, `[listing]`, and `[checks]`.
-- [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of: the checks of pages and of the project as a whole.
+- [The content model](diagnostics/content-model.md): `ascribe.toml`: the file, `[project]`, `[sources]`, content types, and names.
+- [The content model's builds and site](diagnostics/content-model-builds.md): the rest of `ascribe.toml`: `[releases]`, phrases, widgets, the consumer, builds, the editor, `[permalinks]`, `[crawlers]`, `[listing]`, and `[checks]`.
+- [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of: the checks of pages.
+- [Content checks across the project](diagnostics/project-checks.md): the checks of the project as a whole, such as orphan pages and what's unused.
 - [Content checks of outputs and the site](diagnostics/output-checks.md): the rest of the content checks: outputs, prose through Vale, external links, the published site, and tested examples.
 
 Each entry ends with the section of the [directive reference](../writing/directives.md), [directive syntax](../writing/syntax.md), [frontmatter](../writing/frontmatter.md), [phrases, links, and images](../writing/inline.md), or the [`ascribe.toml` reference](../content-model/index.md) about what it checks, which has examples, and links to its part of the specification.
@@ -53,7 +55,7 @@ Each diagnostic says what kind of next step it has. `ascribe check --format json
 
 ## Setting a check's level
 
-A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](../content-model/checks.md#22-checks) in `ascribe.toml`. Those checks are listed under [Content checks](diagnostics/content-checks.md) and [Content checks of outputs and the site](diagnostics/output-checks.md), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
+A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](../content-model/checks.md#22-checks) in `ascribe.toml`. Those checks are listed under [Content checks](diagnostics/content-checks.md), [Content checks across the project](diagnostics/project-checks.md), and [Content checks of outputs and the site](diagnostics/output-checks.md), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
 
 A few content checks matter only to some projects, and are off unless `[checks]` names them; their entries say they're off by default. Name one with a level to turn it on at that level, or with a table of its settings to turn it on at the level its entry gives. [`summary-missing`](diagnostics/content-checks.md#ASC252) and [`summary-long`](diagnostics/content-checks.md#ASC253), for a project that [shows its docs in a product](../permalinks/in-your-product.md), are turned on like this:
 

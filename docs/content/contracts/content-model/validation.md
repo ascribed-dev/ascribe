@@ -5,7 +5,7 @@ nav-label: "Validation rules"
 description: "Every rule a content model loader enforces, and the map of SPEC §7.2 to the contract."
 ---
 
-Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. Each rule's fix, for someone writing `ascribe.toml`, is in the diagnostics reference: [from the file to widgets](../../checks/diagnostics/content-model.md), and [from the consumer to `[checks]`](../../checks/diagnostics/content-model-builds.md).
+Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. Each rule's fix, for someone writing `ascribe.toml`, is in the diagnostics reference: [from the file to names](../../checks/diagnostics/content-model.md), and [from `[releases]` to `[checks]`](../../checks/diagnostics/content-model-builds.md).
 
 ## 25. Validation rules
 

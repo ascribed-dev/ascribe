@@ -15,7 +15,9 @@
 //! - **Without `--check`** files are rewritten in place, and each file that
 //!   changed is listed. **With `--check`** nothing is written, and each file
 //!   that would change is listed. **With `--format json`** the list is one
-//!   JSON document with each file's edits.
+//!   JSON document with each file's edits. **With `--format github`**, only
+//!   with `--check`, each file that would change is a GitHub Actions
+//!   workflow command, with its path from the repository's root.
 //! - **Exit status.** `0` when nothing needed formatting (`--check`) or every
 //!   file was formatted; `1` under `--check` when a file would change; `2` for a
 //!   problem: no project, an invalid model, an unreadable path or file, or a
@@ -31,13 +33,14 @@ use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, FileId, Issue, LineIndex, Location, Span, TextEdit};
 use ascribe_fmt::{FormatFilesError, Formatted};
 use ascribe_resolve::{DiskFs, Layout};
-use clap::Args as ClapArgs;
+use clap::{Args as ClapArgs, ValueEnum};
 use serde::Serialize;
 
-use crate::answer::{self, Format};
+use crate::answer;
 use crate::cli::Global;
 use crate::context::locate;
 use crate::exit;
+use crate::report::github;
 use crate::report::json::Edit;
 
 mod changes;
@@ -77,9 +80,31 @@ pub struct Args {
     /// How to show what changed.
     ///
     /// `json` lists each file with the edits that format it; with
-    /// `--check`, that's the edits without writing them.
-    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    /// `--check`, that's the edits without writing them. `github`, only with
+    /// `--check`, is for GitHub Actions.
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = Format::Text,
+        value_name = "FORMAT",
+        requires_if("github", "check")
+    )]
     pub format: Format,
+}
+
+/// How `ascribe fmt` shows what changed.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum Format {
+    /// Short text, for people and agents to read.
+    #[default]
+    #[value(alias = "concise")]
+    Text,
+    /// One JSON document, for tools.
+    Json,
+    /// A GitHub Actions workflow command per file that would change, which
+    /// shows it on the pull request at its first change, with the path from
+    /// the repository's root: for CI.
+    Github,
 }
 
 impl Args {
@@ -99,6 +124,53 @@ fn shown(file: &Path) -> String {
         .and_then(|here| relative_path(&normalize(&here), &path))
         .filter(ascribe_core::RelPath::is_inside)
         .map_or_else(|| path.display().to_string(), |rel| rel.to_string())
+}
+
+/// A file as `--format github` names it: from the repository's root, when
+/// it's in the project and the project is in a repository; otherwise as
+/// `--check` names it.
+fn in_repository(global: &Global) -> impl Fn(&Path) -> String {
+    let project = locate(global)
+        .ok()
+        .map(|config| normalize(&std::path::absolute(&config).unwrap_or(config)))
+        .and_then(|config| config.parent().map(Path::to_owned));
+    let prefix = project
+        .as_deref()
+        .and_then(|dir| ascribe_diff::Repository::discover(dir).ok())
+        .map(|repo| repo.prefix);
+    move |file| {
+        let path = normalize(&std::path::absolute(file).unwrap_or(file.to_owned()));
+        match (&project, &prefix) {
+            (Some(project), Some(prefix)) => relative_path(project, &path)
+                .filter(ascribe_core::RelPath::is_inside)
+                .map_or_else(
+                    || shown(file),
+                    |rel| github::in_repository(prefix, rel.as_str()),
+                ),
+            _ => shown(file),
+        }
+    }
+}
+
+/// The workflow command for a file that would change: an error at its first
+/// change, which says how many there are.
+fn annotation(file: &str, found: &[changes::Change]) -> String {
+    let line = found.first().map_or(1, |c| c.line + 1);
+    let places = match found.len() {
+        1 => "1 place".to_owned(),
+        n => format!("{n} places"),
+    };
+    github::command(
+        "error",
+        &[
+            ("file", file.to_owned()),
+            ("line", line.to_string()),
+            ("title", "ascribe fmt".to_owned()),
+        ],
+        &format!(
+            "`ascribe fmt` would change this file in {places}; run `ascribe fmt` to format it"
+        ),
+    )
 }
 
 /// What `ascribe fmt --format json` writes: one document. Fields can be
@@ -162,6 +234,13 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         Format::Text => format_all(global, &args, &mut |file, _, _| {
             let _ = writeln!(out, "formatted {}", file.display());
         }),
+        Format::Github => {
+            let in_repository = in_repository(global);
+            format_all(global, &args, &mut |file, source, edits| {
+                let found = changes::changes(source, edits);
+                let _ = writeln!(out, "{}", annotation(&in_repository(file), &found));
+            })
+        }
         Format::Json => answer(global, &args).and_then(|(done, report)| {
             match answer::written(answer::write_json(&mut out, &report), &mut err) {
                 Some(code) => Err(FmtError::Written(code)),

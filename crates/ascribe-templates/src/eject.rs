@@ -1055,6 +1055,8 @@ fn write(root: &Path, path: &str, text: &str) -> Result<(), EjectError> {
         path: path.to_owned(),
         reason: e.to_string(),
     };
+    // Library write: the templates, `templates.lock`, and `ascribe.toml`
+    // `ascribe templates eject` writes, after checking each.
     if let Some(dir) = file.parent() {
         std::fs::create_dir_all(dir).map_err(failed)?;
     }

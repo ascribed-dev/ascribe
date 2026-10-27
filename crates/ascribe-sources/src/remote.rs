@@ -119,6 +119,7 @@ impl Cache {
         };
         // Outside FileSystem: the cache of repositories, outside the project.
         if !remote.dir.join("HEAD").is_file() {
+            // Library write: the cache of repositories, which `git` fills.
             std::fs::create_dir_all(&remote.dir).map_err(|e| SourcesError::Cache {
                 path: remote.dir.display().to_string(),
                 message: e.to_string(),

@@ -138,6 +138,8 @@ pub fn format_files(
             message: e.to_string(),
         })?;
         if !check {
+            // Library write: `fmt` rewrites the files it formats, as it reads them,
+            // one at a time.
             std::fs::write(&file, formatted).map_err(|source| FormatFilesError::Io {
                 path: file.clone(),
                 source,

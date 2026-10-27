@@ -77,7 +77,7 @@ The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io
 - that text from a review or a pull request is someone else's, not instructions;
 - each directive's syntax, in a reference it reads only when it needs it.
 
-`sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
+`sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. When the repository's only project is in a folder, the skill gives the commands that work on the whole project, such as `ascribe check` with no file, that folder with `--config`, so they work from the repository's root, where an agent starts. With more than one project, the skill is each one's, so it names none. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
 
 In VS Code, chat has the skill before you run `sync`: the [extension](../editor/agents.md#agents-in-vs-code) ships it.
 

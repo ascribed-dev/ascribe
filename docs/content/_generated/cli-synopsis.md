@@ -2,13 +2,13 @@
 ```text
 ascribe init              [DIR] [--templates] [--content-root <DIR>] [--format text|json]
 ascribe new               TYPE PATH [--title <TITLE>] [--dry-run] [--force] [--format text|json]
-ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
-ascribe fmt               [--check] [--diff] [PATHS]... [--format text|json]
+ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|github|prompt] [--limit <N>] [--exit-code[=error|warning]] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
+ascribe fmt               [--check] [--diff] [PATHS]... [--format text|json|github]
 ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors] [--no-baseline]
 ascribe preview           [--build <NAME>] [--port <PORT>]
 ascribe diff              [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code] [--pages-only]
 ascribe drift             [--base <REV>] [--build <NAME>]... [--format text|json|markdown] [--exit-code]
-ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code advice|warning|error]
+ascribe report            [SECTION]... [--format text|markdown|json|prompt] [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code[=advice|warning|error]]
 
 ascribe explain           [CODE] [--list] [--format text|json]
 ascribe model             [PATH] [--section types|frontmatter|fragments|dimensions|lifecycle|phrases|features|notes|glossary|images|widgets|releases|builds|sources|apis|from|intended|project|versions|consumer|editor|checks|crawlers|listing] [--format text|json]
@@ -34,20 +34,20 @@ ascribe addresses init    [--format text|json]
 ascribe addresses move    [OLD] [NEW] [--from-git] [--base <REV>] [--base-exact] [--format text|json]
 ascribe addresses retire  OLD --reason <TEXT> [--format text|json]
 ascribe addresses list    [--build <NAME>] [--format text|json]
-ascribe sources fetch     [NAME]...
+ascribe sources fetch     [NAME]... [--format text|json]
 ascribe sources update    [NAME]... [--to <REV>] [--format text|json|markdown]
 ascribe sources status    [--format text|json]
 ascribe observe           [--name <NAME>] [--check] [--yes] [--format text|json]
-ascribe templates list
+ascribe templates list    [--format text|json]
 ascribe templates eject   [NAME]... [--to <DIR>] [--keep-type] [--format text|json]
 ascribe templates status  [--format text|json] [--exit-code] [--diff <NAME>]
-ascribe vale eject
+ascribe vale eject        [--format text|json]
 
-ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>]
+ascribe agents sync       [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>] [--format text|json]
 ascribe agents rules      [PATH]
 ascribe agents index      [--build <NAME>] [--into <FILE>] [--pages <DIR>] [--format text|json]
 ascribe agents skill      [FILE]
-ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list]
+ascribe agents prompt     [NAME] [--arg <KEY=VALUE>]... [--list] [--format text|json]
 ascribe agents hook       HARNESS [--event edit|stop] [--command <COMMAND>]
 ascribe mcp
 ascribe lsp

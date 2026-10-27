@@ -61,6 +61,7 @@ pub mod roles;
 mod scope;
 pub mod side_files;
 pub mod site;
+pub mod store;
 pub mod tool;
 pub mod type_files;
 mod yaml;

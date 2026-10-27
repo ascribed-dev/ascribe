@@ -126,4 +126,4 @@ pages = ["content.md", "variation.md", "output.md", "sources.md", "checks.md", "
 
 [[sections]]
 folder = "contracts/json-reports/"
-pages = ["model.md", "templates.md", "versions.md", "addresses.md", "sources.md", "report.md", "diff.md", "questions.md"]
+pages = ["model.md", "templates.md", "versions.md", "addresses.md", "sources.md", "report.md", "diff.md", "questions.md", "agents.md"]

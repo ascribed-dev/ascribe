@@ -1118,6 +1118,11 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             "\n[listing]\ndefault = \"unquoted\"\n",
         ),
         ("memo-empty", "\n@memo:\n@end\nText.\n", ""),
+        (
+            "github-alert",
+            "\n> [!TIP]\n> Quill runs in the browser too.\n",
+            "",
+        ),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()

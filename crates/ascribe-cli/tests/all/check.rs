@@ -125,6 +125,30 @@ fn warnings_exit_0_unless_denied() {
 }
 
 #[test]
+fn exit_code_names_the_level_that_fails_and_deny_warnings_is_its_alias() {
+    let dir = project(&[("index.md", WITH_WARNING)]);
+    for (args, expected) in [
+        (&["check", "--exit-code"][..], 0),
+        (&["check", "--exit-code=error"][..], 0),
+        (&["check", "--exit-code=warning"][..], 1),
+        // The last one given wins, as an alias's would.
+        (&["check", "--exit-code=error", "--deny-warnings"][..], 1),
+        (&["check", "--deny-warnings", "--exit-code=error"][..], 0),
+    ] {
+        let out = ascribe(dir.path(), args);
+        assert_eq!(code(&out), expected, "{args:?}: {}", stdout(&out));
+    }
+    // A level is given with `=`, so a path after `--exit-code` is a path.
+    let out = ascribe(dir.path(), &["check", "--exit-code", "docs/index.md"]);
+    assert_eq!(code(&out), 0, "{}", stdout(&out));
+    let out = ascribe(dir.path(), &["check", "--exit-code=advice"]);
+    assert_eq!(code(&out), 2, "advice never fails the check");
+    let dir = project(&[("index.md", WITH_ERROR)]);
+    let out = ascribe(dir.path(), &["check", "--exit-code"]);
+    assert_eq!(code(&out), 1, "{}", stdout(&out));
+}
+
+#[test]
 fn usage_errors_exit_2() {
     let dir = project(&[("index.md", CLEAN)]);
     for args in [

@@ -20,8 +20,9 @@ The pages are grouped as the [`ascribe.toml` reference](../content-model/index.m
 - How content varies: [`ascribe versions`](json-reports/versions.md)
 - Where pages are published: [`ascribe permalinks` and `ascribe addresses`](json-reports/addresses.md)
 - What pages draw from: [`ascribe sources` and `ascribe observe`](json-reports/sources.md)
-- Checks: `ascribe check`, `ascribe build`, `ascribe fmt`, and `ascribe baseline`, on this page, [`ascribe report`](json-reports/report.md), and [`ascribe diff` and `ascribe drift`](json-reports/diff.md)
-- Questions: [`ascribe explain`, `outline`, `link`, `refs`, `resolve`, `search`, and `agents index`](json-reports/questions.md)
+- Checks: `ascribe check`, `ascribe build`, `ascribe fmt`, `ascribe baseline`, and `ascribe vale eject`, on this page, [`ascribe report`](json-reports/report.md), and [`ascribe diff` and `ascribe drift`](json-reports/diff.md)
+- Questions: [`ascribe explain`, `outline`, `link`, `refs`, `resolve`, and `search`](json-reports/questions.md)
+- Agents: [`ascribe agents index`, `sync`, and `prompt`](json-reports/agents.md)
 
 ## `ascribe check` and `ascribe build`
 
@@ -38,3 +39,8 @@ The pages are grouped as the [`ascribe.toml` reference](../content-model/index.m
 ## `ascribe baseline prune`
 
 @include: ../_generated/json-baseline-prune.md
+
+## `ascribe vale eject`
+@available: ascribe planned
+
+@include: ../_generated/json-vale-eject.md

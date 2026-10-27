@@ -48,6 +48,11 @@ Each command links to its section, with its options, output, and exit codes, on 
 
 @include: ../_generated/cli-synopsis.md
 
+### Output formats
+@available: ascribe planned
+
+`--format` takes the same words on every command that has it. Every command that takes `text` takes `concise` too: `ascribe check` lists one line a problem, and a command with no one-line form writes its text.
+
 ## Options every command accepts
 
 @include: ../_generated/cli-global-options.md
