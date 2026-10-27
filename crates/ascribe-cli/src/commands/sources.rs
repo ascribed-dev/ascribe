@@ -16,7 +16,7 @@ use ascribe_sources::{
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 
-use crate::answer::TextFormat;
+use crate::answer;
 use crate::cli::Global;
 use crate::commands::diff::fail;
 use crate::commands::drift::{escape, write_summary_groups, write_text_groups};
@@ -64,8 +64,8 @@ pub struct FetchArgs {
     pub names: Vec<String>,
 
     /// How to show what was copied.
-    #[arg(long, value_enum, default_value_t = TextFormat::Text, value_name = "FORMAT")]
-    pub format: TextFormat,
+    #[arg(long, value_enum, default_value_t = answer::Format::Text, value_name = "FORMAT")]
+    pub format: answer::Format,
 }
 
 /// Arguments of `ascribe sources update`.
@@ -92,6 +92,7 @@ pub struct UpdateArgs {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum UpdateFormat {
     /// Each source's commits and copies, then the pages, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -111,6 +112,7 @@ pub struct StatusArgs {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum StatusFormat {
     /// Each source and its copies, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -169,8 +171,8 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
         Err(e) => return exit::fail(err, &e),
     };
     let written = match args.format {
-        TextFormat::Text => write_fetch(out, err, &report),
-        TextFormat::Json => {
+        answer::Format::Text => write_fetch(out, err, &report),
+        answer::Format::Json => {
             for source in report.sources.iter().filter(|s| s.first_copy) {
                 let _ = first_copy(err, &source.name);
             }

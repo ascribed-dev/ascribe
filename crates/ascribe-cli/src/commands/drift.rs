@@ -57,6 +57,7 @@ pub struct Args {
 pub enum Format {
     /// The groups of pages, with each example that broke or changed, for
     /// people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,

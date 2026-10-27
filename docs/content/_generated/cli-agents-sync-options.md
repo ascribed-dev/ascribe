@@ -12,5 +12,5 @@
 - `--agent`: With --cloud, write the MCP server into a custom agent, .github/agents/ascribe-docs.md, instead of printing its JSON: for a repository whose settings you can't change.
 - `--command <COMMAND>`: The command the project runs Ascribe with, which the files name in the commands they give: `npx ascribe`, for example. By default, `npx ascribe`, `pnpm exec ascribe`, or `yarn ascribe` when a package.json depends on @ascribed/cli or @ascribed/astro, by its lockfile; else `ascribe`. Give it again each time: with --check, a file written with another command is out of date.
 - `--format <FORMAT>`: How to show what was written, or with --check what's out of date.
-  - `text` (the default): Text, for people and agents to read.
+  - `text` (the default): Short text, for people and agents to read.
   - `json`: One JSON document, for tools.

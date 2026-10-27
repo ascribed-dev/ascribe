@@ -9,7 +9,7 @@ use ascribe_check::prose::{Ejected, eject};
 use clap::{Args as ClapArgs, Subcommand};
 use serde::Serialize;
 
-use crate::answer::{self, TextFormat};
+use crate::answer::{self, Format};
 use crate::cli::Global;
 use crate::context::{Failure, locate};
 use crate::exit;
@@ -37,8 +37,8 @@ pub enum Command {
 #[derive(Debug, ClapArgs)]
 pub struct EjectArgs {
     /// How to show what was written.
-    #[arg(long, value_enum, default_value_t = TextFormat::Text, value_name = "FORMAT")]
-    pub format: TextFormat,
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// The version of `eject --format json`'s schema.
@@ -84,8 +84,8 @@ fn run_eject(global: &Global, args: &EjectArgs) -> ExitCode {
         Err(e) => return exit::code(exit::fail(&mut err, &e)),
     };
     let result = match args.format {
-        TextFormat::Text => write_eject(&mut out, &ejected),
-        TextFormat::Json => answer::write_json(
+        Format::Text => write_eject(&mut out, &ejected),
+        Format::Json => answer::write_json(
             &mut out,
             &EjectJson {
                 schema_version: EJECT_SCHEMA_VERSION,

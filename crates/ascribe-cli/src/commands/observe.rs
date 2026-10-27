@@ -87,6 +87,7 @@ pub struct Args {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// What it runs and what it wrote, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
