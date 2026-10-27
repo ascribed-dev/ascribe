@@ -8358,7 +8358,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1207"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Load a project once, phase 5: keep the language server's project as a Workspace, with the open buffers over it"
     },
     {
@@ -8665,7 +8665,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1205"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "CLI conventions: the groups after --format json"
     },
     {
