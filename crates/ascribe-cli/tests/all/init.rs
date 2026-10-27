@@ -175,7 +175,7 @@ fn init_in_a_folder_of_pages_adopts_them_and_checks_them() {
     assert!(model.contains("content-root = \"handbook\"\n"), "{model}");
     assert!(!model.contains("[types"), "{model}");
 
-    let fix = ascribe(&dir.path().join("site"), &["check", "--fix"]);
+    let fix = ascribe(&dir.path().join("site"), &["check", "--fix", "--force"]);
     assert_eq!(code_of(&fix), 0, "{}", stdout(&fix));
     assert_eq!(
         fs::read_to_string(dir.path().join("site/handbook/index.md")).unwrap(),

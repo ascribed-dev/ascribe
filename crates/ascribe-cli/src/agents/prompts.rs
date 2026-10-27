@@ -413,6 +413,7 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         base_exact: false,
         addresses: check::Addresses::NotCompared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         // What `ascribe.baseline` holds back isn't the agent's to fix now
         // (#790).

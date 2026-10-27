@@ -84,7 +84,7 @@ fn allow<P: AsRef<Path>>(files: &[P]) -> Result<(), GuardError> {
         .iter()
         .map(AsRef::as_ref)
         .filter(|f| f.exists())
-        .filter_map(|f| Some((answer::path_from_here(f), std::fs::canonicalize(f).ok()?)))
+        .filter_map(|f| Some((answer::path_from_here(f), canonical(f)?)))
         .collect();
     let Some((_, first)) = there.first() else {
         return Ok(());
@@ -124,13 +124,32 @@ fn allow<P: AsRef<Path>>(files: &[P]) -> Result<(), GuardError> {
     if unrestorable.is_empty() {
         return Ok(());
     }
-    Err(GuardError::NotRestorable {
-        files: paths
-            .into_iter()
-            .filter(|(_, path)| unrestorable.contains(path))
-            .map(|(shown, _)| shown)
-            .collect(),
-    })
+    let mut files: Vec<String> = paths
+        .into_iter()
+        .filter(|(_, path)| unrestorable.contains(path))
+        .map(|(shown, _)| shown)
+        .collect();
+    if files.is_empty() {
+        // git named them otherwise: as git names them.
+        files = unrestorable
+            .iter()
+            .map(|p| answer::path_from_here(&root.join(p.as_str())))
+            .collect();
+    }
+    Err(GuardError::NotRestorable { files })
+}
+
+/// `file`'s path with its folder's canonical, and its own name as it is:
+/// git names a symbolic link by its own path, not where it leads.
+fn canonical(file: &Path) -> Option<PathBuf> {
+    let name = file.file_name()?;
+    let folder = match file.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent,
+        _ => Path::new("."),
+    };
+    // Outside FileSystem: where the folder of a file the command writes is,
+    // to ask git about it; nothing is read.
+    Some(std::fs::canonicalize(folder).ok()?.join(name))
 }
 
 /// `path`, below the repository's root, as git names it: `/`-separated.

@@ -183,6 +183,7 @@ fn checked(global: &Global, err: &mut dyn Write) -> Result<(check::Outcome, Vec<
         base_exact: false,
         addresses: check::Addresses::NotCompared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         no_baseline: true,
         vale_timeout: None,

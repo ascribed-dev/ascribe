@@ -59,7 +59,9 @@ pub(crate) struct Report<'a> {
     acknowledged: Vec<AcknowledgedEntry>,
     /// With `--fix`, the safe fixes it applied, in file order and, within a
     /// file, in the order of their diagnostics; the rest of the report is
-    /// the check after them. Left out when none was applied.
+    /// the check after them. With `--dry-run`, the fixes it would apply,
+    /// none of which was, and the check is of the files as they are. Left
+    /// out when there's none.
     #[serde(skip_serializing_if = "<[_]>::is_empty")]
     fixed: &'a [FixedEntry],
     /// How many errors, warnings, and advice.

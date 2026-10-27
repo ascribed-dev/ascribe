@@ -449,7 +449,9 @@ function format(ascribe: string, pages: Map<string, string>): Map<string, string
     writeFileSync(path.join(dir, "ascribe.toml"), ['spec = "0.1"\n', ...types].join("\n"));
     mkdirSync(path.join(dir, "docs"));
     for (const [file, text] of pages) writeFileSync(path.join(dir, "docs", file), text);
-    const run = spawnSync(ascribe, ["fmt"], { cwd: dir, encoding: "utf8" });
+    // `--force`: a folder made for this, in no repository, so the git guard
+    // would refuse every page.
+    const run = spawnSync(ascribe, ["fmt", "--force"], { cwd: dir, encoding: "utf8" });
     if (run.status !== 0) throw new Error(`ascribe fmt failed:\n${run.stdout}${run.stderr}`);
     return new Map(
       [...pages.keys()].map((file) => [file, readFileSync(path.join(dir, "docs", file), "utf8")]),

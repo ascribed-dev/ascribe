@@ -83,7 +83,7 @@ An `unsafe` fix, such as the nearest spelling of a misspelled name, is never app
 npx ascribe check --fix
 ```
 
-The output starts with a line for each file changed (`fixed 2 problems in docs/guides/install.md`). Two fixes that would edit the same text are one too many: the first is applied, and the other's problem is reported again, for the next run. `--fix` can't be combined with `--stdin`, whose text isn't on disk.
+The output starts with a line for each file changed (`fixed 2 problems in docs/guides/install.md`). It changes only files git could put back, as every [command that writes](../command/index.md#commands-that-write) does: a page with changes not committed is refused, and named, unless you pass `--force`. With `--dry-run`, it says what it would fix (`would fix 2 problems in docs/guides/install.md`), changes nothing, and reports the check of the files as they are. Two fixes that would edit the same text are one too many: the first is applied, and the other's problem is reported again, for the next run. `--fix` can't be combined with `--stdin`, whose text isn't on disk.
 
 In VS Code, **Source Action… → Apply the safe fixes in this page** applies a page's safe fixes the same way, to the text in the editor, saved or not, for the problems the editor shows, and can run each time you save. See [Apply the safe fixes](../editor/problems.md#apply-the-safe-fixes).
 
@@ -221,7 +221,9 @@ Once it's serving, problems in the pages never stop it, and a content model that
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](../writing/syntax.md#canonical-form).
 
-It lists each file it changed. With `--check`, it changes nothing and lists each change it would make: the file and line, then the lines as they are, marked `-`, and as they'd be, marked `+`:
+It lists each file it changed. It changes only files git could put back, as every [command that writes](../command/index.md#commands-that-write) does: a page with changes not committed is refused, and named, unless you pass `--force`.
+
+With `--dry-run`, it changes nothing and lists each change it would make: the file and line, then the lines as they are, marked `-`, and as they'd be, marked `+`:
 
 ```text
 docs/install.md:5
@@ -229,7 +231,7 @@ docs/install.md:5
 + @note {type=tip}: Run it from the project root.
 ```
 
-`--diff` writes the changes as a unified diff instead, which `git apply` applies, and also changes nothing.
+`--check` changes nothing too, writes the changes as a unified diff, which `git apply` applies, and exits with `1` when a file would change: for CI. `--diff` is its old spelling, kept for a release.
 
 @include: ../_generated/cli-fmt-options.md
 
@@ -243,6 +245,6 @@ A symbolic link it leaves alone is reported on standard error, as `check` report
 
 | Code | Meaning |
 |---|---|
-| `0` | Every file was formatted, or, with `--check` or `--diff`, none needed it |
-| `1` | With `--check` or `--diff`: a file would change |
-| `2` | A problem: no `ascribe.toml`, a content model with errors, a path or file that can't be read, or a symbolic link that leads out of the content root |
+| `0` | Every file was formatted, or, with `--check`, none needed it; with `--dry-run`, whatever would change |
+| `1` | With `--check`: a file would change |
+| `2` | A problem: no `ascribe.toml`, a content model with errors, a path or file that can't be read, a symbolic link that leads out of the content root, or a file git couldn't put back, without `--force` |

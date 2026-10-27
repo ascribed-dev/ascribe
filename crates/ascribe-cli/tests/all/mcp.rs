@@ -1724,6 +1724,7 @@ fn an_agent_moves_a_page_with_the_rename_tool() {
         &copy,
         &[
             "rename",
+            "--force",
             "docs/keys.md",
             "docs/security/keys.md",
             "--format",

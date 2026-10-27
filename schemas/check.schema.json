@@ -471,7 +471,7 @@
       "type": "integer"
     },
     "fixed": {
-      "description": "With `--fix`, the safe fixes it applied, in file order and, within a\nfile, in the order of their diagnostics; the rest of the report is\nthe check after them. Left out when none was applied.",
+      "description": "With `--fix`, the safe fixes it applied, in file order and, within a\nfile, in the order of their diagnostics; the rest of the report is\nthe check after them. With `--dry-run`, the fixes it would apply,\nnone of which was, and the check is of the files as they are. Left\nout when there's none.",
       "items": {
         "$ref": "#/$defs/FixedEntry"
       },

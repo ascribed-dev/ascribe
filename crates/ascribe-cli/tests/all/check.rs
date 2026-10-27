@@ -1501,7 +1501,10 @@ const KEYS: &str = "---\ntitle: Keys\n---\n";
 #[test]
 fn fix_applies_the_safe_fixes_and_reports_whats_left() {
     let dir = project(&[("index.md", ROUTE_LINKS), ("keys.md", KEYS)]);
-    let out = ascribe(dir.path(), &["check", "--fix", "--deny-warnings"]);
+    let out = ascribe(
+        dir.path(),
+        &["check", "--fix", "--force", "--deny-warnings"],
+    );
     let text = stdout(&out);
     assert!(
         text.starts_with("fixed 2 problems in docs/index.md\n"),
@@ -1518,7 +1521,10 @@ fn fix_applies_the_safe_fixes_and_reports_whats_left() {
         "the unsafe fix isn't applied"
     );
 
-    let again = ascribe(dir.path(), &["check", "--fix", "--format", "concise"]);
+    let again = ascribe(
+        dir.path(),
+        &["check", "--fix", "--force", "--format", "concise"],
+    );
     assert!(
         !stdout(&again).contains("fixed"),
         "nothing is left to fix: {}",
@@ -1541,7 +1547,7 @@ fn fix_leaves_a_term_off_its_glossary_page_and_its_fix_lists_the_page() {
     fs::write(&model, &with_comment).expect("write the model");
 
     // Listing a page links its terms everywhere, so `--fix` doesn't.
-    let out = ascribe(dir.path(), &["check", "--fix"]);
+    let out = ascribe(dir.path(), &["check", "--fix", "--force"]);
     assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
     assert!(!stdout(&out).contains("fixed"), "{}", stdout(&out));
     assert_eq!(fs::read_to_string(&model).expect("the model"), with_comment);
@@ -1582,7 +1588,7 @@ fn fix_lists_what_it_applied_in_the_json() {
     let dir = project(&[("index.md", ROUTE_LINKS), ("keys.md", KEYS)]);
     let report = json_of(&ascribe(
         dir.path(),
-        &["check", "--fix", "--format", "json"],
+        &["check", "--fix", "--force", "--format", "json"],
     ));
     let fixed = report["fixed"].as_array().expect("a list");
     assert_eq!(fixed.len(), 2);
@@ -1605,7 +1611,7 @@ fn fix_with_paths_fixes_only_what_counts_for_them() {
         ("other.md", ROUTE_LINKS),
         ("keys.md", KEYS),
     ]);
-    let out = ascribe(dir.path(), &["check", "docs/other.md", "--fix"]);
+    let out = ascribe(dir.path(), &["check", "docs/other.md", "--fix", "--force"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     assert!(stdout(&out).starts_with("fixed 2 problems in docs/other.md\n"));
     let page = |name: &str| fs::read_to_string(dir.path().join("docs").join(name)).expect("a page");
@@ -1623,7 +1629,10 @@ fn fix_removes_an_unused_acknowledgement_from_the_content_model_it_was_given() {
     fs::remove_file(dir.path().join("ascribe.toml")).expect("remove the model");
     let config = dir.path().join("site.toml");
     write(&config, &model);
-    let out = ascribe(dir.path(), &["check", "--config", "site.toml", "--fix"]);
+    let out = ascribe(
+        dir.path(),
+        &["check", "--config", "site.toml", "--fix", "--force"],
+    );
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     assert!(
         stdout(&out).starts_with("fixed 1 problem in ascribe.toml\n"),
@@ -1640,7 +1649,14 @@ fn fix_cannot_be_used_with_standard_input() {
     let dir = project(&[("index.md", CLEAN)]);
     let out = ascribe(
         dir.path(),
-        &["check", "--fix", "--stdin", "--path", "docs/index.md"],
+        &[
+            "check",
+            "--fix",
+            "--force",
+            "--stdin",
+            "--path",
+            "docs/index.md",
+        ],
     );
     assert_eq!(code(&out), 2);
 }
@@ -1733,7 +1749,7 @@ fn a_problem_in_a_generated_file_names_its_memo_and_has_no_fix() {
     );
 
     // `--fix` leaves the file as its generator wrote it.
-    ascribe(dir.path(), &["check", "--fix"]);
+    ascribe(dir.path(), &["check", "--fix", "--force"]);
     assert_eq!(
         fs::read_to_string(dir.path().join("docs/gen.md")).expect("read the page"),
         GENERATED

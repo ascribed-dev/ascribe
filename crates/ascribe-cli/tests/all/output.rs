@@ -773,6 +773,10 @@ fn existing_docs() {
         "init-existing-ascribe.toml",
         &fs::read_to_string(root.join("ascribe.toml")).unwrap(),
     );
+    // Committed, as a reader's docs are, so the git guard lets `--fix`
+    // write.
+    git(root, &["init", "-q"]);
+    commit(root, "Start using Ascribe");
     expect(
         "init-existing-fix.txt",
         &stdout(&run(root, &["check", "--fix", "--format", "concise"], 1)),
@@ -990,6 +994,8 @@ fn rename() {
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
         dir.path(),
     );
+    git(dir.path(), &["init", "-q"]);
+    commit(dir.path(), "Quill");
     expect(
         "rename.txt",
         &stdout(&run(dir.path(), &["rename", "phrase:cloud", "hosted"], 0)),
@@ -1731,8 +1737,13 @@ fn permalinks() {
     );
     commit(root, "Sync the permalinks");
 
+    // A clone, not a copy: git can still be tidying `.git` after a commit,
+    // and a file copied from there can be gone by the time it's read.
     let copy = tempfile::tempdir().unwrap();
-    copy_tree(root, copy.path());
+    git(
+        root,
+        &["clone", "-q", ".", &copy.path().display().to_string()],
+    );
     let retire = [
         "permalinks",
         "retire",
