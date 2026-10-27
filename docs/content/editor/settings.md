@@ -31,7 +31,11 @@ Each project runs its own `ascribe`, found as [Which `ascribe` it runs](index.md
 
 ### When servers start
 
-A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when something asks for the project: choosing it in **Switch Project** or the Project view, a command run on it, or **Check Every Build**. A change on disk starts nothing: a branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was, with no problems in the Problems panel and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`. Once a server is running, it follows changes on disk to its project's files. A server runs until you close the window or delete its `ascribe.toml` or its folder, and its problems leave the Problems panel with it. A server that doesn't stop when asked is killed, with any process it started, and none outlives the window. A project nothing opens costs nothing.
+A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when something asks for the project: choosing it in **Switch Project** or the Project view, a command run on it, or **Check Every Build**.
+
+A change on disk starts nothing: a branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was, with no problems in the Problems panel and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`.
+
+Once a server is running, it follows changes on disk to its project's files. A server runs until you close the window or delete its `ascribe.toml` or its folder, and its problems leave the Problems panel with it. A server that doesn't stop when asked is killed, with any process it started, and none outlives the window. A project nothing opens costs nothing.
 
 To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
 
