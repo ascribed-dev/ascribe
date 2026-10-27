@@ -1,0 +1,2 @@
+::warning file=handbook/docs/keys.md,line=8,col=15,endLine=8,endColumn=30,title=link-route (ASC041)::this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
+checked 8 files for every build, reported on 8: 0 errors, 1 warning, 0 advice

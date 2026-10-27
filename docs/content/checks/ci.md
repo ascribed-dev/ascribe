@@ -8,13 +8,18 @@ The editor checks a page as you write it. CI checks every pull request the same 
 
 ## Add the workflow
 
-Add `.github/workflows/check.yml`, which runs `ascribe check --deny-warnings` and `ascribe fmt --check` on every pull request and on each push to `main`:
+Add `.github/workflows/check.yml`, which runs `ascribe check --deny-warnings` and `ascribe fmt --check` on every pull request and on each push to `main`, and shows each problem on the pull request's lines, as a linter's are:
 
 @snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow
 
 It installs the latest release. To run the version your `package.json` pins instead, replace that step with `npm ci`, and run each command with `npx`. Where there's no Node, [install `ascribe` on the path](../install.md#without-node) instead.
 
 [`ascribe check`, `build`, `preview`, and `fmt`](check.md) has each command's options and exit codes.
+
+### The problems on the pull request's lines
+@available: ascribe planned
+
+`--format github` writes each problem as a GitHub Actions [annotation](check.md#output-for-github-actions), which the pull request shows on its line, with the diagnostic's name and message. It needs no permissions and no upload step, and works with a project in a folder of the repository. Without it, the problems are in the job's log alone. With a release that doesn't have it yet, leave it out: an unknown format fails the step.
 
 ## Keep the addresses you've published
 
@@ -26,9 +31,9 @@ A project with [`ascribe.addresses`](../publishing/redirects.md) has `ascribe ch
           fetch-depth: 0
       # ...
       - if: github.event_name == 'pull_request'
-        run: ascribe check --deny-warnings --base origin/$GITHUB_BASE_REF
+        run: ascribe check --deny-warnings --format github --base origin/$GITHUB_BASE_REF
       - if: github.event_name == 'push'
-        run: ascribe check --deny-warnings --base ${{ github.event.before }} --base-exact
+        run: ascribe check --deny-warnings --format github --base ${{ github.event.before }} --base-exact
 ```
 
 Without the history, or with a base that isn't there, as after a force-push, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#the-base) says the addresses weren't compared, a warning `--deny-warnings` fails on.

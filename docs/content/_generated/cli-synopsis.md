@@ -2,8 +2,8 @@
 ```text
 ascribe init              [DIR] [--templates] [--content-root <DIR>] [--format text|json]
 ascribe new               TYPE PATH [--title <TITLE>] [--dry-run] [--force] [--format text|json]
-ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
-ascribe fmt               [--check] [--diff] [PATHS]... [--format text|json]
+ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|github|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
+ascribe fmt               [--check] [--diff] [PATHS]... [--format text|json|github]
 ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors] [--no-baseline]
 ascribe preview           [--build <NAME>] [--port <PORT>]
 ascribe diff              [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code] [--pages-only]

@@ -10,6 +10,7 @@
   - `text` (the default): Problems with source snippets, for people.
   - `concise`: One line per problem, `file:line: [code] message`, grouped by file: for an agent. At most 50, or as many as `--limit` says, then how many more and the command that lists them all.
   - `json`: One JSON document, for tools.
+  - `github`: A GitHub Actions workflow command per problem, which shows it on the pull request's lines, with the path from the repository's root, then the summary line: for CI.
   - `prompt`: A prompt for an agent that fixes the problems: about the file, when the paths name one file, else about the project or the paths. Nothing when there are no problems.
 - `--limit <N>`: List at most this many problems with `--format concise`, or `all` of them. By default, 50. When some are left out, the list ends with how many, and the command that lists them all. Only with `--format concise`, and not with `--summary`, which lists none.
 - `--deny-warnings`: Make warnings fail the command too (exit code 1), for CI.

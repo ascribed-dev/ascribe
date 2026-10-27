@@ -414,8 +414,8 @@ function localHost(): Host {
         checkout,
       ]);
       return [
-        ["check", "--deny-warnings"],
-        ["fmt", "--check"],
+        ["check", "--deny-warnings", "--format", "github"],
+        ["fmt", "--check", "--format", "github"],
       ].every((args) => spawnSync(ascribe, args, { cwd: checkout }).status === 0);
     },
     edit: () => pushEdit(),
