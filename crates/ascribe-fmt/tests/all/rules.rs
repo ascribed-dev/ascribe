@@ -403,6 +403,25 @@ fn a_list_in_a_block_quote() {
 }
 
 #[test]
+fn a_list_in_a_block_quote_without_a_space_after_the_marker() {
+    // The space after `>` is the quote's on every line, so with `>-` the
+    // item's content column is 4 on the next line, not 3 (#1195).
+    unchanged(">-\n>   @note: Text.\n");
+    check(
+        ">- item\n>    @note: Text.\n",
+        ">- item\n>   @note: Text.\n",
+    );
+    check(
+        "> - item\n>    @note: Text.\n",
+        "> - item\n>   @note: Text.\n",
+    );
+    check(
+        "- > - item\n  >    @note: Text.\n",
+        "- > - item\n  >   @note: Text.\n",
+    );
+}
+
+#[test]
 fn a_directive_on_a_list_markers_line_is_left_alone() {
     unchanged("-   @note: Text.\n");
     unchanged("1.  @note: Text.\n");
