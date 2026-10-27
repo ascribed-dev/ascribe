@@ -272,7 +272,7 @@ fn what_is_unused_is_what_the_search_counts_no_use_of() {
         ("_steps.md", "The agent.\n"),
         ("_unused.md", "Text.\n"),
     ]);
-    let counts = p.held_index().use_counts();
+    let counts = p.index().use_counts();
     let all = check_all_builds(&p);
     let reported = |slug: &str| -> Vec<String> {
         all.iter()
@@ -303,7 +303,7 @@ fn what_is_unused_is_what_the_search_counts_no_use_of() {
         .collect();
     assert_eq!(reported("feature-unused"), features);
     let terms: Vec<String> = p
-        .held_index()
+        .index()
         .glossary()
         .terms
         .iter()

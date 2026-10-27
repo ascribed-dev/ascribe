@@ -131,7 +131,7 @@ impl Ctx<'_> {
             if issue.slug == diagnostics::LINK_TARGET_MISSING {
                 offer_closest(
                     &mut issue,
-                    self.project.link_index(),
+                    self.project.index(),
                     path,
                     &target,
                     &resolution,
@@ -144,7 +144,7 @@ impl Ctx<'_> {
         }
         if matches!(resolution, Resolution::Operation { .. }) {
             if let Some(issue) = operation_issue(
-                self.project.link_index(),
+                self.project.index(),
                 path,
                 &target,
                 &resolution,
@@ -256,7 +256,7 @@ impl Ctx<'_> {
             if broken.contains(&issue.slug) {
                 offer_closest(
                     &mut issue,
-                    self.project.link_index(),
+                    self.project.index(),
                     &self.file.path,
                     &target,
                     &resolution,
@@ -270,7 +270,7 @@ impl Ctx<'_> {
         // index read, so it's only asked of a link to one.
         if matches!(resolution, Resolution::Operation { .. })
             && let Some(issue) = operation_issue(
-                self.project.link_index(),
+                self.project.index(),
                 &self.file.path,
                 &target,
                 &resolution,
@@ -287,7 +287,7 @@ impl Ctx<'_> {
     /// the bodies' schemas. The source index holds this file's text too, so
     /// only its file ids need to become this project's.
     pub(super) fn check_marked_examples(&mut self) {
-        let index = self.project.link_index();
+        let index = self.project.index();
         for mut issue in index.example_problems(&self.file.path) {
             issue.location.file = self.id;
             for fix in &mut issue.fixes {
