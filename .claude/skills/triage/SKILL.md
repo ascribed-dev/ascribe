@@ -43,7 +43,7 @@ Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workf
 
 ## More codes for a card in progress
 
-An implementor that needs more diagnostics than its card reserved asks on the issue and waits. Each run, search the open issues for such a question with no answer, and answer each with a new `Reserved codes:` line, picked as in step 4. Don't move the card; it stays where it is.
+An implementor that needs more diagnostics than its card reserved asks on the issue, and builds the rest while it waits. Each run, search the open issues for such a question with no answer, and answer each with a new `Reserved codes:` line, picked as in step 4. Don't move the card; it stays where it is.
 
 ## Judgment
 
