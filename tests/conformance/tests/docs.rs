@@ -312,7 +312,10 @@ fn the_docs_name_no_released_version_before_1_0() {
                 use ascribe_core::availability::{Detail, PLANNED};
                 match &entry.detail {
                     Detail::None => false,
-                    Detail::State { state, version: None } => state.text != "ga",
+                    Detail::State {
+                        state,
+                        version: None,
+                    } => state.text != "ga",
                     Detail::Version(v)
                     | Detail::State {
                         version: Some(v), ..
