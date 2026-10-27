@@ -1,0 +1,1 @@
+- **Fixed:** With `--config <folder>`, `ascribe addresses move` and `retire` read a page's path from here. Before, `retire` recorded that path as an address no page had; `rename`, `diff`, and `permalinks` read it the same way now.

@@ -236,6 +236,8 @@ $ ascribe addresses move guides/keys.md security/keys.md
 Recorded in ascribe.addresses: guides/keys.md moved to security/keys.md.
 ```
 
+Each page's path is from the current folder or from the content root, and the entry is from the content root. So, from a repository's root whose project is in `docs/` with its content in `docs/content/`, `ascribe addresses move --config docs docs/content/guides/keys.md docs/content/security/keys.md` records the same entry, and so does `ascribe addresses retire` given such a path.
+
 **`--from-git`** records every move git sees between the base and the working tree whose old path is gone, one entry for each page, so a reorganization made with `git mv` is recorded at once. The base is chosen as `ascribe check` chooses it, with `--base` and `--base-exact`. Git sees a file that's renamed and added, as `git mv` leaves it, and only when the old and new files are mostly the same: a page rewritten as it moved is forwarded with `ascribe addresses move <old> <new>`.
 
 ```console
