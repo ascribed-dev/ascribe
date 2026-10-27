@@ -57,7 +57,7 @@ mod words;
 
 use serde::Serialize;
 
-pub use addresses::{BaseAddresses, base_addresses, base_file_entries, renames};
+pub use addresses::{BaseAddresses, base_addresses, base_file_entries, before_history, renames};
 pub use apis::base_apis;
 pub use command::{DiffOptions, DriftOptions, ProjectDiff, diff_project, drift_project};
 pub use compare::{

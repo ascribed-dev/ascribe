@@ -1,21 +1,26 @@
 //! Starting a project: `ascribe init`.
 //!
 //! It writes a project's first `ascribe.toml`, [`MODEL_TEXT`], in a folder
-//! with none at or above it, and makes its content root. With the templates,
-//! it calls [`eject()`] with that text, as `ascribe templates eject` would
-//! in a project that had it, so the two can't differ; eject then writes the
-//! file, with the six types added at its end. It asks nothing, and writes
-//! over nothing: where there's a project already, it refuses.
+//! with none at or above it, an empty `ascribe.addresses` beside it, so the
+//! addresses the pages publish are kept from the first commit, and makes its
+//! content root. With the templates, it calls [`eject()`] with that text,
+//! as `ascribe templates eject` would in a project that had it, so the two
+//! can't differ; eject then writes the file, with the six types added at
+//! its end. It asks nothing, and writes over nothing: where there's a
+//! project already, it refuses, and an `ascribe.addresses` already there is
+//! left as it is.
 //!
 //! A content root that holds pages already is adopted: the file declares no
 //! page types, so the pages are of the implicit type `page` and none of them
 //! needs `type:` (SPEC §7.2), and the templates, which declare types, are
-//! refused.
+//! refused. It gets `ascribe.addresses` too, so those pages are kept from
+//! the first commit.
 
 use std::path::{Path, PathBuf};
 
 use ascribe_check::{MODEL_FILE, Project};
 use ascribe_core::RelPath;
+use ascribe_model::{ADDRESSES_FILE, AddressFile};
 use ascribe_resolve::{DiskFs, FileSystem as _, Layout};
 use serde::Serialize;
 
@@ -90,7 +95,8 @@ pub struct InitAnswer {
     pub ascribe_version: &'static str,
     /// The files written, from the new project's folder, `/`-separated, in
     /// the order they were written: with the templates, eject's files, then
-    /// `ascribe.toml`. Empty when the templates were refused.
+    /// `ascribe.toml`, then `ascribe.addresses`, unless one was there
+    /// already. Empty when the templates were refused.
     pub written: Vec<String>,
     /// The content root, from the new project's folder.
     pub content_root: String,
@@ -188,9 +194,9 @@ pub struct Init<'a> {
 }
 
 /// Starts a project in `request.root`: writes its first `ascribe.toml`, with
-/// the templates when they're asked for, and makes its content root. A
-/// content root with pages in it already gets an `ascribe.toml` that declares
-/// no page types.
+/// the templates when they're asked for, and `ascribe.addresses`, and makes
+/// its content root. A content root with pages in it already gets an
+/// `ascribe.toml` that declares no page types.
 ///
 /// # Errors
 ///
@@ -275,6 +281,14 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
     } else {
         write(root, MODEL_FILE, |file| std::fs::write(file, &text))?;
         answer.written.push(MODEL_FILE.to_owned());
+    }
+    // Outside FileSystem: a file of the project just written, which is
+    // written only where there's none.
+    if !root.join(ADDRESSES_FILE).exists() {
+        write(root, ADDRESSES_FILE, |file| {
+            std::fs::write(file, AddressFile::default().to_toml())
+        })?;
+        answer.written.push(ADDRESSES_FILE.to_owned());
     }
     let content_root = layout.content_root.as_str();
     // Outside FileSystem: the content root of a project just written, which

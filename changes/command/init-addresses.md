@@ -1,0 +1,1 @@
+- **`ascribe init` writes `ascribe.addresses`, so a new project keeps the addresses it publishes.** A page moved with `git mv` is then `address-lost` on the next check against the base, and its fix records the move. See [`ascribe init`](docs/content/install.md).
