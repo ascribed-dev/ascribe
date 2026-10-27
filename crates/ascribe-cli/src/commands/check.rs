@@ -360,7 +360,7 @@ fn check(
             outcome.reported.iter().map(|r| &r.diagnostic),
         );
         if !files.is_empty() {
-            if let Err(e) = fix::write(&files) {
+            if let Err(e) = write_fixes(&files) {
                 let stopped = Stopped::Failure(Failure::Check(CheckError::Fix(e)));
                 return report_stopped(stopped, args, color, out, err);
             }
@@ -1113,6 +1113,22 @@ fn report_failure(
         ),
     };
     exit::FAILURE
+}
+
+/// Writes each fixed file's new text: the library returns it, and the CLI
+/// writes it.
+///
+/// # Errors
+///
+/// A file couldn't be written. The files before it in the list were.
+fn write_fixes(files: &[fix::FixedFile]) -> Result<(), fix::FixError> {
+    for file in files {
+        std::fs::write(&file.path, &file.text).map_err(|source| fix::FixError {
+            path: file.path.clone(),
+            source,
+        })?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

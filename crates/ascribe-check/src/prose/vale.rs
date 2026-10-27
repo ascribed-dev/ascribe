@@ -162,6 +162,8 @@ impl Linter for Program {
         check_version(request, &program)?;
         let folder = Scratch::new().map_err(|e| failed(request, &e))?;
         let text = folder.path.join("text");
+        // Library write: the text Vale lints, in a scratch folder of its own
+        // that goes when the lint is done.
         for (path, contents) in &request.files {
             let file = text.join(path);
             if let Some(parent) = file.parent() {
@@ -176,6 +178,7 @@ impl Linter for Program {
                 // Vale reads every file `--sources` lists, in order, but
                 // won't start unless it also finds a `.vale.ini` above the
                 // folder it's run in; that one is never read.
+                // Library write: as above.
                 std::fs::write(folder.path.join(".vale.ini"), "")
                     .map_err(|e| failed(request, &e))?;
                 let list: Vec<String> = configs.iter().map(|c| c.display().to_string()).collect();
@@ -304,6 +307,7 @@ impl Scratch {
             NEXT.fetch_add(1, Ordering::Relaxed)
         );
         let path = std::env::temp_dir().join(name);
+        // Library write: the scratch folder, under the system's temporary one.
         std::fs::create_dir_all(&path)?;
         Ok(Scratch { path })
     }
@@ -311,6 +315,7 @@ impl Scratch {
 
 impl Drop for Scratch {
     fn drop(&mut self) {
+        // Library write: as in `new`.
         let _ = std::fs::remove_dir_all(&self.path);
     }
 }

@@ -8,11 +8,12 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ascribe_check::Project;
 use ascribe_check::links::{self, Answer, Cache, LinkChecker, Request};
+use ascribe_check::store::MemoryStore;
 use ascribe_check::tool::ToolError;
 use ascribe_core::{Date, FileId, RelPath};
 
@@ -80,8 +81,14 @@ fn day(s: &str) -> Date {
     Date::parse(s).expect("a date")
 }
 
-fn run(project: &Project, checker: &StandIn, today: &str, recheck: bool) -> links::Checked {
-    let cache = Cache::open(project, project.root(), day(today), recheck);
+fn run(
+    project: &Project,
+    store: &Arc<MemoryStore>,
+    checker: &StandIn,
+    today: &str,
+    recheck: bool,
+) -> links::Checked {
+    let cache = Cache::open(project, store.clone(), day(today), recheck);
     links::check(
         project,
         checker,
@@ -96,15 +103,16 @@ fn run(project: &Project, checker: &StandIn, today: &str, recheck: bool) -> link
 #[test]
 fn a_second_run_asks_only_about_what_had_something_to_report() {
     let dir = tempfile::tempdir().expect("a folder");
+    let store = Arc::new(MemoryStore::new());
     let project = project(dir.path(), "");
     let checker = StandIn::default();
 
-    let first = run(&project, &checker, "2026-10-01", false);
+    let first = run(&project, &store, &checker, "2026-10-01", false);
     assert_eq!((first.checked, first.asked, first.reused), (4, 4, 0));
     assert_eq!(first.oldest_answer, None);
     assert_eq!(first.diagnostics.len(), 2);
 
-    let second = run(&project, &checker, "2026-10-03", false);
+    let second = run(&project, &store, &checker, "2026-10-03", false);
     assert_eq!((second.checked, second.asked, second.reused), (4, 2, 2));
     assert_eq!(second.oldest_answer, Some(day("2026-10-01")));
     assert_eq!(
@@ -115,41 +123,43 @@ fn a_second_run_asks_only_about_what_had_something_to_report() {
     assert_eq!(second.diagnostics.len(), 2);
 
     // `--recheck` asks about every address.
-    let rechecked = run(&project, &checker, "2026-10-03", true);
+    let rechecked = run(&project, &store, &checker, "2026-10-03", true);
     assert_eq!((rechecked.asked, rechecked.reused), (4, 0));
 
     // Past every address's limit, each is asked about again, and cleanup
     // deleted the old entries before that.
-    let later = run(&project, &checker, "2026-11-01", false);
+    let later = run(&project, &store, &checker, "2026-11-01", false);
     assert_eq!((later.asked, later.reused), (4, 0));
 }
 
 #[test]
 fn reuse_days_of_0_asks_every_time_and_keeps_nothing() {
     let dir = tempfile::tempdir().expect("a folder");
+    let store = Arc::new(MemoryStore::new());
     let project = project(dir.path(), "[checks.links]\nreuse-days = 0\n");
     let checker = StandIn::default();
-    run(&project, &checker, "2026-10-01", false);
-    let second = run(&project, &checker, "2026-10-01", false);
+    run(&project, &store, &checker, "2026-10-01", false);
+    let second = run(&project, &store, &checker, "2026-10-01", false);
     assert_eq!((second.asked, second.reused), (4, 0));
-    assert!(!dir.path().join(".ascribe").exists());
+    assert_eq!(store.paths(), Vec::<String>::new());
 }
 
 #[test]
 fn an_address_that_fails_now_is_forgotten() {
     let dir = tempfile::tempdir().expect("a folder");
+    let store = Arc::new(MemoryStore::new());
     let project = project(dir.path(), "");
     // Every address answered on the first run...
     let answered = StandIn {
         all_fine: true,
         ..StandIn::default()
     };
-    run(&project, &answered, "2026-10-01", false);
+    run(&project, &store, &answered, "2026-10-01", false);
     // ...and a recheck finds two that don't, so the next run asks again.
     let checker = StandIn::default();
-    let rechecked = run(&project, &checker, "2026-10-02", true);
+    let rechecked = run(&project, &store, &checker, "2026-10-02", true);
     assert_eq!(rechecked.diagnostics.len(), 2);
-    let next = run(&project, &checker, "2026-10-02", false);
+    let next = run(&project, &store, &checker, "2026-10-02", false);
     assert_eq!(
         checker.last(),
         ["https://gone.test/b", "https://moved.test/c"]
@@ -160,10 +170,23 @@ fn an_address_that_fails_now_is_forgotten() {
 #[test]
 fn a_changed_lychee_toml_asks_about_everything() {
     let dir = tempfile::tempdir().expect("a folder");
+    let store = Arc::new(MemoryStore::new());
     let checker = StandIn::default();
-    run(&project(dir.path(), ""), &checker, "2026-10-01", false);
+    run(
+        &project(dir.path(), ""),
+        &store,
+        &checker,
+        "2026-10-01",
+        false,
+    );
     fs::write(dir.path().join("lychee.toml"), "timeout = 5\n").expect("written");
-    let second = run(&project(dir.path(), ""), &checker, "2026-10-02", false);
+    let second = run(
+        &project(dir.path(), ""),
+        &store,
+        &checker,
+        "2026-10-02",
+        false,
+    );
     assert_eq!((second.asked, second.reused), (4, 0));
 }
 

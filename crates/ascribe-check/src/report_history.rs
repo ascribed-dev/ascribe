@@ -22,19 +22,19 @@
 //! - **Two runs that finish together** keep the one that writes last: the
 //!   file is the last run, not a log.
 //!
-//! The file isn't the project's sources, so it's read outside
-//! `ascribe_resolve::FileSystem`. Only the report's code opens it
-//! (`tests/all/link_cache.rs` holds that).
+//! The file isn't the project's sources, so it's read and written through
+//! the [`Store`] the caller hands it, not `ascribe_resolve::FileSystem`.
+//! Only the report's code opens it (`tests/all/link_cache.rs` holds that).
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use ascribe_core::Date;
 use serde::{Deserialize, Serialize};
 
 use crate::identity::Identity;
-use crate::links::cache::{clean_beside, write_whole};
 use crate::site::Status;
+use crate::store::Store;
 
 /// The history's file, relative to the project's folder.
 pub const FILE: &str = ".ascribe/history/report.json";
@@ -45,8 +45,8 @@ const VERSION: u32 = 2;
 /// What `ascribe report` remembers from its last run, as on one day.
 #[derive(Clone, Debug)]
 pub struct ReportHistory {
-    /// The folder `.ascribe/` is in: the project's folder.
-    root: PathBuf,
+    /// Where the file is kept.
+    store: Arc<dyn Store>,
     /// The day the run is on.
     today: Date,
     /// The builds the run checks, sorted.
@@ -116,15 +116,14 @@ struct CheckJson {
 }
 
 impl ReportHistory {
-    /// The history of the project under `root` (`root` is the project's
-    /// folder, but for a test), as on `today`, for a run that checks
+    /// The history kept in `store`, as on `today`, for a run that checks
     /// `builds`, in any order.
-    pub fn open(root: &Path, today: Date, builds: &[String]) -> ReportHistory {
+    pub fn open(store: Arc<dyn Store>, today: Date, builds: &[String]) -> ReportHistory {
         let mut builds = builds.to_vec();
         builds.sort();
         builds.dedup();
         let mut history = ReportHistory {
-            root: root.to_owned(),
+            store,
             today,
             builds,
             read: FileJson::default(),
@@ -189,22 +188,16 @@ impl ReportHistory {
             return;
         };
         text.push('\n');
-        let path = self.path();
-        let _ = write_whole(&self.root, &path, &text);
-        clean_beside(&path, self.today);
-    }
-
-    /// The file's path.
-    fn path(&self) -> PathBuf {
-        FILE.split('/').fold(self.root.clone(), |p, s| p.join(s))
+        let _ = self.store.write(FILE, &text);
+        if let Some((folder, _)) = FILE.rsplit_once('/') {
+            self.store.tidy(folder, self.today);
+        }
     }
 
     /// What the file holds, when it's a history of this version whose days
     /// are days.
     fn load(&self) -> Option<FileJson> {
-        // Outside FileSystem: the history Ascribe writes under `.ascribe/`,
-        // not the project's sources.
-        let text = std::fs::read_to_string(self.path()).ok()?;
+        let text = self.store.read(FILE)?;
         let file: FileJson = serde_json::from_str(&text).ok()?;
         let days_parse = file
             .problems
@@ -221,6 +214,7 @@ mod tests {
     #![allow(clippy::unwrap_used)]
 
     use super::*;
+    use crate::store::MemoryStore;
 
     fn day(s: &str) -> Date {
         Date::parse(s).unwrap()
@@ -263,12 +257,12 @@ mod tests {
 
     #[test]
     fn a_run_reads_what_the_last_one_wrote() {
-        let dir = tempfile::tempdir().unwrap();
-        let first = ReportHistory::open(dir.path(), day("2026-10-09"), &builds());
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        let first = ReportHistory::open(store.clone(), day("2026-10-09"), &builds());
         assert_eq!(first.problems_before(), None);
         first.save(problems(BTreeSet::from([found("b"), found("a")])));
         assert_eq!(
-            std::fs::read_to_string(first.path()).unwrap(),
+            store.read(FILE).unwrap(),
             r#"{
   "version": 2,
   "problems": {
@@ -294,7 +288,7 @@ mod tests {
 }
 "#
         );
-        let next = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
+        let next = ReportHistory::open(store.clone(), day("2026-10-10"), &builds());
         assert_eq!(
             next.problems_before(),
             Some((day("2026-10-09"), &BTreeSet::from([found("a"), found("b")])))
@@ -303,13 +297,13 @@ mod tests {
 
     #[test]
     fn other_builds_have_nothing_to_go_by_and_the_same_in_another_order_do() {
-        let dir = tempfile::tempdir().unwrap();
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
         let two = |a: &str, b: &str| vec![a.to_owned(), b.to_owned()];
-        ReportHistory::open(dir.path(), day("2026-10-09"), &two("one", "two"))
+        ReportHistory::open(store.clone(), day("2026-10-09"), &two("one", "two"))
             .save(problems(BTreeSet::from([found("a")])));
-        let other = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
+        let other = ReportHistory::open(store.clone(), day("2026-10-10"), &builds());
         assert_eq!(other.problems_before(), None);
-        let swapped = ReportHistory::open(dir.path(), day("2026-10-10"), &two("two", "one"));
+        let swapped = ReportHistory::open(store.clone(), day("2026-10-10"), &two("two", "one"));
         assert_eq!(
             swapped.problems_before().map(|(run, _)| run),
             Some(day("2026-10-09"))
@@ -318,18 +312,18 @@ mod tests {
 
     #[test]
     fn each_section_keeps_its_own_run_and_one_not_reported_keeps_what_it_held() {
-        let dir = tempfile::tempdir().unwrap();
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
         let site = "https://docs.example.com";
-        ReportHistory::open(dir.path(), day("2026-10-09"), &builds())
+        ReportHistory::open(store.clone(), day("2026-10-09"), &builds())
             .save(problems(BTreeSet::from([found("a")])));
-        ReportHistory::open(dir.path(), day("2026-10-10"), &builds()).save(delivery(
+        ReportHistory::open(store.clone(), day("2026-10-10"), &builds()).save(delivery(
             site,
             &[
                 ("llms-txt-exists", Status::Pass),
                 ("content-negotiation", Status::Fail),
             ],
         ));
-        let next = ReportHistory::open(dir.path(), day("2026-10-11"), &builds());
+        let next = ReportHistory::open(store.clone(), day("2026-10-11"), &builds());
         assert_eq!(
             next.problems_before(),
             Some((day("2026-10-09"), &BTreeSet::from([found("a")])))
@@ -346,7 +340,7 @@ mod tests {
         );
         // Another site has nothing to go by.
         assert_eq!(next.delivery_before("http://localhost:4321"), None);
-        let text = std::fs::read_to_string(next.path()).unwrap();
+        let text = store.read(FILE).unwrap();
         assert!(
             text.contains(
                 r#""delivery": {
@@ -364,15 +358,14 @@ mod tests {
 
     #[test]
     fn a_history_from_before_the_rename_is_read() {
-        let dir = tempfile::tempdir().unwrap();
-        let history = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
-        std::fs::create_dir_all(history.path().parent().unwrap()).unwrap();
-        std::fs::write(
-            history.path(),
-            r#"{"version":2,"agents":{"run":"2026-10-09","site":"s","checks":[{"check":"x","status":"pass"}]}}"#,
-        )
-        .unwrap();
-        let read = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
+        store
+            .write(
+                FILE,
+                r#"{"version":2,"agents":{"run":"2026-10-09","site":"s","checks":[{"check":"x","status":"pass"}]}}"#,
+            )
+            .unwrap();
+        let read = ReportHistory::open(store.clone(), day("2026-10-10"), &builds());
         assert_eq!(
             read.delivery_before("s"),
             Some((day("2026-10-09"), BTreeMap::from([("x", Status::Pass)])))
@@ -381,9 +374,7 @@ mod tests {
 
     #[test]
     fn a_reader_trusts_nothing() {
-        let dir = tempfile::tempdir().unwrap();
-        let history = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
-        std::fs::create_dir_all(history.path().parent().unwrap()).unwrap();
+        let store: Arc<dyn Store> = Arc::new(MemoryStore::new());
         for text in [
             "not json",
             r#"{"version":1,"run":"2026-10-09","builds":["site"],"problems":[]}"#,
@@ -391,8 +382,8 @@ mod tests {
             r#"{"version":2,"problems":{"run":"2026-10-09","builds":["site"],"findings":[{"check":"x"}]}}"#,
             r#"{"version":2,"delivery":{"run":"2026-10-09","site":"s","checks":[{"check":"x","status":"maybe"}]}}"#,
         ] {
-            std::fs::write(history.path(), text).unwrap();
-            let read = ReportHistory::open(dir.path(), day("2026-10-10"), &builds());
+            store.write(FILE, text).unwrap();
+            let read = ReportHistory::open(store.clone(), day("2026-10-10"), &builds());
             assert_eq!(read.problems_before(), None, "{text}");
             assert_eq!(read.delivery_before("s"), None, "{text}");
         }

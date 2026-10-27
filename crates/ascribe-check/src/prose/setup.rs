@@ -191,6 +191,8 @@ pub(super) fn write_if_changed(root: &Path, rel: &str, text: &str) -> io::Result
     if std::fs::read_to_string(path).is_ok_and(|current| current == text) {
         return Ok(());
     }
+    // Library write: what Vale runs with, under `.ascribe/vale/`, written
+    // just before the lint it's for.
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }

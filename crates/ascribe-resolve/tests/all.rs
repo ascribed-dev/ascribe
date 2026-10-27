@@ -26,6 +26,8 @@ mod build_quill;
 mod compact_index;
 #[path = "all/file_reads.rs"]
 mod file_reads;
+#[path = "all/file_writes.rs"]
+mod file_writes;
 #[path = "all/headings.rs"]
 mod headings;
 #[path = "all/include_graphs.rs"]
