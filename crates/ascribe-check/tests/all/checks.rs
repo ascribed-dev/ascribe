@@ -1114,7 +1114,8 @@ fn a_github_alert_s_fix_writes_a_note() {
 /// text beside it, isn't an alert.
 #[test]
 fn only_a_marker_on_a_quote_s_first_line_is_an_alert() {
-    let text = page("> Write [!NOTE] to make an alert.\n\n> [!NOTE] Inline.\n\n> \\[!NOTE]\n> Escaped.");
+    let text =
+        page("> Write [!NOTE] to make an alert.\n\n> [!NOTE] Inline.\n\n> \\[!NOTE]\n> Escaped.");
     assert_eq!(found(&project(&[("a.md", &text)])), []);
 }
 

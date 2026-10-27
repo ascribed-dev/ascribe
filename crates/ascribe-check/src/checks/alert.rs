@@ -54,7 +54,13 @@ impl Ctx<'_> {
 
     /// The fix that rewrites the quote as a note: `note` followed by its one
     /// paragraph, or `note` and `@end` around its blocks.
-    fn alert_fix(&self, block: &Block, quote: &BlockQuote, marker: Span, note: &str) -> Option<Fix> {
+    fn alert_fix(
+        &self,
+        block: &Block,
+        quote: &BlockQuote,
+        marker: Span,
+        note: &str,
+    ) -> Option<Fix> {
         let source = self.source();
         let span = block.span;
         if line_start(source, span.start()) != span.start() {
@@ -96,10 +102,7 @@ impl Ctx<'_> {
 /// The `@note` type of an alert's marker, as `[!NOTE]`, in any case.
 fn alert_kind(written: &str) -> Option<&'static str> {
     let name = written.strip_prefix("[!")?.strip_suffix(']')?;
-    KINDS
-        .iter()
-        .find(|k| k.eq_ignore_ascii_case(name))
-        .copied()
+    KINDS.iter().find(|k| k.eq_ignore_ascii_case(name)).copied()
 }
 
 /// The lines of a block quote with its markers taken off: up to three spaces,
