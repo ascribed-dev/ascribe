@@ -22,7 +22,7 @@ mod locate;
 mod workspace;
 
 pub use kept::{FsFor, Kept};
-pub use listing::{Differences, Listing, Stamp, stamp};
+pub use listing::{CodeStamps, Differences, Listing, Stamp, stamp};
 
 pub use load::{LoadError, Loader, ModelFile, ModelLoader, ReadFailure, SourceFile, root_of};
 pub use locate::{LocateError, find_below, find_config, locate};

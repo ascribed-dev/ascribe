@@ -192,10 +192,62 @@ impl Differences {
     }
 }
 
+/// The code files a kept project's snippets read, each stamped as it was
+/// when it was first seen read: they can be outside the project's folder,
+/// and they're read when a check asks for them, after loading, so no
+/// listing has them.
+#[derive(Clone, Debug, Default)]
+pub struct CodeStamps(Vec<(RelPath, Stamp)>);
+
+impl CodeStamps {
+    /// The code files `snapshot`'s snippets have read, or name, whose
+    /// stamps differ from when each was first seen, by path from the
+    /// project root `root` (absolute), each with whether it's there now;
+    /// those seen for the first time are stamped. Called right after
+    /// loading, it stamps every file a snippet names as it's read.
+    pub fn changed(&mut self, root: &Path, snapshot: &WorkspaceSnapshot) -> Vec<(RelPath, bool)> {
+        let mut read: Vec<RelPath> = snapshot
+            .code_files()
+            .all()
+            .iter()
+            .map(|f| f.path.clone())
+            .collect();
+        let index = snapshot.index();
+        for file in index.files() {
+            read.extend(
+                file.snippets
+                    .iter()
+                    .filter_map(|s| index.snippet_at(&file.path, s.span))
+                    .map(|s| s.path.clone()),
+            );
+        }
+        read.sort();
+        read.dedup();
+        let mut changed = Vec::new();
+        for path in read {
+            let now = stamp(&normalize(&root.join(path.as_str())));
+            match self.0.iter_mut().find(|(p, _)| *p == path) {
+                Some((_, then)) if *then != now => {
+                    changed.push((path, now.2.is_some()));
+                    *then = now;
+                }
+                Some(_) => {}
+                None => self.0.push((path, now)),
+            }
+        }
+        changed
+    }
+
+    /// Forgets every stamp, for a project loaded again.
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+}
+
 /// A code file a snippet read, by path from the project root, as a change
 /// to it is told: there now, or gone.
-pub(crate) fn code_change(path: RelPath, now: &Stamp) -> Changed {
-    Changed::Index(if now.2.is_some() {
+pub(crate) fn code_change(path: RelPath, present: bool) -> Changed {
+    Changed::Index(if present {
         Change::AssetCreated { path }
     } else {
         Change::AssetDeleted { path }

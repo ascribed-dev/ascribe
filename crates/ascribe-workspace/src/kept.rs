@@ -9,7 +9,7 @@ use ascribe_core::path::normalize;
 use ascribe_model::{LOCK_FILE, SourceBound};
 use ascribe_resolve::{DiskFs, Layout};
 
-use crate::listing::{Listing, Stamp, code_change, stamp};
+use crate::listing::{CodeStamps, Listing, code_change};
 use crate::load::{LoadError, Loader, ModelFile};
 use crate::workspace::{Changed, SharedFs, Workspace, WorkspaceSnapshot};
 
@@ -58,9 +58,8 @@ pub struct Kept {
     workspace: Workspace,
     listing: Listing,
     /// The code files snippets have read, each as it was when it was first
-    /// seen read: they can be outside the project's folder, and they're read
-    /// when a check asks for them, after loading.
-    code: Vec<(RelPath, Stamp)>,
+    /// seen read.
+    code: CodeStamps,
 }
 
 impl Kept {
@@ -99,15 +98,17 @@ impl Kept {
         let model = loader.load_model_bounded(&config, bound)?;
         let root = model.root.clone();
         let (workspace, listing) = Kept::read(loader, &config, model, &mut files)?;
-        Ok(Kept {
+        let mut kept = Kept {
             loader,
             config,
             root,
             files,
             workspace,
             listing,
-            code: Vec::new(),
-        })
+            code: CodeStamps::default(),
+        };
+        kept.stamp_snippets();
+        Ok(kept)
     }
 
     /// The project around `model`, and the listing of its files, made
@@ -191,40 +192,23 @@ impl Kept {
         Ok(())
     }
 
+    /// Stamps the code files the loaded project's snippets name, as they
+    /// are now, which is when they're read: one changed before the next
+    /// refresh is then a change.
+    fn stamp_snippets(&mut self) {
+        let snapshot = self.workspace.snapshot();
+        self.code.changed(&self.root, &snapshot);
+    }
+
     /// The code files snippets have read whose stamps differ from when each
     /// was first seen read, as changes; those seen for the first time are
     /// stamped.
     fn code_changes(&mut self, snapshot: &WorkspaceSnapshot) -> Vec<Changed> {
-        let mut read: Vec<RelPath> = snapshot
-            .code_files()
-            .all()
-            .iter()
-            .map(|f| f.path.clone())
-            .collect();
-        let index = snapshot.index();
-        for file in index.files() {
-            read.extend(
-                file.snippets
-                    .iter()
-                    .filter_map(|s| index.snippet_at(&file.path, s.span))
-                    .map(|s| s.path.clone()),
-            );
-        }
-        read.sort();
-        read.dedup();
-        let mut changes = Vec::new();
-        for path in read {
-            let now = stamp(&normalize(&self.root.join(path.as_str())));
-            match self.code.iter_mut().find(|(p, _)| *p == path) {
-                Some((_, then)) if *then != now => {
-                    changes.push(code_change(path, &now));
-                    *then = now;
-                }
-                Some(_) => {}
-                None => self.code.push((path, now)),
-            }
-        }
-        changes
+        self.code
+            .changed(&self.root, snapshot)
+            .into_iter()
+            .map(|(path, present)| code_change(path, present))
+            .collect()
     }
 
     fn reload_bounded(&mut self, bound: SourceBound<'_>) -> Result<(), LoadError> {
@@ -237,6 +221,7 @@ impl Kept {
         self.workspace = workspace;
         self.listing = listing;
         self.code.clear();
+        self.stamp_snippets();
         Ok(())
     }
 }

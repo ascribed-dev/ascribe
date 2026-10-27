@@ -174,7 +174,7 @@ impl Core {
         let Some(loaded) = self.loaded.as_ref() else {
             return;
         };
-        if loaded.model.checks.vale.is_none()
+        if loaded.model().checks.vale.is_none()
             || !self.docs.contains_key(path)
             || !matches!(loaded.classify(path), Some(crate::core::Kind::Source(..)))
         {
@@ -201,7 +201,12 @@ impl Core {
                 continue;
             };
             let root = loaded.root.clone();
-            let command = loaded.model.checks.vale.as_ref().map(|v| v.command.clone());
+            let command = loaded
+                .model()
+                .checks
+                .vale
+                .as_ref()
+                .map(|v| v.command.clone());
             let refused = match self.permission(&root, command.as_deref()) {
                 Permission::Run => None,
                 Permission::Refused(why) => Some(why),
@@ -218,15 +223,15 @@ impl Core {
             let Some(crate::core::Kind::Source(content, project)) = loaded.classify(&path) else {
                 continue;
             };
-            let snapshot = loaded.inc.snapshot();
+            let snapshot = loaded.workspace.index_snapshot();
             let id = snapshot.file(&content).map_or(FileId::new(1), |f| f.file);
             let terms = prose::glossary_words(&snapshot.glossary());
             self.prose.running = true;
             return Some(Job {
                 epoch: loaded.epoch,
                 root: loaded.root.clone(),
-                model: loaded.model.clone(),
-                model_text: loaded.model_text.clone(),
+                model: loaded.model().clone(),
+                model_text: loaded.model_text().to_owned(),
                 terms,
                 config: config.clone(),
                 path,
@@ -324,7 +329,7 @@ impl Core {
     ) {
         self.prose.running = false;
         let current = self.loaded.as_ref().is_some_and(|loaded| {
-            loaded.epoch == job.epoch && Arc::ptr_eq(&loaded.model, &job.model)
+            loaded.epoch == job.epoch && Arc::ptr_eq(loaded.model(), &job.model)
         }) && self.encoding == job.encoding
             && self.docs.get(&job.path).map(|d| d.version) == Some(job.version);
         if !current {
@@ -393,7 +398,7 @@ impl Core {
         let now = self
             .loaded
             .as_ref()
-            .and_then(|l| l.model.checks.vale.as_ref());
+            .and_then(|l| l.model().checks.vale.as_ref());
         if same_settings(before, now) {
             if before.map(|b| b.span) != now.map(|n| n.span)
                 && let Some(config) = self.config.clone()
