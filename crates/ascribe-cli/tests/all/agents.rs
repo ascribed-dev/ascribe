@@ -883,6 +883,49 @@ fn projects_that_run_ascribe_differently_share_a_skill_that_says_how() {
 }
 
 #[test]
+fn the_skill_gives_a_lone_project_in_a_folder_its_config() {
+    let repo = tempfile::tempdir().unwrap();
+    let root = repo.path();
+    copy_dir(&examples().join("quill"), &root.join("docs"));
+    git_init(root);
+    // From the repository's root, a command with no file finds no project.
+    run(root, &["check"], 2);
+    sync(root, "docs", &["--target", "claude"]);
+    for file in [".agents/skills/ascribe", ".claude/skills/ascribe"] {
+        let skill = read(&root.join(file).join("SKILL.md"));
+        for command in [
+            "`ascribe check --config docs` with no file",
+            "`ascribe model --config docs --section types`",
+            "`ascribe addresses move --config docs --from-git`",
+        ] {
+            assert!(skill.contains(command), "{file}: {skill}");
+        }
+        // A command given a page finds the project from the page.
+        assert!(skill.contains("Run `ascribe check <file> --format concise`."));
+        let directives = read(&root.join(file).join("references/directives.md"));
+        assert!(
+            directives.contains("`ascribe model --config docs --section sources`"),
+            "{directives}"
+        );
+    }
+    // The commands it names work from the root.
+    run(root, &["check", "--config", "docs"], 0);
+    run(
+        root,
+        &["model", "--config", "docs", "--section", "types"],
+        0,
+    );
+    run(root, &["agents", "rules", "--config", "docs"], 0);
+
+    // With a second project, the skill is both's, so it names no folder.
+    write(&root.join("handbook/ascribe.toml"), "spec = \"0.1\"\n");
+    sync(root, "docs", &[]);
+    let skill = read(&root.join(".agents/skills/ascribe/SKILL.md"));
+    assert!(!skill.contains("--config docs"), "{skill}");
+    assert!(skill.contains("`ascribe check` with no file"), "{skill}");
+}
+
+#[test]
 fn a_settings_file_that_isnt_json_stops_everything() {
     let repo = repository("quill");
     let root = repo.path();

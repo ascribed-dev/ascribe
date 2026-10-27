@@ -266,7 +266,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
             let text = if args.file == skill::DIRECTIVES {
                 skill::directives_md()
             } else {
-                skill::skill_md(None, command::PLAIN)
+                skill::skill_md(None, command::PLAIN, None)
             };
             let result = out.write_all(text.as_bytes());
             answer::written(result, &mut err).unwrap_or(exit::OK)
