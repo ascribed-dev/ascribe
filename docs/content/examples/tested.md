@@ -40,7 +40,7 @@ node --test test/greet.test.mjs passed.
 Wrote examples.observations/default.toml: 2 files, Node 24.9.0 on Linux.
 ```
 
-The config is a list of commands for your machine to run, so `ascribe observe` asks first: type `y` to run them, and anything else, or nothing, runs nothing and writes nothing. It asks only when its input is a terminal. With `--yes` it doesn't ask, and in CI or a hook, where nobody is there to answer, it runs the commands as it lists them, without asking.
+The config is a list of commands for your machine to run, so `ascribe observe` asks first: type `y` to run them, and anything else, or nothing, runs nothing and writes nothing. It asks only when its input is a terminal. With `--yes` it doesn't ask. In CI, a hook, or an agent's shell, where nobody is there to answer, it lists the commands and runs nothing unless given `--yes`, so pass it once you've read them.
 
 Commit the observation with the code, as you would a lockfile. When the test fails, nothing is written, and the old observation stays. When it replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ.
 

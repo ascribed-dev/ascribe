@@ -92,7 +92,9 @@ Runs the test of a folder of [tested examples](tested.md), and when it passes, w
 
 @include: ../_generated/cli-observe-options.md
 
-It prints the config's path and every command it will run. When its standard input is a terminal, it then asks **Run them? [y/N]**, on standard error, and runs nothing unless the answer is `y` or `yes`; with `--format json`, the list goes to standard error too, so standard output holds the JSON alone. `--yes` skips the question, and where standard input isn't a terminal, as in CI or a hook, it doesn't ask. Then it runs each `[environment]` command, then `test`, through the platform's shell (`sh`, or `cmd` on Windows), in the folder, with your environment and standard input closed. The test's output goes to the terminal as it comes, and there's no time limit: you started it, and you can stop it. Last, it names the observation it wrote, with how many files and what it recorded of the environment.
+It prints the config's path and every command it will run. When its standard input is a terminal, it then asks **Run them? [y/N]**, on standard error, and runs nothing unless the answer is `y` or `yes`; with `--format json`, the list goes to standard error too, so standard output holds the JSON alone. `--yes` skips the question. Where standard input isn't a terminal, as in CI, a hook, or an agent's shell, nobody is there to answer, so it lists the commands, runs nothing, and exits 2 unless given `--yes`.
+
+Then it runs each `[environment]` command, then `test`, through the platform's shell (`sh`, or `cmd` on Windows), in the folder, with your environment and standard input closed. The test's output goes to the terminal as it comes, and there's no time limit: you started it, and you can stop it. Last, it names the observation it wrote, with how many files and what it recorded of the environment.
 
 When `test` exits 0, it hashes every example and writes the observation whole, to a file beside it that it then renames, so a run that's stopped part way leaves the old one. When it doesn't, it writes nothing. A file that changes while the test runs is hashed as it is at the end, so run it on a clean tree. When the observation replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ. An observation of another name is never touched.
 
@@ -104,7 +106,7 @@ With `--check`, it runs nothing: not `test`, not the `[environment]` commands. I
 |---|---|
 | `0` | The test passed, and the observation is written |
 | `1` | The test failed. Nothing was written, and the old observation is as it was. |
-| `2` | It couldn't run: a `--name` that isn't one; the current folder is a source's copies (`sources/<name>/` of a project whose `ascribe.lock` pins it), whose config is never run; no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, the question answered with anything but yes, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
+| `2` | It couldn't run: a `--name` that isn't one; the current folder is a source's copies (`sources/<name>/` of a project whose `ascribe.lock` pins it), whose config is never run; no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, the question answered with anything but yes, no terminal to ask at and no `--yes`, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
 
 With `--check`, `0` means the observation is current, `1` that it's stale or missing, and `2` that the config, the examples, or the observation can't be read.
 
