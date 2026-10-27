@@ -46,8 +46,8 @@ The reference implementation is a compiler written in Rust, which runs as a comm
 These principles govern the language. They are non-normative, but every normative rule in this document follows from them.
 
 1. **Authoring should feel like writing, not programming.** Source files are markdown a person can read without any tooling. Where source readability and a renderer's display conflict, source readability wins.
-2. **Directives annotate content structure.** They mark what content *is* (a callout, a procedure, a variant, a reusable region), never how it looks and never what it computes.
-3. **No behavior.** The language has no conditionals, loops, variables, operators, or computed content. Variance is declarative membership, not evaluation.
+2. **Directives annotate content structure.** They mark what content *is* (a callout, a procedure, a variant, a reusable region, an operation of an API), never how it looks.
+3. **No logic.** Authors write no conditionals, loops, variables, or operators, and variance is declarative membership, not evaluation. Anything a processor derives comes from something the content model declares, such as a registry, a source, or an API, and is the same for every reader of a build: `@operation` shows what a declared API's spec says (§4.13), a marked JSON example is checked against that spec's schema (§7.11), glossary terms are linked in prose that doesn't mark them (§5.4), and `planned` stands for the version of a line the content model's releases plan, until that line's release writes the version in its place (§4.4).
 4. **Structure over grammar.** When a need can be met by a file convention or a content-model declaration instead of new syntax, it is.
 5. **Containers are rare.** Most directives occupy a single line. Nesting is discouraged, and every nesting need has a flat alternative.
 6. **Constrain the grammar, don't strangle it.** `@` marks directives, but other constructs use whatever notation reads best (for example, `{key}` for phrases).
@@ -61,6 +61,7 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **
 - A **conforming document** is an Ascribe source file that produces none of the errors §8.2 lists under a given content model. A processor's own checks, which a project may raise to errors, don't count (§8.2).
 - A **processor** is any software that reads Ascribe source: a parser, validator, compiler, or authoring environment.
 - A **conforming processor** parses documents as this specification describes and reports every error listed in §8. It MAY report additional warnings.
+- A diagnostic has one of three **severities**. An **error** means the document isn't conforming, and a build fails on it. A **warning** is a likely mistake in a conforming document, which processors SHOULD report. **Advice** says how a conforming document could be better, such as by linking an operation by its id rather than its method and path; processors MAY report it, and it never fails a build (§8.2).
 
 Sections marked *non-normative*, examples, and notes are informative.
 
@@ -68,7 +69,7 @@ Sections marked *non-normative*, examples, and notes are informative.
 
 An Ascribe document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images and at the end of a table row's first cell).
 
-Processors MAY support common CommonMark extensions, such as GitHub Flavored Markdown tables. This specification doesn't depend on them.
+Processors MAY support common CommonMark extensions, such as GitHub Flavored Markdown tables. This specification doesn't depend on them, except that its rules for tables apply where a processor supports tables: a table row's attribute block and availability (§4.4), and the plain output's column alignment (§9.4). Where a processor doesn't, such text is the paragraph CommonMark makes of it.
 
 ### 1.5 Notational conventions
 
@@ -346,13 +347,15 @@ You can run Quill in the browser with no local setup.
 
 ### 3.8 Binding
 
-A directive in line form attaches to content according to its schema's **binding**:
+A directive in line form attaches to content according to its schema's **binding**, and so does a container that binds:
 
 | Binding | Applies to |
 |---|---|
 | Self | The directive's own primary, or nothing (it stands alone) |
 | Preceding heading | The heading at the start of its section, and that section |
 | Following block | The next block in the same container |
+| Following block, from the end line | A container that binds, such as `@memo`'s: the next block after its end line, or, at the top of a section, the section (below) |
+| Section, by its paragraph | `@summary` with no primary: its section, by the paragraph it touches anywhere in the section (below) |
 
 **Heading-bound directives** go at the top of their section: under the heading, before any other content. Blank lines between the heading and these directives don't matter. Several MAY stack, one per line:
 
@@ -374,7 +377,7 @@ Following-block directives **stack**: several in a row all bind the block the la
 
 Sections are found within one container: a heading-bound directive binds a heading in its own document, list item, blockquote, directive container, or arm, never one outside it. A container's first blocks have no heading above them, as at the start of a document.
 
-The two rules together: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.**
+The two rules together: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.** There are two exceptions, both above: a container that binds touches the block after its end line, not the one after its opening line, and `@summary` with no primary describes its section from anywhere in it, by the paragraph it touches.
 
 Before a document's first heading there is no section. A directive that can only bind a heading, such as `@id`, is an error there, and one that can bind either way, such as `@available`, binds the block it touches. Availability for the whole page belongs in frontmatter (§4.4).
 
@@ -410,9 +413,9 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
 | `@snippet` | line | identifier (address) | self | Take a code example from a file |
 | `@intended` | line | line (reason) | top of section, else following block | Acknowledge a check's problem as intended |
-| `@memo` | line, container (raw) | line (text), in line form | top of section, else following block, in either form | Keep a note for the people who maintain the page, never published |
+| `@memo` | line, container (raw) | line (text), in line form | top of section, else following block; a container's block follows its end line | Keep a note for the people who maintain the page, never published |
 | `@term` | line | none | top of section | Make a glossary page's heading a term |
-| `@summary` | line | text, optional | top of section (with primary), else following block | Give a section a summary |
+| `@summary` | line | text, optional | top of section (with primary), else its section, by the following paragraph | Give a section a summary |
 | `@operation` | line | identifier (link to an operation) | self | Show an operation of a declared API, linked to its reference |
 
 ### 4.1 `@id`
@@ -769,7 +772,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 
 ### 4.10 `@memo`
 
-Keeps a note for the people and agents who maintain a page: why it's written the way it is, beside what it's about. A memo is never published, and nothing reads what it says, apart from the two words that say a file is generated.
+Keeps a note for the people and agents who maintain a page: why it's written the way it is, beside what it's about. A memo is never published, and no processor resolves it. A memo is for a line or two, in place beside what it's about; anything longer belongs in a memo file (§7.7), which names what it's about.
 
 ```
 ## Rotate a key
@@ -786,10 +789,10 @@ Revoke the old key once every agent uses the new one.
 
 - **Forms:** line and container. **Binding:** top of section, else following block, in either form (§3.8). **Primary:** in line form, REQUIRED text (a line primary, §3.4): plain text, the rest of the line. **Attributes:** none.
 - **The container is raw** (§3.5): its lines are the memo's text, as written. It's about what its opening line says it's about, and the block it's about starts directly after its `@end`.
-- **Nothing reads a memo.** Its text isn't inline content: a `{key}` in it isn't a phrase, a link isn't checked and isn't a use of its target, an `@include` isn't followed, a `#` line isn't a heading and gets no id, and a processor that checks prose doesn't check it.
+- **No processor resolves or publishes a memo.** Its text isn't inline content: a `{key}` in it isn't a phrase, a link isn't checked and isn't a use of its target, an `@include` isn't followed, a `#` line isn't a heading and gets no id, and a processor that checks prose doesn't check it. Processors read a memo's words in two places only, for what they say about the file and not as content: the words that say a file is generated (below), and a memo file's `quote` (§7.7), which places it.
 - **Never in an output.** A memo changes no output: the site, plain, and JSON outputs (§9.4) are what they'd be without it. A memo in a fragment is part of the fragment, and no page that includes the fragment publishes it.
 - **Never a change.** Comparing two versions of a page compares what they publish, so a page whose only change is to a memo hasn't changed.
-- **A generated file.** A memo among a file's top-level blocks, not inside a container, a list, or a blockquote, whose text begins `Generated from` or `Generated by` says another program writes the file: an edit to it is lost the next time that program runs, and the memo's text says what to change instead and how to run the program again. Processors SHOULD report the first such memo as related information of each diagnostic located in the file, with a note that gives the memo's text, and MUST NOT offer a fix that edits the file. The rest of the memo's text is read by nobody.
+- **A generated file.** A memo among a file's top-level blocks, not inside a container, a list, or a blockquote, whose text begins `Generated from` or `Generated by` says another program writes the file: an edit to it is lost the next time that program runs, and the memo's text says what to change instead and how to run the program again. Processors SHOULD report the first such memo as related information of each diagnostic located in the file, with a note that gives the memo's text, and MUST NOT offer a fix that edits the file. No processor reads the rest of the memo's text.
 
 ```
 @memo: Generated from options.toml by scripts/options.ts; edit the options, then run `node scripts/options.ts` to rewrite it.
