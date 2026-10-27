@@ -230,7 +230,7 @@ With `--format github` and `--check`, it writes a GitHub Actions workflow comman
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/fmt-check-github.txt
 
-A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/pages.md#ASC123)), and the other files are still formatted.
+A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/sources.md#ASC123)), and the other files are still formatted.
 
 | Code | Meaning |
 |---|---|
