@@ -6972,8 +6972,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1156"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Restate the spec's principles and binding summary to match the features they now cover"
     },
     {
@@ -7125,8 +7128,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/986"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCME",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1152"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: an entry path for each audience, engineers, writers, and agent builders"
     },
     {
@@ -7139,8 +7145,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/987"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCOA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1146"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Catch a stale site sidebar fixture before CI"
     },
     {
@@ -7160,7 +7169,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1131"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Incremental differential test: generate the change kinds added since it was written"
     },
     {
@@ -7173,8 +7182,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/989"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCRM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1142"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Add a CLAUDE.md that imports AGENTS.md"
     },
     {
@@ -7204,8 +7216,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/991"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCbA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1155"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "CI: flag a change with no changelog entry, and a contract change with no decision"
     },
     {
@@ -7337,8 +7352,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/999"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCpA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1150"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "One command that rewrites every generated file"
     },
     {
@@ -7457,7 +7475,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1138"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Tested examples: report an ascribe.examples.toml that no source reads"
     },
     {
@@ -7507,8 +7525,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1009"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCwM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1145"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: \"Tested with Rust 1.98.1 on Linux\" on npm steps and config misleads readers"
     },
     {
@@ -7524,8 +7545,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1153"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Make example-stale a warning, so CI fails when a tested example changed"
     },
     {
@@ -7766,7 +7790,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1141"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Agent Markdown: link to the other pages' Markdown, so an agent following a link stays in Markdown"
     },
     {
@@ -7928,8 +7952,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1032"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDag",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1154"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: break up the paragraphs over 250 words, and keep them under 150"
     },
     {
@@ -8078,8 +8105,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1144"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "README: say which outputs a reading agent gets from a published site"
     },
     {
@@ -8316,7 +8346,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1140"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "An unclosed container's span takes in the trailing line ending"
     },
     {
@@ -8332,8 +8362,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1151"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Incremental project: a snippet's code file id isn't a fresh load's"
     },
     {
@@ -8366,9 +8399,43 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1148"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "A paragraph before a table loses its span after a CRLF"
+    },
+    {
+      "content": {
+        "body": "Split from #1009 (PR #1145). The docs' tested captions now say \"Tested with ascribe 0.4.4 on Linux\". #1009 asked that the OS stay only when it matters to the block, such as command output that differs by platform, but the tested line always lists the operating systems ([tested-examples contract §5](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/contracts/tested-examples.md#5-the-tested-line)), so leaving it out is a product change, not a config one.\n\n## Done when\n\n- `ascribe.examples.toml` can say the OS isn't worth showing (for example, an option on the config, or per `include` pattern), and a tested line then names only the `[environment]` entries.\n- The contract, SPEC §4.8, and a conformance case cover it.\n- The repository's own config uses it where the output doesn't vary by platform.",
+        "number": 1147,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Tested line: leave out the OS when it doesn't matter to the example",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1147"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDvh1I",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Tested line: leave out the OS when it doesn't matter to the example"
+    },
+    {
+      "content": {
+        "body": "Found by the `parse` fuzz target while working on #1139. It's on main too and doesn't involve `\\r`.\n\n## What's wrong\n\nWhen a table's header line is indented and its delimiter row has an alignment colon, a body cell's span stops one byte short of the text inside it:\n\n```text\n\" s\\n:-\\nc\\n\"\n  inline Span { start: 7, end: 8 } \"\\n\": outside its parent Span { start: 7, end: 7 }\n\" s\\n:-\\ncc\\n\"\n  inline Span { start: 7, end: 9 } \"c\\n\": outside its parent Span { start: 7, end: 8 }\n```\n\nWith no indent (`\"s\\n:-\\ncc\\n\"`) or no colon (`\" s\\n-\\ncc\\n\"`), the spans are right. It looks like the body row's cell offsets in `crates/comrak-ascribe/src/parser/table.rs` (`try_opening_row`) are measured against the header's indented start column. A vertical tab instead of the indent (`\" \\x0b\\n:-\\nc\"`) gives an empty text span, which may be the same cause.\n\n## Done when\n\n- Body cells under an indented, aligned header have the span of their own text, and those inputs are in `directives_in_every_container` (`crates/ascribe-syntax/tests/all/spans.rs`).\n- The `parse` fuzz target runs clean on them.",
+        "number": 1149,
+        "repository": "ascribed-dev/ascribe",
+        "title": "A table body cell's span is one byte short after an indented header and an aligned delimiter",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1149"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDvmno",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "A table body cell's span is one byte short after an indented header and an aligned delimiter"
     }
   ]
 }
