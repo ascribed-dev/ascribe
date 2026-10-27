@@ -9,7 +9,7 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{MODEL_FILE, Project};
+use ascribe_check::MODEL_FILE;
 use ascribe_workspace::LocateError;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
@@ -438,8 +438,8 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     };
     let mut projects = Vec::new();
     for config in &configs {
-        match Project::load(config) {
-            Ok(project) => projects.push(project.with_today(crate::clock::today())),
+        match ascribe_check::load(config) {
+            Ok(workspace) => projects.push(crate::context::checked(&workspace)),
             Err(e) => return answer::report_failure(err, &Failure::Load(e)),
         }
     }

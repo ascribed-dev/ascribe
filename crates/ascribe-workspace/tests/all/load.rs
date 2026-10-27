@@ -9,7 +9,7 @@ use std::path::Path;
 use ascribe_core::{FileId, Issue};
 use ascribe_model::{ContentModel, MODEL_FILE, SourceBound};
 use ascribe_resolve::side_file::{Entry, Lock, Nav, Permalinks, SideFile};
-use ascribe_workspace::{LoadError, Loader};
+use ascribe_workspace::{LoadError, Loader, Workspace};
 
 const MODEL: &str =
     "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[builds.site]\n[builds.pdf]\n";
@@ -77,15 +77,13 @@ fn load_model_uses_the_loader_given() {
 fn a_model_that_cant_be_read_is_a_read_error() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     fs::write(dir.path().join(MODEL_FILE), [0xff, 0xfe]).expect("write the model");
-    let err = loader(&[])
-        .load(&dir.path().join(MODEL_FILE))
-        .expect_err("not UTF-8");
+    let err = Workspace::load(&loader(&[]), &dir.path().join(MODEL_FILE)).expect_err("not UTF-8");
     assert!(
         matches!(&err, LoadError::Read { message, .. } if message == "the file isn't valid UTF-8"),
         "{err:?}"
     );
     assert!(matches!(
-        loader(&[]).load(&dir.path().join("nowhere.toml")),
+        Workspace::load(&loader(&[]), &dir.path().join("nowhere.toml")),
         Err(LoadError::Read { .. })
     ));
 }
@@ -100,13 +98,13 @@ fn the_sources_are_read_in_path_order_with_the_unreadable_after() {
             ("broken.md", &[0xff, 0xfe]),
         ],
     );
-    let loaded = loader(&[])
-        .load(&dir.path().join(MODEL_FILE))
-        .expect("the project loads");
-    assert_eq!(loaded.content_root.as_str(), "docs");
-    assert_eq!(loaded.model_text, MODEL);
+    let loaded = Workspace::load(&loader(&[]), &dir.path().join(MODEL_FILE))
+        .expect("the project loads")
+        .snapshot();
+    assert_eq!(loaded.content_root().as_str(), "docs");
+    assert_eq!(loaded.model_text(), MODEL);
     let read: Vec<(u32, &str, bool)> = loaded
-        .sources
+        .sources()
         .iter()
         .map(|s| (s.id.index(), s.path.as_str(), s.unreadable.is_some()))
         .collect();
@@ -118,10 +116,11 @@ fn the_sources_are_read_in_path_order_with_the_unreadable_after() {
             (3, "broken.md", true)
         ]
     );
-    assert_eq!(loaded.sources[0].text, "# A\n");
-    let failure = loaded.sources[2].unreadable.as_ref().expect("unreadable");
+    assert_eq!(&*loaded.sources()[0].text, "# A\n");
+    let failure = loaded.sources()[2].unreadable.as_ref().expect("unreadable");
     assert!(failure.not_utf8);
-    assert_eq!(loaded.listing.paths.len(), 3);
+    // The index lists it as unreadable for the same reason.
+    assert_eq!(loaded.index().unreadable()[0].reason, failure.reason);
 }
 
 #[test]
@@ -133,18 +132,26 @@ fn the_loader_reads_each_side_file_it_is_given_and_only_those() {
     }
     let config = dir.path().join(MODEL_FILE);
 
-    let loaded = loader(GIVEN).load(&config).expect("the project loads");
-    let paths: Vec<&str> = loaded.side.iter().map(|held| held.path()).collect();
+    let load = |side_files| {
+        Workspace::load(&loader(side_files), &config)
+            .expect("the project loads")
+            .snapshot()
+    };
+    let loaded = load(GIVEN);
+    let paths: Vec<&str> = loaded.side_files().iter().map(|held| held.path()).collect();
     assert_eq!(paths, [Nav::PATH, Lock::PATH], "in the order of the list");
-    assert_eq!(loaded.side[0].text(), "not what it should be\n");
-    assert!(loaded.side[0].get::<Nav>().is_some());
+    assert_eq!(loaded.side_files()[0].text(), "not what it should be\n");
+    assert!(loaded.side_file::<Nav>().is_some());
 
-    let none = loader(&[]).load(&config).expect("the project loads");
-    assert!(none.side.is_empty());
+    assert!(load(&[]).side_files().is_empty());
 
     // A side file the list names and the project hasn't isn't read.
     fs::remove_file(dir.path().join(Lock::PATH)).expect("remove the lock");
-    let without = loader(GIVEN).load(&config).expect("the project loads");
-    let paths: Vec<&str> = without.side.iter().map(|held| held.path()).collect();
+    let without = load(GIVEN);
+    let paths: Vec<&str> = without
+        .side_files()
+        .iter()
+        .map(|held| held.path())
+        .collect();
     assert_eq!(paths, [Nav::PATH]);
 }

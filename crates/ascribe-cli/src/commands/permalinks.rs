@@ -19,7 +19,7 @@ use clap::{Args as ClapArgs, Subcommand};
 
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::context::load_project;
+use crate::context::{checked, load_project};
 use crate::exit;
 use crate::guard;
 
@@ -208,7 +208,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// the list can't be read or written.
 fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let mut synced = match ascribe_query::permalinks::sync(
@@ -352,7 +352,7 @@ fn write_sync_check(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) ->
 /// or its list can't be read.
 fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let listed = match ascribe_query::permalinks::list(project.index(), project.permalinks()) {
@@ -520,7 +520,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         return answer::fail(err, &PermalinksError::NoReason);
     }
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let index = project.index();

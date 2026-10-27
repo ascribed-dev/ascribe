@@ -107,7 +107,7 @@ fn a_project_at_the_root_of_the_repository() {
     assert_eq!(revision.model_text, MODEL);
     assert_eq!(sources(&revision), ["guides/install.md", "index.md"]);
     assert_eq!(revision.fs.read(&rel("index.md")).unwrap(), "# Home\n");
-    let project = revision.project();
+    let project = revision.workspace().snapshot().index().clone();
     assert_eq!(project.pages().count(), 2);
 }
 
@@ -169,7 +169,7 @@ fn a_snippet_reads_its_code_at_the_revision_through_its_source() {
         Probe::Missing
     );
     assert_eq!(revision.fs.probe(&rel("../other/big.txt")), Probe::Missing);
-    let project = revision.project();
+    let project = revision.workspace().snapshot().index().clone();
     let page = project.expand(&rel("index.md")).expect("the page");
     let mut code_found = Vec::new();
     page.visit(&mut |block| {
@@ -228,7 +228,7 @@ fn a_snippet_of_a_tested_example_is_tested_at_the_revision() {
         revision.fs.probe(&rel("../service/README.md")),
         Probe::Missing
     );
-    let project = revision.project();
+    let project = revision.workspace().snapshot().index().clone();
     let page = project.expand(&rel("index.md")).expect("the page");
     let mut snippets = Vec::new();
     page.visit(&mut |block| {

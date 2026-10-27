@@ -22,7 +22,7 @@ use serde::Serialize;
 
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::context::load_project;
+use crate::context::{checked, load_project};
 use crate::exit;
 
 /// Arguments of `ascribe versions`.
@@ -343,7 +343,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// Exit codes: 0 whatever the lists say; 2 when the project doesn't load.
 fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let listed = ascribe_query::versions::list(project.index());
@@ -421,7 +421,7 @@ fn run_changes(
     err: &mut dyn Write,
 ) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let changes = match ascribe_query::versions::changes(project.index(), &args.from, &args.to) {
@@ -786,7 +786,7 @@ fn run_release(
         Err(e) => return answer::fail(err, &e),
     };
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let (config, project, from) = match lines_project(config, project, &target) {
@@ -1117,7 +1117,7 @@ const EXPORT_SCHEMA_VERSION: u32 = 1;
 /// empty and isn't an archive Ascribe wrote.
 fn run_export(global: &Global, args: &ExportArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let index = project.index();
@@ -1488,7 +1488,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Err(e) => return answer::fail(err, &e),
     };
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let (config, project, from) = match lines_project(config, project, &target) {
@@ -1603,9 +1603,9 @@ fn lines_project(
         return Ok((config, project, None));
     };
     let holder = ascribe_core::path::normalize(&project.root().join(&taken.file));
-    let other = ascribe_check::Project::load(&holder)
-        .map_err(crate::context::Failure::Load)?
-        .with_today(crate::clock::today());
+    let other = crate::context::checked(
+        &ascribe_check::load(&holder).map_err(crate::context::Failure::Load)?,
+    );
     Ok((holder.clone(), other, Some(holder)))
 }
 

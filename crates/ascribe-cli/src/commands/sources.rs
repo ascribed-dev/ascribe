@@ -8,10 +8,10 @@ use std::process::ExitCode;
 
 use ascribe_check::Project;
 use ascribe_core::Coded;
-use ascribe_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
+use ascribe_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_loading};
 use ascribe_sources::{
-    CopyState, ExampleState, FetchReport, FileChange, Options, SourceUpdate, StatusReport,
-    UpdateReport, Workspace, short,
+    CopyState, ExampleState, FetchReport, FileChange, Options, SourceUpdate, SourcesView,
+    StatusReport, UpdateReport, short,
 };
 use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
@@ -21,7 +21,7 @@ use crate::answer;
 use crate::cli::Global;
 use crate::commands::diff::fail;
 use crate::commands::drift::{escape, write_summary_groups, write_text_groups};
-use crate::context::{Failure, load_project};
+use crate::context::{Failure, checked, load_model, load_project, load_rest};
 use crate::exit;
 
 /// The version of `fetch --format json`'s schema.
@@ -134,9 +134,9 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
-/// The project, and the workspace the commands work on.
-fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace), u8> {
-    let project = load_project(global).map_err(|failure| {
+/// The project, and the sources' view of it the commands work on.
+fn view(global: &Global, err: &mut dyn Write) -> Result<(Project, SourcesView), u8> {
+    let workspace = load_project(global).map_err(|failure| {
         let message = match failure {
             Failure::Config(e) => e.to_string(),
             Failure::Load(LoadError::Model { issues, .. }) => {
@@ -150,16 +150,14 @@ fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace
         };
         fail(err, &message)
     })?;
-    let index = project.index();
-    let workspace =
-        Workspace::new(project.root(), project.model(), index).map_err(|e| exit::fail(err, &e))?;
-    Ok((project, workspace))
+    let view = SourcesView::new(&workspace.snapshot()).map_err(|e| exit::fail(err, &e))?;
+    Ok((checked(&workspace), view))
 }
 
 /// Exit codes: 0 when the copies match the lock, 1 when a file a snippet
 /// names couldn't be copied, 2 when it couldn't run.
 fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let (_, workspace) = match workspace(global, err) {
+    let (_, view) = match view(global, err) {
         Ok(found) => found,
         Err(code) => return code,
     };
@@ -167,7 +165,7 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
         Ok(options) => options,
         Err(e) => return exit::fail(err, &e),
     };
-    let report = match ascribe_sources::fetch(&workspace, &args.names, &options) {
+    let report = match ascribe_sources::fetch(&view, &args.names, &options) {
         Ok(report) => report,
         Err(e) => return exit::fail(err, &e),
     };
@@ -282,11 +280,11 @@ pub(crate) struct StatusJson<'a> {
 
 /// Exit codes: 0 whatever it finds, 2 when the project can't be loaded.
 fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let (_, workspace) = match workspace(global, err) {
+    let (_, view) = match view(global, err) {
         Ok(found) => found,
         Err(code) => return code,
     };
-    let report = ascribe_sources::status(&workspace);
+    let report = ascribe_sources::status(&view);
     let written = match args.format {
         StatusFormat::Text => write_status(out, &report),
         StatusFormat::Json => serde_json::to_writer_pretty(
@@ -350,7 +348,7 @@ fn write_status(out: &mut dyn Write, report: &StatusReport) -> io::Result<()> {
 /// and repeating `git`'s message. A file that couldn't be copied is reported,
 /// and `ascribe check` fails on its snippet.
 fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let (project, workspace) = match workspace(global, err) {
+    let (project, view) = match view(global, err) {
         Ok(found) => found,
         Err(code) => return code,
     };
@@ -358,11 +356,10 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
         Ok(options) => options,
         Err(e) => return exit::fail(err, &e),
     };
-    let report =
-        match ascribe_sources::update(&workspace, &args.names, args.to.as_deref(), &options) {
-            Ok(report) => report,
-            Err(e) => return exit::fail(err, &e),
-        };
+    let report = match ascribe_sources::update(&view, &args.names, args.to.as_deref(), &options) {
+        Ok(report) => report,
+        Err(e) => return exit::fail(err, &e),
+    };
     // The pages whose examples changed: the working tree, with the new
     // copies, against HEAD.
     let pages = if report.changed {
@@ -463,15 +460,19 @@ fn drift_reason(e: &DiffError) -> String {
 /// the pages whose examples the new copies change. `Err` says why there's
 /// no telling, as when the project isn't in a git repository.
 fn pages(global: &Global) -> Result<Option<DriftReport>, PagesUnavailable> {
-    let project = load_project(global).map_err(PagesUnavailable::Load)?;
+    let (config, model) = load_model(global).map_err(PagesUnavailable::Load)?;
     let options = DriftOptions {
         base: Some("HEAD"),
         base_exact: true,
         builds: &[],
     };
-    drift_project(&project, &options)
-        .map(Some)
-        .map_err(PagesUnavailable::Drift)
+    let (root, content_model) = (model.root.clone(), model.model.clone());
+    drift_loading(&root, &content_model, &options, || {
+        load_rest(&config, model).map(|workspace| checked(&workspace))
+    })
+    .map_err(PagesUnavailable::Load)?
+    .map(Some)
+    .map_err(PagesUnavailable::Drift)
 }
 
 /// `9f2c41d → a3a8411`, or `a3a8411` for a first pin.

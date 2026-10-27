@@ -31,7 +31,8 @@
 //!     let repo = Repository::discover(Path::new("docs"))?;
 //!     let base = repo.base(None, false)?;
 //!     let before = Revision::read(&repo, base.compared())?;
-//!     let before_project = before.as_ref().map(Revision::project);
+//!     let before_workspace = before.as_ref().map(Revision::workspace);
+//!     let before_project = before_workspace.as_ref().map(|w| w.snapshot().index().clone());
 //!     let before_side = before
 //!         .as_ref()
 //!         .zip(before_project.as_ref())
@@ -59,7 +60,10 @@ use serde::Serialize;
 
 pub use addresses::{BaseAddresses, base_addresses, base_file_entries, before_history, renames};
 pub use apis::base_apis;
-pub use command::{DiffOptions, DriftOptions, ProjectDiff, diff_project, drift_project};
+pub use command::{
+    DiffOptions, DriftOptions, ProjectDiff, diff_loading, diff_project, drift_loading,
+    drift_project,
+};
 pub use compare::{
     BuildDiff, Change, ChangeKind, Counts, MovedPage, PageDiff, PageStatus, Renames, Side, Words,
     compare_builds, compare_page_in,

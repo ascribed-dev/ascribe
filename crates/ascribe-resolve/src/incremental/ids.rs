@@ -9,7 +9,7 @@
 //!
 //! 1. **Id 0 is `ascribe.toml`**, always. Source files have ids from 1.
 //! 2. **A fresh load numbers files in path order**, from 1
-//!    ([`Project::load`](crate::Project::load), `ascribe_check::Project::load`).
+//!    ([`Project::load`](crate::Project::load), `ascribe_workspace::Workspace::load`).
 //! 3. **An id names a path** for as long as the [`FileIds`] table lives (in an
 //!    [`IncrementalProject`](crate::IncrementalProject), its whole life): a path
 //!    is given an id the first time a file is there and keeps it. Editing a
@@ -34,9 +34,9 @@
 //!    A fresh load numbers them in the order it reads them: files in path
 //!    order, each file's snippets in order.
 //!
-//! `ascribe_check::Project` accepts any ids (it finds a file by id, not by
-//! position), so the language server builds one from a snapshot's ids, and the
-//! two agree.
+//! `ascribe_check::Project` takes its sources' ids from the source index it
+//! reads, and finds a file by id, not by position, so the language server
+//! checks a snapshot with its ids, and the two agree.
 
 use std::collections::BTreeMap;
 
@@ -70,6 +70,19 @@ impl FileIds {
     /// An empty table: the first path assigned gets id 1.
     pub fn new() -> FileIds {
         FileIds::default()
+    }
+
+    /// A table that gives each of `files`' paths its id, and any other path
+    /// the next number past them all: for indexing again a project whose
+    /// files have ids already, such as a snapshot's with one file's text
+    /// replaced, so every file keeps its id.
+    pub fn keeping(files: impl IntoIterator<Item = (RelPath, FileId)>) -> FileIds {
+        let mut ids = FileIds::default();
+        for (path, id) in files {
+            ids.next = ids.next.max(id.index().saturating_add(1));
+            ids.by_path.insert(path, id);
+        }
+        ids
     }
 
     /// The id of a path a file has been at.

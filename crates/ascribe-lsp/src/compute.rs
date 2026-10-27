@@ -26,6 +26,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::identity::Identity;
+use ascribe_check::side_files::SIDE_FILES;
 use ascribe_check::{
     Acknowledgements, Diagnostic, PageChecker, Project, Registry, Severity, apply_levels,
     check_file,
@@ -34,7 +35,7 @@ use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
-use ascribe_workspace::{ReadFailure, SourceFile};
+use ascribe_workspace::WorkspaceSnapshot;
 use lsp_types::{
     CodeDescription, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString,
 };
@@ -748,27 +749,44 @@ fn run_across(
     found
 }
 
-/// The checked project of a snapshot: its sources with the snapshot's ids, and
-/// the files the editor and the watcher reported over the disk.
+/// The checked project of a snapshot: its sources with the snapshot's ids, its
+/// source index, and the files the editor and the watcher reported over the
+/// disk.
 fn check_project_of(job: &Job) -> Project {
-    checked_project(
+    Project::new(snapshot_of(
         &job.snapshot,
         job.root.clone(),
         &job.model,
         &job.model_text,
         &job.fs,
-        &[],
-    )
+    ))
     .with_today(job.today)
     // The editor reports a personal memo's problems as a team memo's.
     .with_personal_memos()
-    // The snapshot's index is of the same files, with the same ids.
-    .with_link_index(job.snapshot.shared_project())
+}
+
+/// The checks' snapshot of `snapshot`: its files and their ids, over `fs`,
+/// with `model`.
+fn snapshot_of(
+    snapshot: &Snapshot,
+    root: PathBuf,
+    model: &ContentModel,
+    model_text: &str,
+    fs: &Arc<LayerFs>,
+) -> WorkspaceSnapshot {
+    WorkspaceSnapshot::of_index(
+        root,
+        Arc::new(model.clone()),
+        model_text.to_owned(),
+        snapshot.shared_project(),
+        SIDE_FILES,
+        fs.clone(),
+    )
 }
 
 /// The checked project of `snapshot`, with each of `replaced`'s files holding
-/// the text given instead of its own: what `ascribe/edit` checks an edit's
-/// result in.
+/// the text given instead of its own, and indexed again: what `ascribe/edit`
+/// checks an edit's result in.
 pub(crate) fn checked_project(
     snapshot: &Snapshot,
     root: PathBuf,
@@ -777,45 +795,7 @@ pub(crate) fn checked_project(
     fs: &Arc<LayerFs>,
     replaced: &[(&RelPath, &str)],
 ) -> Project {
-    let mut sources: Vec<SourceFile> = snapshot
-        .files()
-        .map(|f| SourceFile {
-            id: f.file,
-            path: f.path.clone(),
-            text: match replaced.iter().find(|(path, _)| **path == f.path) {
-                Some((_, text)) => (*text).to_owned(),
-                None => f.source.to_string(),
-            },
-            unreadable: None,
-        })
-        .collect();
-    // Files the project couldn't read are still sources, reported and not
-    // checked, with ids past every other.
-    let first = snapshot
-        .files()
-        .map(|f| f.file.index())
-        .max()
-        .map_or(1, |max| max + 1);
-    for (id, unreadable) in (first..).zip(snapshot.unreadable()) {
-        sources.push(SourceFile {
-            id: FileId::new(id),
-            path: unreadable.path.clone(),
-            text: String::new(),
-            unreadable: Some(ReadFailure {
-                reason: unreadable.reason.clone(),
-                not_utf8: unreadable.reason.contains("valid UTF-8"),
-            }),
-        });
-    }
-    sources.sort_by(|a, b| a.path.cmp(&b.path));
-    Project::from_parts_with_fs(
-        root,
-        snapshot.layout().content_root.clone(),
-        model.clone(),
-        model_text.to_owned(),
-        sources,
-        fs.clone(),
-    )
+    Project::new(snapshot_of(snapshot, root, model, model_text, fs).with_texts(replaced))
 }
 
 /// Adds to `lsp`'s data the fixes of `d` that edit another file the project

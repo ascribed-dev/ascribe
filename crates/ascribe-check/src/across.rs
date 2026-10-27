@@ -104,13 +104,12 @@ fn runs(checks: &Checks, slug: DiagnosticSlug, errors_only: bool) -> bool {
 /// What the checks that run for every build found, by file: the content
 /// model's entries under its id, each unused fragment under its own, and the
 /// image files' under theirs, each list in source order. `index` is the
-/// project's source index; `file` gives the project's id of one of its files.
+/// project's source index.
 /// The image checks run only when `images` is set, and with `errors_only`
 /// only the checks `[checks]` raises to an error run.
 pub(crate) fn for_every_build(
     project: &Project,
     index: &ascribe_resolve::Project,
-    file: &dyn Fn(FileId) -> FileId,
     images: bool,
     errors_only: bool,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
@@ -123,7 +122,7 @@ pub(crate) fn for_every_build(
     if on(diagnostics::FRAGMENT_UNUSED) {
         for fragment in index.fragments() {
             if index.includers(&fragment.path).is_empty() {
-                let at = Location::new(file(fragment.file), first_line(&fragment.source));
+                let at = Location::new(fragment.file, first_line(&fragment.source));
                 issues.push(Issue::new(diagnostics::FRAGMENT_UNUSED, at));
             }
         }
@@ -169,7 +168,7 @@ pub(crate) fn for_every_build(
                     issues.push(
                         Issue::new(
                             diagnostics::GLOSSARY_TERM_UNUSED,
-                            Location::new(file(t.file), t.heading),
+                            Location::new(t.file, t.heading),
                         )
                         .with_arg("term", t.term.clone()),
                     );

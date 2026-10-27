@@ -51,7 +51,7 @@ pub fn base_addresses(
     let base = repo.base(requested, exact)?;
     let published = match Revision::read(&repo, base.compared())? {
         Some(revision) => {
-            let mut published = Published::of(&revision.project());
+            let mut published = Published::of(revision.workspace().snapshot().index());
             published.renames = renames(&repo, base.compared(), content_root)?;
             Some(published)
         }

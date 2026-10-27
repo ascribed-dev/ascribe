@@ -21,12 +21,13 @@ mod copies;
 mod remote;
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use ascribe_core::RelPath;
 use ascribe_model::examples::{Status, is_examples_file};
-use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedFile, LockedSource, Source, file_hash};
+use ascribe_model::{LOCK_FILE, Lock, LockedFile, LockedSource, Source, file_hash};
 use ascribe_resolve::{DiskFs, FileSystem, Layout};
+use ascribe_workspace::WorkspaceSnapshot;
 use serde::Serialize;
 
 pub use ascribe_model::short_commit as short;
@@ -131,7 +132,7 @@ impl Options {
 /// A project, as these commands see it: its folder, its sources, its lock,
 /// and the files its snippets name.
 #[derive(Clone, Debug)]
-pub struct Workspace {
+pub struct SourcesView {
     root: PathBuf,
     /// The project's files.
     files: DiskFs,
@@ -144,19 +145,17 @@ pub struct Workspace {
     used: BTreeMap<String, BTreeSet<String>>,
 }
 
-impl Workspace {
-    /// The project whose content model is `model`, in `root`, with the
-    /// snippets of `project` (its source index).
+impl SourcesView {
+    /// The sources' view of the project `snapshot` holds: its folder, its
+    /// content model's sources, and the paths its source index's snippets
+    /// name.
     ///
     /// # Errors
     ///
     /// [`SourcesError::Lock`] when `ascribe.lock` is there and can't be
     /// read.
-    pub fn new(
-        root: &Path,
-        model: &ContentModel,
-        project: &ascribe_resolve::Project,
-    ) -> Result<Workspace, SourcesError> {
+    pub fn new(snapshot: &WorkspaceSnapshot) -> Result<SourcesView, SourcesError> {
+        let (root, model, project) = (snapshot.root(), snapshot.model(), snapshot.index());
         let files = DiskFs::new(root, &Layout::from_model(model));
         let lock_text = RelPath::parse(LOCK_FILE)
             .ok()
@@ -183,7 +182,7 @@ impl Workspace {
                 }
             }
         }
-        Ok(Workspace {
+        Ok(SourcesView {
             root: root.to_path_buf(),
             files,
             sources: model.sources.clone(),
@@ -513,17 +512,17 @@ impl FetchReport {
 /// fails or isn't there, or a file can't be written. The pins of the sources
 /// done before it are written.
 pub fn fetch(
-    workspace: &Workspace,
+    view: &SourcesView,
     names: &[String],
     options: &Options,
 ) -> Result<FetchReport, SourcesError> {
-    let selected = workspace.selected(names)?;
+    let selected = view.selected(names)?;
     let cache = Cache::new(options.cache.clone());
-    let mut lock = workspace.lock.clone();
+    let mut lock = view.lock.clone();
     let mut report = FetchReport::default();
     let mut outcome = Ok(());
     for source in selected {
-        match fetch_one(workspace, source, &cache) {
+        match fetch_one(view, source, &cache) {
             Ok(Some((fetched, pin))) => {
                 replace(&mut lock, pin);
                 report.sources.push(fetched);
@@ -541,7 +540,7 @@ pub fn fetch(
             .sources
             .iter()
             .filter(|l| {
-                !workspace
+                !view
                     .sources
                     .iter()
                     .any(|s| s.name == l.name && s.git.is_some())
@@ -551,10 +550,10 @@ pub fn fetch(
         for locked in stale {
             let folder = Source::copies_folder(&locked.name);
             // A source in this repository may use that folder itself.
-            if !workspace.sources.iter().any(|s| s.path == folder) {
+            if !view.sources.iter().any(|s| s.path == folder) {
                 let folder = Folder::new(
-                    &workspace.root,
-                    &workspace.files,
+                    &view.root,
+                    &view.files,
                     RelPath::parse(&folder).unwrap_or_default(),
                 );
                 for path in locked.files.keys() {
@@ -568,20 +567,20 @@ pub fn fetch(
             report.unpinned.push(locked.name);
         }
     }
-    report.lock_written = workspace.write_lock(&lock)?;
+    report.lock_written = view.write_lock(&lock)?;
     outcome.map(|()| report)
 }
 
 fn fetch_one(
-    workspace: &Workspace,
+    view: &SourcesView,
     source: &Source,
     cache: &Cache,
 ) -> Result<Option<(SourceFetch, LockedSource)>, SourcesError> {
     let Some(git) = &source.git else {
         return Ok(None);
     };
-    let previous = workspace.pin(source);
-    if previous.is_none() && workspace.needed(source).is_empty() {
+    let previous = view.pin(source);
+    if previous.is_none() && view.needed(source).is_empty() {
         // Nothing to copy, and nothing to pin it to yet.
         return Ok(None);
     }
@@ -598,7 +597,7 @@ fn fetch_one(
             (remote.get()?.fetch(rev, true)?, true)
         }
     };
-    let synced = workspace.sync(source, &commit, previous, &mut remote)?;
+    let synced = view.sync(source, &commit, previous, &mut remote)?;
     let had_files = previous.is_some_and(|p| !p.files.is_empty());
     let pin = synced.locked(source, &git.url, &commit);
     Ok(Some((
@@ -737,12 +736,12 @@ pub enum FileChange {
 /// an unknown revision), or a file can't be written. The pins of the
 /// sources done before it are written.
 pub fn update(
-    workspace: &Workspace,
+    view: &SourcesView,
     names: &[String],
     to: Option<&str>,
     options: &Options,
 ) -> Result<UpdateReport, SourcesError> {
-    let selected = workspace.selected(names)?;
+    let selected = view.selected(names)?;
     if let Some(to) = to {
         if selected.len() != 1 {
             return Err(SourcesError::ToNeedsOneSource);
@@ -755,11 +754,11 @@ pub fn update(
         }
     }
     let cache = Cache::new(options.cache.clone());
-    let mut lock = workspace.lock.clone();
+    let mut lock = view.lock.clone();
     let mut report = UpdateReport::default();
     let mut outcome = Ok(());
     for source in selected {
-        match update_one(workspace, source, to, &cache) {
+        match update_one(view, source, to, &cache) {
             Ok(Some((updated, pin))) => {
                 report.changed |= !updated.files.is_empty();
                 replace(&mut lock, pin);
@@ -772,12 +771,12 @@ pub fn update(
             }
         }
     }
-    report.changed |= workspace.write_lock(&lock)?;
+    report.changed |= view.write_lock(&lock)?;
     outcome.map(|()| report)
 }
 
 fn update_one(
-    workspace: &Workspace,
+    view: &SourcesView,
     source: &Source,
     to: Option<&str>,
     cache: &Cache,
@@ -785,7 +784,7 @@ fn update_one(
     let Some(git) = &source.git else {
         return Ok(None);
     };
-    let previous = workspace.pin(source);
+    let previous = view.pin(source);
     let followed = to.or(git.branch.as_deref()).unwrap_or("HEAD").to_owned();
     let mut remote = Lazy {
         cache,
@@ -796,10 +795,10 @@ fn update_one(
     // Without a pin to count from, the history isn't needed.
     let commit = remote.get()?.fetch(&followed, previous.is_none())?;
     let moved = previous.is_none_or(|p| p.commit != commit);
-    let folder = workspace.folder(source);
-    let needed = workspace.needed(source);
+    let folder = view.folder(source);
+    let needed = view.needed(source);
     let examples_before = example_states(&folder, &needed);
-    let synced = workspace.sync(source, &commit, previous.filter(|_| !moved), &mut remote)?;
+    let synced = view.sync(source, &commit, previous.filter(|_| !moved), &mut remote)?;
     let examples_after = example_states(&folder, &needed);
     let examples = needed
         .iter()
@@ -955,15 +954,15 @@ impl StatusReport {
 
 /// Each source's pin and the state of its copies. Reads only the project's
 /// files: no `git`, no network.
-pub fn status(workspace: &Workspace) -> StatusReport {
+pub fn status(view: &SourcesView) -> StatusReport {
     let mut report = StatusReport::default();
-    for source in &workspace.sources {
+    for source in &view.sources {
         let Some(git) = &source.git else {
             continue;
         };
-        let pin = workspace.pin(source);
-        let folder = workspace.folder(source);
-        let needed = workspace.needed(source);
+        let pin = view.pin(source);
+        let folder = view.folder(source);
+        let needed = view.needed(source);
         let on_disk: BTreeSet<String> = folder.files().into_iter().collect();
         let mut files: BTreeMap<String, CopyState> = BTreeMap::new();
         if let Some(pin) = pin {

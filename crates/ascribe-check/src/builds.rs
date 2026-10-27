@@ -11,9 +11,8 @@ use ascribe_model::{Build, ContentModel};
 use crate::baseline::Held;
 use crate::identity::{Identity, identities, identities_in};
 use crate::{
-    Acknowledged, Acknowledgements, Baseline, BaselineError, Diagnostic, PageChecker, PageIndex,
-    Project, Reported, Scope, apply_levels, check_all_builds, check_builds, check_file,
-    check_files_with,
+    Acknowledged, Acknowledgements, Baseline, BaselineError, Diagnostic, PageChecker, Project,
+    Reported, Scope, apply_levels, check_all_builds, check_builds, check_file, check_files_with,
 };
 
 /// A build name that isn't a build of the content model.
@@ -213,20 +212,16 @@ impl Request<'_> {
 
     /// What the checks find, before [`settle`](Request::settle): of the
     /// builds named, as [`diagnose`] finds it, or of the editor's build, as
-    /// [`diagnose_editor_build_in`] finds it over `index`, only what can
-    /// count for the scope's files when it names some.
+    /// [`diagnose_editor_build`] finds it, only what can count for the
+    /// scope's files when it names some.
     ///
     /// # Errors
     ///
     /// The first name that isn't a build of the content model.
-    pub fn find<'p>(
-        &self,
-        project: &'p Project,
-        index: Option<&'p PageIndex>,
-    ) -> Result<Diagnosed<'p>, UnknownBuild> {
+    pub fn find<'p>(&self, project: &'p Project) -> Result<Diagnosed<'p>, UnknownBuild> {
         if self.editor_build {
             let files = self.scope.and_then(|s| s.named_sources(project));
-            Ok(diagnose_editor_build_in(project, index, files.as_deref()))
+            Ok(diagnose_editor_build(project, files.as_deref()))
         } else {
             diagnose(project, self.builds)
         }
@@ -337,7 +332,7 @@ pub fn diagnose_with(project: &Project, request: &Request<'_>) -> Result<Checked
     request
         .baseline_of(project)
         .map_err(DiagnoseError::Baseline)?;
-    let found = request.find(project, None)?;
+    let found = request.find(project)?;
     request
         .settle(project, found.into())
         .map_err(DiagnoseError::Baseline)
@@ -466,21 +461,8 @@ pub fn diagnose_every_build_in(project: &Project, files: &[RelPath]) -> Vec<Diag
 /// neither are the content checks across the project, which need every page
 /// (the server runs them on save).
 pub fn diagnose_editor_build<'p>(project: &'p Project, files: Option<&[RelPath]>) -> Diagnosed<'p> {
-    diagnose_editor_build_in(project, None, files)
-}
-
-/// [`diagnose_editor_build`], over `index` when it's given: the project's,
-/// kept from an earlier check ([`PageIndex::new`]).
-pub fn diagnose_editor_build_in<'p>(
-    project: &'p Project,
-    index: Option<&'p PageIndex>,
-    files: Option<&[RelPath]>,
-) -> Diagnosed<'p> {
     let build = project.model().editor_default_build();
-    let checker = || match index {
-        Some(index) => PageChecker::with_page_index(project, index),
-        None => PageChecker::new(project),
-    };
+    let checker = || PageChecker::new(project);
     let diagnostics = match files {
         None => {
             let checker = checker();

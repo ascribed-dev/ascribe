@@ -35,14 +35,14 @@ fn a_moved_pin_copies_the_files_again_and_lists_the_commits() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs#login\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
 
     code.write("src/auth.rs", V2);
     code.commit("Take a user");
     code.write("src/other.rs", "y\n");
     let head = code.commit("Change another file");
 
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert!(report.changed);
     let api = &report.sources[0];
     assert!(api.moved);
@@ -75,14 +75,14 @@ fn with_nothing_to_move_no_file_changes() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
     let lock = docs.read("ascribe.lock").unwrap();
     let modified = std::fs::metadata(common::path(docs.root(), "ascribe.lock"))
         .unwrap()
         .modified()
         .unwrap();
 
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert!(!report.changed);
     let api = &report.sources[0];
     assert!(!api.moved && api.files.is_empty() && api.commits.is_none());
@@ -116,14 +116,14 @@ fn commits_are_counted_from_the_history_not_the_shallow_cache() {
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
     );
     // The first pin, the head, fetched alone.
-    update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    update(&docs.view(), &[], None, &docs.options()).unwrap();
 
-    let back = update(&docs.workspace(), &[], Some("v1"), &docs.options()).unwrap();
+    let back = update(&docs.view(), &[], Some("v1"), &docs.options()).unwrap();
     let api = &back.sources[0];
     assert!(api.moved && api.back, "{api:?}");
     assert_eq!(api.commits, None);
 
-    let forward = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let forward = update(&docs.view(), &[], None, &docs.options()).unwrap();
     let api = &forward.sources[0];
     assert!(api.moved && !api.back, "{api:?}");
     let commits = api.commits.as_ref().unwrap();
@@ -147,23 +147,17 @@ fn to_moves_the_pin_to_a_revision_back_or_forward() {
     );
 
     // The first pin, by update, is the head of the branch.
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert_eq!(report.sources[0].to, second);
     assert!(report.sources[0].first_copy && report.sources[0].from.is_none());
 
     // Back to a tag.
-    let report = update(
-        &docs.workspace(),
-        &["api".into()],
-        Some("v1"),
-        &docs.options(),
-    )
-    .unwrap();
+    let report = update(&docs.view(), &["api".into()], Some("v1"), &docs.options()).unwrap();
     assert_eq!(report.sources[0].to, first);
     assert_eq!(docs.read("sources/api/src/auth.rs").as_deref(), Some(V1));
     // Forward to a commit, by its hash.
     let report = update(
-        &docs.workspace(),
+        &docs.view(),
         &["api".into()],
         Some(&second),
         &docs.options(),
@@ -174,14 +168,14 @@ fn to_moves_the_pin_to_a_revision_back_or_forward() {
 
     // An unknown revision fails with git's own message, and changes nothing.
     let lock = docs.read("ascribe.lock");
-    let error = update(&docs.workspace(), &[], Some("nope"), &docs.options()).unwrap_err();
+    let error = update(&docs.view(), &[], Some("nope"), &docs.options()).unwrap_err();
     assert!(
         matches!(&error, SourcesError::Git { name, message } if name == "api" && message.contains("nope")),
         "{error}"
     );
     assert_eq!(docs.read("ascribe.lock"), lock);
     assert!(matches!(
-        update(&docs.workspace(), &[], Some("-x"), &docs.options()),
+        update(&docs.view(), &[], Some("-x"), &docs.options()),
         Err(SourcesError::BadRevision(_))
     ));
 }
@@ -196,11 +190,11 @@ fn a_region_that_is_gone_is_left_for_check_to_report() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs#login\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
 
     code.write("src/auth.rs", "fn sign_in() {}\n");
     let head = code.commit("Rename login");
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert_eq!(report.sources[0].to, head);
     assert_eq!(pinned(&docs, "api"), head);
     let problems = docs.check();
@@ -224,7 +218,7 @@ fn two_sources_at_once_and_one_by_name() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n\n@snippet: cli:cmd/main.go\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
 
     api.write("src/auth.rs", V2);
     let api_head = api.commit("second");
@@ -232,13 +226,13 @@ fn two_sources_at_once_and_one_by_name() {
     let cli_head = cli.commit("second");
 
     // By name, only that one moves.
-    let report = update(&docs.workspace(), &["api".into()], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &["api".into()], None, &docs.options()).unwrap();
     assert_eq!(report.sources.len(), 1);
     assert_eq!(pinned(&docs, "api"), api_head);
     assert_eq!(pinned(&docs, "cli"), cli_first);
 
     // Without names, every one; the one already at its head doesn't move.
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     let moved: Vec<(&str, bool)> = report
         .sources
         .iter()
@@ -247,7 +241,7 @@ fn two_sources_at_once_and_one_by_name() {
     assert_eq!(moved, [("api", false), ("cli", true)]);
     assert_eq!(pinned(&docs, "cli"), cli_head);
     assert!(matches!(
-        update(&docs.workspace(), &[], Some("main"), &docs.options()),
+        update(&docs.view(), &[], Some("main"), &docs.options()),
         Err(SourcesError::ToNeedsOneSource)
     ));
 }
@@ -284,7 +278,7 @@ fn an_update_says_which_examples_went_stale_lost_their_observation_or_are_curren
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:a.rs\n\n@snippet: api:b.rs\n\n@snippet: api:c.rs\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
     let examples = |report: ascribe_sources::UpdateReport| report.sources[0].examples.clone();
     let example = |path: &str, status, was| ExampleUpdate {
         path: path.to_owned(),
@@ -299,7 +293,7 @@ fn an_update_says_which_examples_went_stale_lost_their_observation_or_are_curren
         observation(&[("a.rs", "a\n"), ("c.rs", "c\n")]),
     );
     code.commit("second");
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert_eq!(
         examples(report),
         [
@@ -316,14 +310,14 @@ fn an_update_says_which_examples_went_stale_lost_their_observation_or_are_curren
         observation(&[("a.rs", "a2\n"), ("c.rs", "c\n")]),
     );
     code.commit("third");
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert_eq!(
         examples(report),
         [example("a.rs", ExampleState::Current, ExampleState::Stale)]
     );
 
     // No move, nothing to say.
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert!(examples(report).is_empty());
 }
 
@@ -348,7 +342,7 @@ fn an_update_counts_an_example_current_when_any_observation_has_it_as_it_is() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:a.rs\n\n@snippet: api:b.rs\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
 
     // Both change; only `node-22` is run again, and only `a` passes it as
     // it is now. `a` stays current, by `node-22`; `b` goes stale.
@@ -357,7 +351,7 @@ fn an_update_counts_an_example_current_when_any_observation_has_it_as_it_is() {
         observation(&[("a.rs", "a2\n")]),
     );
     code.commit("second");
-    let report = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let report = update(&docs.view(), &[], None, &docs.options()).unwrap();
     assert_eq!(
         report.sources[0].examples,
         [ExampleUpdate {

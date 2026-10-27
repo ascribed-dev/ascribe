@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 
-use ascribe_check::Project;
 use ascribe_model::ContentModel;
 use ascribe_query::{ModelReport, Section as QuerySection};
 use ascribe_resolve::{DiskFs, Layout};
@@ -144,8 +143,8 @@ fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
         .load_model(&config)
         .map_err(Failure::Load)?;
     let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
-    let project = Project::load(&config).map_err(Failure::Load)?;
-    let index = project.index().clone();
+    let workspace = ascribe_check::load(&config).map_err(Failure::Load)?;
+    let index = workspace.snapshot().index().clone();
     Ok(Loaded {
         model: file.model,
         config: file.text,

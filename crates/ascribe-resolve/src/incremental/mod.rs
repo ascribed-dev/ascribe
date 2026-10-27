@@ -79,8 +79,8 @@
 //!
 //! See [`ids`]: an id names a path for the life of the project, is never
 //! reused for another path, and a rename is a deletion plus a creation.
-//! `ascribe_check::Project` numbers its sources the same way on a fresh load
-//! and accepts the ids a snapshot gives.
+//! `ascribe_check::Project` takes its sources' ids from the snapshot it
+//! checks.
 
 mod cache;
 mod ids;
@@ -611,6 +611,10 @@ pub struct IncrementalProject {
     include_rev: IncludeRev,
     parse_cache: ParseCache,
     fingerprints: Fingerprints,
+    /// Whether the parse cache, the signatures, the dependencies, and the
+    /// include revisions hold the loaded files yet: a project loaded with
+    /// [`IncrementalProject::load_deferred`] makes them on its first update.
+    prepared: bool,
     history: VecDeque<HistoryEntry>,
     stats: Stats,
 }
@@ -626,26 +630,29 @@ impl IncrementalProject {
         layout: Layout,
         fs: impl FileSystem + Send + 'static,
     ) -> IncrementalProject {
+        let mut project = IncrementalProject::load_deferred(model, layout, fs);
+        project.prepare();
+        project
+    }
+
+    /// [`IncrementalProject::load`], without what only an update needs: each
+    /// file's parse kept for reuse, its structure signature, and the paths
+    /// its references depend on are made on the first
+    /// [`IncrementalProject::apply`], if one comes. A project that's loaded
+    /// and never updated, as a command's, costs what a [`Project::load`]
+    /// costs; one that's updated ends up as if loaded with
+    /// [`IncrementalProject::load`].
+    pub fn load_deferred(
+        model: Arc<ContentModel>,
+        layout: Layout,
+        fs: impl FileSystem + Send + 'static,
+    ) -> IncrementalProject {
         let mut ids = FileIds::new();
         let project = Project::load_with_ids(model.clone(), layout, &fs, &mut ids);
-        let fingerprints = Fingerprints::of(&model);
-        let mut parse_cache = ParseCache::default();
-        let mut sigs = BTreeMap::new();
-        let mut deps = Deps::default();
-        let mut include_rev = IncludeRev::default();
-        let mut stamps = BTreeMap::new();
-        for index in project.files() {
-            parse_cache.put(
-                index.file,
-                &index.source,
-                fingerprints.parse(),
-                &index.document,
-            );
-            sigs.insert(index.path.clone(), structure_signature(index));
-            deps.set(project.layout(), index);
-            include_rev.set(index);
-            stamps.insert(index.path.clone(), Version(0));
-        }
+        let stamps = project
+            .files()
+            .map(|index| (index.path.clone(), Version(0)))
+            .collect();
         IncrementalProject {
             fs: Overlay::new(Box::new(fs)),
             ids,
@@ -654,13 +661,35 @@ impl IncrementalProject {
             latest: Arc::new(AtomicU64::new(0)),
             model_revision: 0,
             stamps: Arc::new(stamps),
-            sigs,
-            deps,
-            include_rev,
-            parse_cache,
-            fingerprints,
+            sigs: BTreeMap::new(),
+            deps: Deps::default(),
+            include_rev: IncludeRev::default(),
+            parse_cache: ParseCache::default(),
+            fingerprints: Fingerprints::of(&model),
+            prepared: false,
             history: VecDeque::new(),
             stats: Stats::default(),
+        }
+    }
+
+    /// Makes what an update reads of the loaded files, once: the parse
+    /// cache, the signatures, the dependencies, and the include revisions.
+    fn prepare(&mut self) {
+        if self.prepared {
+            return;
+        }
+        self.prepared = true;
+        for index in self.project.files() {
+            self.parse_cache.put(
+                index.file,
+                &index.source,
+                self.fingerprints.parse(),
+                &index.document,
+            );
+            self.sigs
+                .insert(index.path.clone(), structure_signature(index));
+            self.deps.set(self.project.layout(), index);
+            self.include_rev.set(index);
         }
     }
 
@@ -727,6 +756,7 @@ impl IncrementalProject {
         &mut self,
         changes: impl IntoIterator<Item = Change>,
     ) -> Result<Affected, ApplyError> {
+        self.prepare();
         let layout = self.project.layout().clone();
         // Which files are sources: the nested projects stay what they were at
         // load, since a batch that would change them is refused below.

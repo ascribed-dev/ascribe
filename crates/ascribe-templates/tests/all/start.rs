@@ -47,9 +47,8 @@ fn run(
     title: &str,
     path: Option<&str>,
 ) -> Result<NewPage, StartError> {
-    let project = ascribe_check::LOADER
-        .load(&dir.join("ascribe.toml"))
-        .map(Project::from_loaded)
+    let project = ascribe_check::load(&dir.join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
         .expect("the project loads");
     let path = path.map(|p| RelPath::parse(p).expect("a relative path"));
     start(&project, type_name, Some(title), path.as_ref())
@@ -183,9 +182,8 @@ fn an_unknown_type_or_a_title_with_no_name_in_it_is_refused() {
 #[test]
 fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
     let dir = project();
-    let project = ascribe_check::LOADER
-        .load(&dir.path().join("ascribe.toml"))
-        .map(Project::from_loaded)
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
         .expect("the project loads");
     let model = project.model();
     let takes = |folder: &str| -> Vec<&str> {
@@ -206,9 +204,8 @@ fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
 #[test]
 fn with_no_title_the_page_keeps_the_templates_and_needs_a_path() {
     let dir = project();
-    let project = ascribe_check::LOADER
-        .load(&dir.path().join("ascribe.toml"))
-        .map(Project::from_loaded)
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
         .expect("the project loads");
     let path = RelPath::parse("rotate.md").expect("a relative path");
     let page = start(&project, "how-to", None, Some(&path)).expect("started");

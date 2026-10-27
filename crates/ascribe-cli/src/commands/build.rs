@@ -21,7 +21,7 @@ use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
+use crate::context::{Failure, checked, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::json::About;
 use crate::report::{Counts, FileTable, json, text};
@@ -111,7 +111,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let color = use_color(global, stdout_is_terminal());
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
     // The checks, for every build asked for, before anything is written.

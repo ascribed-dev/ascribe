@@ -14,7 +14,7 @@ use ascribe_check::{Found, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, RelPath, diagnostics};
 use ascribe_query::QueryError;
-use ascribe_workspace::{LoadError, LocateError};
+use ascribe_workspace::{LoadError, LocateError, Workspace};
 use clap::ValueEnum;
 use serde::Serialize;
 
@@ -52,13 +52,14 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
 
 /// A loaded project, and what's kept with it between questions.
 pub struct Loaded {
-    /// The project.
+    /// The project, loaded once.
+    pub workspace: Rc<Workspace>,
+    /// The checks' view of it, on today, with any text laid over it
+    /// ([`Loaded::with_source`]).
     pub project: Project,
     /// The source index with the base's specs, once a link to a missing
     /// operation asks for it; `None` inside when the base can't be read.
     based_index: OnceCell<Option<Arc<ascribe_resolve::Project>>>,
-    /// The index the page-level checks read, once a check asks for it.
-    page_index: OnceCell<ascribe_check::PageIndex>,
     /// Each build's readings of its pages, once a search asks for the
     /// build.
     readings: ascribe_query::Readings,
@@ -75,12 +76,26 @@ struct Checked {
 }
 
 impl Loaded {
-    /// A project, not yet indexed.
-    pub fn new(project: Project) -> Loaded {
+    /// A project loaded, checked as on today.
+    pub fn new(workspace: Workspace) -> Loaded {
+        Loaded::over(Rc::new(workspace), |workspace| {
+            crate::context::checked(workspace)
+        })
+    }
+
+    /// The same project with the source file at `path` (a content path)
+    /// holding `text`: a file checked before it's saved
+    /// ([`Project::with_source`]). Nothing kept is shared.
+    pub fn with_source(&self, path: &RelPath, text: String) -> Loaded {
+        let project = self.project.with_source(path, text);
+        Loaded::over(Rc::clone(&self.workspace), |_| project)
+    }
+
+    fn over(workspace: Rc<Workspace>, project: impl FnOnce(&Workspace) -> Project) -> Loaded {
         Loaded {
-            project,
+            project: project(&workspace),
+            workspace,
             based_index: OnceCell::new(),
-            page_index: OnceCell::new(),
             readings: ascribe_query::Readings::default(),
             checks: RefCell::new(Vec::new()),
         }
@@ -108,20 +123,13 @@ impl Loaded {
         Ok(found)
     }
 
-    /// The index the page-level checks read ([`ascribe_check::PageIndex`]),
-    /// made on first use.
-    pub fn page_index(&self) -> &ascribe_check::PageIndex {
-        self.page_index
-            .get_or_init(|| ascribe_check::PageIndex::new(&self.project))
-    }
-
     /// Each build's readings of its pages that searches have made, kept
     /// with the project.
     pub fn readings(&self) -> &ascribe_query::Readings {
         &self.readings
     }
 
-    /// The project's source index ([`Project::index`]), made on first use.
+    /// The project's source index ([`Project::index`]).
     pub fn index(&self) -> &ascribe_resolve::Project {
         self.project.index()
     }
@@ -158,8 +166,7 @@ pub struct FromDisk;
 
 impl Projects for FromDisk {
     fn load(&self, config: &Path) -> Result<Rc<Loaded>, LoadError> {
-        Project::load(config)
-            .map(|project| Rc::new(Loaded::new(project.with_today(crate::clock::today()))))
+        ascribe_check::load(config).map(|workspace| Rc::new(Loaded::new(workspace)))
     }
 }
 

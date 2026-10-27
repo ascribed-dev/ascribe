@@ -29,7 +29,9 @@ fn convert_one(corpus: Corpus, path: &str, text: &str, docset: &str) -> Converte
 fn check(converted: &Converted) -> Vec<ascribe_check::Diagnostic> {
     let dir = tempfile::tempdir().expect("temp dir");
     converted.write_to(dir.path()).expect("writes");
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the model loads");
     check_all_builds(&project)
 }
 

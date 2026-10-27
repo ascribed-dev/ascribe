@@ -134,7 +134,9 @@ fn a_match_wholly_in_a_value_opens_the_phrase_in_ascribe_toml() {
 fn the_places_are_the_commands() {
     let f = quill();
     let mut client = started(&f);
-    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).unwrap();
+    let project = ascribe_check::load(&f.path("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .unwrap();
     for query in ["quill", "\"sign in\"", "streaming sync", "key"] {
         for build in [None, Some("cloud")] {
             let builds: Vec<String> = build.into_iter().map(str::to_owned).collect();

@@ -22,7 +22,7 @@ use ascribe_query::report::{Options, Ran, Report, Section, Tools};
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::context::{Failure, load_project};
+use crate::context::{Failure, checked, load_project};
 use crate::exit;
 use crate::report::FileTable;
 use crate::shell::quote;
@@ -267,7 +267,7 @@ pub(crate) fn report(
         return exit::fail(err, &ReportError::PromptSection);
     }
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => {
             let message = failure_message(failure);
             if args.format == Format::Json {

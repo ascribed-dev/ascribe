@@ -998,7 +998,7 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   client waiting on the change learns the server has caught up with it: the
   extension forgets the changed pages review keeps when it sees one. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
-  (`Project::from_parts_with_fs`), as the source index does.
+  (`WorkspaceSnapshot::of_index`), as the source index does.
 - **A code file's `snippet-tags`.** Each `snippet-tags` (ASC132) problem a
   file's `@snippet` has is also published on the code file whose tags it's
   about, at the tag (`compute::on_code_files`): the same message, severity,

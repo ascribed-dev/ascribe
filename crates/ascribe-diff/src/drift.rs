@@ -172,12 +172,12 @@ pub fn drift(
 
 /// The project at a revision, read and indexed; `None` when it has no
 /// `ascribe.toml` there.
-pub(crate) type BaseProject = Option<(Revision, Project)>;
+pub(crate) type BaseProject = Option<(Revision, Arc<Project>)>;
 
 /// The project at `commit`, read and indexed.
 pub(crate) fn read_base(repo: &Repository, commit: &str) -> Result<BaseProject, DiffError> {
     Ok(Revision::read(repo, commit)?.map(|revision| {
-        let project = revision.project();
+        let project = revision.workspace().snapshot().index().clone();
         (revision, project)
     }))
 }

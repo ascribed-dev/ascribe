@@ -334,7 +334,8 @@ fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
 /// them, so a permalink they add is in it, and so is every one they had.
 #[test]
 fn the_docs_list_of_permalinks_is_current() {
-    let project = ascribe_check::Project::load(&repo().join("docs/ascribe.toml")).unwrap();
+    let workspace = ascribe_check::load(&repo().join("docs/ascribe.toml")).unwrap();
+    let project = ascribe_check::Project::new(workspace.snapshot());
     let synced = ascribe_query::permalinks::sync(
         project.index(),
         project.permalinks(),

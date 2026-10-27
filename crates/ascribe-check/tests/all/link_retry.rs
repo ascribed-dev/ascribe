@@ -92,13 +92,19 @@ impl LinkChecker for FailsAgain {
 fn project(page: String) -> Project {
     let text = "spec = \"0.1\"\n";
     let model = ascribe_model::load_str(text, FileId::new(0)).expect("a model");
-    let sources = Project::from_sources([(RelPath::parse("index.md").expect("a path"), page)]);
-    Project::from_parts(
-        std::env::temp_dir(),
-        RelPath::root(),
-        model,
-        text.to_owned(),
-        sources,
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+        RelPath::parse("index.md").expect("a path"),
+        page,
+    )]);
+    Project::new(
+        ascribe_check::in_memory(
+            std::env::temp_dir(),
+            RelPath::root(),
+            model,
+            text.to_owned(),
+            sources,
+        )
+        .snapshot(),
     )
 }
 

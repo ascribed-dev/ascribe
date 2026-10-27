@@ -108,7 +108,9 @@ fn time_cli(name: &str, metric: &str, bin: &Path, dir: &Path, args: &[&str], run
 fn phases(name: &str, dir: &Path) {
     let config = dir.join("ascribe.toml");
     let start = Instant::now();
-    let project = Project::load(&config).expect("loads");
+    let project = ascribe_check::load(&config)
+        .map(|w| Project::new(w.snapshot()))
+        .expect("loads");
     let load = start.elapsed();
     let start = Instant::now();
     let file_level = check_files(&project);

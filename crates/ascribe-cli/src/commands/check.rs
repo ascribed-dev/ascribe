@@ -483,7 +483,7 @@ pub fn run_check(
     };
     let mut found = if args.editor_build {
         request
-            .find(project, Some(loaded.page_index()))
+            .find(project)
             .map(Found::from)
             .map_err(Stopped::Build)?
     } else {
@@ -525,7 +525,7 @@ pub fn run_check(
                 })
             });
             let found = loaded.diagnosed(&args.build, |project| {
-                request.find(project, None).map(Found::from)
+                request.find(project).map(Found::from)
             });
             let base = base.map(|thread| {
                 thread
@@ -549,7 +549,7 @@ pub fn run_check(
         {
             let based = project.clone().with_base_apis(Arc::new(apis));
             found = request
-                .find(&based, None)
+                .find(&based)
                 .map(Found::from)
                 .map_err(Stopped::Build)?;
         }
@@ -966,14 +966,13 @@ fn load(
             stdin
                 .read_to_string(&mut text)
                 .map_err(|e| Failure::Check(CheckError::Stdin(e)))?;
-            let project = project.with_source(&content_path, text);
             let scope = project
                 .content_root()
                 .join(content_path.as_str())
                 .map(|p| Scope::new([p]))
                 .ok();
             Ok(Checked {
-                loaded: Rc::new(Loaded::new(project)),
+                loaded: Rc::new(loaded.with_source(&content_path, text)),
                 config,
                 scope,
             })

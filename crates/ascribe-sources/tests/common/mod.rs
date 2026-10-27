@@ -6,11 +6,8 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::Arc;
 
-use ascribe_core::{FileId, RelPath};
-use ascribe_resolve::{DiskFs, Layout};
-use ascribe_sources::{Options, Workspace};
+use ascribe_sources::{Options, SourcesView};
 
 /// Runs `git` in `dir`, with a fixed identity and no user configuration.
 pub fn git(dir: &Path, args: &[&str]) -> String {
@@ -146,16 +143,9 @@ impl Docs {
     }
 
     /// The project as the commands see it, read from disk now.
-    pub fn workspace(&self) -> Workspace {
-        let text = std::fs::read_to_string(self.root().join("ascribe.toml")).unwrap();
-        let model = ascribe_model::load_str(&text, FileId::new(0)).unwrap();
-        let layout = Layout {
-            content_root: RelPath::parse(&model.project.content_root).unwrap(),
-            output_dir: RelPath::parse(&model.project.output_dir).unwrap(),
-        };
-        let fs = DiskFs::new(self.root(), &layout);
-        let project = ascribe_resolve::Project::load(Arc::new(model.clone()), layout, &fs);
-        Workspace::new(self.root(), &model, &project).unwrap()
+    pub fn view(&self) -> SourcesView {
+        let workspace = ascribe_check::load(&self.root().join("ascribe.toml")).unwrap();
+        SourcesView::new(&workspace.snapshot()).unwrap()
     }
 
     pub fn read(&self, rel: &str) -> Option<String> {
@@ -168,7 +158,9 @@ impl Docs {
 
     /// The diagnostics' slugs of `ascribe check`'s file-level checks.
     pub fn check(&self) -> Vec<String> {
-        let project = ascribe_check::Project::load(&self.root().join("ascribe.toml")).unwrap();
+        let project = ascribe_check::load(&self.root().join("ascribe.toml"))
+            .map(|w| ascribe_check::Project::new(w.snapshot()))
+            .unwrap();
         ascribe_check::check_files(&project)
             .into_iter()
             .map(|d| format!("{} {}", d.slug.as_str(), d.message))
