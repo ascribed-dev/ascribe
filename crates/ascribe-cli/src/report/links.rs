@@ -6,7 +6,7 @@
 use std::borrow::Cow;
 
 /// `text` with each Markdown link outside a code span written plainly:
-/// ``[`[checks]`](content-model/checks.md#19-checks)`` as `` `[checks]` ``,
+/// ``[`[checks]`](content-model/checks.md#22-checks)`` as `` `[checks]` ``,
 /// and `[Vale](https://vale.sh)` as `Vale (https://vale.sh)`.
 pub fn plain(text: &str) -> Cow<'_, str> {
     if !text.contains("](") {
@@ -94,7 +94,7 @@ mod tests {
     fn a_docs_link_becomes_its_text() {
         assert_eq!(
             plain(
-                "turn the check off in [`[checks]`](content-model/checks.md#19-checks) (`page-orphan = \"off\"`)."
+                "turn the check off in [`[checks]`](content-model/checks.md#22-checks) (`page-orphan = \"off\"`)."
             ),
             "turn the check off in `[checks]` (`page-orphan = \"off\"`)."
         );
