@@ -436,9 +436,12 @@ struct Next {
     memos: Arc<OnceLock<Vec<MemoFile>>>,
     all_memos: Arc<OnceLock<Vec<MemoFile>>>,
     images: Arc<OnceLock<Vec<(RelPath, RelPath)>>>,
-    /// The new model and its text, the side files as they read now, and
-    /// what's dropped of what was read on demand.
-    changed: (Option<(Arc<ContentModel>, String)>, Vec<Held>, Dropped),
+    /// The new model and its text, if it changed.
+    new_model: Option<(Arc<ContentModel>, String)>,
+    /// The side files as they read now.
+    side: Vec<Held>,
+    /// What's dropped of what was read on demand.
+    drop: Dropped,
 }
 
 impl Next {
@@ -458,14 +461,15 @@ impl Next {
             memos: old.memos.clone(),
             all_memos: old.all_memos.clone(),
             images: old.images.clone(),
-            changed: (model, side, drop.clone()),
+            new_model: model,
+            side,
+            drop: drop.clone(),
         }
     }
 
     /// The next snapshot, of `index`.
     fn assemble(self, index: Arc<ascribe_resolve::Project>) -> WorkspaceSnapshot {
-        let (new_model, side, drop) = self.changed;
-        let (model, model_text) = new_model.unwrap_or((self.model, self.model_text));
+        let (model, model_text) = self.new_model.unwrap_or((self.model, self.model_text));
         let mut failed = unreadable(&index);
         failed.sort_by(|a, b| a.0.cmp(&b.0));
         let mut inner = Inner::assemble(
@@ -474,20 +478,20 @@ impl Next {
                 model,
                 model_text,
                 index,
-                side,
+                side: self.side,
                 side_list: self.side_list,
                 fs: self.fs,
             },
             failed,
         );
-        if !drop.code {
+        if !self.drop.code {
             inner.code = self.code;
         }
-        if !drop.memos {
+        if !self.drop.memos {
             inner.memos = self.memos;
             inner.all_memos = self.all_memos;
         }
-        if !drop.images {
+        if !self.drop.images {
             inner.images = self.images;
         }
         WorkspaceSnapshot(Arc::new(inner))
