@@ -90,6 +90,10 @@ export const rewrites: Rewrite[] = [
     run: "ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_anchors::",
   },
   {
+    writer: "crates/ascribe-emit/tests/all/site_sidebar.rs",
+    run: "ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar",
+  },
+  {
     writer: "crates/ascribe-emit/tests/all/zod.rs",
     run: "ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all zod",
   },
