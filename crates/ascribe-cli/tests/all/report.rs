@@ -103,14 +103,14 @@ fn with_no_section_it_reports_what_needs_nothing_outside_the_project() {
     assert!(text.contains("By type: guide 2, page 1."), "{text}");
     assert!(text.contains("By owner: platform 2, no owner 1."), "{text}");
     assert!(
-        text.contains("server leaves out 1 page and 0 pieces of content that another build keeps:\n    guides/cloud.md: "),
+        text.contains("server leaves out 1 page that another build keeps:\n    guides/cloud.md: not available (available: cloud); cloud publishes it\n"),
         "{text}"
     );
     assert!(!text.contains("External links"), "{text}");
 
     let out = ascribe(dir.path(), &["report", "--format", "json"]);
     let report = json(&out);
-    assert_eq!(report["schema_version"], 2);
+    assert_eq!(report["schema_version"], 3);
     assert_eq!(
         report["sections"],
         serde_json::json!(["problems", "inventory", "builds"])
@@ -124,6 +124,108 @@ fn with_no_section_it_reports_what_needs_nothing_outside_the_project() {
     assert_eq!(
         report["builds"][1]["pages"]["items"][0]["kept_by"],
         serde_json::json!(["cloud"])
+    );
+    assert_eq!(
+        report["builds"][1]["pages"]["items"][0]["kind"],
+        "availability"
+    );
+    assert_eq!(report["builds"][1]["pages"]["items"][0]["mark"], "cloud");
+}
+
+/// Each mark is one entry, at its line, under its heading, however many
+/// blocks it takes out; the build's line counts marks by what they take out.
+#[test]
+fn builds_list_each_mark_once() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        r#"spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "server"]
+versionless = ["cloud", "server"]
+
+[builds.cloud]
+availability = { filter = "cloud" }
+variants = { deployment = "cloud" }
+
+[builds.server]
+availability = { filter = "server" }
+variants = { deployment = "server" }
+
+[editor]
+build = "cloud"
+"#,
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Sign events\n@id: sign\n@available: server\n\nOne.\n\nTwo.\n\n- Three.\n\n## Connect\n\n@variant {deployment=cloud}:\nIn the cloud.\n\n@variant {deployment=server}:\nOn a server.\n@end\n\n@include: _parts/note.md\n",
+    );
+    write(
+        dir.path(),
+        "docs/_parts/note.md",
+        "@available: server\nOnly on a server.\n",
+    );
+    write(
+        dir.path(),
+        "docs/server.md",
+        "---\ntitle: Server\nvariant:\n  deployment: server\n---\n\nOn a server.\n",
+    );
+    let out = ascribe(dir.path(), &["report", "builds"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("  cloud leaves out 1 page, 1 section, 1 block, and 1 variant arm that another build keeps:\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains("    server.md: not this build's variant (variant: deployment=server); server publishes it\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains("    index.md § Sign events (line 7): Available on server (GA), not cloud; server keeps it\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains(
+            "    index.md § Connect (line 20): variant arm the build doesn't show (it shows only deployment=cloud); server keeps it\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("    index.md § Connect (docs/_parts/note.md:1): "),
+        "{text}"
+    );
+    assert_eq!(text.matches("index.md § Sign events").count(), 1, "{text}");
+
+    let report = json(&ascribe(
+        dir.path(),
+        &["report", "builds", "--format", "json"],
+    ));
+    let content = &report["builds"][0]["content"];
+    assert_eq!(content["total"], 3, "{content}");
+    let first = &content["items"][0];
+    assert_eq!(first["heading"], "Sign events");
+    assert_eq!(first["scope"], "section");
+    assert_eq!(first["range"]["start"]["line"], 7);
+    assert_eq!(content["items"][2]["file"], "docs/_parts/note.md");
+    assert_eq!(content["items"][2]["scope"], "block");
+
+    // In Markdown, a heading's text is escaped.
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Use `snake_case` keys\n@available: server\n\nOne.\n",
+    );
+    let markdown = stdout(&ascribe(
+        dir.path(),
+        &["report", "builds", "--format", "markdown"],
+    ));
+    assert!(
+        markdown.contains("§ Use snake\\_case keys (line 6)"),
+        "{markdown}"
     );
 }
 

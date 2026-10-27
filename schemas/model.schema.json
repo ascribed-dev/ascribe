@@ -8,11 +8,11 @@
           "type": "string"
         },
         "reference": {
-          "description": "Where its reference is: the renderer's page, or the template of an\noperation's address, as written.",
+          "description": "Where its reference is: the renderer's page, or an address\npattern, as written.",
           "type": "string"
         },
         "renderer": {
-          "description": "The renderer its reference is published with, `redoc`; absent when\n`reference` is a template of an operation's address.",
+          "description": "The renderer its reference is published with, `redoc`; absent when\n`reference` is an address pattern.",
           "type": [
             "string",
             "null"

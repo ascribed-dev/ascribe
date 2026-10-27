@@ -595,7 +595,7 @@ pub const CONTENT_TYPE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("content-type-un
 /// `ASC198`, advice, file level: a content check (area `pages`).
 pub const DESCRIPTION_LINK: DiagnosticSlug = DiagnosticSlug("description-link");
 
-/// `ASC199`, advice, file level: a content check (area `examples`).
+/// `ASC199`, warning, file level: a content check (area `examples`).
 pub const EXAMPLE_STALE: DiagnosticSlug = DiagnosticSlug("example-stale");
 
 /// `ASC200`, advice, file level: a content check (area `examples`).
@@ -882,6 +882,13 @@ pub const BUILD_FILTER_LINE_UNDECLARED: DiagnosticSlug =
 /// (its key in any case, then optional spaces and `=`) but isn't one".
 pub const INFO_PAIR_MALFORMED: DiagnosticSlug = DiagnosticSlug("info-pair-malformed");
 
+/// `ASC285`, warning, file level: a content check (area `examples`).
+pub const EXAMPLES_CONFIG_UNREAD: DiagnosticSlug = DiagnosticSlug("examples-config-unread");
+
+/// `ASC286`, error, file level: a content check (area `pages`).
+pub const TEMPLATE_PLACEHOLDER_PUBLISHED: DiagnosticSlug =
+    DiagnosticSlug("template-placeholder-published");
+
 /// The checks renamed, each by the name it had before, which still names
 /// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
 /// release (decision #953).
@@ -1161,6 +1168,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
     INFO_PAIR_MALFORMED,
+    EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1221,6 +1230,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     ADDRESSES_BASE_UNREADABLE,
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
+    EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
 ];
 
 /// The configurable checks that are off unless a project names them in

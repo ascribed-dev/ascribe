@@ -30,6 +30,17 @@ fn a_page_is_its_frontmatter_and_its_body() {
 }
 
 #[test]
+fn a_published_pages_draft_false_is_left_out_of_its_frontmatter() {
+    // A page in the output is published, and the Zod schema has no `draft`.
+    let source = "---\ntitle: Test\ndraft: false\n---\n\nHello.\n";
+    let project = memory_project(FULL_MODEL, &[("index.md", source)]);
+    assert_eq!(
+        site(&project, "site", "index.md"),
+        "---\ntitle: Test\nsource: index.md\n---\n\nHello.\n"
+    );
+}
+
+#[test]
 fn a_code_blocks_request_and_response_are_left_out() {
     // SPEC §3.3.1: the site keeps `title` and `tested` for the caption.
     let out = body(

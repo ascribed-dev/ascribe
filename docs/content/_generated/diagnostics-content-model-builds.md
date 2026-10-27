@@ -167,7 +167,7 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to one of the builds the message lists.
 
-**Read more:** [`[editor]`](../content-model/output.md#17-editor) in the `ascribe.toml` reference.
+**Read more:** [`[editor]`](../content-model/checks.md#23-editor) in the `ascribe.toml` reference.
 
 ### ASC118 `model-editor-build-required`
 @id {permalink=true}: ASC118
@@ -181,7 +181,7 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to the build the editor should check, or name one of the builds `site`.
 
-**Read more:** [`[editor]`](../content-model/output.md#17-editor) in the `ascribe.toml` reference.
+**Read more:** [`[editor]`](../content-model/checks.md#23-editor) in the `ascribe.toml` reference.
 
 ### ASC162 `model-consumer-agents-site`
 @id {permalink=true}: ASC162
@@ -239,7 +239,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Split the string into one string per line: `lines = ["User-agent: *", "Disallow: /drafts/"]`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ### ASC189 `model-crawlers-named-twice`
 @id {permalink=true}: ASC189
@@ -253,7 +253,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Name each crawler in one group. Move the lines for it into the first group that names it and remove the second `User-agent` line. For a crawler a disallowed purpose covers, the purpose's group already says `Disallow: /`: remove the group from `lines`, or allow the purpose and write the crawler's group whole in `lines`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ## `[listing]`
 
@@ -269,7 +269,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the folder's path from the content root, ending in `/`, with its name's case as it is on disk: `"internal/" = "unlisted"`. A rule is for a folder and everything under it; patterns aren't read.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ### ASC186 `model-listing-type`
 @id {permalink=true}: ASC186
@@ -283,7 +283,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Name a content type the project declares in `[types]`, or `page` when it declares none.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ### ASC187 `model-listing-looser`
 @id {permalink=true}: ASC187
@@ -297,7 +297,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the narrower rule, or make it as strict as the one it's under, or stricter: `listed`, then `unquoted`, then `unlisted`. To list some pages more openly than the rest, loosen the wider rule, and restrict the others with rules of their own.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ## `[apis]`
 
@@ -313,21 +313,21 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Fix:** Give the API a `spec` inside the project's repository: a spec in another repository isn't read, so commit a copy of it, or the file your pipeline bundles. With no repository, the editor and `ascribe mcp` read a spec only inside the folder they were opened on: open the folder that contains it.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ### ASC260 `model-api-reference`
 @id {permalink=true}: ASC260
-@summary: An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+@summary: An API's `reference` is an address pattern with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
 
 Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
-**When:** An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+**When:** An API's `reference` is an address pattern with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
 
 **Message:** the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same
 
-**Fix:** Write the template as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `"/api/#/operations/{operationId}"` for Stoplight Elements. For Redoc, write `{ renderer = "redoc", at = "/api/" }` instead.
+**Fix:** Write the address pattern as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `"/api/#/operations/{operationId}"` for Stoplight Elements. For Redoc, write `{ renderer = "redoc", at = "/api/" }` instead.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ## `[checks]`
 
@@ -343,7 +343,7 @@ Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](../checks/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC146 `model-intended-check`
 @id {permalink=true}: ASC146

@@ -1,11 +1,11 @@
 ---
 type: reference
 title: "The head, sitemap, `robots.txt`, and headers"
-description: "What @ascribed/astro writes from the page records for search engines and crawlers: each page's head, the sitemap, robots.txt, and the Markdown versions' response headers."
+description: "What `@ascribed/astro` writes from the page records for search engines and crawlers: each page's head, the sitemap, `robots.txt`, and the Markdown versions' response headers."
 permalink: search-engines
 ---
 
-Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/checks.md#22-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/checks.md#21-crawlers). `@ascribed/astro` writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Publishing](index.md) says what a project tells search engines and agents, and why.
+Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/output.md#17-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/output.md#18-crawlers). `@ascribed/astro` writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Publishing](index.md) says what a project tells search engines and agents, and why.
 
 ## The head
 
@@ -92,7 +92,7 @@ Disallow: /
 Sitemap: https://docs.example.com/sitemap.xml
 ```
 
-It writes a group for each purpose a project disallows, such as `training = "disallow"`, naming every crawler of that purpose Ascribe knows ([crawlers by purpose](../content-model/checks.md#crawlers-by-purpose)), each purpose once. Then it opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file: a project with no `[crawlers]` and an address gets the sitemap's line alone.
+It writes a group for each purpose a project disallows, such as `training = "disallow"`, naming every crawler of that purpose Ascribe knows ([crawlers by purpose](../content-model/output.md#crawlers-by-purpose)), each purpose once. Then it opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file: a project with no `[crawlers]` and an address gets the sitemap's line alone.
 
 - **Projects of one site must agree on each purpose,** since they share the file. One that allows a purpose and one that disallows it fail `astro build`, naming both, and `astro dev` serves no `robots.txt` until they agree. A project that leaves a purpose out agrees with either.
 - **A site with its own `robots.txt`** in `public/` keeps it, and the integration writes none. The build says so, with the lines Ascribe would have written; copy them into your file.

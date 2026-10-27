@@ -18,8 +18,8 @@ The views show the active file's project, named beside Pages' and Content model'
 
 **Project** is about the whole project, where This page is about one page. It shows the same project as the views below it.
 
-![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM", has nothing to do, so it's its head alone, with "Nothing to do" at its end. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-light.png){scheme=light}
-![The Project view for the project quill, with the rest of the Ascribe sidebar closed: at its top the project's name, with a gear and a settings button beside it, its folder, its server "running" with buttons to show its output and restart it, the version of `ascribe` the server runs, and a Build switch showing "site, line 3.5, the current line, editor build". Actions lists Check Every Build under Check; Apply Every Safe Fix, Format Every Page, Build, Sync Agent Files, and Observe Examples under Write; and Start Review and Prompt Agent to Fix This Project under Review and agents. Health, "3 to do", groups its counts by when each is from. Every build, "checked at 02:02 PM", has nothing to do, so it's its head alone, with "Nothing to do" at its end. As you type: 1 page nothing links to and 2 unused model entries. At the last save, "02:02 PM": 3 agent files out of date. About is closed.](../images/project-dark.png){scheme=dark}
+![The Project view for the project quill, with its name, folder, server, and Build switch at the top, then its Actions, Health, and About sections.](../images/project-light.png){scheme=light}
+![The Project view for the project quill, with its name, folder, server, and Build switch at the top, then its Actions, Health, and About sections.](../images/project-dark.png){scheme=dark}
 
 At its top:
 
@@ -79,7 +79,6 @@ The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says wh
 Each first says how much it changes and asks: "Apply 6 safe fixes in 4 files? They're left unsaved, to read before you save them." Each opens the files it changes, unsaved, so you can read them first. **File: Save All** saves them, and **Undo** takes the edit back. [How the whole-project edits apply](#how-the-whole-project-edits-apply) has the rest.
 
 ### Addresses lost
-@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), Health has a group after **Every build**, **Against the base**, with one count:
 
@@ -94,8 +93,8 @@ In a project that [keeps its addresses](../publishing/redirects.md), Health has 
 
 **This page** says what's known about the page you're working in. Its sections are **About**, **Health**, **Connections**, and **Memos**. While review is on, **Review** comes after About ([Review in the preview](review.md#the-review-view)).
 
-![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its address, /install-agent/, its Markdown version, not published, its availability, the builds that publish it, its listing, "Listed (the default)", and its three permalinks. Health says its problems, none, its description's length, 102 characters, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-light.png){scheme=light}
-![The This page view, with the rest of the Ascribe sidebar closed, beside the page Install the Quill agent with the cursor under its heading "Install the agent". At the view's top are the page's title, its type, page, and its path, install-agent.md. About gives its address, /install-agent/, its Markdown version, not published, its availability, the builds that publish it, its listing, "Listed (the default)", and its three permalinks. Health says its problems, none, its description's length, 102 characters, and its size, "2,567 of 50,000 characters, in site@3.4". Connections, titled to “Install the agent”, lists under Linked from the file keys.md and its line that links there, with its line number, under Included by none, and under Includes the fragment _fragments/prerequisites.md. Memos, titled about “Install the agent”, lists one memo by its first line, with its file, memos/agent-first.md, beside it.](../images/this-page-dark.png){scheme=dark}
+![The This page view beside the page Install the Quill agent, with its About, Health, Connections, and Memos sections for the heading under the cursor.](../images/this-page-light.png){scheme=light}
+![The This page view beside the page Install the Quill agent, with its About, Health, Connections, and Memos sections for the heading under the cursor.](../images/this-page-dark.png){scheme=dark}
 
 Only About starts open. The other headers say whether to open them: Health's count of the rows that warn, such as "2 rows warn", Connections' heading, and Memos' "none". The view's badge shows Health's count, so you see it with This page collapsed or Health closed.
 
@@ -131,7 +130,6 @@ The head at the top shows the page's title, its type ("fragment" for a fragment)
 A fragment has no builds, listing, or size of its own: it's published only where it's included. [This page's rows](#this-pages-rows) has what each row measures and when it warns.
 
 ### Old addresses
-@available: ascribe 0.4.4
 
 In a project that [keeps its addresses](../publishing/redirects.md), About has an **Also answers at** row after **Markdown** for each old address an entry of `ascribe.addresses` leads to the page. These are the redirects the build writes to it, such as `/docs/guides/my-setup` on a page moved from `guides/my-setup.md`. Its tooltip names the entry. A row goes when the entry does, and an entry you've added and not saved counts.
 
@@ -139,15 +137,16 @@ In a project that [keeps its addresses](../publishing/redirects.md), About has a
 
 **Pages** shows the project's [navigation](../navigation/index.md) in its order, then the fragments by folder, each with the files that include it. A page shows its [`nav-label`](../navigation/index.md#a-page-s-label), or else its title. Its tooltip counts the links and includes that reach it. **New Page**, in the title bar, starts a page ([Start a page](actions.md#start-a-page)).
 
-![The Pages view for the project quill, with the rest of the Ascribe sidebar closed and the status bar showing the cloud build. Start, the content root's section, lists its pages by title with their paths beside them, first Try Quill in the browser, quickstart.md, and Install the Quill agent, install-agent.md; four pages the cloud build leaves out, Configure the agent, Configure the agent (3.4), Upgrade the agent, and Webhooks, say "Not in cloud" in place of their paths, dimmed; and API keys, which ascribe.nav leaves out of the section's order, comes last, with a warning icon and "not placed". The section Reference, reference/, lists its own page first, then quill.yaml, then The quill command, reference/cli.md, in red with a count of 1 for the error on it. Fragments, closed, counts one.](../images/pages-light.png){scheme=light}
-![The Pages view for the project quill, with the rest of the Ascribe sidebar closed and the status bar showing the cloud build. Start, the content root's section, lists its pages by title with their paths beside them, first Try Quill in the browser, quickstart.md, and Install the Quill agent, install-agent.md; four pages the cloud build leaves out, Configure the agent, Configure the agent (3.4), Upgrade the agent, and Webhooks, say "Not in cloud" in place of their paths, dimmed; and API keys, which ascribe.nav leaves out of the section's order, comes last, with a warning icon and "not placed". The section Reference, reference/, lists its own page first, then quill.yaml, then The quill command, reference/cli.md, in red with a count of 1 for the error on it. Fragments, closed, counts one.](../images/pages-dark.png){scheme=dark}
+![The Pages view for the project quill while the status bar shows the cloud build, with the pages that build leaves out dimmed.](../images/pages-light.png){scheme=light}
+![The Pages view for the project quill while the status bar shows the cloud build, with the pages that build leaves out dimmed.](../images/pages-dark.png){scheme=dark}
 
 Its sections start closed. Opening a page selects it in Pages and opens the sections above it, so you see the open page's path.
 
 To change the order, drag a section or a page where you want it, and Pages writes `ascribe.nav`, unsaved. [Or drag them in the editor](../navigation/order.md#or-drag-them-in-the-editor) has how each drag is placed, **Place Here** for a page the file leaves out, and **Rename Label…**.
 
 - A page or fragment with a problem is red for an error and yellow for a warning, as in the Explorer.
-- A page the status bar's build leaves out is dimmed, title and icon, as the [build lens](preview.md#the-build-lens) dims text. See [Pages' colors](#pages-colors).
+- A page the status bar's build leaves out is dimmed, title and icon, as the [build lens](preview.md#the-build-lens) dims text, and says "Not in" and the build's name in place of its path. See [Pages' colors](#pages-colors).
+- A page `ascribe.nav` leaves out of its section's order comes last in the section, marked **not placed**.
 - A page's menu has **Open Preview to the Side**, also its button; **Copy Link**; **Rename or Move…**; **Find All References**; and **Reveal in Explorer**. A fragment's menu has the last three. [Pages' menus](#pages-menus) says what each does.
 - **New Page Here**, in a section's menu, starts a page in its folder ([Start a page](actions.md#start-a-page)).
 - **Orphans Only**, the filter button in the title bar, lists only the pages and fragments nothing links to or includes. Choose it again to list everything.
@@ -167,10 +166,10 @@ Clicking an entry or a value opens its declaration in `ascribe.toml`, or a gloss
 
 ## The status bar
 
-While a page or an `ascribe.toml` is the active editor, the status bar names its project and the [build you're looking at](preview.md#the-build-youre-looking-at), with an icon for its language server's state. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state.
+While a page or an `ascribe.toml` is the active editor, the status bar names its project and the [build you're looking at](preview.md#the-build-youre-looking-at), with an icon for its language server's state: a slashed circle before a page of the project has opened ("docs: not checked yet"), a spinning arrow while the server starts, a book while it runs, an eye while the build lens dims by a build, and a warning when the server failed. While it runs, it also says which builds the Problems panel covers, such as "problems: this build only". Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state.
 
-![The status bar item in five states, one above another: "docs: not checked yet" with a slashed circle, before a page of the project has opened; "docs" with a spinning arrow, while its language server starts; "docs · site · problems: this build only" with a book, while it runs and the Problems panel covers the editor build alone; "docs · windows · problems: site only" with an eye, while the build lens dims by the windows build; and "docs" with a warning, when the server failed.](../images/status-bar-light.png){scheme=light}
-![The status bar item in five states, one above another: "docs: not checked yet" with a slashed circle, before a page of the project has opened; "docs" with a spinning arrow, while its language server starts; "docs · site · problems: this build only" with a book, while it runs and the Problems panel covers the editor build alone; "docs · windows · problems: site only" with an eye, while the build lens dims by the windows build; and "docs" with a warning, when the server failed.](../images/status-bar-dark.png){scheme=dark}
+![The status bar item in five states, one above another, each with its own icon.](../images/status-bar-light.png){scheme=light}
+![The status bar item in five states, one above another, each with its own icon.](../images/status-bar-dark.png){scheme=dark}
 
 Click it, or run **Ascribe: Project Menu**, for a menu of the project: **Switch build**, **Check every build**, **Show output**, **Switch project** in a workspace with several projects, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**. The [Project view](#the-project-view) has the same jobs for its project, and each does the same there.
 
@@ -212,7 +211,6 @@ The view never checks every build by itself, since that can take a few seconds o
 About's builds and content types are the language server's, so they're known once it runs. Its sources are what `ascribe model` says.
 
 ### When Addresses lost updates
-@available: ascribe 0.4.4
 
 The language server compares the addresses with the base's on its own, between checks: when the project loads, after a save, after a change on disk such as a page deleted in the Explorer or a `git checkout`, and as you edit `ascribe.addresses`, so a move's entry counts before you save it. It doesn't compare as you type in a page. While the server is starting, or when the base can't be read, the count is a dash and the head says why, with the reason in the Problems panel.
 
@@ -235,7 +233,7 @@ A row whose state can warn says the state in the warning color only when there's
 - **Address** is written as the site output's links write it. It opens the site's origin and the address, in your browser, after VS Code asks about a domain it doesn't trust yet. That's the published site, not your branch: a page that's new or moved on your branch isn't there yet, and the row's tooltip says so. Without a `site`, for a fragment, and where the build the status bar shows leaves the page out, it's text and opens nothing.
 - **Markdown** says "not published" when the project publishes no Markdown versions ([`[consumer] agents`](../content-model/output.md#consumer), on by default with a `site`). It opens its Markdown version as Address opens the page. A fragment's address is only where it's included.
 - **Builds** names the builds that publish the page and the ones that leave it out.
-- **Listing** is what [`pages.json`](../content-model/checks.md#22-listing) says of the page, and the rule that sets it.
+- **Listing** is what [`pages.json`](../content-model/output.md#17-listing) says of the page, and the rule that sets it.
 - **Permalink**'s tooltip has the summary a product shows with its help, as [`help.json`](../permalinks/in-your-product.md#writing-summaries) writes it in the editor's build: the section's `@summary`, or the page's description for its own. Or it says the section has none, which [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252) reports when it's turned on.
 
 In Health:
@@ -243,7 +241,7 @@ In Health:
 - **Problems** is VS Code's problems for the page, counted as the status bar counts them, leaving out a severity there's none of. Its filter's **Show Active File Only** keeps the Problems panel to the page.
 - **Description** is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. Its length is its field's default's when the page leaves the field out or empty. It's measured against the 300 characters its line in `llms.txt` reads best under, when the project publishes one, and led by "too long", with a warning, only where [`description-too-long`](../checks/diagnostics/output-checks.md#ASC163) reports it.
 - **Review** comes from the field with the [`recheck-date` role](../content-model/index.md#54-field-roles), as [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
-- **Size** is the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#19-checks) measures it. It's shown always, so a page is seen growing toward the limit, and led by "too large" once it reaches it.
+- **Size** is the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#22-checks) measures it. It's shown always, so a page is seen growing toward the limit, and led by "too large" once it reaches it.
 - **Example** is each tested example a `@snippet` of the page shows: its state first, tested, changed since it was tested, or not tested, then its address, what it was tested with, and the heading it's under.
 
 ### Pages and Content model

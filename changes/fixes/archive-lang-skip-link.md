@@ -1,0 +1,1 @@
+- **Fixed:** An archive's pages declare their language. Each starts with a "Skip to content" link past the sidebar too, for a keyboard at a phone's width. See the [archive contract](docs/content/contracts/archive.md).

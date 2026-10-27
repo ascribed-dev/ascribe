@@ -1,0 +1,6 @@
+.card {
+  /* :snippet-start: card */
+  padding: 1rem;
+  outline: 1px solid red; /* :remove: */
+  /* :snippet-end: */
+}

@@ -6,13 +6,14 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/templates/index.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe init` | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates]` | `text`, `json` |
-| `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `github`, `prompt` |
-| `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json`, `github` |
+| `ascribe init` | Starts a project: writes its first `ascribe.toml` and `ascribe.addresses`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates] [--content-root <DIR>]` | `text`, `json` |
+| `ascribe new` | Starts a page of a type from the type's template, with its `type` and `title` set, as a draft, as **New Page** does, and writes it where `PATH` says. | `TYPE PATH [--title <TITLE>] [--dry-run] [--force]` | `text`, `json` |
+| `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
+| `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
 | `ascribe preview` | Shows a build's pages as readers see them, with nothing but the `ascribe` command: no Node, no editor, and no Astro. | `[--build <NAME>] [--port <PORT>]` |  |
 | `ascribe diff` | Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. | `[PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--exit-code] [--pages-only]` | `text`, `json`, `html`, `prompt` |
@@ -91,33 +92,33 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 | Section | What it's for | In the reference |
 |---|---|---|
-| Top level: `spec` | The only other top-level keys are `[from]` (§2.1) and the tables in §3–§22, `[releases]` (§7.1) and `[[intended]]` (§19.1) among them. | §2 |
+| Top level: `spec` | The only other top-level keys are `[from]` (§2.1) and the tables in §3–§23, `[releases]` (§12.1) and `[[intended]]` (§22.1) among them. | §2 |
 | `[project]` | Where the source lives and where builds write. | §3 |
 | `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
-| `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
-| `[versions]` | How versions in availability specs are compared (SPEC §4.4). | §7 |
-| `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §8 |
-| `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §9 |
-| `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §10 |
-| `[phrases]` | The phrases registry (SPEC §5.1). | §11 |
-| `[glossary]` | The glossary (SPEC §5.4): the pages that hold its terms, and how occurrences are matched. | §12 |
-| `[images]` | Image attributes (SPEC §5.3): which keys may appear in an attribute block after an image, and their types. | §13 |
-| `[widgets.<name>]` | Project widgets (SPEC §6): directives a documentation set defines. | §14 |
+| `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §6 |
+| `[phrases]` | The phrases registry (SPEC §5.1). | §7 |
+| `[glossary]` | The glossary (SPEC §5.4): the pages that hold its terms, and how occurrences are matched. | §8 |
+| `[images]` | Image attributes (SPEC §5.3): which keys may appear in an attribute block after an image, and their types. | §9 |
+| `[widgets.<name>]` | Project widgets (SPEC §6): directives a documentation set defines. | §10 |
+| `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §11 |
+| `[versions]` | How versions in availability specs are compared (SPEC §4.4). | §12 |
+| `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §13 |
+| `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §14 |
 | `[consumer]` | The consumer profile (SPEC §9.5): how the site output fits a specific consumer. | §15 |
 | `[builds.<name>]` | Named builds (SPEC §9.3). | §16 |
-| `[editor]` | Settings for the authoring environment (SPEC §10). | §17 |
-| `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §18 |
-| `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §19 |
-| `[permalinks]` | `ascribe.toml` has no `[permalinks]` any more. | §20 |
-| `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
-| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
-| `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §23 |
+| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §17 |
+| `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §18 |
+| `[permalinks]` | `ascribe.toml` has no `[permalinks]` any more. | §19 |
+| `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §20 |
+| `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §21 |
+| `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §22 |
+| `[editor]` | Settings for the authoring environment (SPEC §10). | §23 |
 
 ## Diagnostics
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-272 in all. By severity: 62 advice, 182 error, 28 warning. By level: 242 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 169 write.
+274 in all. By severity: 61 advice, 183 error, 30 warning. By level: 244 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 171 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -308,7 +309,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC196` | `content-type-missing` | error | choose | this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values} |
 | `ASC197` | `content-type-unknown` | error | choose | `{type}` isn't a content type; the types are: {values} |
 | `ASC198` | `description-link` | advice | write | a description is plain text, so `{link}` isn't a link: a search result and a link preview show its brackets and destination, and `ascribe check` and `ascribe rename` don't see it |
-| `ASC199` | `example-stale` | advice | outside | `{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again |
+| `ASC199` | `example-stale` | warning | outside | `{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again |
 | `ASC200` | `example-unobserved` | advice | outside | `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` |
 | `ASC201` | `examples-config-invalid` | warning | outside | the examples of source `{source}` can't be checked: `{file}` can't be read: {detail} |
 | `ASC202` | `observation-file-missing` | advice | outside | `{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again |
@@ -382,7 +383,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC271` | `addresses-anchor-collision` | error | write | `{key}` is forwarded to `{value}`, and a link to `#{id}` follows its page's redirect to {page}, which has its own heading with the id `{id}`, so the link lands there |
 | `ASC272` | `addresses-file-deleted` | error | write | ascribe.addresses was deleted, and the base has it, with {count}: the build no longer writes their redirects, and the check no longer compares the addresses |
 | `ASC273` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
-| `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
+| `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is an address pattern, which has no address for it; a link by method and path needs `renderer = "redoc"` |
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
 | `ASC276` | `link-operation-deprecated` | advice | write | `#{operation}` names an operation `{path}` marks deprecated |
 | `ASC277` | `api-example-schema-mismatch` | error | write | {found}; {body} says {expected} |
@@ -393,6 +394,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
 | `ASC283` | `build-filter-line-undeclared` | advice | write | build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"` |
 | `ASC284` | `info-pair-malformed` | warning | write | `{written}` starts like the pair `{key}` but isn't one, so it isn't read; write `{key}=` with nothing around `=`, then the value, in double quotes if it has a space or a quote |
+| `ASC285` | `examples-config-unread` | warning | write | `{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = "{folder}"`, or move the file to `{root}` |
+| `ASC286` | `template-placeholder-published` | error | write | this page publishes with its template's placeholder `{placeholder}`; write what it asks for in its place, or mark the page `draft: true` until it's ready |
 
 ## The VS Code extension
 
@@ -854,6 +857,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/lsp-settings.schema.json` | SettingsResult | The answer to `ascribe/settings`. |
 | `schemas/lsp-targets.schema.json` | TargetsResult | The answer to `ascribe/targets`: a list for each kind asked for, and no others. |
 | `schemas/model.schema.json` | ModelReport | What `ascribe model --format json` answers: the content model's sections, or the one asked for. |
+| `schemas/new.schema.json` | NewReport | What `ascribe new` wrote, or with `--dry-run` would write. |
 | `schemas/observe.schema.json` | ObserveReport | What `ascribe observe --format json` writes: the commands it ran, how the test ended, the observation it wrote, and what changed since the one it replaced. |
 | `schemas/outline.schema.json` | OutlineReport | What `ascribe outline <PAGE>` answers. |
 | `schemas/permalinks-list.schema.json` | PermalinksListReport | What `ascribe permalinks list` answers. |
@@ -921,25 +925,29 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `command/project-files.md` | Files Ascribe writes | reference |
 | `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search` | reference |
 | `command/site-output.md` | A page in the site output | reference |
-| `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
-| `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
+| `content-model/checks.md` | `ascribe.toml`: checks and the editor | reference |
+| `content-model/content.md` | `ascribe.toml`: what pages hold | reference |
 | `content-model/glossary.md` | Set up a glossary | how-to |
 | `content-model/index.md` | `ascribe.toml` reference | reference |
-| `content-model/output.md` | `ascribe.toml`: consumer, builds, and sources | reference |
+| `content-model/output.md` | `ascribe.toml`: where pages are published | reference |
+| `content-model/sources.md` | `ascribe.toml`: what pages draw from | reference |
+| `content-model/variation.md` | `ascribe.toml`: how content varies | reference |
 | `contracts/archive.md` | Archive contract | reference |
 | `contracts/assets.md` | Asset contract | reference |
 | `contracts/content-model.md` | `ascribe.toml` format contract | reference |
-| `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks, permalinks, and listing | reference |
-| `contracts/content-model/content.md` | `ascribe.toml` format contract: dimensions, phrases, and widgets | reference |
-| `contracts/content-model/output.md` | `ascribe.toml` format contract: consumer, builds, and sources | reference |
+| `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks and the editor | reference |
+| `contracts/content-model/content.md` | `ascribe.toml` format contract: what pages hold | reference |
+| `contracts/content-model/output.md` | `ascribe.toml` format contract: where pages are published | reference |
+| `contracts/content-model/sources.md` | `ascribe.toml` format contract: what pages draw from | reference |
 | `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
+| `contracts/content-model/variation.md` | `ascribe.toml` format contract: how content varies | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
-| `contracts/json-reports/addresses.md` | JSON reports: `ascribe addresses` | reference |
+| `contracts/json-reports/addresses.md` | JSON reports: `ascribe permalinks` and `ascribe addresses` | reference |
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
-| `contracts/json-reports/model.md` | JSON reports: `ascribe model` | reference |
+| `contracts/json-reports/model.md` | JSON reports: `ascribe init` and `ascribe model` | reference |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
-| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe sources` and `ascribe observe` | reference |
 | `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` | reference |
 | `contracts/json-reports/versions.md` | JSON reports: `ascribe versions` | reference |
 | `contracts/navigation.md` | The navigation contract | reference |
@@ -963,6 +971,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `examples/snippets.md` | Show an example from the code | how-to |
 | `examples/sources.md` | `ascribe sources` and `observe` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
+| `existing-docs.md` | Bring existing docs to Ascribe | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |
@@ -1050,7 +1059,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `sources/` | `ascribe sources fetch` and `ascribe sources update`: copies of the files your snippets use from another repository, in `sources/<name>/`. | Yes |
 | `examples.observations/` | `ascribe observe`, beside `ascribe.examples.toml` in the code's folder: what its tested examples passed with, in `default.toml`, or `<name>.toml` with `--name`. `ascribe observe --check` fails without it. | Yes |
 | `ascribe.permalinks` | `ascribe permalinks sync` and `ascribe permalinks retire`: the list of the docs' permalinks a product checks its links against. | Yes |
-| `ascribe.addresses` | `ascribe addresses init` makes it, and from then on `ascribe addresses move` and `ascribe addresses retire`, `ascribe rename`, moving a page in the editor, and `ascribe check --fix` write to it: where each address the docs published went, which the build turns into redirects. | Yes |
+| `ascribe.addresses` | `ascribe init` writes it with a new project, or `ascribe addresses init` makes it, and from then on `ascribe addresses move` and `ascribe addresses retire`, `ascribe rename`, moving a page in the editor, and `ascribe check --fix` write to it: where each address the docs published went, which the build turns into redirects. | Yes |
 | `ascribe.baseline` | `ascribe baseline write` and `ascribe baseline prune`: the advice `ascribe check` holds back for now. | Yes |
 | `ascribe.toml` | You do: the content model. `ascribe init` writes the first one, and a few commands change it in place. | Yes |
 | `ascribe.examples.toml` | You do, in the code's folder: the files the docs show as examples, and the test that proves them. `ascribe observe` reads it. | Yes |
@@ -1066,6 +1075,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent. | Yes |
 | `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
+| `dist/_redirects`, `dist/_headers`, and `dist/_ascribe/gone/` | `@ascribed/astro`, when it builds, in the Astro root's output folder: with `host` in `[consumer]`, the host's files, whose `_redirects` has a line for each address `ascribe.addresses` records a move or a retirement of, and in `_ascribe/gone/` under the base path, a page for each retired address, saying what was removed and why. Astro's starters leave `dist/` out of git. | No |
 
 ## What nothing declares
 

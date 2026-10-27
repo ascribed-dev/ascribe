@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Output-layout contract
-description: Where ascribe build writes each build's output, how it records what it wrote, and how it replaces a previous output.
+description: "Where `ascribe build` writes each build's output, how it records what it wrote, and how it replaces a previous output."
 permalink: output-layout-contract
 ---
 
@@ -42,6 +42,12 @@ Only pages the build publishes are written (SPEC §9.3); fragments never are.
 | Emitter | Page `Guides/My Setup.md` is written to |
 |---|---|
 | `plain` | `guides/my-setup.md`: the page's Astro entry id with `.md` (the root `index.md` stays `index.md`) |
+
+Each of these pages opens with a blockquote pointing at `llms.txt`. After the page's title, and its availability line when it has one, comes a blockquote saying what the page is for: its content type with its first letter capitalized, then ` · ` and its description, the field its type marks `role = "description"`, as plain text on one line, as `llms.txt` shows it: `> Reference · Every option of ascribe.toml.` A page of the implicit `page` type, in a project that declares no types, has the description alone, a page without a description the type alone, and a page with neither no blockquote (decision #1028).
+
+For a project with `[releases]`, the opening blockquote, and the summary of each `llms.txt`, ends with the releases the build describes, each target by its label: a line of a versioned build its line, `This documentation describes Self-managed 3.5.`; a build that filters for a version, that version, and a build that filters for a target without lines, none; any other build, each target's live lines, and when a target has a planned line, a sentence saying that what's marked planned is in none of them: `This documentation describes Ascribe 0.4.4. Anything marked planned isn't in that release yet.` The word is `[releases] planned-label`. A page of a versioned build with more than one live line, which a blockquote naming its line follows (SPEC §9.4), leaves the line to that blockquote. A project without `[releases]` writes neither.
+
+A link in these pages to a page the build publishes, a glossary link included, is the absolute URL of that page's Markdown version (`https://docs.example.com/docs/guides/my-setup.md`), and its fragment, when it names a heading, is the anchor a Markdown reader gives that heading there: the `github` slug of the heading's text as the page's Markdown writes it, numbered across the page as the slugger numbers. That's the heading's page id (SPEC §5.5), unless the heading has an `@id`, or is in a variant arm, whose label its heading ends with in the Markdown (SPEC §9.4); either way it's the heading the page id names on the page. A link out of a line of a versioned build, a link to an operation, and the sections in `_ascribe/help.json` (§1.7) keep the HTML address, as the `plain` output without agents does (decision #1023).
 
 Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §15); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
 
@@ -283,7 +289,6 @@ A site serves each entry at an address of its own, for a product to fetch its li
 Beside it, at the same address with `.md` for `.json`, a site serves the entry's section as Markdown, for an agent to read the section a permalink names in one fetch: `# `, `title`, a blank line, and `text`, or the heading alone when `text` is empty. A site that answers a page's address asked for with `Accept: text/markdown` with the page's Markdown version answers a permalink's address the same way, since `<path><name>.md` is where it looks. A permalink's forwarding page names both as its alternates, `<link rel="alternate" type="text/markdown">` and `type="application/json"`, and the headers list (§1.4) gives each address `Access-Control-Allow-Origin: *`, and the JSON a `Link` to the Markdown.
 
 ### 1.8 The redirects
-@available: ascribe 0.4.4
 
 The site output holds `_ascribe/redirects.json`: where the addresses the build used to publish lead now, and which were retired, from the project's `ascribe.addresses` (SPEC §7.10) alone. The base revision isn't read: a source's old address is made from its path by the build's routing today, so a pair is written as long as its entry is there. It's `generated` in the manifest, and written for every build, with empty lists when the project has no `ascribe.addresses`, so a consumer can tell "no redirects" from an Ascribe that doesn't write the file.
 
@@ -319,7 +324,6 @@ The site output holds `_ascribe/redirects.json`: where the addresses the build u
 A later version adds keys and changes none of these.
 
 ### 1.9 The host's files
-@available: ascribe 0.4.4
 
 With `[consumer] host` (content-model.md §15), the site output holds the host's own files in `_ascribe/host/`, each `generated` in the manifest, for whatever deploys the site to copy to the root of what's deployed. `@ascribed/astro` reads them, merges every project's, and writes them at the built site's root. Without `host`, the folder isn't written.
 

@@ -56,6 +56,15 @@ It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `d
 
 A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 
+### What CI checks a pull request records
+
+Some rules are about what a pull request records besides its code. On every pull request, CI's `change record` job ([scripts/ci/change-record.ts](scripts/ci/change-record.ts)) checks the two it can tell from the files the pull request changes, and writes what it finds to the run's summary:
+
+- **A contract changed with no decision fails.** When `SPEC.md`, a file in `docs/content/contracts/`, or `packages/elements/CONTRACT.md` changes, the pull request also adds or changes a decision in [project-docs/decisions/](project-docs/decisions/README.md) (the folder's README doesn't count). A contract changes only by a decision recorded with the change; undo the change, or record the decision.
+- **A change to the source with no changelog entry warns.** When a file in `crates/*/src/` or `packages/*/src/` changes and no entry is added in [changes/](changes/README.md), the summary says so. It's a warning, since plenty of changes to the source are nothing a user would notice. A change a user would notice adds the entry and updates its page under `docs/content/` ([Documenting a change](#documenting-a-change)). One they wouldn't says so in the description, in a line of its own that starts with `Not user-visible:` and says why, such as `Not user-visible: a rename inside ascribe-check.` The reviewer judges whether that's true.
+
+The job reads the description when it runs, so after editing the description, re-run the job to clear its warning. Two rules stay with the reviewer, because no script can tell them from the files: a behavior change comes with a conformance case, and a clean-up is labeled `optimization`, so CI compares its outputs.
+
 ### Fuzzing
 
 `fuzz/` holds three [cargo-fuzz](https://rust-fuzz.github.io/book/cargo-fuzz.html) targets that feed arbitrary text to the entry points every keystroke and every agent's edit goes through:
@@ -77,6 +86,21 @@ cargo fuzz tmin parse artifacts/parse/crash-<hash>  # make it smaller
 ```
 
 A crash is written to `fuzz/artifacts/<target>/`, and the corpus grows in `fuzz/corpus/<target>/`; neither is committed. The Fuzz workflow (`.github/workflows/fuzz.yml`) runs each target for five minutes every night, keeps the corpus in its cache, and opens an issue for each distinct crash, named by its signature (`fuzz/signature.sh`), or comments on the one that's open. Pull requests don't run it. A fix comes with a test of the input in the crate's own tests, so it stays fixed without the nightly toolchain.
+
+## Command-line conventions
+
+The commands share their flags, so what one teaches holds for the rest (decision [#965](project-docs/decisions/965-cli-conventions.md)). A command *writes* when it changes a file you commit: a page, `ascribe.toml`, or a file [Files Ascribe writes](docs/content/command/project-files.md) says to commit. Writing a build's outputs, or a cache or history under `.ascribe/`, isn't writing.
+
+- **Every command that writes takes `--dry-run`**, which says what it would change and changes nothing, **and the git guard**: it refuses to change a file git can't put back as it was (one with changes not committed, or outside a repository), and says so, unless `--force`.
+- **`--check` is a dry run that exits `1` when something would change**, and prints each change as a unified diff, as `rustfmt --check` does. Only a command that writes takes it.
+- **`--exit-code` makes a command exit `1` on findings**, and `--exit-code=<level>` on findings at that level or above. `--deny-warnings` stays, as an alias of `--exit-code=warning`.
+- **Every command takes `--format json`**, unless it only prints a file (`agents rules`, `agents skill`) or speaks another program's protocol (`mcp`, `lsp`, `preview`, `agents hook`).
+- **`--format` takes the same words everywhere**, from those [the checklist](project-docs/checklists.md#a-new-command-or-option) lists, and a command that takes `text` takes `concise` too: its own one-line-a-problem form, or an alias of `text` where it has none.
+- **A revision to compare with is `--base <REV>`.** A revision given where a path goes is answered with the `--base` that compares with it, as `ascribe drift main` is.
+- **A renamed option keeps its old spelling** as a hidden alias for a release.
+- **A new project file is named for who writes it.** One you write, which Ascribe reads, is TOML named `ascribe.<name>.toml`, as `ascribe.examples.toml` is (the content model is `ascribe.toml` itself). A record Ascribe writes and you commit is `ascribe.<name>`, with no extension, as `ascribe.baseline` is: you change it through a command. What Ascribe can write again goes under `.ascribe/`, and a file another tool reads keeps that tool's name (`AGENTS.md`, `.vale.ini`). Existing files keep their names, since renaming one costs every project a migration: `ascribe.nav` is yours without `.toml`, and `templates.lock` is a record without the prefix.
+
+`crates/ascribe-cli/src/conventions.rs` holds these over the `clap` definitions, and the file rule over the rows of [Files Ascribe writes](docs/content/command/project-files.md). Every command is in its list of those that write or those that only read, so a new one says which. A command that broke a convention before #965 is in its `EXCEPTIONS`, and the test fails when an exception is no longer needed, so a pull request that brings a command into line removes its entry. A new command or option takes no new exception.
 
 ## Documenting a change
 

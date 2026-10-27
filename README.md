@@ -36,7 +36,7 @@ See [](keys.md#rotate-keys) to rotate your API key.
 
 - **The tools of a docs team.** Reusable content with `@include` and phrases, variants by platform or product shown as tabs, and a build for each release line from one source. A glossary, page types and templates from a content model in `ascribe.toml`, notes and steps, and a page and site preview in VS Code.
 - **Checked like code.** Broken links, missing headings, and undeclared names are errors, in the editor as you type and in CI. Code examples are read from the code's own files with `@snippet`, and a pull request is reviewed as rendered pages, with what changed marked.
-- **Built for agents, writing and reading.** AI agents that write pages get the project's rules from `ascribe agents sync`, the checks through the MCP server, and a hook that checks after each edit. Agents that read them get `llms.txt`, a Markdown version of every page, and JSON.
+- **Built for agents, writing and reading.** AI agents that write pages get the project's rules from `ascribe agents sync`, the checks through the MCP server, and a hook that checks after each edit. Agents that read a published site get `llms.txt`, a Markdown version of every page, and each permalink's help as JSON. The build's page JSON is for tools, and isn't served.
 - **Plain files you can leave.** A page reads as Markdown without Ascribe, and the plain output is CommonMark. Ascribe hosts nothing and calls no model, and it's open source under the MPL.
 
 ## Get started

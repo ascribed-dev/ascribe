@@ -64,7 +64,7 @@ pnpm exec ascribe init
 ```
 @end
 
-It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the pages go in. The file says what each part is for:
+It writes the project's first `ascribe.toml` and `ascribe.addresses`, and makes `docs/`, the folder the pages go in. `ascribe.toml` says what each part is for:
 
 @snippet: code:examples/getting-started/ascribe.toml#init
 
@@ -86,7 +86,7 @@ Add the output directory to `.gitignore`:
 .ascribe/
 ```
 
-[Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
+Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when it moves, so the addresses your docs publish keep working ([Keep the addresses you've published](publishing/redirects.md)). [Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
 
 ## Write a page
 
@@ -117,11 +117,13 @@ Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.
 
 ## Format it
 
+`ascribe fmt` rewrites directives and attribute blocks into their canonical spelling, and changes nothing else:
+
 ```sh
 npx ascribe fmt
 ```
 
-rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
+`ascribe fmt --check` reports what would change, for CI.
 
 ## Build it
 
@@ -173,13 +175,8 @@ You installed the command and the editor, declared a content model in `ascribe.t
 
 ## Next steps
 
-- [Checks in CI](checks/ci.md): check every pull request the way the editor checks a page.
-- [Content that varies](writing/variants.md): alternatives by platform or product, availability, and builds.
-- [Directive syntax](writing/syntax.md) and the [directive reference](writing/directives.md): the language.
-- [`ascribe.toml` reference](content-model/index.md): the content model.
-- [Command reference](command/index.md): every command, its options, and its exit codes.
-- [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, and its fix.
-- [Editing](editor/index.md): the VS Code extension.
-- [Astro](astro/index.md): publishing a site.
-- [Tested examples](examples/tested.md): code blocks that say what their example was tested with. Start from a repository to copy, for Node with TypeScript or for Python.
-- [Agents](agents/index.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.
+The [docs' home page](index.md) has a path for each kind of reader, a few pages in order from here:
+
+- [For engineers](index.md#for-engineers): checks in CI, code examples from tested files, and review in CI.
+- [For writers](index.md#for-writers): the editor and its preview, content that varies, reuse, a glossary and templates, and review in the editor.
+- [For agent builders](index.md#for-agent-builders): `ascribe agents sync`, the MCP server and hooks, and what the outputs give agents that read the docs.

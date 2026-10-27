@@ -86,7 +86,7 @@ fn id(project: &Project, content: &str) -> FileId {
 }
 
 fn shown_on(project: &Project) -> impl Fn(&RelPath) -> Vec<RelPath> + '_ {
-    let index = project.held_index();
+    let index = project.index();
     move |fragment| index.including_pages(fragment)
 }
 

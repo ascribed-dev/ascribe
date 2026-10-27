@@ -4,7 +4,7 @@ title: no
 description: A description
 order: 3
 updated: 2026-02-28
-draft: false
+featured: false
 level: beginner
 tags: [a, b]
 available: cloud

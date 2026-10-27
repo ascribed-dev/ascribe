@@ -1,8 +1,7 @@
 ---
 type: how-to
 title: Show an operation in a page
-description: "Put an OpenAPI operation's method, path, and summary in a guide with @operation, linked to the operation in your API reference and checked against the spec."
-available: ascribe 0.4.4
+description: "Put an OpenAPI operation's method, path, and summary in a guide with `@operation`, linked to the operation in your API reference and checked against the spec."
 ---
 
 A guide often names the call it's about before it explains it. `@operation` puts that call in the page, its method, path, and summary as the spec has them, linked to the operation in your published reference, so the line can't drift from the spec:

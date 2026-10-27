@@ -143,11 +143,11 @@ fn every_edit(root: &Path) {
     let build = model.editor_default_build().clone();
     let options = ascribe_fmt::options_from_model(&model);
     let content = root.join(project.content_root().as_str());
-    let index = project.held_index();
+    let index = project.index();
     let reaches: Vec<Reach> = project
         .sources()
         .iter()
-        .map(|s| Reach::of(&project, &index, &build, &s.path))
+        .map(|s| Reach::of(&project, index, &build, &s.path))
         .collect();
     // Every range of every page, in order: the threads take them in turn, so
     // one page's ranges are shared out rather than one page per thread.

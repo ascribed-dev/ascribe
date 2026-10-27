@@ -47,7 +47,8 @@
 //!   an update drops only the pages that (transitively) include a file that
 //!   changed.
 //! - **Reverse edges** ([`Project::includers`], [`Project::links_to`],
-//!   [`Project::asset_users`]) are updated by removing and adding what the
+//!   [`Project::asset_users`], [`Project::files_linking_missing_pages`]) are
+//!   updated by removing and adding what the
 //!   files involved contribute.
 //! - **Resolved pages**: [`ResolvedCache`] keeps them per build until an update
 //!   lists them in [`Affected::re_resolve`].
@@ -96,6 +97,7 @@ use ascribe_model::ContentModel;
 use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
 
 pub use cache::ResolvedCache;
+pub(crate) use ids::CodeFileIds;
 pub use ids::FileIds;
 pub use signature::ModelImpact;
 
@@ -1098,13 +1100,15 @@ impl IncrementalProject {
             project.put_index(index);
         }
         let mut res_changed: BTreeSet<RelPath> = BTreeSet::new();
+        // Code files keep their ids, and one read for the first time gets
+        // the next, as a fresh load with the same ids gives it.
+        let code = crate::snippet::CodeFiles::with_ids(std::mem::take(&mut self.ids.code));
         for path in &resolve_set {
             let Some(index) = project.file(path).cloned() else {
                 continue;
             };
             let resolutions = project.resolve_file(&index, &self.fs);
-            let snippets =
-                project.resolve_snippets(&index, &self.fs, &crate::snippet::CodeFiles::new());
+            let snippets = project.resolve_snippets(&index, &self.fs, &code);
             project.put_snippets(path, snippets);
             self.stats.resolutions += 1;
             if old_resolutions
@@ -1133,12 +1137,12 @@ impl IncrementalProject {
                 .map(|file| file.path.clone())
                 .collect()
         };
-        let code = crate::snippet::CodeFiles::new();
         for path in showing.iter().filter(|p| !resolve_set.contains(*p)) {
             if let Some(index) = project.file(path).cloned() {
                 project.put_snippets(path, project.resolve_snippets(&index, &self.fs, &code));
             }
         }
+        self.ids.code = code.into_ids();
         for path in created.keys().chain(&gone) {
             let includers: Vec<RelPath> = self.include_rev.includers(path).into_iter().collect();
             project.refresh_include_edges(path, &includers);
@@ -1262,6 +1266,15 @@ impl IncrementalProject {
                 for includer in self.include_rev.includers(path) {
                     recheck.insert(includer);
                 }
+            }
+            // A link to a missing page names the page it most likely meant,
+            // by its path or its headings, so a page appearing, going, or
+            // changing its headings can change what any such link says.
+            let reshaped = touched
+                .iter()
+                .any(|p| old_sigs.get(p).copied().flatten() != self.sigs.get(p).copied());
+            if !created.is_empty() || !gone.is_empty() || reshaped {
+                recheck.extend(project.files_linking_missing_pages().iter().cloned());
             }
             if glossary_edited && !all_pages && old_glossary != Some(glossary_signature(project)) {
                 all_pages = true;

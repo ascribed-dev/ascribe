@@ -15,7 +15,7 @@ use ascribe_resolve::openapi::ApiSpecs;
 use ascribe_resolve::side_file::{self, Held, SideFile};
 use ascribe_resolve::{
     CodeFile, CodeFiles, Committed, DiskFs, FileSystem, Layout, MemoFile, MemoStore, Personal,
-    SourceSet,
+    SourceSet, Sources,
 };
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, ParseOptions, parse};
 
@@ -240,6 +240,11 @@ pub struct Project {
     /// for [`SourceSet`].
     source_paths: HashMap<String, RelPath>,
     fs: Files,
+    /// The listing the sources were read from, as [`FileSystem::sources`]
+    /// gave it, when the project was loaded: the source index is built from
+    /// it and the texts read, so nothing is listed or read again. `None` for
+    /// a project built from parts.
+    listing: Option<Arc<Sources>>,
     /// The code files snippets have read, read as the checks ask for them.
     code: Arc<CodeFiles>,
     /// The side files the project has ([`SIDE_FILES`]), each read with its
@@ -249,10 +254,9 @@ pub struct Project {
     /// root and from the content root, once the image checks have listed
     /// them.
     images: OnceLock<Vec<(RelPath, RelPath)>>,
-    /// The source index a broken link's closest targets are looked for in,
-    /// and the page-level checks read: the one the caller gave
+    /// The source index ([`Project::index`]): the one the caller gave
     /// ([`Project::with_link_index`]), or one built from the held texts the
-    /// first time either needs it, so it's built once.
+    /// first time it's needed, so it's built once.
     link_index: OnceLock<Arc<ascribe_resolve::Project>>,
     /// A base revision's specs, which the source index it builds keeps
     /// where each `operationId` was from ([`Project::with_base_apis`]).
@@ -377,20 +381,42 @@ impl Project {
     ///
     /// As [`Project::load`].
     pub fn load_bounded(config: &Path, bound: SourceBound<'_>) -> Result<Project, LoadError> {
-        let ModelFile { root, text, model } = Project::load_model_bounded(config, bound)?;
+        let loaded = Project::load_model_bounded(config, bound)?;
         let content_root =
-            RelPath::parse(&model.project.content_root).map_err(|e| LoadError::Read {
+            RelPath::parse(&loaded.model.project.content_root).map_err(|e| LoadError::Read {
                 path: config.display().to_string(),
                 message: e.to_string(),
             })?;
-        let sources = Project::read_sources(&root, &content_root)?;
-        Ok(Project::from_parts(
-            root,
+        let layout = Layout {
             content_root,
-            model,
-            text,
-            sources,
-        ))
+            output_dir: RelPath::parse(&loaded.model.project.output_dir).unwrap_or_default(),
+        };
+        // A one-shot command reads a disk that doesn't change while it runs,
+        // so listings are kept.
+        let fs = Arc::new(DiskFs::with_listing_cache(&loaded.root, &layout));
+        Ok(Project::load_from(loaded, layout.content_root, fs))
+    }
+
+    /// The project of a content model [`Project::load_model`] loaded, with
+    /// every source file under `content_root` read through `fs`, as
+    /// [`FileSystem::sources`] lists them, and `fs` as the file system the
+    /// checks probe. Each source is read once and listed once: the source
+    /// index ([`Project::index`]) is built from what was read.
+    ///
+    /// A source file or directory that can't be read, or a source file that
+    /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
+    /// `check_files` reports it and checks the rest.
+    pub fn load_from(
+        model: ModelFile,
+        content_root: RelPath,
+        fs: Arc<dyn FileSystem + Send + Sync>,
+    ) -> Project {
+        let ModelFile { root, text, model } = model;
+        let (sources, listing) = read_sources(&*fs);
+        Project {
+            listing: Some(Arc::new(listing)),
+            ..Project::assemble(root, content_root, model, text, sources, Some(fs))
+        }
     }
 
     /// Loads only the content model at `config`, the first step of
@@ -436,55 +462,6 @@ impl Project {
                 diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
             }),
         }
-    }
-
-    /// Reads every source file under `root/content_root`. The files that
-    /// could be read have ids from 1, in path order, as in
-    /// `ascribe_resolve::Project`; those that couldn't come after them, with
-    /// their [`ReadFailure`].
-    pub fn read_sources(root: &Path, content_root: &RelPath) -> Result<Vec<SourceFile>, LoadError> {
-        let layout = Layout {
-            content_root: content_root.clone(),
-            output_dir: RelPath::root(),
-        };
-        let disk = DiskFs::new(root, &layout);
-        let found = disk.sources();
-        let mut sources = Vec::with_capacity(found.paths.len());
-        let mut failed = Vec::new();
-        for path in found.paths {
-            match disk.read(&path) {
-                Ok(text) => sources.push((path, text)),
-                Err(e) => failed.push((
-                    path,
-                    ReadFailure {
-                        not_utf8: e.kind() == io::ErrorKind::InvalidData,
-                        reason: e.to_string(),
-                    },
-                )),
-            }
-        }
-        failed.extend(found.unreadable.into_iter().map(|u| {
-            (
-                u.path,
-                ReadFailure {
-                    reason: u.reason,
-                    not_utf8: false,
-                },
-            )
-        }));
-        let out = sources
-            .into_iter()
-            .map(|(path, text)| (path, text, None))
-            .chain(failed.into_iter().map(|(p, f)| (p, String::new(), Some(f))))
-            .enumerate()
-            .map(|(i, (path, text, unreadable))| SourceFile {
-                id: FileId::new(i as u32 + 1),
-                path,
-                text,
-                unreadable,
-            })
-            .collect();
-        Ok(out)
     }
 
     /// A project from parts the caller already has: the language server's
@@ -564,6 +541,7 @@ impl Project {
             model_warnings,
             source_paths,
             fs: Files(fs),
+            listing: None,
             code: Arc::default(),
             side,
             images: OnceLock::new(),
@@ -609,25 +587,30 @@ impl Project {
         &self.layout
     }
 
-    /// The source index over the same files: what a command that resolves
-    /// builds (`build`, `diff`, `drift`, `sources`) works on. It's read again
-    /// through [`Project::file_system`], so the two can't disagree about which
-    /// files exist; reading them once is left for later.
-    pub fn index(&self) -> ascribe_resolve::Project {
-        ascribe_resolve::Project::load(
-            Arc::new(self.model.clone()),
-            self.layout.clone(),
-            self.file_system(),
-        )
+    /// The source index over the texts this project holds: what the
+    /// page-level checks read, a broken link's closest targets are looked for
+    /// in, and a command that resolves builds (`build`, `diff`, `drift`,
+    /// `sources`) works on. It's built the first time it's needed, from the
+    /// listing and the texts loading read, so a command reads each source
+    /// once and indexes once; or it's the one given to
+    /// [`Project::with_link_index`]. The held texts can differ from the files
+    /// on disk: text laid over them with [`Project::with_source`], or a
+    /// project built in memory. Images and other files are read through
+    /// [`Project::file_system`].
+    pub fn index(&self) -> &Arc<ascribe_resolve::Project> {
+        self.link_index.get_or_init(|| {
+            let mut index = crate::page::held_index(self);
+            if let Some(base) = &self.base_apis {
+                index.remember_base_apis(base);
+            }
+            Arc::new(index)
+        })
     }
 
-    /// The source index over the texts this project holds, which can differ
-    /// from the files on disk: text laid over it with
-    /// [`Project::with_source`], or a project built in memory. Only its
-    /// sources are what's held; images and other files are read as
-    /// [`Project::index`] reads them.
-    pub fn held_index(&self) -> ascribe_resolve::Project {
-        crate::page::held_index(self)
+    /// The listing the sources were read from, when the project was loaded
+    /// ([`Project::load_from`]).
+    pub(crate) fn listing(&self) -> Option<&Sources> {
+        self.listing.as_deref()
     }
 
     /// The content model's text.
@@ -965,10 +948,9 @@ impl Project {
         self
     }
 
-    /// This project, with `index` as the source index a broken link's
-    /// closest targets are looked for in, so none is built for them: the
-    /// language server gives its incremental index. `index` must be an index
-    /// of the same files.
+    /// This project, with `index` as its source index ([`Project::index`]),
+    /// so none is built: the language server gives its incremental index.
+    /// `index` must be an index of the same files.
     #[must_use]
     pub fn with_link_index(self, index: Arc<ascribe_resolve::Project>) -> Project {
         let link_index = OnceLock::new();
@@ -988,25 +970,6 @@ impl Project {
             link_index: OnceLock::new(),
             ..self
         }
-    }
-
-    /// The source index a broken link's closest targets are looked for in,
-    /// and the page-level checks read, built the first time it's needed.
-    pub(crate) fn link_index(&self) -> &Arc<ascribe_resolve::Project> {
-        self.link_index.get_or_init(|| {
-            let mut index = self.held_index();
-            if let Some(base) = &self.base_apis {
-                index.remember_base_apis(base);
-            }
-            Arc::new(index)
-        })
-    }
-
-    /// Lets go of the source index the checks built and kept, for a caller
-    /// that goes on to index the files its own way, as `ascribe build` does:
-    /// holding both at once is a third more peak memory (#894).
-    pub fn release_link_index(&mut self) {
-        self.link_index = OnceLock::new();
     }
 
     /// The values the pages' `@variant` arms give the dimension `name`, in
@@ -1123,6 +1086,52 @@ pub(crate) fn image_id(i: usize) -> FileId {
     // navigation file's.
     #[allow(clippy::cast_possible_truncation)]
     FileId::new(IMAGE_FILE_IDS + i as u32)
+}
+
+/// Reads every source file `fs` lists, and the listing. The files that could
+/// be read have ids from 1, in path order, as in `ascribe_resolve::Project`;
+/// those that couldn't come after them, with their [`ReadFailure`].
+fn read_sources(fs: &dyn FileSystem) -> (Vec<SourceFile>, Sources) {
+    let listing = fs.sources();
+    let mut paths = listing.paths.clone();
+    paths.sort();
+    paths.dedup();
+    let mut sources = Vec::with_capacity(paths.len());
+    let mut failed = Vec::new();
+    for path in paths {
+        match fs.read(&path) {
+            Ok(text) => sources.push((path, text)),
+            Err(e) => failed.push((
+                path,
+                ReadFailure {
+                    not_utf8: e.kind() == io::ErrorKind::InvalidData,
+                    reason: e.to_string(),
+                },
+            )),
+        }
+    }
+    failed.extend(listing.unreadable.iter().map(|u| {
+        (
+            u.path.clone(),
+            ReadFailure {
+                reason: u.reason.clone(),
+                not_utf8: false,
+            },
+        )
+    }));
+    let out = sources
+        .into_iter()
+        .map(|(path, text)| (path, text, None))
+        .chain(failed.into_iter().map(|(p, f)| (p, String::new(), Some(f))))
+        .enumerate()
+        .map(|(i, (path, text, unreadable))| SourceFile {
+            id: FileId::new(i as u32 + 1),
+            path,
+            text,
+            unreadable,
+        })
+        .collect();
+    (out, listing)
 }
 
 fn read_error(path: &Path, e: std::io::Error) -> LoadError {

@@ -1,0 +1,1 @@
+- **Fixed:** a table row under an indented header line has the position of its own text. Each cell's span was shifted by the header's indent, so what pointed at it missed by that many characters.

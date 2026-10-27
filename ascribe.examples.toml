@@ -24,5 +24,9 @@ include = [
 # changes one of the files.
 test = "cargo test --locked -p ascribe-cli --test all -- output:: agents:: && cargo test --locked -p ascribe-model --test load"
 
+# A page says which ascribe printed its output, "Tested with ascribe 0.4.4 on
+# Linux", since that's what a reader installs; the Rust that built it isn't
+# theirs to match. The commit `--version` adds is cut, so observing again
+# writes nothing new until the version changes.
 [environment]
-rust = { label = "Rust", command = "rustc --version" }
+ascribe = { label = "ascribe", command = "cargo run --locked -q -p ascribe-cli -- --version | cut -d \" \" -f 1,2" }

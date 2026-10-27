@@ -107,6 +107,10 @@ pub struct PagePermalink {
 /// list: a sidebar, previous and next (SPEC §2.1).
 pub const NAV_LABEL: &str = "nav-label";
 
+/// The reserved frontmatter key that makes a page a draft, which no build
+/// publishes (SPEC §2.1).
+pub const DRAFT: &str = "draft";
+
 /// A page's `nav-label`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NavLabel {
@@ -520,6 +524,8 @@ pub enum DropReason {
     /// The page's `available` frontmatter makes it unavailable for the
     /// build's target and version.
     Unavailable,
+    /// The page's frontmatter has `draft: true`, which every build drops.
+    Draft,
 }
 
 impl DropReason {
@@ -531,6 +537,9 @@ impl DropReason {
             }
             DropReason::Unavailable => {
                 "its available frontmatter makes it unavailable for the build's target and version"
+            }
+            DropReason::Draft => {
+                "it's a draft, and no build publishes a draft until its draft: true is removed"
             }
         }
     }

@@ -605,3 +605,33 @@ fn the_headers_agree_with_the_records() {
         assert_eq!(rule["headers"]["X-Robots-Tag"], robots, "{route}");
     }
 }
+
+#[test]
+fn a_draft_is_in_no_output_of_any_kind() {
+    // SPEC §2.1: no build publishes a draft, so nothing that lists a build's
+    // pages lists it: not the records, the navigation, `llms.txt`, the
+    // permalinks, or the plain and JSON outputs.
+    let mut files = FILES.to_vec();
+    files.push((
+        "guides/upcoming.md",
+        "---\ntype: page\ntitle: Upcoming release\npermalink: upcoming-release\ndraft: true\n---\n\nNot yet.\n",
+    ));
+    let project = memory_project(MODEL, &files);
+    let emitters: [&dyn ascribe_emit::Emitter; 3] = [
+        &SiteEmitter::new(project.model()),
+        &PlainEmitter::default(),
+        &ascribe_emit::JsonEmitter,
+    ];
+    for emitter in emitters {
+        let outputs = emit_build(Path::new("/nowhere"), &project, "site", emitter);
+        assert!(!outputs.is_empty(), "{} wrote nothing", emitter.name());
+        for (path, text) in &outputs {
+            assert!(!path.contains("upcoming"), "{}: {path}", emitter.name());
+            assert!(
+                !text.contains("upcoming") && !text.contains("Upcoming"),
+                "{}: {path} names the draft:\n{text}",
+                emitter.name()
+            );
+        }
+    }
+}

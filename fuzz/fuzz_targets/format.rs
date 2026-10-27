@@ -23,13 +23,6 @@ static MODEL: LazyLock<(ContentModel, ParseOptions)> = LazyLock::new(|| {
 });
 
 fuzz_target!(|source: &str| {
-    // A lone carriage return shifts the spans after it, and the formatter
-    // edits the wrong bytes (#1121). libFuzzer stops at the first crash, so
-    // until that's fixed these inputs are left out, or the target would find
-    // only that.
-    if source.replace("\r\n", "").contains('\r') {
-        return;
-    }
     let (model, options) = &*MODEL;
     let edits = ascribe_fmt::format(source, options, model);
     let once = match apply_edits(source, &edits) {

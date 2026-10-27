@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Archive contract
-description: What ascribe versions export writes into a folder, how it records what it wrote, and what each page holds.
+description: "What `ascribe versions export` writes into a folder, how it records what it wrote, and what each page holds."
 ---
 
 This contract says what `ascribe versions export` writes: one line of a versioned build, rendered once more by Ascribe alone into a folder of HTML that needs nothing else. An archive is a file format people keep for years, so what's here changes only by a recorded decision. [Export and retire a line](../versions/archive.md) is the guide.
@@ -37,12 +37,14 @@ The folder is replaced by the output layout contract's rules: a file is written 
 
 Each page is one complete HTML document that Ascribe gives one script, the search's (§6):
 
+- `<html lang="en">`. The content model has no setting for a project's language yet; once it has one, the archive takes its language from it.
 - `<meta name="robots" content="noindex">`, and a content security policy of `script-src 'self' file:`. No inline script runs, and no event handler or `javascript:` link. A script file does: the search's, and any a page's own raw HTML names with `<script src>` that the browser can load, from where the folder is served, or, opened from a disk, from anywhere on the reader's disk.
 - A `<title>` of the page's title and the line: `Install the Quill agent · self-managed 3.4`.
 - One stylesheet, `style.css`, linked relatively: the element library's stylesheet, then the archive's own. Every element of the [element contract](../astro/elements.md) renders as it does without its script; tabs show one after another, each under its label.
+- A skip link first, `<a class="archive-skip" href="#archive-main">Skip to content</a>`, out of sight until it has focus, so a keyboard reaches the page without going through the statement and the sidebar, which come before it at a phone's width.
 - The statement, `<header class="archive-statement">`: "Documentation for self-managed 3.4. This version is no longer maintained.", with the target's label (content model contract §6) and the line, and with `--current` a `<span class="archive-current">` holding a link to that address.
 - The sidebar, `<nav class="archive-sidebar">`: the search script's `<script>` (§6), a link to the contents page, then the line's [navigation](../navigation/index.md) as its site's sidebar has it: the content root's pages first with no name, then each top section under its label, its own page first, then its pages, each nested section a list of its own in its place, headed by a link to its own page with the section's label. Each page is named by its label, its `nav-label` or else its title. A page that's `unlisted` isn't in it. The page shown has `aria-current="page"`.
-- The page, `<main class="archive-page">`: the title as an `<h1>`, the page's availability as `<ascribe-availability scope="page">`, the page's level 2 and 3 headings as `<nav class="archive-on-this-page">`, the content as `render_site_html` renders the site output, and `<nav class="archive-pager">` with `rel="prev"` and `rel="next"` links in the navigation's reading order (the [navigation contract](navigation.md), §3), each named by the page's label. An `unlisted` page has none.
+- The page, `<main id="archive-main" class="archive-page">`: the title as an `<h1>`, the page's availability as `<ascribe-availability scope="page">`, the page's level 2 and 3 headings as `<nav class="archive-on-this-page">`, the content as `render_site_html` renders the site output, and `<nav class="archive-pager">` with `rel="prev"` and `rel="next"` links in the navigation's reading order (the [navigation contract](navigation.md), §3), each named by the page's label. An `unlisted` page has none.
 
 ## 3. Links
 
@@ -55,12 +57,12 @@ Every link between files of the archive is relative, starting `./` or `../`, so 
 ## 4. The other files
 
 - **The contents page** lists the pages as the sidebar does, with a heading for each top section, and links to `all.html`. It's `index.html`, or `contents.html` when the line's root page is `index.html`.
-- **`all.html`** holds every page once, in reading order, the `unlisted` ones last, in path order, each an `<article>` with its title and availability, its links relative to the top of the folder. It has the statement and no sidebar, so no search. It's for printing the set, so its ids aren't unique: two pages with a heading of the same name both have its id, and a link to it in `all.html` goes to the first.
+- **`all.html`** holds every page once, in reading order, the `unlisted` ones last, in path order, each an `<article>` with its title and availability, its links relative to the top of the folder, in `<main id="archive-main" class="archive-all">`. It has the skip link and the statement and no sidebar, so no search. It's for printing the set, so its ids aren't unique: two pages with a heading of the same name both have its id, and a link to it in `all.html` goes to the first.
 - **`robots.txt`** is `User-agent: *` and `Disallow: /`, for a host that serves the folder at its own origin.
 
 ## 5. Print
 
-The stylesheet's print rules hide the sidebar, the search box, the statement's link, and the previous and next links; keep the statement; write each link's address in parentheses after its text; and start each page of `all.html` on a new sheet.
+The stylesheet's print rules hide the skip link, the sidebar, the search box, the statement's link, and the previous and next links; keep the statement; write each link's address in parentheses after its text; and start each page of `all.html` on a new sheet.
 
 ## 6. Search
 

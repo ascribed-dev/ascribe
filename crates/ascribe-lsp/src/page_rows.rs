@@ -98,6 +98,8 @@ pub enum LeftOut {
     Variant,
     /// The page's `available` makes it unavailable for the build.
     Availability,
+    /// The page is a draft, which no build publishes.
+    Draft,
 }
 
 /// Whether search engines list a page, and what sets that.
@@ -306,6 +308,7 @@ pub(crate) fn builds(ctx: &Ctx, file: &FileIndex) -> Vec<PageBuild> {
                 |reason| match reason {
                     DropReason::Variant => LeftOut::Variant,
                     DropReason::Unavailable => LeftOut::Availability,
+                    DropReason::Draft => LeftOut::Draft,
                 },
             ),
         })

@@ -139,6 +139,45 @@ fn unclosed_containers_are_reported_at_their_openers() {
 }
 
 #[test]
+fn an_unclosed_container_ends_with_its_last_line_that_isnt_blank() {
+    // Its span stops at its last block, or for a raw container its last
+    // line that isn't blank, and never takes in the line endings, blank
+    // lines, or spaces after it (#1122).
+    let cases = [
+        ("@memo:\n", "@memo:", ""),
+        (
+            "@memo:\n  - Not an item.\n\n   ",
+            "@memo:\n  - Not an item.",
+            "  - Not an item.",
+        ),
+        ("@memo:\r\ntext  \r\n\r\n", "@memo:\r\ntext", "text"),
+        ("> @memo:\n> text\n>\n> \n", "@memo:\n> text", "text"),
+        ("@note:\ntext\n\n  \n", "@note:\ntext", ""),
+    ];
+    for (source, span, raw) in cases {
+        let d = doc(source);
+        let block = match &d.blocks[0].kind {
+            BlockKind::BlockQuote(q) => &q.children[0],
+            _ => &d.blocks[0],
+        };
+        let BlockKind::Container(c) = &block.kind else {
+            panic!("{source:?}: not a container")
+        };
+        assert!(c.end.is_none(), "{source:?}");
+        assert_eq!(cut(source, block.span), span, "{source:?}");
+        let text = raw_container_text(source, c).unwrap_or_default();
+        assert_eq!(text, raw, "{source:?}");
+    }
+    // The empty lines of a raw container with none sit at the start of the
+    // line after its opener, outside its span.
+    let d = doc("@memo:\n");
+    let BlockKind::Container(c) = &d.blocks[0].kind else {
+        panic!()
+    };
+    assert_eq!(c.raw, Some(Span::new(7, 7)));
+}
+
+#[test]
 fn containers_cant_straddle_list_items() {
     // The note is unclosed at the end of its item; the `@end` in the next
     // item is another container's, so it's reported too (SPEC §3.9).

@@ -13,6 +13,7 @@ import type {
   InventoryResult,
   InventorySection,
   InventoryValue,
+  LeftOut,
   LspRange,
   ModelKind,
   PageAbout,
@@ -1091,7 +1092,9 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
   }
   if (about.builds.length > 0) {
     const published = about.builds.filter((b) => b.leftOut === null).map((b) => b.name);
-    const left = about.builds.filter((b) => b.leftOut !== null);
+    const left = about.builds.flatMap((b) =>
+      b.leftOut === null ? [] : [{ name: b.name, leftOut: b.leftOut }],
+    );
     const parts = [
       published.length > 0 ? `published by ${published.join(", ")}` : "",
       left.length > 0 ? `left out by ${left.map((b) => b.name).join(", ")}` : "",
@@ -1100,10 +1103,7 @@ function aboutRows(about: PageAbout, uri: string | undefined): AboutRow[] {
       label: "Builds",
       value: capitalized(parts.join("; ")),
       tooltip: [
-        ...left.map(
-          (b) =>
-            `${b.name} leaves it out: ${b.leftOut === "variant" ? "its `variant` names none of the build's values" : "its `available` makes it unavailable there"}`,
-        ),
+        ...left.map((b) => `${b.name} leaves it out: ${LEFT_OUT_BECAUSE[b.leftOut]}`),
         "Choose a build to see the page as it publishes it",
       ].join("\n"),
       opens: { kind: "command", command: SWITCH_BUILD, title: "Switch Build" },
@@ -1643,6 +1643,13 @@ function group(label: string, size: number, icon: string, tooltip: string): Item
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
+
+/** Why a build leaves a page out, for the Builds row's tooltip. */
+const LEFT_OUT_BECAUSE: Record<LeftOut, string> = {
+  variant: "its `variant` names none of the build's values",
+  availability: "its `available` makes it unavailable there",
+  draft: "it's a draft, which no build publishes",
+};
 
 function capitalized(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);

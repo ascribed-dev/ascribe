@@ -156,6 +156,33 @@ impl Pass<'_> {
         }
     }
 
+    /// An unclosed raw container's lines, `raw`, through the last that isn't
+    /// blank once the opener's prefix (its list indentation and blockquote
+    /// markers) is off it, without the spaces and tabs that line ends with.
+    /// Empty, at the start of `raw`, when every line is blank.
+    fn through_last_line(&self, raw: Span, opener: &DirectiveLine) -> Span {
+        let at = opener.span.start();
+        let line_start = self
+            .source
+            .get(..at)
+            .and_then(|before| before.rfind(['\n', '\r']))
+            .map_or(0, |i| i + 1);
+        let prefix = self.source.get(line_start..at).unwrap_or("");
+        let mut to = raw.start();
+        let mut from = raw.start();
+        while from < raw.end() {
+            let next = self.after_line(from).min(raw.end());
+            let line = self.source.get(from..next).unwrap_or("");
+            let line = line.trim_end_matches(['\n', '\r']);
+            let content = strip_matching_prefix(line, prefix);
+            if !content.trim_matches([' ', '\t']).is_empty() {
+                to = from + line.trim_end_matches([' ', '\t']).len();
+            }
+            from = next;
+        }
+        Span::new(raw.start(), to)
+    }
+
     /// A groupable opener begins the next arm of the open group at `frames[k]`,
     /// ending the previous arm. Containers still open inside that arm are
     /// reported at this opener, and closed there (SPEC §3.6).
@@ -272,21 +299,21 @@ impl Pass<'_> {
         } = frame;
         let end_span = end.as_ref().map(|e| e.span.end());
         // A closed raw container's lines run to the end line, blank ones
-        // included.
-        let raw = match (raw, &end) {
-            (Some(raw), Some(end)) => {
+        // included; an unclosed one's stop at the last that isn't blank.
+        let raw = raw.map(|raw| match &end {
+            Some(end) => {
                 let to = self.before_line(end.span.start());
-                Some(Span::new(raw.start(), to.max(raw.start())))
+                Span::new(raw.start(), to.max(raw.start()))
             }
-            (raw, _) => raw,
-        };
+            None => self.through_last_line(raw, &opener),
+        });
         let Some(mut arms) = arms else {
             let mut children = children;
             self.finish_children(&mut children, Scope::Container);
             let last = children
                 .last()
                 .map_or(0, |b| b.span.end())
-                .max(raw.map_or(0, Span::end));
+                .max(raw.filter(|r| !r.is_empty()).map_or(0, Span::end));
             let to = end_span.unwrap_or_else(|| last.max(opener.span.end()));
             return Block {
                 span: Span::new(start, to),

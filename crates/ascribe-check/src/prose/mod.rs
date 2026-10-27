@@ -78,7 +78,7 @@ pub fn lint(
             })
         })
         .collect();
-    let terms = glossary_words(&project.held_index().glossary());
+    let terms = glossary_words(&project.index().glossary());
     lint_pages(
         project.root(),
         project.model(),

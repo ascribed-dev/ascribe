@@ -31,14 +31,17 @@ use super::tree::{
 use crate::expand::PageProblem;
 use crate::index::FileIndex;
 
-/// Why the build doesn't publish this page, if it doesn't (SPEC §9.3): its
-/// `variant` frontmatter conflicts with the selection, or its `available`
-/// frontmatter makes it unavailable in a filter build.
+/// Why the build doesn't publish this page, if it doesn't (SPEC §9.3): it's
+/// a draft, its `variant` frontmatter conflicts with the selection, or its
+/// `available` frontmatter makes it unavailable in a filter build.
 pub(crate) fn drop_reason(
     model: &ContentModel,
     index: &FileIndex,
     build: &Build,
 ) -> Option<DropReason> {
+    if !build.drafts && index.is_draft() {
+        return Some(DropReason::Draft);
+    }
     if let VariantMode::Select(selection) = &build.variants
         && page_conflicts(index, selection)
     {
@@ -162,6 +165,7 @@ pub fn select(
         availability: AvailabilityMode::Badge,
         versions: None,
         line: None,
+        drafts: false,
     };
     let mut problems = Vec::new();
     let mut modes = Modes {

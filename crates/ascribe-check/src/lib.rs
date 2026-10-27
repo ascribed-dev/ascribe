@@ -73,8 +73,8 @@ pub use builds::{
     diagnose, diagnose_editor_build, diagnose_editor_build_in, diagnose_every_build_in,
     diagnose_with, select_builds,
 };
-pub use checks::check_file;
-use checks::{check_examples, check_sources};
+use checks::{check_examples, check_sources, check_unread_configs};
+pub use checks::{check_file, unread_config_issue};
 pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
 pub use evidence::GATHERED as GATHERED_EVIDENCE;
 pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
@@ -132,6 +132,7 @@ pub(crate) fn check_files_with(
     // snippets have been read.
     let mut sources = check_sources(project);
     sources.extend(check_examples(project));
+    sources.extend(check_unread_configs(project));
     sources.extend(across.remove(&PERMALINKS_FILE_ID).unwrap_or_default());
     sources.extend(across.remove(&NAV_FILE_ID).unwrap_or_default());
     if let Some(Err(problems)) = project.addresses() {
@@ -141,7 +142,7 @@ pub(crate) fn check_files_with(
     // The specs are read with the source index, so they're asked of it only
     // when the content model declares one.
     if !project.model().apis.is_empty() {
-        let apis = project.link_index().apis();
+        let apis = project.index().apis();
         sources.extend(
             apis.problems(project.model(), FileId::new(0))
                 .iter()

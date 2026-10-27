@@ -319,8 +319,23 @@ fn an_open_config_reports_its_problems_where_they_are() {
     );
     client.settle();
     assert!(client.diagnostics(&config).is_empty());
-    // A config no source names is just a TOML file.
-    let other = f.path("code/examples/ascribe.examples.toml");
+    // One below a source's root is read by no source, which it says.
+    let below = f.path("code/examples/ascribe.examples.toml");
+    client.open(&below, 1, "nope = 1\n");
+    client.settle();
+    let found = client.diagnostics(&below);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(support::slug(&found[0]), "examples-config-unread");
+    assert_eq!(found[0].range.start.line, 0);
+    assert!(
+        found[0]
+            .message
+            .contains("declare a source with `path = \"code/examples\"`"),
+        "{}",
+        found[0].message
+    );
+    // One in no source's folder is just a TOML file.
+    let other = f.path("elsewhere/ascribe.examples.toml");
     client.open(&other, 1, "nope = 1\n");
     client.settle();
     assert!(client.publications(&other).is_empty());

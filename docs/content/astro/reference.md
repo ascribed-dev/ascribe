@@ -99,7 +99,7 @@ Each build lists its [permalinks](../permalinks/index.md) in the site output, `_
 
 So it works on any static host. With `[consumer] host = "netlify"`, the host [forwards each address with a `301`](../publishing/redirects.md#permalinks-on-netlify) instead, and serves the page only for an address with a dimension's parameter. The page names its section's [Markdown and JSON](reference.md#help-entries) as its alternates, `<link rel="alternate">`, for an agent that reads it. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents. A retired permalink's page says what was there was removed from the docs, gives the reason, and links to the docs' home page, unless it was retired `--to` another page, where it forwards.
 
-The parameters are named for the content model's [dimensions](../content-model/content.md#dimensions), as a product [links to a permalink](../permalinks/index.md#linking-from-a-product):
+The parameters are named for the content model's [dimensions](../content-model/variation.md#dimensions), as a product [links to a permalink](../permalinks/index.md#linking-from-a-product):
 
 - **A parameter that names a dimension, with one of its values,** sets the reader's choice for that dimension, as if they'd picked the tab, and the choice holds on the pages they read next.
 - **Anything else is ignored:** a name that isn't a dimension, or a value the dimension doesn't have. A link with only unknown parameters works as one with none.

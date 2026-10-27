@@ -203,7 +203,7 @@ fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let synced = match ascribe_query::permalinks::sync(
-        &project.index(),
+        project.index(),
         project.permalinks(),
         project.permalinks_text(),
     ) {
@@ -317,7 +317,7 @@ fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let listed = match ascribe_query::permalinks::list(&project.index(), project.permalinks()) {
+    let listed = match ascribe_query::permalinks::list(project.index(), project.permalinks()) {
         Ok(listed) => listed,
         Err(e) => return answer::fail(err, &e),
     };
@@ -504,7 +504,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             under: place.as_deref().filter(|_| args.under.is_some()),
             named: given,
         };
-        match ascribe_query::permalinks::retiring(&index, project.permalinks(), &retire) {
+        match ascribe_query::permalinks::retiring(index, project.permalinks(), &retire) {
             Ok(names) => {
                 found = Some(Ok(names));
                 break;
@@ -568,7 +568,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
     }
     let list = match project.permalinks() {
         Some(Ok(list)) => ascribe_query::permalinks::record_retired(
-            &index,
+            index,
             list,
             &names,
             reason.unwrap_or_default(),

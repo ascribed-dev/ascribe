@@ -1080,7 +1080,7 @@ export interface InventoryValue {
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */
-export type LeftOut = "variant" | "availability";
+export type LeftOut = "variant" | "availability" | "draft";
 
 /** A file to create, empty. */
 export interface LspCreateFile {
@@ -1170,13 +1170,13 @@ export interface ModelApi {
   /** The spec's file, from the folder `ascribe.toml` is in. */
   spec: string;
   /**
-   * Where its reference is: the renderer's page, or the template of an
-   * operation's address, as written.
+   * Where its reference is: the renderer's page, or an address
+   * pattern, as written.
    */
   reference: string;
   /**
    * The renderer its reference is published with, `redoc`; absent when
-   * `reference` is a template of an operation's address.
+   * `reference` is an address pattern.
    */
   renderer?: string;
 }

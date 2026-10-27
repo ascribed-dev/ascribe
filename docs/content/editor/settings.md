@@ -16,7 +16,7 @@ Some folders hold an `ascribe.toml` that isn't a project to work on, and the edi
 
 - **What git ignores.** In a workspace folder that's a git repository, an `ascribe.toml` git ignores isn't a project, such as one a test run writes into a build folder. One git tracks is, whatever the ignore rules say. Without git, or outside a repository, the folders below are still left out.
 - **Output, dependencies, and caches,** in every folder with one of these names, whether or not git ignores it: `.ascribe`, each project's outputs and caches; `node_modules`, `bower_components`, `vendor`, `.venv`, `venv`, and `__pypackages__`; and `target`, `dist`, `.output`, `.next`, `.nuxt`, `.svelte-kit`, `.astro`, `.turbo`, `.vercel`, `.netlify`, `.cache`, `coverage`, `.gradle`, `.vscode-test`, `.tox`, and `.nox`. Not `build`, `out`, or `bin`, which are also names of folders people write in: where they're output, git ignores them.
-- **A source's copies.** The copies of a [source in another repository](../content-model/output.md#18-sourcesname), `sources/<name>/` in a project's folder, can hold that repository's own `ascribe.toml`: it's code the project shows, not a project.
+- **A source's copies.** The copies of a [source in another repository](../content-model/sources.md#20-sourcesname), `sources/<name>/` in a project's folder, can hold that repository's own `ascribe.toml`: it's code the project shows, not a project.
 - **Folders that `files.exclude` hides.**
 
 Anything else whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`.
@@ -31,7 +31,11 @@ Each project runs its own `ascribe`, found as [Which `ascribe` it runs](index.md
 
 ### When servers start
 
-A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when something asks for the project: choosing it in **Switch Project** or the Project view, a command run on it, or **Check Every Build**. A change on disk starts nothing: a branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was, with no problems in the Problems panel and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`. Once a server is running, it follows changes on disk to its project's files. A server runs until you close the window or delete its `ascribe.toml` or its folder, and its problems leave the Problems panel with it. A server that doesn't stop when asked is killed, with any process it started, and none outlives the window. A project nothing opens costs nothing.
+A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when something asks for the project: choosing it in **Switch Project** or the Project view, a command run on it, or **Check Every Build**.
+
+A change on disk starts nothing: a branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was, with no problems in the Problems panel and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`.
+
+Once a server is running, it follows changes on disk to its project's files. A server runs until you close the window or delete its `ascribe.toml` or its folder, and its problems leave the Problems panel with it. A server that doesn't stop when asked is killed, with any process it started, and none outlives the window. A project nothing opens costs nothing.
 
 To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
 
