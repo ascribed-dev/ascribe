@@ -18,6 +18,7 @@ New or changed syntax, a directive, a block or inline form, an attribute, or wha
 - [ ] Parsing, in `crates/ascribe-syntax/`. A change to the parser itself is in `crates/comrak-ascribe/`, marked as `crates/comrak-ascribe/FORK.md` says.
 - [ ] The content model, in `crates/ascribe-model/`, if `ascribe.toml` can say something new.
 - [ ] Resolving, in `crates/ascribe-resolve/`: includes, snippets, phrases, links, and builds.
+- [ ] Incremental updates: a new kind of change (a file the project reads, or a new `Change`) is a row of the invalidation table in `crates/ascribe-resolve/src/incremental/mod.rs`, and the differential test's generator makes it, with sources that use it (`crates/ascribe-resolve/tests/all/incremental_differential.rs`, and its vocabulary in `crates/ascribe-resolve/tests/incremental_support/`).
 
 **Checking it**
 
@@ -80,9 +81,10 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 
 ## A new command or option
 
-- [ ] **Its name.** A command is one lowercase word: a verb for what it does to the project (`build`, `check`, `resolve`), or a noun for what it shows (`model`, `outline`, `refs`). Commands about one kind of thing are a group, named with that thing's plural (`sources`, `agents`), whose subcommands are verbs (`fetch`, `update`, `sync`), or a noun where one prints a thing (`rules`, `status`). A second command about a thing makes a group: it doesn't get a second top-level word. So `ascribe permalinks verify` and `ascribe versions retire`, and archiving a version is `ascribe versions archive`, not `ascribe archive`. A verb alone is right while it's the only command about its thing, as `ascribe observe` would be.
+- [ ] **The shared flags,** as [CONTRIBUTING.md](../CONTRIBUTING.md#command-line-conventions)'s command-line conventions say: `--dry-run` and the git guard with `--force` on a command that writes, `--check`, `--exit-code`, `--format json`, and `--base`. The command is in `WRITES` or `READS` in `crates/ascribe-cli/src/conventions.rs`, which holds them, and takes no exception there.
+- [ ] **Its name.** A command is one lowercase word: a verb for what it does to the project (`build`, `check`, `resolve`), or a noun for what it shows (`model`, `outline`, `refs`). Commands about one kind of thing are a group, named with that thing's plural (`sources`, `agents`), whose subcommands are verbs (`fetch`, `update`, `sync`), or a noun where one prints a thing (`rules`, `status`). A second command about a thing makes a group: it doesn't get a second top-level word. So `ascribe permalinks verify` and `ascribe versions retire`, and exporting a version is `ascribe versions export`, not `ascribe export`. A verb alone is right while it's the only command about its thing, as `ascribe observe` would be.
 - [ ] **The same verb for the same job.** `sync` writes files Ascribe goes on owning and rewrites, with `--check` to say whether they're current, exiting with `1` when they're not (`agents sync --check`, `permalinks sync --check`). `eject` writes Ascribe's own defaults into the project once, as the project's from then on. A command that writes a starter set into a project is that group's `eject`. `list`, `status`, and `verify` only read.
-- [ ] **`--format`'s words,** and only the ones the command needs, with `text` the default. `text` is for a person, and isn't a contract. `json` is the contract: one document with a schema version. `concise` is one line for each thing found, for an agent. `prompt` is text to hand to an agent. `html` is one file that stands alone. A report in Markdown, for a CI job's summary, a pull request's description, or an issue's body, is `markdown` (decision 104). No command takes a word outside these for a new meaning, and a shorter report is an option of its own (`--summary`), not a format.
+- [ ] **`--format`'s words,** and only the ones the command needs, with `text` the default. `text` is for a person, and isn't a contract. `json` is the contract: one document with a schema version. `concise` is one line for each thing found, for an agent. `prompt` is text to hand to an agent. `html` is one file that stands alone. A report in Markdown, for a CI job's summary, a pull request's description, or an issue's body, is `markdown` (decision 104). No command takes a word outside these for a new meaning, and a shorter report is an option of its own (`--summary`), not a format. A command that takes `text` takes `concise` too, an alias of `text` where it has no one-line form (decision [#965](decisions/965-cli-conventions.md)).
 - [ ] **How it names things.** A page is a path from the current folder: `PAGE` when the command is about one, `PATHS...` when it takes several, and an option named for its part when it's a second one (`--from`). A build is `--build <NAME>`: repeatable where the command covers several, with every build when it's absent, and single where it shows one reader's view. The project is found from the path arguments, or from the current folder, and `--config` says otherwise; a command adds no option or argument of its own for it. Nothing is an option named `--version`, which prints Ascribe's: a version of the docs is an argument. An option word means one thing across the commands: `--list` is a switch that lists, so a path gets another word.
 - [ ] **The words for what it reports.** What Ascribe found is a *problem*; the kind of problem, with a code, is a *diagnostic*; how severe one is, is an error, a warning, or advice, and a count of them is a `summary` (decision 119). A command doesn't call them findings, alerts, or issues.
 - [ ] **What it exits with.** `0`: it ran, and there's nothing to act on. `1`: it ran, and the answer is the one to act on: problems, a target that isn't there, a file that would change. `2`: it couldn't do its work. A name of Ascribe's own that doesn't exist (a build, a diagnostic's code, a section) is `2`; a thing of the project's that doesn't exist (a page, a heading, a permalink) is `1`. A command whose whole job is a yes or a no exits `1` unasked (`check`, `link`, a group's `verify`). One that reports exits `0` whatever it finds, and `1` only with `--exit-code` (`diff`, `drift`, `report`).
@@ -95,7 +97,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/all/output.rs`.
 - [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 - [ ] The map of the surface, `project-docs/surface.md`, rewritten by `node scripts/surface/inventory.ts` after the fragments above. Its diff is what the change added to the surface: read it against the conventions at the top of this list.
-- [ ] **A tool for it,** if an agent with no shell needs the answer: named `ascribe_` and the command's own word (`ascribe_search` for `ascribe search`), with the command's arguments under the same names, `response_format` with `concise` the default, and nothing that writes a file. A command that changes the project gets no tool (decision 56).
+- [ ] **A tool for it,** if an agent with no shell needs the answer: named `ascribe_` and the command's own word (`ascribe_search` for `ascribe search`), with the command's arguments under the same names, `response_format` with `concise` the default, and nothing that writes a file. A command that changes the project gets no tool that changes it: its tool gives the changes to make, as `ascribe_fmt` and `ascribe_rename` do (decision 56, decision [#962](decisions/962-mcp-tool-names.md)).
 - [ ] **A path in what it prints, or in a prompt it writes,** is from the folder the command was run in, the form it takes as an argument. A prompt says once which folder its commands are for.
 - [ ] The tools of `ascribe mcp`, whose names and arguments are a contract (decision 56): the tools table under `ascribe mcp` in `docs/content/agents/commands.md` and each tool's command's section, in `docs/content/command/questions.md`.
 
@@ -114,21 +116,21 @@ An element, an attribute, a class, or the order of what the `site` output writes
 
 - [ ] The site output, in `crates/ascribe-emit/src/site/`, and its contract in `docs/content/contracts/site-render.md`.
 - [ ] A new or renamed element, attribute, class, or id: in `crates/ascribe-core/src/names.rs`, its one home, then each package's generated `names.ts` (`packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`), rewritten by `ASCRIBE_BLESS=1 cargo test -p ascribe-core --test names`. Code uses the constant, never the literal; that test fails on a literal elsewhere, and on a stylesheet selecting a name that isn't declared.
-- [ ] Ascribe's own renderer, `render_site_html` in `crates/ascribe-emit/src/render/`, which the page preview and the HTML report use.
+- [ ] Ascribe's own renderer, `render_site_html` in `crates/ascribe-emit/src/render/`, which the page preview and the HTML preview use.
 - [ ] The fixtures in `tests/render/`, which both renderers must pass: ours, and the site's through `@ascribed/astro`.
 - [ ] Source anchors in review mode (`crates/ascribe-emit/src/site/anchor.rs`, tested by `crates/ascribe-emit/tests/all/site_anchors.rs`): the page with anchors is the page without them, plus the anchors.
 - [ ] `@ascribed/elements`: `packages/elements/src/`, `packages/elements/css/style.css`, and its contract, `packages/elements/CONTRACT.md`.
 - [ ] `@ascribed/astro`: `packages/astro/src/rehype.ts`, `packages/astro/src/attributes.ts`, `packages/astro/src/code-titles.ts`, and the components `packages/astro/src/Elements.astro` and `packages/astro/src/Availability.astro`.
 - [ ] `@ascribed/review`'s marks and placement, in `packages/review/src/marks/` and `packages/review/src/place/`.
 - [ ] The page preview in VS Code: `packages/vscode/src/preview/` and `packages/vscode/src/webview/`.
-- [ ] The HTML report, `crates/ascribe-diff/src/html/`. Its embedded script and styles are rebuilt from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`.
+- [ ] The HTML preview, `crates/ascribe-diff/src/html/`. Its embedded script and styles are rebuilt from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`.
 - [ ] The Astro example's end-to-end tests, in `examples/astro-site/test/e2e/`.
 - [ ] The docs site's own styles, in `site/src/styles/site.css`, if they style the changed markup.
 - [ ] Its changelog entry, a file of its own in `changes/` ([changes/README.md](../changes/README.md)), not a line in `CHANGELOG.md`.
 
 ## A change to how something looks
 
-A color, a font, the type scale, a space or radius, the mark, or one of its images, on any surface: the docs site, the element library, review, the HTML report, the Astro toolbar, or the extension. [design/README.md](../design/README.md) has the steps.
+A color, a font, the type scale, a space or radius, the mark, or one of its images, on any surface: the docs site, the element library, review, the HTML preview, the Astro toolbar, or the extension. [design/README.md](../design/README.md) has the steps.
 
 - [ ] The value is in `design/tokens.toml`, and a stylesheet takes it through its `[emit]` block; no stylesheet writes a color of its own.
 - [ ] The generated blocks, and `design/candidates/chosen.toml`'s shared colors, rewritten (`ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts`), and the diff read.
@@ -137,6 +139,13 @@ A color, a font, the type scale, a space or radius, the mark, or one of its imag
 - [ ] Contrast: a new text or meaningful graphic color has its pairings in `design/candidates/pairs.toml`, and `pnpm exec vitest run scripts/design` passes.
 - [ ] The specimen rewritten (`node scripts/design/specimen.ts`) and looked at.
 - [ ] Screenshots in light and dark of each surface it reaches, in the pull request.
-- [ ] `node scripts/compare/outputs.ts --base main`: only the HTML report's files differ, accepted by name, with the label `outputs changed`.
+- [ ] `node scripts/compare/outputs.ts --base main`: only the HTML preview's files differ, accepted by name, with the label `outputs changed`.
 - [ ] A changed default of an `--ascribe-*` or `--ascribe-review-*` property: a **Behavior change** in its changelog entry in `changes/`, with the previous values (decision 44). A new property is a contract addition, recorded as a decision.
 - [ ] In the extension: a codicon and a theme color first (`packages/vscode/DEVELOPMENT.md`, "Icons and colors").
+
+## A docs page added, moved, or retitled
+
+A page added to `docs/content/`, moved or renamed there, or given a new `title` or `nav-label`, or a change to `docs/ascribe.nav`.
+
+- [ ] Its place in the sidebar: `docs/ascribe.nav` lists the page where the default order (its own page, then by type, then by title) isn't the one it should have, and labels a new section whose own page's title isn't the sidebar's.
+- [ ] The site's sidebar fixture, `site/test/fixtures/sidebar.json`, rewritten (`ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar`), and the diff read: it's the sidebar's change, and `site/test/e2e.test.ts` holds the published sidebar to it.

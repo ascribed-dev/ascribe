@@ -31,8 +31,14 @@ name: CI
 #   label `outputs changed` too, and lists the files it accepts in the
 #   description (see the job): those still show, but only another difference
 #   fails.
+# - A pull request's change record (the `record` job) fails when a contract
+#   changed with no decision, and warns when the source changed with no
+#   changelog entry (CONTRIBUTING.md, "What CI checks a pull request records").
 # - The install script and the Homebrew formula install the last release, on
 #   every night and when either changed.
+# - A pull request or a push to `main` that changes the crates or the corpora
+#   runs a quick benchmark (rust.yml's `bench`); the full run is weekly
+#   (corpora.yml).
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -62,6 +68,7 @@ jobs:
       site: ${{ steps.find.outputs.site }}
       install: ${{ steps.find.outputs.install }}
       windows: ${{ steps.find.outputs.windows }}
+      bench: ${{ steps.find.outputs.bench }}
       rust-os: ${{ steps.find.outputs.rust-os }}
       vscode-os: ${{ steps.find.outputs.vscode-os }}
       astro-targets: ${{ steps.find.outputs.astro-targets }}
@@ -122,6 +129,17 @@ jobs:
             windows=true
           fi
 
+          # A pull request that changes the crates, the corpora, or the job
+          # itself runs the quick benchmark, and so does a push to `main` that
+          # does, which keeps the job's cache of the dependencies warm for the
+          # pull requests after it.
+          bench=false
+          if { [ "$EVENT" = pull_request ] || [ "$EVENT" = push ]; } &&
+            { [ "$files" = all ] ||
+              printf '%s\n' "$files" | grep -qE '^(crates|tests/corpora)/|^\.github/workflows/rust\.yml$'; }; then
+            bench=true
+          fi
+
           linux_x64='{"os":"ubuntu-24.04","target":"linux-x64","env_target":"LINUX_X64","exe":"ascribe"}'
           linux_arm64='{"os":"ubuntu-24.04-arm","target":"linux-arm64","env_target":"LINUX_ARM64","exe":"ascribe"}'
           darwin_arm64='{"os":"macos-latest","target":"darwin-arm64","env_target":"DARWIN_ARM64","exe":"ascribe"}'
@@ -162,6 +180,7 @@ jobs:
             echo "site=$site"
             echo "install=$install"
             echo "windows=$windows"
+            echo "bench=$bench"
             echo "rust-os=$rust_os"
             echo "vscode-os=$vscode_os"
             echo "astro-targets=$astro"
@@ -190,6 +209,7 @@ jobs:
     uses: ./.github/workflows/rust.yml
     with:
       os: ${{ needs.changes.outputs.rust-os }}
+      bench: ${{ needs.changes.outputs.bench == 'true' }}
 
   js:
     needs: changes
@@ -279,6 +299,35 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+  # What a pull request records besides its code (scripts/ci/change-record.ts):
+  # a contract changed with no decision fails, and a change to the source with
+  # no changelog entry warns in the summary, unless the description says it's
+  # not user-visible. The description is read here rather than from the
+  # event, so a re-run sees an edit.
+  record:
+    name: change record
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # To read the description.
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The merge commit and its first parent, the base it was made on.
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '.body // ""' > "$RUNNER_TEMP/description.md"
+          node scripts/ci/change-record.ts --base HEAD^1 --description "$RUNNER_TEMP/description.md"
+
   # The install script (site/public/install.sh) installs the last release on
   # Linux, in a container with no Node and the oldest glibc the binaries run
   # on, and on macOS; and the formula scripts/release/formula.ts writes for it
@@ -347,7 +396,7 @@ jobs:
   # passed or was skipped, and fails when one failed or was cancelled.
   gate:
     name: all checks
-    needs: [changes, prose, rust, js, site, compare, install]
+    needs: [changes, prose, rust, js, site, compare, record, install]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 30

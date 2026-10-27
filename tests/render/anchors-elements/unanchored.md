@@ -81,11 +81,15 @@ New way.
 
 <ascribe-tab value="npm" label="npm">
 
+<p class="ascribe-tab-label">npm</p>
+
 Use npm.
 
 </ascribe-tab>
 
 <ascribe-tab value="pnpm" label="pnpm">
+
+<p class="ascribe-tab-label">pnpm</p>
 
 Use pnpm.
 

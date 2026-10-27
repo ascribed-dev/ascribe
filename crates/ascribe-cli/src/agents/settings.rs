@@ -52,6 +52,10 @@ pub struct Ascribe {
     /// `.mcp.json`, and Codex on Windows, whose shell isn't documented.
     /// Always `ascribe`, from the path.
     pub plain: String,
+    /// What follows each hook's arguments: ` --command "<command>"` when
+    /// the project's command was given to `sync`, so the hook's messages
+    /// name it; else nothing, and the hook works it out.
+    pub hook_args: String,
 }
 
 impl Ascribe {
@@ -62,6 +66,7 @@ impl Ascribe {
             claude: "ascribe".to_owned(),
             powershell: "ascribe".to_owned(),
             plain: "ascribe".to_owned(),
+            hook_args: String::new(),
         }
     }
 
@@ -73,6 +78,19 @@ impl Ascribe {
             claude: format!("\"$CLAUDE_PROJECT_DIR\"/{path}"),
             powershell: format!("& \"$(git rev-parse --show-toplevel)/{path}.cmd\""),
             plain: "ascribe".to_owned(),
+            hook_args: String::new(),
+        }
+    }
+
+    /// With the project's `command` passed to each hook, when it's given.
+    /// It's [`super::command::is_safe`], so double quotes keep it whole in
+    /// every shell.
+    pub fn with_command(self, command: Option<&str>) -> Ascribe {
+        Ascribe {
+            hook_args: command
+                .map(|command| format!(" --command \"{command}\""))
+                .unwrap_or_default(),
+            ..self
         }
     }
 }
@@ -83,8 +101,12 @@ const HOOK: &str = "agents hook";
 /// `.claude/settings.json`, from its text now: the edit hook after `Write`
 /// and `Edit`, and the stop hook.
 pub fn claude_settings(old: Option<&str>, ascribe: &Ascribe) -> Result<String, String> {
-    let command =
-        |event: &str| format!("{} agents hook claude-code --event {event}", ascribe.claude);
+    let command = |event: &str| {
+        format!(
+            "{} agents hook claude-code --event {event}{}",
+            ascribe.claude, ascribe.hook_args
+        )
+    };
     let mut settings = parse(old)?;
     let hooks = settings.object("hooks")?;
     hooks.set_groups(
@@ -102,8 +124,12 @@ pub fn claude_settings(old: Option<&str>, ascribe: &Ascribe) -> Result<String, S
 /// hook passes over a tool that writes no file. `commandWindows` runs
 /// `ascribe` from the path: Codex doesn't say which shell runs it.
 pub fn codex_hooks(old: Option<&str>, ascribe: &Ascribe) -> Result<String, String> {
-    let command =
-        |ascribe: &str, event: &str| format!("{ascribe} agents hook codex --event {event}");
+    let command = |run: &str, event: &str| {
+        format!(
+            "{run} agents hook codex --event {event}{}",
+            ascribe.hook_args
+        )
+    };
     let commands = |event: &str| {
         [
             ("command", command(&ascribe.shell, event)),
@@ -159,8 +185,8 @@ pub fn copilot_hooks(ascribe: &Ascribe) -> String {
     let entry = |event: &str, timeout: u64| {
         serde_json::json!({
             "type": "command",
-            "bash": format!("{} agents hook copilot --event {event}", ascribe.shell),
-            "powershell": format!("{} agents hook copilot --event {event}", ascribe.powershell),
+            "bash": format!("{} agents hook copilot --event {event}{}", ascribe.shell, ascribe.hook_args),
+            "powershell": format!("{} agents hook copilot --event {event}{}", ascribe.powershell, ascribe.hook_args),
             "timeoutSec": timeout,
         })
     };

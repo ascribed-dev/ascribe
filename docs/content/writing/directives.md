@@ -148,7 +148,7 @@ Each build decides what happens to availability: `badge` keeps everything and ma
 
 ### The planned line
 
-Where a version goes, `planned` means the target's planned line in [`[releases]`](../content-model/content.md#71-releasestarget), so content for a release that hasn't shipped is marked without its number:
+Where a version goes, `planned` means the target's planned line in [`[releases]`](../content-model/variation.md#121-releasestarget), so content for a release that hasn't shipped is marked without its number:
 
 ```markdown
 @available: self-managed planned
@@ -244,7 +244,7 @@ Takes a code example from a file outside the content, and puts it in the page as
 @snippet {lang=shell, title="Install"}: code:scripts/install.sh
 ```
 
-- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a [source](../glossary.md#source) declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/output.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/output.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
+- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a [source](../glossary.md#source) declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/sources.md#20-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/sources.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
 - The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text. A symbolic link is followed, but only to a file in the source's folder that `include` and `ignore` take in.
 - **When the file isn't found,** the message says why, and when `ascribe check` can tell which file was meant, it offers that address:
   - The path is relative to the source's folder, so it doesn't repeat it: with `path = "src"`, `src/config.js` is `code:config.js`.
@@ -252,7 +252,7 @@ Takes a code example from a file outside the content, and puts it in the page as
   - A symbolic link that leads out of the source is named by the file it leads to, through a source that includes it.
   - A file of a source in another repository is copied by `ascribe sources fetch`. When it isn't in the repository at the pinned commit, because it was moved or deleted there, name it where it is now, or change the code and move the pin with `ascribe sources update`.
 - Without `#<region>`, the snippet is the whole file.
-- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
+- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`), or for a file known by its name, the language of its name (`dockerfile` for `Dockerfile`, `makefile` for `Makefile`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
 - It's a block, allowed wherever a code block is: in a list item, a note, or a variant's arm. A `@note`, `@details`, or widget directly above it applies to it.
 
 A region is marked in the code with [Bluehawk](https://github.com/mongodb-university/Bluehawk)'s tags in comments, `:snippet-start: <name>` and `:snippet-end:`: [mark a region in the code](../examples/snippets.md#2-mark-a-region-in-the-code) has the tags and the comments they're read in.
@@ -272,7 +272,7 @@ Says that a problem a check reports is intended: you've looked at it and are kee
 Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
-- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#19-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
+- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#22-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
 - **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/pages.md#ASC143)).
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
@@ -322,7 +322,7 @@ Revoke the old key once every agent uses the new one.
 
 - **What it's about** is decided as for `@available` ([binding](syntax.md#binding-what-a-directive-applies-to)). A container memo touches the block that starts on the line after its `@end`. Several memos stack, in either form, and `ascribe fmt` removes a blank line between a memo and its block.
 - **A line memo** is the rest of its line, and needs some text. **A container memo** is every line up to a line that's only `@end` at the memo's own indent, as written. It takes no attributes. A container memo with nothing in it, or only blank lines, is almost always a slip: `ascribe check` reports it as advice, [`memo-empty`](../checks/diagnostics/content-checks.md#ASC224), whose fix removes it.
-- **Nothing reads a memo,** nor a [memo file](memo-files.md)'s text, apart from the words that say a page is generated (below). A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
+- **Nothing resolves or publishes a memo,** nor a [memo file](memo-files.md)'s text. Ascribe reads only the words that say a page is generated (below), and a memo file's `quote`, which places it. A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
 - **A memo can say its page is generated.** A memo among the page's top-level blocks whose text begins `Generated from` or `Generated by` says another program writes the file, and its text says what to change instead and the command that writes it again: `` @memo: Generated from options.toml by scripts/options.ts; edit the options, then run `node scripts/options.ts` to rewrite it. `` Each problem `ascribe check` and the editor report in the file names the memo as a related place, the [agent prompt](../agents/prompts.md) says to change what the file is generated from rather than the file, and no quick fix or `ascribe check --fix` edits it. Nothing else reads the memo's text.
 - **It changes no output.** No build, preview, or report shows a memo, in a page, a fragment, or a memo file, and a change to one alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
 - **An HTML comment isn't a memo:** [`html-comment`](../checks/diagnostics/content-checks.md#ASC223) says why, and how to rewrite one as a memo.
@@ -384,7 +384,6 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
 
 ## `@operation`
-@available: ascribe 0.4.4
 
 ([SPEC §4.13]({repo}/blob/main/SPEC.md#413-operation))
 
@@ -412,5 +411,5 @@ A project widget is a directive a project declares in `ascribe.toml`, for needs 
 @quill-labspace {lab=first-sync}
 ```
 
-A declared widget works like a built-in directive, with the forms, primary, attributes, binding, title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#14-widgetsname).
+A declared widget works like a built-in directive, with the forms, primary, attributes, binding, title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#10-widgetsname).
 

@@ -788,7 +788,7 @@ describe("the This page view", () => {
   /** What the server says beyond what the page is, when it has nothing to say. */
   const quiet = {
     description: null,
-    review: null,
+    recheck: null,
     availability: null,
     builds: [],
     listing: null,
@@ -1110,7 +1110,7 @@ describe("the This page view", () => {
         reported: true,
         range: range(3),
       },
-      review: {
+      recheck: {
         field: "review-by",
         date: "2026-10-03",
         days: -14,
@@ -1191,7 +1191,7 @@ describe("the This page view", () => {
         "Health (5 rows warn)",
         "  Problems (1 warning and advice on 2 lines)",
         "  Description (too long, 312 of 300 characters)",
-        "  Review (overdue, since 3 October)",
+        "  Recheck (overdue, since 3 October)",
         "  Template (2 placeholders left, how-to template)",
         "  Size (31,200 of 50,000 characters, in site)",
         "  Example (tested, code:greet.ts#greet, with Node 22 on Linux, under “Greet”)",
@@ -1222,7 +1222,7 @@ describe("the This page view", () => {
       const all = [...rows(nth(roots, 0)), ...rows(nth(roots, 1))];
       const opened = (label: string) => all.find((row) => row.label === label)?.opens;
       expect(opened("Description")).toEqual({ kind: "place", uri, range: range(3) });
-      expect(opened("Review")).toEqual({ kind: "place", uri, range: range(4) });
+      expect(opened("Recheck")).toEqual({ kind: "place", uri, range: range(4) });
       expect(opened("Listing")).toEqual({
         kind: "place",
         uri: "file:///p/ascribe.toml",
@@ -1232,7 +1232,7 @@ describe("the This page view", () => {
       expect(opened("Template")).toMatchObject({ kind: "command", command: NEXT_PLACEHOLDER });
       expect(opened("Availability")).toBeUndefined();
       const health = rows(nth(roots, 1)).filter(
-        (row) => !["Description", "Review", "Template"].includes(row.label),
+        (row) => !["Description", "Recheck", "Template"].includes(row.label),
       );
       expect(health[0]?.opens).toMatchObject({ kind: "command", command: SHOW_PROBLEMS });
       // Size goes nowhere: its tooltip says which build and the limit.
@@ -1264,13 +1264,13 @@ describe("the This page view", () => {
       ]);
     });
 
-    it("warn of an overdue review only where review-overdue reports it", () => {
+    it("warn of an overdue recheck only where recheck-overdue reports it", () => {
       const warned = (reported: boolean) => {
         const roots = thisPageRoots({
           ...full,
           about: {
             ...fullAbout,
-            review: {
+            recheck: {
               field: "review-by",
               date: "2026-10-03",
               days: -14,
@@ -1282,7 +1282,7 @@ describe("the This page view", () => {
         });
         return thisPageChildren(nth(roots, 1))
           .flatMap((n) => (n.kind === "row" ? [n.row] : []))
-          .find((row) => row.label === "Review");
+          .find((row) => row.label === "Recheck");
       };
       const overdue = { state: "overdue", value: "since 3 October" };
       expect(warned(true)).toMatchObject({ ...overdue, warn: true });
@@ -1329,7 +1329,7 @@ describe("the This page view", () => {
             reported: false,
             range: range(3),
           },
-          review: {
+          recheck: {
             field: "review-by",
             date: "2027-01-03",
             days: 12,
@@ -1351,7 +1351,7 @@ describe("the This page view", () => {
       });
       expect(flat([nth(later, 1)]).slice(1, 3)).toEqual([
         "  Description (120 characters)",
-        "  Review (due in 12 days)",
+        "  Recheck (due in 12 days)",
       ]);
       expect(flat([nth(later, 0)]).slice(3, 5)).toEqual([
         "  Availability (self-managed 3.5)",
@@ -1373,7 +1373,7 @@ describe("the This page view", () => {
         markdownAddress: null,
         site: null,
         description: null,
-        review: null,
+        recheck: null,
         availability: null,
         builds: [],
         listing: null,
@@ -1430,7 +1430,7 @@ describe("This page's items, as its webview draws them", () => {
       markdownAddress: null,
       site: null,
       description: null,
-      review: null,
+      recheck: null,
       availability: null,
       builds: [{ name: "site", leftOut: null }],
       listing: null,
@@ -1516,7 +1516,7 @@ describe("This page's head, its notices, and its badge", () => {
     markdownAddress: null,
     site: null,
     description: null,
-    review: null,
+    recheck: null,
     availability: null,
     builds: [],
     listing: null,

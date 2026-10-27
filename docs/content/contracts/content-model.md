@@ -12,30 +12,52 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 
 ## Contents
 
+Each page holds the sections for one job.
+
+On this page, what pages are:
+
 1. [Conventions](#1-conventions)
 2. [Top level: `spec`](#2-top-level-spec), and [`[from]`](#21-from)
 3. [`[project]`](#3-project)
 4. [`[types.<name>]` and `[fragments]`](#4-typesname-and-fragments)
 5. [Field and attribute types](#5-field-and-attribute-types)
-6. [`[dimensions.<name>]`](content-model/content.md#6-dimensionsname)
-7. [`[versions]`](content-model/content.md#7-versions)
-8. [`[lifecycle.<state>]`](content-model/content.md#8-lifecyclestate)
-9. [`[features.<key>]`](content-model/content.md#9-featureskey)
-10. [`[notes.<type>]`](content-model/content.md#10-notestype)
-11. [`[phrases]`](content-model/content.md#11-phrases)
-12. [`[glossary]`](content-model/content.md#12-glossary)
-13. [`[images]`](content-model/content.md#13-images)
-14. [`[widgets.<name>]`](content-model/content.md#14-widgetsname)
+
+[What pages hold](content-model/content.md):
+
+6. [`[notes.<type>]`](content-model/content.md#6-notestype)
+7. [`[phrases]`](content-model/content.md#7-phrases)
+8. [`[glossary]`](content-model/content.md#8-glossary)
+9. [`[images]`](content-model/content.md#9-images)
+10. [`[widgets.<name>]`](content-model/content.md#10-widgetsname)
+
+[How content varies](content-model/variation.md):
+
+11. [`[dimensions.<name>]`](content-model/variation.md#11-dimensionsname)
+12. [`[versions]`](content-model/variation.md#12-versions), and [`[releases.<target>]`](content-model/variation.md#121-releasestarget)
+13. [`[lifecycle.<state>]`](content-model/variation.md#13-lifecyclestate)
+14. [`[features.<key>]`](content-model/variation.md#14-featureskey)
+
+[Where pages are published](content-model/output.md):
+
 15. [`[consumer]`](content-model/output.md#15-consumer)
 16. [`[builds.<name>]`](content-model/output.md#16-buildsname)
-17. [`[editor]`](content-model/output.md#17-editor)
-18. [`[sources.<name>]`](content-model/output.md#18-sourcesname)
-19. [`[checks]`](content-model/checks.md#19-checks)
-20. [`[permalinks]`](content-model/checks.md#20-permalinks)
-21. [`[crawlers]`](content-model/checks.md#21-crawlers)
-22. [`[listing]`](content-model/checks.md#22-listing)
-23. [`[apis.<name>]`](content-model/checks.md#23-apisname)
+17. [`[listing]`](content-model/output.md#17-listing)
+18. [`[crawlers]`](content-model/output.md#18-crawlers)
+19. [`[permalinks]`](content-model/output.md#19-permalinks)
+
+[What pages draw from](content-model/sources.md):
+
+20. [`[sources.<name>]`](content-model/sources.md#20-sourcesname)
+21. [`[apis.<name>]`](content-model/sources.md#21-apisname)
+
+[Checks and the editor](content-model/checks.md):
+
+22. [`[checks]`](content-model/checks.md#22-checks)
+23. [`[editor]`](content-model/checks.md#23-editor)
 24. [Defaults: what an absent section means](content-model/checks.md#24-defaults-what-an-absent-section-means)
+
+[Validation rules](content-model/validation.md):
+
 25. [Validation rules](content-model/validation.md#25-validation-rules)
 26. [Map of SPEC §7.2 to this file](content-model/validation.md#26-map-of-spec-72-to-this-file)
 
@@ -77,7 +99,7 @@ Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-mod
 
 @include: ../_fragments/content-model/types.md
 
-**The page title.** Every page type has `title`, a required `string` field, whether `[frontmatter]` or the type declares it or not, and a page's frontmatter `title` is its title wherever SPEC needs one (SPEC §5.2). A declaration of it MAY set `phrases = true` (§11) and `inline = "code"` (§5.3), and MUST NOT make it optional, give it a default, or give it another type (`model-field-reserved`).
+**The page title.** Every page type has `title`, a required `string` field, whether `[frontmatter]` or the type declares it or not, and a page's frontmatter `title` is its title wherever SPEC needs one (SPEC §5.2). A declaration of it MAY set `phrases = true` (§7) and `inline = "code"` (§5.3), and MUST NOT make it optional, give it a default, or give it another type (`model-field-reserved`).
 
 **Frontmatter every type shares.** A page type's fields are `[frontmatter]`'s, in their order, each replaced whole by the type's own field of its name, then the type's other fields in theirs, with `title` first when neither declares it. Fields are never merged key by key.
 
@@ -126,12 +148,12 @@ A field the page leaves out gets its default's formatted form, so `formatted.<fi
 
 ### 5.4 Field roles
 
-A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2). A field named `description`, `review-date`, or `owner` has that role without `role`, unless another field of the type has it:
+A page type's top-level field MAY have a `role`, which says what the field is for, so a check or the report reads it whatever the field's name (SPEC §7.2). A field named `description`, `recheck-date`, or `owner` has that role without `role`, unless another field of the type has it:
 
 | Role | The field's type | Read by |
 |---|---|---|
 | `description` | `string` or `string?` | `page-description-missing`, which reports a page of the type whose field is absent, null, or blank. A field that's required or has a default is never absent, so the check skips it. |
-| `review-date` | `date` or `date?` | `review-overdue`, which reports a page whose date is before the day the check runs. |
+| `recheck-date` | `date` or `date?` | `recheck-overdue`, which reports a page whose date is before the day the check runs. `review-date`, its old name, names it too, for a release. |
 | `owner` | `string`, `string?`, or an `enum`, optional or not | `ascribe report inventory`, which counts pages by the field's value; a page without one counts as having no owner. |
 
 A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.

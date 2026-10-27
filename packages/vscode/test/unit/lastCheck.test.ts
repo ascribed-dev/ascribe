@@ -96,7 +96,7 @@ describe("readKept", () => {
     unsaved: 0,
     counted: {
       examples: { count: 0, first: null },
-      reviews: { count: 0, first: null },
+      rechecks: { count: 0, first: null },
       permalinks: { count: 0, first: null },
     },
     problems: [],

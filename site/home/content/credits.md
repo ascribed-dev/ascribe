@@ -40,7 +40,7 @@ You install these yourself, when you use the command that runs them.
 
 - [Vale](https://vale.sh) checks the prose, for `ascribe vale`.
 - [lychee](https://lychee.cli.rs) asks each external link whether it still works, for `ascribe report links`.
-- [afdocs](https://agentdocsspec.com), the Web Documentation Delivery Spec's checker, checks what a built site publishes for AI agents, for `ascribe report agents`.
+- [afdocs](https://agentdocsspec.com), the Web Documentation Delivery Spec's checker, checks what a built site publishes for AI agents, for `ascribe report delivery`.
 
 ### Building Ascribe and its site
 
@@ -49,7 +49,7 @@ You install these yourself, when you use the command that runs them.
 - [Vitest](https://vitest.dev) runs the JavaScript tests.
 - [insta](https://insta.rs) keeps the Rust tests' snapshots, and [proptest](https://github.com/proptest-rs/proptest) feeds the parser generated input.
 - [TypeScript](https://www.typescriptlang.org), [oxlint](https://oxc.rs), and [Prettier](https://prettier.io) check the JavaScript packages.
-- [esbuild](https://esbuild.github.io) bundles the editor extension, and the script `ascribe diff` puts in its HTML report.
+- [esbuild](https://esbuild.github.io) bundles the editor extension, and the script `ascribe diff` puts in its HTML preview.
 - [sharp](https://sharp.pixelplumbing.com) and [opentype.js](https://opentype.js.org) draw the icons and social cards.
 - [axe-core](https://github.com/dequelabs/axe-core) checks the element library for accessibility.
 

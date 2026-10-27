@@ -1,0 +1,9 @@
+description: >-
+  A pair as the first word means the block has no language, which is
+  reported as one; the pair itself is a pair, so it isn't reported as one
+  that looks like a pair.
+spec: ["3.3.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: code-language-missing, line: 5, column: 1, severity: advice}

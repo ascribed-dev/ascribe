@@ -36,7 +36,7 @@ The conformance suite's format and adapters are in [tests/conformance/README.md]
 - **A server request:** a scenario over `support::Client` in `crates/ascribe-lsp/tests/all/`, and `lsp_parity.rs` if the request reports diagnostics the CLI also reports.
 - **Incremental updates:** add to the vocabulary in `crates/ascribe-resolve/tests/incremental_support/` so the differential tests exercise it. Don't write a second incremental test by hand; the property test is the proof.
 - **The content model:** a failing fixture per loading rule in `crates/ascribe-model/tests/rules.rs` (every `model-` diagnostic must have one), and `load.rs` for the example models.
-- **A formatter rule:** a conformance case under `format/`, and the rule's group in `crates/ascribe-fmt/tests/all/rules.rs`; idempotence over every input is already proved by `inputs.rs` and `fuzz.rs`.
+- **A formatter rule:** a conformance case under `format/`, and the rule's group in `crates/ascribe-fmt/tests/all/rules.rs`; idempotence over every input is already proved by `inputs.rs` and `fuzz.rs`, and the nightly `format` fuzz target (`fuzz/`, CONTRIBUTING.md) feeds it arbitrary text. A crash a fuzz target finds is fixed with a test of its input in the crate's own tests.
 
 ## Fixtures: build on what's there
 
@@ -100,7 +100,7 @@ A test that takes more than a few seconds in debug needs a reason in its doc com
 
 ## Generated files and blessing
 
-Some tests write the file they check when run with `ASCRIBE_BLESS=1`: the diagnostics reference, each command's options and JSON Schemas, the command output the docs show, what `agents sync` writes, the names each package imports, the render fixtures' inputs, the Zod fixtures, the extension's settings and commands, the design specimen and tokens. The table of which test rewrites what is in [ARCHITECTURE.md](../../../ARCHITECTURE.md#ascribe_bless1); run the one named, then read the diff before committing it. A generated file is never edited by hand.
+Some tests write the file they check when run with `ASCRIBE_BLESS=1`: the diagnostics reference, each command's options and JSON Schemas, the command output the docs show, what `agents sync` writes, the names each package imports, the render fixtures' inputs, the Zod fixtures, the extension's settings and commands, the design specimen and tokens. The table of which test rewrites what is in [ARCHITECTURE.md](../../../ARCHITECTURE.md#ascribe_bless1); run the one named, or `pnpm bless` to run all of them in order, then read the diff before committing it. A generated file is never edited by hand.
 
 ## Before you finish
 

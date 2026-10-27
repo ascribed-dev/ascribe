@@ -271,6 +271,48 @@ fn an_edit_with_an_error_tells_the_agent() {
 }
 
 #[test]
+fn the_hook_names_the_projects_command() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("package.json"),
+        r#"{"devDependencies": {"@ascribed/cli": "1.0.0"}}"#,
+    )
+    .unwrap();
+    fs::write(root.join("pnpm-lock.yaml"), "").unwrap();
+    let edit = edit_input("claude-code", root, "docs/guide.md");
+    let out = hook(&["claude-code"], &edit, None);
+    let text = context("claude-code", &out);
+    assert!(
+        text.starts_with("`pnpm exec ascribe check docs/guide.md` reports 1 error:"),
+        "{text}"
+    );
+    assert!(
+        text.contains("Run `pnpm exec ascribe explain <code>`"),
+        "{text}"
+    );
+    // `--command`, as `sync --command` writes it, names another.
+    let out = hook(&["claude-code", "--command", "bunx ascribe"], &edit, None);
+    let text = context("claude-code", &out);
+    assert!(
+        text.starts_with("`bunx ascribe check docs/guide.md` reports 1 error:"),
+        "{text}"
+    );
+    fs::write(root.join("docs/index.md"), ERROR).unwrap();
+    let out = hook(
+        &["claude-code", "--event", "stop"],
+        &stop_input("claude-code", root, false),
+        None,
+    );
+    let answer: Value = serde_json::from_str(&stdout(&out)).unwrap();
+    let reason = answer["reason"].as_str().unwrap();
+    assert!(
+        reason.starts_with("`pnpm exec ascribe check` reports"),
+        "{reason}"
+    );
+}
+
+#[test]
 fn an_edit_with_no_errors_says_nothing() {
     let dir = project();
     for harness in HARNESSES {
@@ -827,5 +869,62 @@ fn a_baseline_that_cant_be_read_is_named_after_an_edit() {
                 && said.contains("Fix the line, then run `ascribe check`."),
             "{said}"
         );
+    }
+}
+
+#[test]
+fn an_edit_that_leaves_a_templates_placeholder_names_it() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("ascribe.toml"),
+        format!("{MODEL}\n[types.how-to]\ntemplate = \"templates/how-to.md\"\n\n[types.how-to.frontmatter]\ndescription = \"string\"\n"),
+    )
+    .unwrap();
+    fs::create_dir_all(root.join("templates")).unwrap();
+    let template = "---\ntype: how-to\ntitle: Title\ndescription: \"\\\\{One sentence.}\"\n---\n\nThis guide explains how to \\{insert the task}.\n";
+    fs::write(root.join("templates/how-to.md"), template).unwrap();
+    fs::write(
+        root.join("docs/rotate.md"),
+        template.replace("title: Title", "title: Rotate keys\ndraft: true"),
+    )
+    .unwrap();
+    let cache = tempfile::tempdir().unwrap();
+    // In a draft, they're advice, which the hook passes on.
+    let said = "`ascribe check docs/rotate.md` reports 2 of what the page's template left to fill in, which you write now, while the page is yours:\n\
+                docs/rotate.md:5: [ASC195] `description` is still the template's `\\{One sentence.}`; write this page's own\n\
+                docs/rotate.md:8: [ASC195] this page still has its template's placeholder `{insert the task}`; write what it asks for in its place\n\
+                Checked build `site` only. Run `ascribe explain <code>` for any you don't recognize.\n";
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/rotate.md");
+        let here = hook(&[harness], &input, None);
+        assert_eq!(context(harness, &here), said, "{harness}");
+        // The check server says the same.
+        let out = served(&[harness], &input, cache.path());
+        assert_eq!(context(harness, &out), said, "{harness}");
+    }
+    // In a page that publishes, they're errors.
+    fs::write(
+        root.join("docs/rotate.md"),
+        template.replace("title: Title", "title: Rotate keys"),
+    )
+    .unwrap();
+    let input = edit_input("claude-code", root, "docs/rotate.md");
+    let text = context("claude-code", &hook(&["claude-code"], &input, None));
+    assert!(
+        text.starts_with(
+            "`ascribe check docs/rotate.md` reports 2 errors:\ndocs/rotate.md:4: [ASC286]"
+        ),
+        "{text}"
+    );
+    // Filled in, the hook goes quiet.
+    fs::write(
+        root.join("docs/rotate.md"),
+        "---\ntype: how-to\ntitle: Rotate keys\ndescription: Rotate the signing keys.\n---\n\nThis guide explains how to rotate the keys.\n",
+    )
+    .unwrap();
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/rotate.md");
+        assert_quiet(harness, "edit", &hook(&[harness], &input, None));
     }
 }

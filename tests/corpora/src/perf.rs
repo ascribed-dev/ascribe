@@ -14,6 +14,10 @@
 //! The margin is deliberately generous (see `RESULTS.md`): shared CI runners
 //! vary by a factor of two between runs and by more between machines, and the
 //! job exists to catch an algorithm that got worse, not a few percent.
+//!
+//! The pull request's run (`corpora compare --quick`) compares only the
+//! handful of metrics the baseline's `quick` section names, against the same
+//! recorded medians, with that section's wider margin and floor.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -34,6 +38,21 @@ pub struct Baseline {
     pub targets: BTreeMap<String, f64>,
     /// The recorded median in milliseconds, by metric.
     pub metrics: BTreeMap<String, f64>,
+    /// What the pull request's run compares.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quick: Option<Quick>,
+}
+
+/// The pull request's run: a few metrics, with a wider margin than the weekly
+/// run's, since it measures once on whichever runner it gets.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Quick {
+    /// A metric fails when its median is over `baseline * margin + floor_ms`.
+    pub margin: f64,
+    /// Added to every limit.
+    pub floor_ms: f64,
+    /// The metrics it measures, each of which must be in the results.
+    pub metrics: Vec<String>,
 }
 
 /// One line of a results file.
@@ -112,30 +131,58 @@ fn machine() -> String {
     format!("{cpu}, {cores} logical cores, {}", std::env::consts::OS)
 }
 
-/// Compares `results` with the baseline at `baseline`; with `record`, writes
-/// the results as the new baseline's metrics (keeping its margin, floor, and
-/// targets) instead, unless a [`REQUIRED`] metric is missing from them, which
-/// fails and leaves the file as it was.
+/// What [`compare`] does.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mode {
+    /// The weekly run: every result, against the baseline's margin.
+    Full,
+    /// The pull request's run: the metrics of the baseline's `quick` section,
+    /// against its margin; other results are left out.
+    Quick,
+    /// Write the results as the new baseline's metrics.
+    Record,
+}
+
+/// Compares `results` with the baseline at `baseline` as `mode` says. To
+/// record, it writes the results as the new baseline's metrics (keeping its
+/// margin, floor, targets, and `quick` section) instead, unless a
+/// [`REQUIRED`] metric is missing from them, which fails and leaves the file
+/// as it was.
 ///
 /// # Errors
 ///
-/// A message when a file can't be read, parsed, or written.
+/// A message when a file can't be read, parsed, or written, or when the
+/// baseline has no `quick` section for [`Mode::Quick`].
 pub fn compare(
     results: &Path,
     baseline: &Path,
-    record: bool,
+    mode: Mode,
 ) -> std::result::Result<Comparison, String> {
-    let results = read_results(results)?;
+    let mut results = read_results(results)?;
     let mut base: Baseline = serde_json::from_str(
         &std::fs::read_to_string(baseline).map_err(|e| format!("{}: {e}", baseline.display()))?,
     )
     .map_err(|e| format!("{}: {e}", baseline.display()))?;
-    let missing: Vec<&str> = REQUIRED
-        .iter()
-        .copied()
+    let (required, margin, floor_ms): (Vec<&str>, f64, f64) = if mode == Mode::Quick {
+        let quick = base
+            .quick
+            .as_ref()
+            .ok_or_else(|| format!("{}: no `quick` section", baseline.display()))?;
+        results.retain(|name, _| quick.metrics.contains(name));
+        (
+            quick.metrics.iter().map(String::as_str).collect(),
+            quick.margin,
+            quick.floor_ms,
+        )
+    } else {
+        (REQUIRED.to_vec(), base.margin, base.floor_ms)
+    };
+    let missing: Vec<String> = required
+        .into_iter()
         .filter(|r| !results.contains_key(*r))
+        .map(str::to_owned)
         .collect();
-    if record {
+    if mode == Mode::Record {
         // A recording without a required metric would drop its baseline
         // unnoticed; keep the old file instead.
         if !missing.is_empty() {
@@ -161,9 +208,10 @@ pub fn compare(
         });
     }
     let mut ok = true;
+    let mut failures = String::new();
     let mut text = format!(
-        "baseline recorded on: {}\nfails over baseline x {} + {} ms, or over a target\n\n",
-        base.machine, base.margin, base.floor_ms
+        "baseline recorded on: {}\nfails over baseline x {margin} + {floor_ms} ms, or over a target\n\n",
+        base.machine
     );
     text.push_str(&format!(
         "{:<44} {:>10} {:>10} {:>10} {:>10}  status\n",
@@ -175,7 +223,7 @@ pub fn compare(
     }
     for (name, r) in &results {
         let recorded = base.metrics.get(name).copied();
-        let limit = recorded.map(|b| b * base.margin + base.floor_ms);
+        let limit = recorded.map(|b| b * margin + floor_ms);
         let target = base.targets.get(name).copied();
         let mut status = "ok";
         if limit.is_some_and(|l| r.median_ms > l) {
@@ -190,6 +238,20 @@ pub fn compare(
             status = "no baseline";
         }
         let show = |v: Option<f64>| v.map_or_else(|| "-".to_owned(), |v| format!("{v:.1}"));
+        if status == "REGRESSED" || status == "MISSES TARGET" {
+            let unit = if name.starts_with("memory/") {
+                "MB"
+            } else {
+                "ms"
+            };
+            failures.push_str(&format!(
+                "{status}: {name} measured {:.1} {unit}, baseline {} {unit}, limit {} {unit}, target {}\n",
+                r.median_ms,
+                show(recorded),
+                show(limit),
+                target.map_or_else(|| "none".to_owned(), |t| format!("{t:.1} {unit}")),
+            ));
+        }
         text.push_str(&format!(
             "{name:<44} {:>10.1} {:>10} {:>10} {:>10}  {status}\n",
             r.median_ms,
@@ -198,5 +260,93 @@ pub fn compare(
             show(target)
         ));
     }
+    if !failures.is_empty() {
+        text.push('\n');
+        text.push_str(&failures);
+    }
     Ok(Comparison { text, ok })
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    const BASELINE: &str = r#"{
+        "machine": "test",
+        "margin": 3.0,
+        "floor_ms": 25.0,
+        "targets": { "lsp/keystroke-page-3000": 50.0 },
+        "metrics": { "check/synthetic-3000": 100.0, "lsp/keystroke-page-3000": 2.0 },
+        "quick": {
+            "margin": 4.0,
+            "floor_ms": 50.0,
+            "metrics": ["check/synthetic-3000", "lsp/keystroke-page-3000"]
+        }
+    }"#;
+
+    fn run(results: &str, mode: Mode) -> Comparison {
+        let dir = tempfile::tempdir().unwrap();
+        let baseline = dir.path().join("perf.json");
+        std::fs::write(&baseline, BASELINE).unwrap();
+        let out = dir.path().join("results.jsonl");
+        std::fs::write(&out, results).unwrap();
+        compare(&out, &baseline, mode).unwrap()
+    }
+
+    fn line(name: &str, median_ms: f64) -> String {
+        format!("{{\"name\":\"{name}\",\"median_ms\":{median_ms},\"p95_ms\":{median_ms}}}\n")
+    }
+
+    #[test]
+    fn the_quick_run_has_its_own_margin_and_metrics() {
+        // 400 ms is over the weekly limit (3 x 100 + 25) and under the quick
+        // one (4 x 100 + 50); a result the quick run doesn't name is left out.
+        let results = line("check/synthetic-3000", 400.0)
+            + &line("lsp/keystroke-page-3000", 2.0)
+            + &line("lsp/watched-unread-3000", 1.0);
+        let quick = run(&results, Mode::Quick);
+        assert!(quick.ok, "{}", quick.text);
+        assert!(!quick.text.contains("watched-unread"), "{}", quick.text);
+        assert!(!run(&results, Mode::Full).ok);
+    }
+
+    #[test]
+    fn a_quick_failure_names_the_metric_its_baseline_and_what_was_measured() {
+        let results = line("check/synthetic-3000", 451.0) + &line("lsp/keystroke-page-3000", 2.0);
+        let quick = run(&results, Mode::Quick);
+        assert!(!quick.ok);
+        assert!(
+            quick.text.contains(
+                "REGRESSED: check/synthetic-3000 measured 451.0 ms, baseline 100.0 ms, limit 450.0 ms, target none"
+            ),
+            "{}",
+            quick.text
+        );
+    }
+
+    #[test]
+    fn a_metric_the_quick_run_names_must_be_measured() {
+        let quick = run(&line("check/synthetic-3000", 100.0), Mode::Quick);
+        assert!(!quick.ok);
+        assert!(
+            quick.text.contains("lsp/keystroke-page-3000"),
+            "{}",
+            quick.text
+        );
+    }
+
+    #[test]
+    fn the_quick_section_names_metrics_with_baselines() {
+        let base: Baseline =
+            serde_json::from_str(&std::fs::read_to_string(default_baseline()).unwrap()).unwrap();
+        let quick = base.quick.unwrap();
+        assert!(!quick.metrics.is_empty());
+        for metric in &quick.metrics {
+            assert!(
+                base.metrics.contains_key(metric),
+                "{metric} has no baseline"
+            );
+        }
+    }
 }

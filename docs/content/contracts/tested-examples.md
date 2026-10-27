@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Tested examples contract
-description: The formats of ascribe.examples.toml, which says which of a source's files are examples and how to test them, and of the observation ascribe observe writes beside it.
+description: "The formats of `ascribe.examples.toml`, which says which of a source's files are examples and how to test them, and of the observation `ascribe observe` writes beside it."
 ---
 
 This contract says what the two files of a source's tested examples hold: `ascribe.examples.toml`, which the code's owners write, and the observation `ascribe observe` writes beside it. Both are TOML. [Show what an example was tested with](../examples/tested.md) walks through them, and [`ascribe observe`](../examples/sources.md#cli-observe) is the command that reads the first and writes the second.
@@ -10,7 +10,7 @@ This contract says what the two files of a source's tested examples hold: `ascri
 
 Both are in the folder a source's `path` names: `ascribe.examples.toml` at its root, and the observations in `examples.observations/` beside it, each named `<name>.toml`: `default.toml` for the one `ascribe observe` writes, and another for each `--name`. A name is lowercase words of letters and digits joined by `-`, such as `node-22`; a file in the folder named otherwise isn't an observation, and is left alone. They're read from there whatever the source's own `include` says, and no snippet can address either: a `@snippet` of `ascribe.examples.toml`, or of a file under `examples.observations/`, reports what a file outside the source's `include` does. Every path in either file is relative to that folder, with `/` between segments, which is also how a snippet's path in the source is written.
 
-For a source in another repository, the folder is its copies, `sources/<name>/`. [`ascribe sources fetch` and `update`](../examples/sources.md#cli-sources-fetch) copy the repository's `ascribe.examples.toml` and every file in its `examples.observations/` there, at the pin, beside the files snippets use, and `ascribe.lock` lists each with its hash, as it does every copy ([the lock](content-model/output.md#181-ascribelock-and-the-copies)). A repository with neither copies nothing more.
+For a source in another repository, the folder is its copies, `sources/<name>/`. [`ascribe sources fetch` and `update`](../examples/sources.md#cli-sources-fetch) copy the repository's `ascribe.examples.toml` and every file in its `examples.observations/` there, at the pin, beside the files snippets use, and `ascribe.lock` lists each with its hash, as it does every copy ([the lock](content-model/sources.md#201-ascribelock-and-the-copies)). A repository with neither copies nothing more.
 
 `check`, `build`, `sources`, and the editor read both files and never run a command in either. Only `ascribe observe` runs the config's commands, and only from the folder it's run in; when its input is a terminal, as in the editor's Observe Examples task, it lists them and asks before running them. It refuses a folder that's a source's copies, which it knows from the `ascribe.lock` of a project above it, and exits 2: a config that arrived as a copy is data, and its `test` and commands are shown nowhere.
 
@@ -73,10 +73,10 @@ For a snippet of an example, the observations that can be read decide its status
 | Status | When | What the page shows | What `ascribe check` reports |
 |---|---|---|---|
 | current | At least one lists it with the hash it has now | The tested line, from those | Nothing |
-| stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/output-checks.md#ASC199), advice |
+| stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/output-checks.md#ASC199), a warning |
 | unobserved | None lists it, or there's no observation | Nothing | [`example-unobserved`](../checks/diagnostics/output-checks.md#ASC200), advice |
 
-For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its advice says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
+For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its diagnostic says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
 
 ## 5. The tested line
 

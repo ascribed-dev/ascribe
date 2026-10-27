@@ -2,17 +2,21 @@
 // in Chromium with the network off: every page loads with nothing from
 // outside the folder and no script but the search's, every link in it leads
 // to a file in it, printing a page hides its sidebar, and the search box
-// finds pages and headings, or is absent with scripts off.
+// finds pages and headings, or is absent with scripts off. axe finds nothing
+// on any page in either color scheme.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolveBinary } from "@ascribed/cli/binary";
 import type { Browser, Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { launchChromium } from "./harness.js";
+
+const axeSource = readFileSync(createRequire(import.meta.url).resolve("axe-core/axe.min.js"), "utf8");
 
 const quill = fileURLToPath(new URL("../../../quill", import.meta.url));
 
@@ -26,7 +30,7 @@ beforeAll(async () => {
   const binary = process.env["ASCRIBE_BIN"] ?? resolveBinary();
   execFileSync(
     binary,
-    ["versions", "archive", "self-managed 3.4", "--to", path.join(folder, "3.4"), "--current", "https://docs.quill.dev/"],
+    ["versions", "export", "self-managed 3.4", "--to", path.join(folder, "3.4"), "--current", "https://docs.quill.dev/"],
     { cwd: quill, stdio: "pipe" },
   );
   folder = path.join(folder, "3.4");
@@ -57,8 +61,11 @@ async function open(
   file: string,
   media: "screen" | "print" = "screen",
   javaScriptEnabled = true,
+  colorScheme: "light" | "dark" = "light",
 ): Promise<Page> {
-  const context = await browser.newContext({ offline: true, javaScriptEnabled });
+  // The page's policy would refuse axe's inline script, which only the
+  // audit adds.
+  const context = await browser.newContext({ offline: true, javaScriptEnabled, colorScheme, bypassCSP: true });
   const page = await context.newPage();
   const inside = pathToFileURL(folder).href;
   await page.route("**/*", (route) => {
@@ -195,6 +202,60 @@ describe("searching an archive opened from a disk", () => {
       await expect(page.getByRole("searchbox").count(), file).resolves.toBe(0);
       await expect(page.locator("main h1").isVisible(), file).resolves.toBe(true);
       expect(await page.getByRole("navigation", { name: "Pages" }).getByRole("link").count(), file).toBeGreaterThan(1);
+      await page.context().close();
+    }
+  });
+});
+
+describe("an archive's accessibility", () => {
+  /** What axe finds on `page`: WCAG 2.1 A and AA, and its best practice. */
+  async function audit(page: Page): Promise<unknown[]> {
+    await page.addScriptTag({ content: axeSource });
+    return page.evaluate(async () => {
+      const axe = (
+        window as unknown as {
+          axe: {
+            run: (
+              context: Document,
+              options: { runOnly: string[] },
+            ) => Promise<{ violations: { id: string; nodes: { target: unknown }[] }[] }>;
+          };
+        }
+      ).axe;
+      const { violations } = await axe.run(document, {
+        runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"],
+      });
+      return violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target) }));
+    });
+  }
+
+  for (const scheme of ["light", "dark"] as const) {
+    it(`finds nothing on any page, the contents page and all.html among them, in ${scheme}`, async () => {
+      for (const file of pages()) {
+        const page = await open(file, "screen", true, scheme);
+        expect(await page.locator("html").getAttribute("lang"), file).toBe("en");
+        expect(await audit(page), `${file}, ${scheme}`).toEqual([]);
+        await page.context().close();
+      }
+    });
+  }
+
+  it("starts each page with a skip link to its main, shown when it has focus", async () => {
+    for (const file of pages()) {
+      const page = await open(file);
+      const skip = page.getByRole("link", { name: "Skip to content" });
+      await page.keyboard.press("Tab");
+      await expect(skip.evaluate((a) => a === document.activeElement), file).resolves.toBe(true);
+      await expect(skip.isVisible(), file).resolves.toBe(true);
+      const box = await skip.boundingBox();
+      expect(box !== null && box.y >= 0, file).toBe(true);
+      expect(await skip.getAttribute("href"), file).toBe(`#${await page.locator("main").getAttribute("id")}`);
+      await page.keyboard.press("Enter");
+      await page.waitForURL(/#archive-main$/);
+      // The next Tab goes on from the page, past the sidebar.
+      await page.keyboard.press("Tab");
+      const inMain = await page.evaluate(() => document.activeElement?.closest("main") !== null);
+      expect(inMain, file).toBe(true);
       await page.context().close();
     }
   });

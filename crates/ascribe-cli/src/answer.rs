@@ -8,8 +8,9 @@ use std::cell::{OnceCell, RefCell};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 
-use ascribe_check::{Acknowledged, Diagnostic, LoadError, LocateError, MODEL_FILE, Project};
+use ascribe_check::{Found, LoadError, LocateError, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, RelPath, diagnostics};
 use ascribe_query::QueryError;
@@ -45,11 +46,13 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
     Project::find_config(&start).ok_or_else(|| LocateError::not_found(start))
 }
 
-/// A loaded project, and its source index once something asks for it.
+/// A loaded project, and what's kept with it between questions.
 pub struct Loaded {
     /// The project.
     pub project: Project,
-    index: OnceCell<ascribe_resolve::Project>,
+    /// The source index with the base's specs, once a link to a missing
+    /// operation asks for it; `None` inside when the base can't be read.
+    based_index: OnceCell<Option<Arc<ascribe_resolve::Project>>>,
     /// The index the page-level checks read, once a check asks for it.
     page_index: OnceCell<ascribe_check::PageIndex>,
     /// Each build's readings of its pages, once a search asks for the
@@ -67,23 +70,12 @@ struct Checked {
     found: Found,
 }
 
-/// What a check of a project found.
-#[derive(Clone, Debug, Default)]
-pub struct Found {
-    /// The diagnostics to report.
-    pub diagnostics: Vec<Diagnostic>,
-    /// The builds whose page-level checks ran, by name.
-    pub builds: Vec<String>,
-    /// The problems acknowledged as intended, which aren't reported.
-    pub acknowledged: Vec<Acknowledged>,
-}
-
 impl Loaded {
     /// A project, not yet indexed.
     pub fn new(project: Project) -> Loaded {
         Loaded {
             project,
-            index: OnceCell::new(),
+            based_index: OnceCell::new(),
             page_index: OnceCell::new(),
             readings: ascribe_query::Readings::default(),
             checks: RefCell::new(Vec::new()),
@@ -127,7 +119,22 @@ impl Loaded {
 
     /// The project's source index ([`Project::index`]), made on first use.
     pub fn index(&self) -> &ascribe_resolve::Project {
-        self.index.get_or_init(|| self.project.index())
+        self.project.index()
+    }
+
+    /// The project's source index keeping where each `operationId` was in
+    /// the specs of the base `ascribe diff` compares with by default
+    /// ([`ascribe_diff::base_apis`]), so a link to one renamed since is
+    /// offered the operation in its place. Made on first use; `None` when
+    /// the base can't be read, as in a shallow clone.
+    pub fn index_with_base_apis(&self) -> Option<&ascribe_resolve::Project> {
+        self.based_index
+            .get_or_init(|| {
+                let apis = ascribe_diff::base_apis(self.project.root(), None, false)?;
+                let based = self.project.clone().with_base_apis(Arc::new(apis));
+                Some(Arc::clone(based.index()))
+            })
+            .as_deref()
     }
 }
 

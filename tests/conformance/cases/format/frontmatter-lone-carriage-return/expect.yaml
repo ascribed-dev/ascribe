@@ -1,0 +1,4 @@
+description: "A lone carriage return in frontmatter ends a line, so the directive after it is formatted in place."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

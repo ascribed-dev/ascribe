@@ -1,11 +1,11 @@
 ---
 type: tutorial
 title: Getting started
-description: Install Ascribe, write a first page, check it, build it, and publish it with Astro.
+description: Install Ascribe, write a first page, check it, build it, see it, and publish it with Astro.
 permalink: getting-started
 ---
 
-Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, and builds a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
+Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, builds, and previews a first page. Its second half, [Astro](astro/index.md), publishes the page as a site.
 
 It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor checks as you write it, and a build of it ready for a site.
 
@@ -64,7 +64,7 @@ pnpm exec ascribe init
 ```
 @end
 
-It writes the project's first `ascribe.toml`, and makes `docs/`, the folder the pages go in. The file says what each part is for:
+It writes the project's first `ascribe.toml` and `ascribe.addresses`, and makes `docs/`, the folder the pages go in. `ascribe.toml` says what each part is for:
 
 @snippet: code:examples/getting-started/ascribe.toml#init
 
@@ -76,6 +76,8 @@ The page below uses what most projects add next: a dimension the content varies 
 
 @snippet: code:examples/getting-started/ascribe.toml#added
 
+`values` are what a page writes, and `label` and `labels` are what readers see: the dimension's name, and each value's. The site's tabs read **npm**, **pnpm**, and **Yarn**; without `labels`, a tab shows the value as written, so the last would read **yarn**.
+
 The [`ascribe.toml` reference](content-model/index.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
 
 Add the output directory to `.gitignore`:
@@ -84,7 +86,7 @@ Add the output directory to `.gitignore`:
 .ascribe/
 ```
 
-[Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
+Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when it moves, so the addresses your docs publish keep working ([Keep the addresses you've published](publishing/redirects.md)). [Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
 
 ## Write a page
 
@@ -115,11 +117,13 @@ Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.
 
 ## Format it
 
+`ascribe fmt` rewrites directives and attribute blocks into their canonical spelling, and changes nothing else:
+
 ```sh
 npx ascribe fmt
 ```
 
-rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
+`ascribe fmt --check` reports what would change, for CI.
 
 ## Build it
 
@@ -134,6 +138,20 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `json/`: the resolved pages as JSON, for your own tools.
 
 See [`ascribe build`](checks/check.md#cli-build) for its options, and the [command reference](command/index.md) for the rest.
+
+## See it
+
+```sh
+npx ascribe preview
+```
+
+renders the build's pages as a site into `.ascribe/preview/`, with the sidebar, the page's contents, and search, and serves it on this computer. It prints the check's problems, then the address to open:
+
+```text
+previewing build `site` at http://127.0.0.1:4880/
+```
+
+Open it in a browser to see `install.md` as a reader does, its note, its alternatives by package manager, and its steps. As you edit a page or `ascribe.toml`, it renders the pages again; reload to see the change. It needs nothing but the command: no Node, no editor, and no Astro. Ctrl-C stops it. The published site has its own look, which the next step gives it. See [`ascribe preview`](checks/check.md#cli-preview).
 
 ## Publish it with Astro
 
@@ -153,17 +171,12 @@ Either way:
 
 ## Summary
 
-You installed the command and the editor, declared a content model in `ascribe.toml`, and wrote a page with a note, alternatives by package manager, phrases, and a procedure. Then you checked it, formatted it, and built its site output, plain Markdown, and JSON, ready for Astro to publish.
+You installed the command and the editor, declared a content model in `ascribe.toml`, and wrote a page with a note, alternatives by package manager, phrases, and a procedure. Then you checked it, formatted it, built its site output, plain Markdown, and JSON, and saw it as a site with `ascribe preview`, ready for Astro to publish.
 
 ## Next steps
 
-- [Checks in CI](checks/ci.md): check every pull request the way the editor checks a page.
-- [Content that varies](writing/variants.md): alternatives by platform or product, availability, and builds.
-- [Directive syntax](writing/syntax.md) and the [directive reference](writing/directives.md): the language.
-- [`ascribe.toml` reference](content-model/index.md): the content model.
-- [Command reference](command/index.md): every command, its options, and its exit codes.
-- [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, and its fix.
-- [Editing](editor/index.md): the VS Code extension.
-- [Astro](astro/index.md): publishing a site.
-- [Tested examples](examples/tested.md): code blocks that say what their example was tested with. Start from a repository to copy, for Node with TypeScript or for Python.
-- [Agents](agents/index.md): working with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, starting with `ascribe agents sync`, which gives it your project's rules.
+The [docs' home page](index.md) has a path for each kind of reader, a few pages in order from here:
+
+- [For engineers](index.md#for-engineers): checks in CI, code examples from tested files, and review in CI.
+- [For writers](index.md#for-writers): the editor and its preview, content that varies, reuse, a glossary and templates, and review in the editor.
+- [For agent builders](index.md#for-agent-builders): `ascribe agents sync`, the MCP server and hooks, and what the outputs give agents that read the docs.

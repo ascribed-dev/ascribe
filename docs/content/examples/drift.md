@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Report the pages whose examples changed
-description: Run ascribe drift on each pull request, so the run's summary lists the pages whose code examples changed while their words didn't.
+description: "Run `ascribe drift` on each pull request, so the run's summary lists the pages whose code examples changed while their words didn't."
 ---
 
 A snippet keeps the code on the page current, but not the sentence around it. When a pull request changes a region and not the page that shows it, the page now explains code that may work differently. `ascribe drift` lists those pages:

@@ -293,7 +293,7 @@ pub fn release(project: &Project, releasing: &Releasing<'_>) -> Result<Released,
     let next = plan.next.as_ref();
 
     // Steps 2 and 3: the marks, and `--next`.
-    let index = project.held_index();
+    let index = project.index();
     let mut files = Vec::new();
     if plan.rewrite_planned {
         for file in index.files() {
@@ -815,7 +815,7 @@ pub(crate) fn outputs(
         outputs: vec![Output::Site, Output::Plain],
         anchors: false,
     };
-    outputs_in_memory(&after.held_index(), project.root(), &options)
+    outputs_in_memory(after.index(), project.root(), &options)
         .map_err(|e| ReleaseError::Build(e.to_string()))
 }
 

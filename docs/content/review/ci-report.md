@@ -1,18 +1,19 @@
 ---
 type: how-to
-title: Attach the review report to every pull request
-description: Write the HTML review report in CI on each pull request, and link it from the run, so anyone can read the change without a checkout.
+title: Attach the HTML preview to every pull request
+description: Write the HTML preview in CI on each pull request, and link it from the run, so anyone can read the change without a checkout.
 ---
 
-`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same [marks](how-it-works.md#the-marks) as the previews and **Copy prompt** for an agent that reviews the page. It shows the changes, not the pull request's comments. The file holds everything it shows and makes no network requests, so a reviewer opens it with no checkout, no build, and no account, and nothing in it runs but its own script, so a report from a pull request you don't trust yet is safe to open. [The HTML report](diff.md#the-html-report) is its reference.
+`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same [marks](how-it-works.md#the-marks) as the previews and **Copy prompt** for an agent that reviews the page. It shows the changes, not the pull request's comments. The file holds everything it shows and makes no network requests, so a reviewer opens it with no checkout, no build, and no account, and nothing in it runs but its own script, so a preview from a pull request you don't trust yet is safe to open. [The HTML preview](diff.md#the-html-report) is its reference.
 
 ```sh
 ascribe diff --format html > review.html
 ```
 
-## Add the report to CI
+## Add the preview to CI
+@id: add-the-report-to-ci
 
-This GitHub Actions job writes the report on each pull request, uploads it, and links it from the run's summary, so a reviewer opens it from the pull request's checks. Change `--config docs` to your project's folder (the one with `ascribe.toml`), or drop it when that's the repository's root, and install `ascribe` however your other jobs do.
+This GitHub Actions job writes the preview on each pull request, uploads it, and links it from the run's summary, so a reviewer opens it from the pull request's checks. Change `--config docs` to your project's folder (the one with `ascribe.toml`), or drop it when that's the repository's root, and install `ascribe` however your other jobs do.
 
 @snippet {lang=yaml}: code:.github/workflows/review.yml#job
 
@@ -24,6 +25,6 @@ This repository runs this job on these docs, when a pull request changes them or
 
 ## See also
 
-- [](diff.md#the-html-report): what the report shows, and its limits on a large change.
+- [](diff.md#the-html-report): what the preview shows, and its limits on a large change.
 - [](how-it-works.md): what review compares, and what its marks mean.
 - [](index.md): reviewing the same change in the previews, with comments.

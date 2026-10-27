@@ -25,12 +25,16 @@ pub(super) enum Owner<'a> {
 }
 
 impl Ctx<'_> {
-    /// Checks a directive's attribute block, or lack of one.
+    /// Checks a directive's attribute block, or lack of one. `whole` is
+    /// false when the line has text that fits no part of it, which may be
+    /// the attributes without their braces (`directive-extra-text`), so an
+    /// attribute that seems missing isn't reported.
     pub(super) fn check_directive_attributes(
         &mut self,
         schema: &DirectiveSchema,
         block: Option<&AttributeBlock>,
         closed: bool,
+        whole: bool,
         name_span: Span,
     ) {
         // An unclosed block can't be read, so nothing more is said about
@@ -48,7 +52,12 @@ impl Ctx<'_> {
                 if let Some(block) = block {
                     self.check_block(block, declared, Owner::Directive(schema));
                 }
-                for missing in required_missing(declared, block) {
+                let missing = if whole {
+                    required_missing(declared, block)
+                } else {
+                    Vec::new()
+                };
+                for missing in missing {
                     let issue = Issue::new(
                         diagnostics::WIDGET_SCHEMA,
                         Location::new(self.id, name_span),

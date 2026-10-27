@@ -1,0 +1,4 @@
+FROM alpine
+# :snippet-start: run
+RUN apk add curl
+# :snippet-end:

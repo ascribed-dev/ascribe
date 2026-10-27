@@ -155,6 +155,11 @@ export const ciOnly: { workflow: Step["workflow"]; job: string; why: string }[] 
     job: "astro",
     why: "it packs and installs a release build of each platform's binary",
   },
+  {
+    workflow: "rust.yml",
+    job: "bench",
+    why: "its timings are compared with baselines recorded on CI's runner",
+  },
 ];
 
 // The versions of cargo-deny and cargo-machete rust.yml installs.

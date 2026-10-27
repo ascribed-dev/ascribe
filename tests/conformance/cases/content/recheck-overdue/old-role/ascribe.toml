@@ -1,0 +1,6 @@
+spec = "0.1"
+
+# `review-date` is the role's old name, which still names it for a release.
+[types.page.frontmatter]
+title = "string"
+next-review = { type = "date?", role = "review-date" }

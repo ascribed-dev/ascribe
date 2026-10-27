@@ -123,6 +123,205 @@ pub fn quote(value: &str) -> String {
     format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
 }
 
+/// The keys of the pairs a processor reads, SPEC §3.3.1's table.
+pub const KEYS: &[&str] = &["phrases", "title", "tested", "request", "response"];
+
+/// A word after the language that starts like a pair a processor reads but
+/// isn't one (SPEC §3.3.1): one of [`KEYS`], in any case, then optional
+/// spaces and `=`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NearMiss {
+    /// The key it starts like, as [`KEYS`] has it.
+    pub key: &'static str,
+    /// Where what was meant as the pair starts in the text it was read from.
+    pub start: usize,
+    /// Where it ends: past its value, which may take in the words after it,
+    /// as `phrases = true` and `title="say "hi""` do.
+    pub end: usize,
+    /// What keeps it from being a pair.
+    pub problem: NearMissProblem,
+    /// The pair it was meant to be, when that's clear, as an info string
+    /// holds it.
+    pub fixed: Option<String>,
+}
+
+/// What keeps a [`NearMiss`] from being a pair.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NearMissProblem {
+    /// The key isn't lowercase, as `Title=x`.
+    Case,
+    /// Spaces around `=`, as `phrases = true`.
+    Spaced,
+    /// A quote inside the value, as `title="say "hi""` or `title=a"b`.
+    Quote,
+    /// A quoted value that doesn't close, as `title="connect.ts`.
+    Unclosed,
+    /// Anything else, such as no value: `title=`.
+    Other,
+}
+
+impl NearMissProblem {
+    /// The name a diagnostic's message variant has for it.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            NearMissProblem::Case => "case",
+            NearMissProblem::Spaced => "spaced",
+            NearMissProblem::Quote => "quote",
+            NearMissProblem::Unclosed => "unclosed",
+            NearMissProblem::Other => "other",
+        }
+    }
+}
+
+/// The words after an info string's language that start like a pair a
+/// processor reads and aren't one, in order. A word inside what one of them
+/// meant as its value isn't looked at again.
+pub fn near_misses(info: &str) -> Vec<NearMiss> {
+    let parsed = InfoString::parse(info);
+    let mut out: Vec<NearMiss> = Vec::new();
+    for word in &parsed.words {
+        if word.pair.is_some() || out.last().is_some_and(|m| word.start < m.end) {
+            continue;
+        }
+        if let Some(miss) = near_miss_at(info, word.start) {
+            out.push(miss);
+        }
+    }
+    out
+}
+
+/// The key in [`KEYS`] that `text` starts with at `start`, in any case,
+/// followed by optional spaces and `=`, and where the `=` is.
+fn key_at(text: &str, start: usize) -> Option<(&'static str, usize)> {
+    let rest = text.get(start..)?;
+    KEYS.iter().find_map(|key| {
+        let written = rest.get(..key.len())?;
+        if !written.eq_ignore_ascii_case(key) {
+            return None;
+        }
+        let after = &rest.as_bytes()[key.len()..];
+        let spaces = after.iter().take_while(|&&b| is_space(b)).count();
+        (after.get(spaces) == Some(&b'=')).then_some((*key, start + key.len() + spaces))
+    })
+}
+
+/// A quoted value's text with its escapes, `\\"` and `\\\\`, taken off.
+fn unescaped(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut chars = raw.chars().peekable();
+    while let Some(c) = chars.next() {
+        match (c, chars.peek()) {
+            ('\\', Some(&next @ ('"' | '\\'))) => {
+                out.push(next);
+                chars.next();
+            }
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
+/// Whether a word starts at `at` that ends what a near miss before it
+/// meant as its value: a pair, or another near miss.
+fn starts_another(text: &str, at: usize) -> bool {
+    pair_at(text, at).is_some() || key_at(text, at).is_some()
+}
+
+fn near_miss_at(text: &str, start: usize) -> Option<NearMiss> {
+    let bytes = text.as_bytes();
+    let (key, equals) = key_at(text, start)?;
+    let mut value_start = equals + 1;
+    while bytes.get(value_start).is_some_and(|&b| is_space(b)) {
+        value_start += 1;
+    }
+    let spaced = equals > start + key.len() || value_start > equals + 1;
+    let named = |otherwise| {
+        if &text[start..start + key.len()] != key {
+            NearMissProblem::Case
+        } else if spaced {
+            NearMissProblem::Spaced
+        } else {
+            otherwise
+        }
+    };
+    // No value, or only a word after the spaces that's a pair of its own.
+    if value_start == bytes.len() || (spaced && starts_another(text, value_start)) {
+        return Some(NearMiss {
+            key,
+            start,
+            end: equals + 1,
+            problem: named(NearMissProblem::Other),
+            fixed: None,
+        });
+    }
+    let (end, value, problem) = if bytes[value_start] == b'"' {
+        quoted_value(text, value_start)
+    } else {
+        let end = word_end(bytes, value_start);
+        let token = &text[value_start..end];
+        if token.contains('"') {
+            (end, quote(token), NearMissProblem::Quote)
+        } else {
+            (end, token.to_owned(), NearMissProblem::Other)
+        }
+    };
+    let fixed = format!("{key}={value}");
+    let fixed = match words(&fixed).as_slice() {
+        [only] if only.pair.is_some() && only.text.len() == fixed.len() => Some(fixed),
+        _ => None,
+    };
+    Some(NearMiss {
+        key,
+        start,
+        end,
+        problem: named(problem),
+        fixed,
+    })
+}
+
+/// The quoted value that starts at `open`, its quote: where it ends, the
+/// value quoted again, and what was wrong with it. A value whose first
+/// closing quote is followed by a space or the end is right as it is.
+/// Otherwise it was meant to close at the last quote before a space or the
+/// end, short of a word that starts another pair; with no such quote, it
+/// doesn't close.
+fn quoted_value(text: &str, open: usize) -> (usize, String, NearMissProblem) {
+    let bytes = text.as_bytes();
+    let value = |end: usize| quote(&unescaped(&text[open + 1..end]));
+    let closes_at = |j: usize| bytes.get(j + 1).is_none_or(|&b| is_space(b));
+    // The quotes after the opening one that aren't escaped, with whether a
+    // word starting another pair comes before each.
+    let mut quotes = Vec::new();
+    let mut stop = None;
+    let mut j = open + 1;
+    while j < bytes.len() {
+        match bytes[j] {
+            b'\\' if matches!(bytes.get(j + 1), Some(b'"' | b'\\')) => j += 1,
+            b'"' => quotes.push((j, stop.is_some())),
+            b if is_space(b) && stop.is_none() && starts_another(text, j + 1) => stop = Some(j),
+            _ => {}
+        }
+        j += 1;
+    }
+    if let Some(&(first, _)) = quotes.first()
+        && closes_at(first)
+    {
+        return (first + 1, value(first), NearMissProblem::Other);
+    }
+    let stop = stop.unwrap_or(bytes.len());
+    let quotes: Vec<usize> = quotes
+        .into_iter()
+        .filter_map(|(q, past)| (!past).then_some(q))
+        .collect();
+    match quotes.iter().rev().find(|&&q| closes_at(q)) {
+        Some(&last) => (last + 1, value(last), NearMissProblem::Quote),
+        None => {
+            let end = text[..stop].trim_end_matches([' ', '\t']).len();
+            (end, value(end), NearMissProblem::Unclosed)
+        }
+    }
+}
+
 fn is_space(b: u8) -> bool {
     b == b' ' || b == b'\t'
 }
@@ -318,5 +517,126 @@ mod tests {
             let info = format!("text title={}", quote(value));
             assert_eq!(InfoString::parse(&info).get("title"), Some(value));
         }
+    }
+    /// The near misses of `info`: what each was meant as, what's wrong, and
+    /// the pair it was meant to be.
+    fn misses(info: &str) -> Vec<(&str, &'static str, Option<String>)> {
+        near_misses(info)
+            .into_iter()
+            .map(|m| (&info[m.start..m.end], m.problem.as_str(), m.fixed))
+            .collect()
+    }
+
+    #[test]
+    fn near_misses_say_what_was_meant() {
+        let cases: &[(&str, &str, &str, Option<&str>)] = &[
+            (
+                "ts phrases = true",
+                "phrases = true",
+                "spaced",
+                Some("phrases=true"),
+            ),
+            (
+                r#"ts title= "x""#,
+                r#"title= "x""#,
+                "spaced",
+                Some(r#"title="x""#),
+            ),
+            ("ts Title=x", "Title=x", "case", Some("title=x")),
+            (
+                r#"ts TESTED = "Node""#,
+                r#"TESTED = "Node""#,
+                "case",
+                Some(r#"tested="Node""#),
+            ),
+            (
+                r#"ts title="connect.ts"#,
+                r#"title="connect.ts"#,
+                "unclosed",
+                Some(r#"title="connect.ts""#),
+            ),
+            (
+                r#"ts title="say "hi"""#,
+                r#"title="say "hi"""#,
+                "quote",
+                Some(r#"title="say \"hi\"""#),
+            ),
+            (
+                r#"ts title=a"b"#,
+                r#"title=a"b"#,
+                "quote",
+                Some(r#"title="a\"b""#),
+            ),
+            ("ts title=", "title=", "other", None),
+            ("ts phrases= tested=x", "phrases=", "spaced", None),
+        ];
+        for (info, meant, problem, fixed) in cases {
+            assert_eq!(
+                misses(info),
+                [(*meant, *problem, fixed.map(str::to_owned))],
+                "{info}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_near_miss_ends_before_the_next_pair() {
+        assert_eq!(
+            misses(r#"ts title="say "hi" now" phrases=true"#),
+            [(
+                r#"title="say "hi" now""#,
+                "quote",
+                Some(r#"title="say \"hi\" now""#.to_owned())
+            )]
+        );
+        assert_eq!(
+            misses(r#"ts title="connect.ts phrases = true"#),
+            [
+                (
+                    r#"title="connect.ts"#,
+                    "unclosed",
+                    Some(r#"title="connect.ts""#.to_owned())
+                ),
+                ("phrases = true", "spaced", Some("phrases=true".to_owned())),
+            ]
+        );
+        // A quoted value that closes is right, whatever is inside it.
+        assert_eq!(
+            misses(r#"ts Title="use title=x" {1,3} "y""#),
+            [(
+                r#"Title="use title=x""#,
+                "case",
+                Some(r#"title="use title=x""#.to_owned())
+            )]
+        );
+    }
+
+    #[test]
+    fn other_words_are_no_near_misses() {
+        for info in [
+            r#"ts {1,3} showLineNumbers titles=x foo=bar Foo=bar title"#,
+            r#"ts title="a" phrases=true"#,
+            r#"ts title="use phrases = true""#,
+            // The first word is the language, whatever it looks like.
+            "Title=x",
+        ] {
+            assert_eq!(misses(info), [], "{info}");
+        }
+    }
+
+    #[test]
+    fn the_keys_are_the_specs() {
+        let spec = include_str!("../../../SPEC.md");
+        let section = spec
+            .split("#### 3.3.1 ")
+            .nth(1)
+            .and_then(|s| s.split("\n### ").next())
+            .expect("SPEC §3.3.1");
+        let keys: Vec<&str> = section
+            .lines()
+            .filter_map(|l| l.strip_prefix("| `"))
+            .filter_map(|l| l.split('`').next())
+            .collect();
+        assert_eq!(keys, KEYS);
     }
 }

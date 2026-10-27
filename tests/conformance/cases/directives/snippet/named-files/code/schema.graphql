@@ -1,0 +1,5 @@
+# :snippet-start: query
+type Query {
+  user(id: ID!): User
+}
+# :snippet-end:

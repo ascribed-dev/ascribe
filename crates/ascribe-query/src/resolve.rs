@@ -113,7 +113,11 @@ pub fn resolve(
     let cx = EmitContext::new(project, project_root, build);
     match emit {
         Emit::Plain => {
-            let emitted = emit_page(&PlainEmitter::new(project.model()), &cx, &page)?;
+            // One page alone: a link keeps its page's HTML address, since
+            // the anchors its fragment has in another page's Markdown are
+            // the build's to work out (decision #1023).
+            let plain = PlainEmitter::new(project.model()).with_html_links();
+            let emitted = emit_page(&plain, &cx, &page)?;
             if frontmatter && let Some(value) = page.frontmatter.as_ref().filter(|v| !v.is_null()) {
                 // A value parsed from YAML always writes back as YAML; were it
                 // not to, the page is still worth showing without its
@@ -269,8 +273,8 @@ mod tests {
             let emitter = SiteEmitter::new(project.model());
             let paths: Vec<RelPath> = index.pages().map(|file| file.path.clone()).collect();
             for path in paths {
-                let whole = resolve(&index, &root, &path, build, Emit::Site, true).unwrap();
-                let body = resolve(&index, &root, &path, build, Emit::Site, false).unwrap();
+                let whole = resolve(index, &root, &path, build, Emit::Site, true).unwrap();
+                let body = resolve(index, &root, &path, build, Emit::Site, false).unwrap();
                 assert_eq!(whole.emit, Emit::Site);
                 if whole.not_published.is_some() {
                     assert!(whole.text.is_empty() && body.text.is_empty());
@@ -290,5 +294,26 @@ mod tests {
             }
         }
         assert!(compared > 10, "only {compared} pages compared");
+    }
+
+    /// With the outputs for agents on, the plain form keeps a link's HTML
+    /// address, as it did before the agents' Markdown linked to Markdown: a
+    /// link to a heading with an `@id` keeps the page id.
+    #[test]
+    fn the_plain_form_links_to_pages_by_their_html_address() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
+        let loaded =
+            ascribe_check::Project::load(&root.join("ascribe.toml")).expect("the example loads");
+        let index = loaded.index();
+        let build = &loaded.model().builds[0];
+        let path = RelPath::parse("Reference/Options.md").unwrap();
+        let text = resolve(index, &root, &path, build, Emit::Plain, false)
+            .unwrap()
+            .text;
+        assert!(
+            text.contains("(https://docs.example.com/docs/guides/my-setup#weave-config)"),
+            "{text}"
+        );
+        assert!(!text.contains("my-setup.md"), "{text}");
     }
 }

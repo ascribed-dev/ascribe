@@ -7,7 +7,9 @@
 use std::sync::Arc;
 
 use ascribe_core::FileId;
-use ascribe_diff::{BuildDiff, Change, ChangeKind, PageDiff, PageStatus, Side, compare_builds};
+use ascribe_diff::{
+    BuildDiff, Change, ChangeKind, PageDiff, PageStatus, Renames, Side, compare_builds,
+};
 use ascribe_resolve::{Layout, MemoryFs, Project};
 
 const MODEL: &str = "spec = \"0.1\"\n[phrases]\nproduct = \"Quill\"\n[builds.site]\n";
@@ -46,7 +48,7 @@ fn diff(before: &Version, after: &Version) -> Vec<BuildDiff> {
         .map(|b| b.name.clone())
         .collect();
     let names: Vec<&str> = names.iter().map(String::as_str).collect();
-    compare_builds(Some(side(before)), side(after), &names)
+    compare_builds(Some(side(before)), side(after), &names, &Renames::new())
 }
 
 /// The one changed page of the one build.
@@ -462,7 +464,7 @@ fn pages_a_build_starts_or_stops_publishing() {
 #[test]
 fn without_a_base_every_page_is_added() {
     let b = version(MODEL, &[("install.md", PAGE)]);
-    let builds = compare_builds(None, side(&b), &["site"]);
+    let builds = compare_builds(None, side(&b), &["site"], &Renames::new());
     assert_eq!(builds[0].pages.len(), 1);
     assert_eq!(builds[0].pages[0].status, PageStatus::Added);
 }
@@ -767,4 +769,305 @@ fn a_memo_added_beside_a_changed_paragraph_lists_the_paragraph_alone() {
     let change = only_change(&page);
     assert_eq!(change.kind, ChangeKind::Changed);
     assert_eq!(change.now.as_ref().unwrap().source, "install.md:10-10");
+}
+
+/// A version with an `ascribe.addresses` beside the content model.
+fn with_addresses(files: &[(&str, &str)], addresses: &str) -> Version {
+    let loaded = ascribe_model::load_str(MODEL, FileId::new(0)).expect("a valid model");
+    let layout = Layout::from_model(&loaded);
+    let mut fs = MemoryFs::new(&layout).with_file("ascribe.addresses", addresses);
+    for (path, text) in files {
+        fs = fs.with_source(path, text);
+    }
+    Version {
+        model: MODEL.to_owned(),
+        project: Project::load(Arc::new(loaded), layout, &fs),
+    }
+}
+
+const CONFIGURE: &str = "---\ntitle: Configure Widgetly\n---\n\n# Configure\n\nSet the key.\n";
+const MOVED: &str = "version = 1\n\n[moved]\n\"guides/configure.md\" = \"guides/setup.md\"\n";
+
+/// The pages of the one build, by path.
+fn pages_of(builds: &[BuildDiff]) -> Vec<&PageDiff> {
+    assert_eq!(builds.len(), 1);
+    builds[0].pages.iter().collect()
+}
+
+#[test]
+fn a_page_git_sees_renamed_is_one_page_that_moved() {
+    let a = version(
+        MODEL,
+        &[
+            ("guides/configure.md", CONFIGURE),
+            ("guides/install.md", "# Install\n\nThen [](configure.md).\n"),
+        ],
+    );
+    let b = version(
+        MODEL,
+        &[
+            ("guides/setup.md", CONFIGURE),
+            ("guides/install.md", "# Install\n\nThen [](setup.md).\n"),
+        ],
+    );
+    let renames = Renames::from([(
+        "guides/configure.md".to_owned(),
+        "guides/setup.md".to_owned(),
+    )]);
+    let builds = compare_builds(Some(side(&a)), side(&b), &["site"], &renames);
+    let pages = pages_of(&builds);
+    let paths: Vec<&str> = pages.iter().map(|p| p.path.as_str()).collect();
+    assert_eq!(paths, ["guides/install.md", "guides/setup.md"]);
+
+    let setup = pages[1];
+    assert_eq!(setup.status, PageStatus::Changed);
+    assert_eq!(setup.moved_from.as_deref(), Some("guides/configure.md"));
+    assert!(!setup.own_file_changed);
+    assert!(setup.changes.is_empty(), "{:#?}", setup.changes);
+    assert!(setup.page_changed.is_empty(), "{:?}", setup.page_changed);
+    assert_eq!(
+        setup.describe(str::to_owned),
+        "moved from guides/configure.md, no change to the page"
+    );
+
+    // The link was changed in install.md itself, and all that changed
+    // through the page it leads to is its address: the summary doesn't name
+    // it, and the JSON says which page moved.
+    let install = pages[0];
+    assert!(install.own_file_changed);
+    assert_eq!(install.because, ["guides/setup.md"]);
+    assert_eq!(install.moved_links.len(), 1);
+    assert_eq!(install.moved_links[0].from, "guides/configure.md");
+    assert_eq!(install.moved_links[0].to, "guides/setup.md");
+    assert_eq!(install.describe(str::to_owned), "1 changed");
+
+    // Without the rename, or a record of the move, it's two pages.
+    let builds = compare_builds(Some(side(&a)), side(&b), &["site"], &Renames::new());
+    let statuses: Vec<(&str, PageStatus)> = pages_of(&builds)
+        .iter()
+        .map(|p| (p.path.as_str(), p.status))
+        .collect();
+    assert_eq!(
+        statuses,
+        [
+            ("guides/configure.md", PageStatus::Removed),
+            ("guides/install.md", PageStatus::Changed),
+            ("guides/setup.md", PageStatus::Added),
+        ]
+    );
+}
+
+#[test]
+fn a_move_ascribe_addresses_records_is_a_move_and_its_changes_are_marked() {
+    let a = version(MODEL, &[("guides/configure.md", CONFIGURE)]);
+    let b = with_addresses(
+        &[(
+            "guides/setup.md",
+            &CONFIGURE.replace("Set the key.", "Set the API key."),
+        )],
+        MOVED,
+    );
+    let page = page(&a, &b);
+    assert_eq!(page.path, "guides/setup.md");
+    assert_eq!(page.moved_from.as_deref(), Some("guides/configure.md"));
+    assert!(page.own_file_changed);
+    let change = only_change(&page);
+    assert_eq!(change.kind, ChangeKind::Changed);
+    assert_eq!(
+        change.was.as_ref().unwrap().source,
+        "guides/configure.md:7-7"
+    );
+    assert_eq!(change.now.as_ref().unwrap().source, "guides/setup.md:7-7");
+    assert_eq!(
+        page.describe(str::to_owned),
+        "moved from guides/configure.md, 1 changed"
+    );
+
+    // The page is found by either path.
+    let mut report = ascribe_diff::Report {
+        schema_version: ascribe_diff::SCHEMA_VERSION,
+        ascribe_version: "",
+        base: ascribe_diff::BaseInfo {
+            requested: "main".to_owned(),
+            commit: "0".repeat(40),
+            merge_base: None,
+        },
+        repository: ascribe_diff::RepositoryInfo {
+            root: String::new(),
+            project_prefix: String::new(),
+        },
+        working_tree_errors: 0,
+        blocks_omitted: false,
+        builds: diff(&a, &b),
+    };
+    let old = ascribe_core::RelPath::parse("guides/configure.md").unwrap();
+    assert!(report.reaches(&old));
+    report.narrow_to(&old);
+    assert_eq!(report.builds[0].pages.len(), 1);
+}
+
+#[test]
+fn a_page_changed_only_because_a_page_it_links_to_moved_says_so() {
+    // install.md isn't edited, so its link no longer finds the page's
+    // title: it changed because the page moved.
+    let install = "# Install\n\nThen [](configure.md).\n";
+    let a = version(
+        MODEL,
+        &[
+            ("guides/configure.md", CONFIGURE),
+            ("guides/install.md", install),
+        ],
+    );
+    let b = with_addresses(
+        &[
+            ("guides/setup.md", CONFIGURE),
+            ("guides/install.md", install),
+        ],
+        MOVED,
+    );
+    let builds = diff(&a, &b);
+    let pages = pages_of(&builds);
+    let install = pages
+        .iter()
+        .find(|p| p.path == "guides/install.md")
+        .unwrap();
+    assert!(!install.own_file_changed);
+    assert_eq!(install.because, ["guides/setup.md"]);
+    assert_eq!(
+        install.describe(str::to_owned),
+        "1 changed (a link changed because guides/configure.md moved)"
+    );
+}
+
+#[test]
+fn a_move_is_in_the_json() {
+    let a = version(MODEL, &[("guides/configure.md", CONFIGURE)]);
+    let b = with_addresses(&[("guides/setup.md", CONFIGURE)], MOVED);
+    let json = serde_json::to_value(diff(&a, &b)).unwrap();
+    let page = &json[0]["pages"][0];
+    assert_eq!(page["path"], "guides/setup.md");
+    assert_eq!(page["moved_from"], "guides/configure.md");
+    assert_eq!(page["status"], "changed");
+    assert_eq!(page["own_file_changed"], false);
+    assert_eq!(page["changes"], serde_json::json!([]));
+    // A page that didn't move has neither field.
+    let a = version(MODEL, &[("install.md", PAGE)]);
+    let b = version(MODEL, &[("install.md", &PAGE.replace("more", "fewer"))]);
+    let json = serde_json::to_value(diff(&a, &b)).unwrap();
+    assert!(json[0]["pages"][0].get("moved_from").is_none());
+    assert!(json[0]["pages"][0].get("moved_links").is_none());
+}
+
+/// A spec with one operation, `createWidget`, as `[apis.widgets]` declares
+/// it at `api/openapi.yaml`.
+fn spec(id: &str, summary: &str, deprecated: bool, description: &str) -> String {
+    format!(
+        "openapi: 3.1.0\ninfo: {{ title: Widgets, version: \"1\" }}\npaths:\n  /widgets:\n    post:\n      operationId: {id}\n      summary: {summary}\n      description: {description}\n      deprecated: {deprecated}\n"
+    )
+}
+
+/// A version declaring `[apis.widgets]` with this spec, and these pages.
+fn with_spec(pages: &[(&str, &str)], spec: &str) -> Version {
+    let model = format!(
+        "{MODEL}[apis.widgets]\nspec = \"api/openapi.yaml\"\nreference = {{ renderer = \"redoc\", at = \"/api/\" }}\n"
+    );
+    let loaded = ascribe_model::load_str(&model, FileId::new(0)).expect("a valid model");
+    let layout = Layout::from_model(&loaded);
+    let mut fs = MemoryFs::new(&layout).with_file("api/openapi.yaml", spec);
+    for (path, text) in pages {
+        fs = fs.with_source(path, text);
+    }
+    Version {
+        model,
+        project: Project::load(Arc::new(loaded), layout, &fs),
+    }
+}
+
+const EMBEDS: &str =
+    "# Widgets\n\n@operation: ../../api/openapi.yaml#createWidget\n\nThen go on.\n";
+const LINKS: &str = "# Widgets\n\nSee [the operation](../../api/openapi.yaml#createWidget).\n";
+
+#[test]
+fn a_page_changed_only_through_its_operation_names_the_spec() {
+    let before = spec("createWidget", "Make a widget", false, "Makes one.");
+    for after in [
+        spec("createWidget", "Create a widget", false, "Makes one."),
+        spec("createWidget", "Make a widget", true, "Makes one."),
+        spec("widgets_create", "Make a widget", false, "Makes one."),
+    ] {
+        let a = with_spec(&[("guides/api.md", EMBEDS)], &before);
+        let b = with_spec(&[("guides/api.md", EMBEDS)], &after);
+        let page = page(&a, &b);
+        assert!(!page.own_file_changed);
+        assert_eq!(page.because, ["api/openapi.yaml#createWidget"], "{after}");
+        assert_eq!(
+            page.describe(str::to_owned),
+            "1 changed (through api/openapi.yaml#createWidget)"
+        );
+        assert_eq!(
+            only_change(&page).now.as_ref().unwrap().source,
+            "guides/api.md:3-3"
+        );
+    }
+}
+
+#[test]
+fn a_link_to_an_operation_changes_only_when_its_address_does() {
+    let before = spec("createWidget", "Make a widget", false, "Makes one.");
+    // A link writes the operation's address alone: its summary and
+    // deprecation aren't on the page.
+    for after in [
+        spec("createWidget", "Create a widget", false, "Makes one."),
+        spec("createWidget", "Make a widget", true, "Makes one."),
+    ] {
+        let a = with_spec(&[("guides/api.md", LINKS)], &before);
+        let b = with_spec(&[("guides/api.md", LINKS)], &after);
+        assert!(diff(&a, &b)[0].pages.is_empty(), "{after}");
+    }
+    let a = with_spec(&[("guides/api.md", LINKS)], &before);
+    let b = with_spec(
+        &[("guides/api.md", LINKS)],
+        &spec("widgets_create", "Make a widget", false, "Makes one."),
+    );
+    let renamed = page(&a, &b);
+    assert!(!renamed.own_file_changed);
+    assert_eq!(renamed.because, ["api/openapi.yaml#createWidget"]);
+    // Named by its method and path, the link leads to the new id's address.
+    let by_path = "# Widgets\n\nSee [the operation](../../api/openapi.yaml#post/widgets).\n";
+    let a = with_spec(&[("guides/api.md", by_path)], &before);
+    let b = with_spec(
+        &[("guides/api.md", by_path)],
+        &spec("widgets_create", "Make a widget", false, "Makes one."),
+    );
+    assert_eq!(page(&a, &b).because, ["api/openapi.yaml#post/widgets"]);
+}
+
+#[test]
+fn a_spec_change_no_page_shows_lists_nothing() {
+    let before = spec("createWidget", "Make a widget", false, "Makes one.");
+    let after = spec("createWidget", "Make a widget", false, "Makes a new one.");
+    for text in [EMBEDS, LINKS] {
+        let a = with_spec(&[("guides/api.md", text)], &before);
+        let b = with_spec(&[("guides/api.md", text)], &after);
+        assert!(diff(&a, &b)[0].pages.is_empty());
+    }
+}
+
+#[test]
+fn an_operation_change_beside_the_pages_own_is_named_too() {
+    let a = with_spec(
+        &[("guides/api.md", EMBEDS)],
+        &spec("createWidget", "Make a widget", false, "Makes one."),
+    );
+    let b = with_spec(
+        &[("guides/api.md", &EMBEDS.replace("go on", "carry on"))],
+        &spec("createWidget", "Create a widget", false, "Makes one."),
+    );
+    let page = page(&a, &b);
+    assert!(page.own_file_changed);
+    assert_eq!(page.because, ["api/openapi.yaml#createWidget"]);
+    assert_eq!(
+        page.describe(str::to_owned),
+        "2 changed (also through api/openapi.yaml#createWidget)"
+    );
 }

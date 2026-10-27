@@ -8,5 +8,5 @@ spec: ["4.8", "7.3"]
 tags: [check]
 
 diagnostics:
-  - {slug: example-stale, file: index.md, line: 5}
-  - {slug: example-unobserved, file: index.md, line: 7}
+  - {slug: example-stale, file: index.md, line: 5, severity: warning}
+  - {slug: example-unobserved, file: index.md, line: 7, severity: advice}

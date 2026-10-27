@@ -120,7 +120,7 @@ export interface ProjectViewServices {
 
 export class ProjectView implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
-  /** Draws the view again when the day changes, which overdue reviews are counted for. */
+  /** Draws the view again when the day changes, which overdue rechecks are counted for. */
   private midnight: ReturnType<typeof setTimeout> | undefined;
   /** Each project's sources, for About, by its folder: asked once, and again when they may have changed. */
   private readonly sources = new Map<string, AboutFacts["sources"]>();
@@ -307,7 +307,7 @@ export class ProjectView implements vscode.Disposable {
         await vscode.commands.executeCommand("workbench.actions.view.problems");
         return;
       case PROJECT_KEYS.examples:
-      case PROJECT_KEYS.reviews:
+      case PROJECT_KEYS.rechecks:
       case PROJECT_KEYS.permalinks: {
         const result = this.checks.resultOf(server.project.folder);
         const first = result.kind === "made" ? result.counted[key].first : null;

@@ -91,7 +91,7 @@ The colors can come from the library's own properties, so a project's state look
 
 ## Generated text
 
-A note's heading line and a tab's label, when the script isn't running, come from the elements' attributes through CSS generated content. So does the lead-in of a line of availability badges, `ascribe-availability::before`, which is `Available: `; the lead-in of a tested code block's caption, `.ascribe-code-tested::before`, which is `Tested with ` ([§9]({repo}/blob/main/packages/elements/CONTRACT.md#9-a-tested-code-block)); and the line after a link to another line of a versioned build, `a[data-ascribe-release-line]::after`, such as ` (3.5)` ([§10]({repo}/blob/main/packages/elements/CONTRACT.md#10-a-link-out-of-a-line)). A site can restyle or translate each:
+A note's heading line comes from the element's attributes through CSS generated content. So does the lead-in of a line of availability badges, `ascribe-availability::before`, which is `Available: `; the lead-in of a tested code block's caption, `.ascribe-code-tested::before`, which is `Tested with ` ([§9]({repo}/blob/main/packages/elements/CONTRACT.md#9-a-tested-code-block)); and the line after a link to another line of a versioned build, `a[data-ascribe-release-line]::after`, such as ` (3.5)` ([§10]({repo}/blob/main/packages/elements/CONTRACT.md#10-a-link-out-of-a-line)). A site can restyle or translate each:
 
 ```css
 ascribe-availability::before {
@@ -100,6 +100,8 @@ ascribe-availability::before {
 ```
 
 A table row's badges have no lead-in in sight. Their `(Available: ` and `)` are in the HTML, in spans with the class `ascribe-availability-lead-in`, which the stylesheet hides from sight and not from a screen reader, so the row reads as the page's Markdown writes it.
+
+A tab's label isn't generated: it's text, the tab's first paragraph, `<p class="ascribe-tab-label">`, so a reader of the HTML that runs neither script nor stylesheet, such as a tool that converts the page to text for an AI agent, finds each label before its tab's content. Without the script it introduces the tab; with it, the tab's button shows the label, and the paragraph is out of sight and hidden from screen readers, which hear the label once, from the button ([§3]({repo}/blob/main/packages/elements/CONTRACT.md#3-ascribe-tabs-and-ascribe-tab)).
 
 ## Copy buttons
 @available: ascribe planned

@@ -57,7 +57,7 @@ Markdown plus web components, for a consumer that renders CommonMark with raw HT
 | Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults |
 | `@note` | `<ascribe-note type label heading>` wrapping the content |
 | `@steps` | `<ascribe-steps>` wrapping the list |
-| `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>` per surviving arm (a group reduced to one arm is its content) |
+| `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>` per surviving arm, each starting with its label as `<p class="ascribe-tab-label">` (a group reduced to one arm is its content) |
 | `@details` | `<details>` with `<summary>` holding the title as HTML |
 | `@available` | `<ascribe-availability scope="section|block">` of `<ascribe-availability-target target dimension states versions>` |
 | Project widget | An element named after the widget, `<ascribe-group widget>` around a group's arms |

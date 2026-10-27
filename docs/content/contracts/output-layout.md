@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Output-layout contract
-description: Where ascribe build writes each build's output, how it records what it wrote, and how it replaces a previous output.
+description: "Where `ascribe build` writes each build's output, how it records what it wrote, and how it replaces a previous output."
 permalink: output-layout-contract
 ---
 
@@ -42,6 +42,12 @@ Only pages the build publishes are written (SPEC §9.3); fragments never are.
 | Emitter | Page `Guides/My Setup.md` is written to |
 |---|---|
 | `plain` | `guides/my-setup.md`: the page's Astro entry id with `.md` (the root `index.md` stays `index.md`) |
+
+Each of these pages opens with a blockquote pointing at `llms.txt`. After the page's title, and its availability line when it has one, comes a blockquote saying what the page is for: its content type with its first letter capitalized, then ` · ` and its description, the field its type marks `role = "description"`, as plain text on one line, as `llms.txt` shows it: `> Reference · Every option of ascribe.toml.` A page of the implicit `page` type, in a project that declares no types, has the description alone, a page without a description the type alone, and a page with neither no blockquote (decision #1028).
+
+For a project with `[releases]`, the opening blockquote, and the summary of each `llms.txt`, ends with the releases the build describes, each target by its label: a line of a versioned build its line, `This documentation describes Self-managed 3.5.`; a build that filters for a version, that version, and a build that filters for a target without lines, none; any other build, each target's live lines, and when a target has a planned line, a sentence saying that what's marked planned is in none of them: `This documentation describes Ascribe 0.4.4. Anything marked planned isn't in that release yet.` The word is `[releases] planned-label`. A page of a versioned build with more than one live line, which a blockquote naming its line follows (SPEC §9.4), leaves the line to that blockquote. A project without `[releases]` writes neither.
+
+A link in these pages to a page the build publishes, a glossary link included, is the absolute URL of that page's Markdown version (`https://docs.example.com/docs/guides/my-setup.md`), and its fragment, when it names a heading, is the anchor a Markdown reader gives that heading there: the `github` slug of the heading's text as the page's Markdown writes it, numbered across the page as the slugger numbers. That's the heading's page id (SPEC §5.5), unless the heading has an `@id`, or is in a variant arm, whose label its heading ends with in the Markdown (SPEC §9.4); either way it's the heading the page id names on the page. A link out of a line of a versioned build, a link to an operation, and the sections in `_ascribe/help.json` (§1.7) keep the HTML address, as the `plain` output without agents does (decision #1023).
 
 Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §15); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
 
@@ -148,7 +154,7 @@ In an older line of a versioned build (§1.5), a page's `canonical` is the route
 
 ### 1.4 The headers
 
-The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, and a help entry's own address (§1.7) is read by a product on another origin, so the host sends them, and the host is the site's: with `[consumer] host = "netlify"`, the build writes them in Netlify's format too (§1.9), which `@ascribed/astro` places at the site's root, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
+The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, and a help entry's own addresses (§1.7) are read by a product on another origin, so the host sends them, and the host is the site's: with `[consumer] host = "netlify"`, the build writes them in Netlify's format too (§1.9), which `@ascribed/astro` places at the site's root, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
 
 ```json
 {
@@ -172,9 +178,9 @@ The site output holds `_ascribe/headers.json`: the response headers the build's 
 | Field | Meaning |
 |---|---|
 | `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
-| `headers` | One rule for each page's Markdown version, and one for each help entry's address, sorted by `path`. |
+| `headers` | One rule for each page's Markdown version, and one for each of each help entry's addresses, its JSON's and its Markdown's, sorted by `path`. |
 | `headers[].path` | The path the rule is for, from the host's root, matched exactly and never as a pattern: the page record's `markdown` (§1.3), or a help entry's address (§1.7). |
-| `headers[].headers` | Each header's value, keyed by its name, sorted by name. For a Markdown version, `Link` is `<canonical>; rel="canonical"`, the page's own address from its record, so a search engine lists the page and not its Markdown version. `X-Robots-Tag` is the rule the page's head gives a crawler: `noindex` for a page that's `unlisted`, `nosnippet` for one that's `unquoted`, and absent for one that's `listed`. For a help entry's address, `Access-Control-Allow-Origin` is `*`, since the text is already public and a product on any origin may read it. |
+| `headers[].headers` | Each header's value, keyed by its name, sorted by name. For a Markdown version, `Link` is `<canonical>; rel="canonical"`, the page's own address from its record, so a search engine lists the page and not its Markdown version. `X-Robots-Tag` is the rule the page's head gives a crawler: `noindex` for a page that's `unlisted`, `nosnippet` for one that's `unquoted`, and absent for one that's `listed`. For a help entry's addresses, `Access-Control-Allow-Origin` is `*`, since the text is already public and a product on any origin may read it, and the JSON's `Link` is `<markdown>; rel="alternate"; type="text/markdown"`, the path of the same entry as Markdown. |
 
 Whatever answers a request for a page's Markdown sends the same headers, whether it serves the file or answers the page's own address asked for with `Accept: text/markdown`. A later version may add keys to the file, or more headers to a rule; it doesn't change these. The redirects are in a file of their own (§1.8).
 
@@ -278,10 +284,11 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
 
 An entry's `text` and each of its `choices` are rendered from the page's resolved blocks by the plain output's own renderer, so each reads as the section does in the page's plain output, with that value selected for a choice. A later version adds keys and changes none of these: a formatted title, as `pages.json` has, would be a key beside `title`.
 
-A site serves each entry at an address of its own, for a product to fetch its line's: `<path><name>.json`, where `path` is the permalinks list's (§1.2), for the current line and a build that isn't versioned, and `<base>go/<name>.json`, where `base` is the line's (§1.5), for an older line. The answer is this file with `help` holding that one entry: `{"version": 1, "build": "site", "line": "3.4", "help": {"connect": {…}}}`. The headers list (§1.4) gives each address `Access-Control-Allow-Origin: *`.
+A site serves each entry at an address of its own, for a product to fetch its line's: `<path><name>.json`, where `path` is the permalinks list's (§1.2), for the current line and a build that isn't versioned, and `<base>go/<name>.json`, where `base` is the line's (§1.5), for an older line. The answer is this file with `help` holding that one entry: `{"version": 1, "build": "site", "line": "3.4", "help": {"connect": {…}}}`.
+
+Beside it, at the same address with `.md` for `.json`, a site serves the entry's section as Markdown, for an agent to read the section a permalink names in one fetch: `# `, `title`, a blank line, and `text`, or the heading alone when `text` is empty. A site that answers a page's address asked for with `Accept: text/markdown` with the page's Markdown version answers a permalink's address the same way, since `<path><name>.md` is where it looks. A permalink's forwarding page names both as its alternates, `<link rel="alternate" type="text/markdown">` and `type="application/json"`, and the headers list (§1.4) gives each address `Access-Control-Allow-Origin: *`, and the JSON a `Link` to the Markdown.
 
 ### 1.8 The redirects
-@available: ascribe 0.4.4
 
 The site output holds `_ascribe/redirects.json`: where the addresses the build used to publish lead now, and which were retired, from the project's `ascribe.addresses` (SPEC §7.10) alone. The base revision isn't read: a source's old address is made from its path by the build's routing today, so a pair is written as long as its entry is there. It's `generated` in the manifest, and written for every build, with empty lists when the project has no `ascribe.addresses`, so a consumer can tell "no redirects" from an Ascribe that doesn't write the file.
 
@@ -317,19 +324,21 @@ The site output holds `_ascribe/redirects.json`: where the addresses the build u
 A later version adds keys and changes none of these.
 
 ### 1.9 The host's files
-@available: ascribe 0.4.4
 
 With `[consumer] host` (content-model.md §15), the site output holds the host's own files in `_ascribe/host/`, each `generated` in the manifest, for whatever deploys the site to copy to the root of what's deployed. `@ascribed/astro` reads them, merges every project's, and writes them at the built site's root. Without `host`, the folder isn't written.
 
 With `host = "netlify"`:
 
-- `_ascribe/host/_redirects` has a line for each pair of §1.8, in its order: `from`, `to`, and `status`, separated by a space. Then a line for each `gone` address, in its order: `path`, `page`, and `404`, which serves the page at the address with that status. Netlify uses the first rule that matches, and matches a rule with or without a final `/`.
+- `_ascribe/host/_redirects` has a line for each pair of §1.8, in its order: `from`, `to`, and `status`, separated by a space. Then a line for each `gone` address, in its order: `path`, `page`, and `404`, which serves the page at the address with that status. Then, for a build that isn't an older line, the rules for each name in the permalinks list (§1.2), sorted by name, at its address: for each of `dimensions`, in the content model's order, the address, `<dimension>=:<dimension>`, the address again, and `200!`, which serves the forwarding page for an address with that parameter, so its script takes the reader's choice; then the address, `route` with `#` and `fragment` when there is one, and `301!`. A name in `removed` has one line instead: the address, the address again, and `410!`, which serves its page, saying why, with that status. `!` forces each past the forwarding page at the address. An address a pair of §1.8 already has gets none. Netlify uses the first rule that matches, and matches a rule with or without a final `/`.
 - `_ascribe/host/_headers` has each rule of §1.4, in its order: the path on a line of its own, then each header indented by two spaces, as `Name: value`.
 
 ```text
 /docs/guides/keys/ /docs/security/keys/ 301
 /docs/guides/keys.md /docs/security/keys.md 301
 /docs/reference/legacy-sync/ /docs/_ascribe/gone/reference/legacy-sync/ 404
+/docs/go/connect/ pm=:pm /docs/go/connect/ 200!
+/docs/go/connect/ /docs/install-agent/#connect 301!
+/docs/go/legacy-sync/ /docs/go/legacy-sync/ 410!
 ```
 
 ## 2. What Ascribe owns

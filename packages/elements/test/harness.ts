@@ -127,17 +127,23 @@ export const TABS = `
 
 <ascribe-tab value="npm" label="npm">
 
+<p class="ascribe-tab-label">npm</p>
+
 Install with npm.
 
 </ascribe-tab>
 
 <ascribe-tab value="pnpm yarn" label="pnpm / yarn">
 
+<p class="ascribe-tab-label">pnpm / yarn</p>
+
 Install with pnpm or yarn.
 
 </ascribe-tab>
 
 <ascribe-tab value="bun" label="bun">
+
+<p class="ascribe-tab-label">bun</p>
 
 Install with bun.
 
@@ -149,11 +155,15 @@ Install with bun.
 
 <ascribe-tab value="pnpm" label="pnpm">
 
+<p class="ascribe-tab-label">pnpm</p>
+
 Configure with pnpm.
 
 </ascribe-tab>
 
 <ascribe-tab value="npm" label="npm">
+
+<p class="ascribe-tab-label">npm</p>
 
 Configure with npm.
 
@@ -165,11 +175,15 @@ Configure with npm.
 
 <ascribe-tab value="linux" label="Linux">
 
+<p class="ascribe-tab-label">Linux</p>
+
 Linux steps.
 
 </ascribe-tab>
 
 <ascribe-tab value="windows" label="Windows">
+
+<p class="ascribe-tab-label">Windows</p>
 
 Windows steps.
 
@@ -181,11 +195,15 @@ Windows steps.
 
 <ascribe-tab label="First look">
 
+<p class="ascribe-tab-label">First look</p>
+
 First look content.
 
 </ascribe-tab>
 
 <ascribe-tab label="Second look">
+
+<p class="ascribe-tab-label">Second look</p>
 
 Second look content.
 

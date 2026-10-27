@@ -14,7 +14,7 @@ In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) lists the 
 ## Link from your product
 @id: linking-from-a-product
 
-A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../content-model/content.md#dimensions):
+A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../content-model/variation.md#dimensions):
 
 ```ts
 // The docs' permalinks, as `[consumer]` publishes them.
@@ -31,6 +31,15 @@ docsLink("weave-config", { pm: "pnpm" });
 ```
 
 A parameter that names a dimension, with one of its values, sets the reader's choice, as if they'd picked the tab: this link opens the section with the `pnpm` tab showing. Anything else is ignored, so send what the product knows, without checking what the docs accept ([the parameters](../astro/reference.md#permalinks)).
+
+## What an agent gets
+@id: permalinks-for-agents
+@available: ascribe planned
+
+An agent given a permalink, by `ascribe --help`, `ascribe explain`, or a diagnostic's link, gets the section it names in one fetch:
+
+- **Its section as Markdown,** at the address with `.md` in place of its end, `go/weave-config.md`, under the section's title. A host that answers a page asked for with `Accept: text/markdown` with its Markdown finds it for the address too, and the forwarding page names it, `<link rel="alternate" type="text/markdown">`, beside the JSON entry a product [fetches](in-your-product.md#fetching-the-entry).
+- **A `301` to the section,** with `host = "netlify"`, since an agent's fetcher doesn't follow the forwarding page ([permalinks on Netlify](../publishing/redirects.md#permalinks-on-netlify)). A retired permalink's address answers `410`.
 
 ## Check the links in the product's CI
 @id: checking-a-products-links

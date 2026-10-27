@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: The project report
-description: Reading ascribe report and acting on each section, from the problems and pages it counts to the external links and the published site, and running it every day in CI.
+description: "Reading `ascribe report` and acting on each section, from the problems and pages it counts to the external links and the published site, and running it every day in CI."
 ---
 
 `ascribe check` answers "is this change fine?", quickly, on every edit and every pull request. `ascribe report` answers "what state is this project in?": it counts what the checks find across the whole project, lists what each build leaves out, and runs what's too slow or too networked for a check, such as following every external link. Every problem in it says what kind of next step it needs, as the editor does.
@@ -10,10 +10,10 @@ description: Reading ascribe report and acting on each section, from the problem
 ascribe report                       # problems, inventory, and builds
 ascribe report pages --not-listed    # the pages kept out of search, and why
 ascribe report links                 # external links, with lychee
-ascribe report agents --site https://docs.example.com   # the published site, with afdocs
+ascribe report delivery --site https://docs.example.com   # the published site, with afdocs
 ```
 
-Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages` needs nothing outside it either, and runs when it's named. `links` and `agents` run programs you install, and reach the network: when one can't run, it says what's missing, and the rest of the report is the same. [`ascribe report`](report-command.md#cli-report) lists every option, and the JSON.
+Without a section named, it runs the three that say what state the project is in and need nothing outside it. `pages` needs nothing outside it either, and runs when it's named. `links` and `delivery` run programs you install, and reach the network: when one can't run, it says what's missing, and the rest of the report is the same. [`ascribe report`](report-command.md#cli-report) lists every option, and the JSON.
 
 This guide takes the report a section at a time and says what to do about what each one finds, then runs it every day in CI.
 
@@ -51,7 +51,7 @@ A first run says nothing about what's new, and neither does a run on other build
 
 ## Inventory
 
-How many pages the project has, by content type and by owner, and three lists from the checks across the project: the pages whose review date has passed, the pages nothing links to, and the fragments, phrases, features, glossary terms, and images nothing uses.
+How many pages the project has, by content type and by owner, and three lists from the checks across the project: the pages whose recheck date has passed, the pages nothing links to, and the fragments, phrases, features, glossary terms, and images nothing uses.
 
 A page's owner is the value of the frontmatter field its type marks `role = "owner"`, such as a team's name:
 
@@ -79,9 +79,21 @@ For each API in `[apis]`, it counts the spec's operations, how many of them a li
 
 For each build, the pages it doesn't publish and the content it takes out of the pages it does (a variant arm, a section marked available elsewhere), when another build keeps them, with why. It's what to read before a release of one build: whether what its readers won't see is what you meant to leave out. A project with one build has nothing to compare.
 
+Each is listed once, for the mark a writer made: a page by its `available` or `variant` frontmatter, and content by its `@available` (a section's, a block's, or a table row's) or its variant arm, at the mark's line and under the heading it's in, however many blocks it takes out. The line above a build's list counts the marks, by what each takes out.
+
+```text
+Builds
+  site@3.4 leaves out 2 pages and 1 section that another build keeps:
+    configure.md: not available (available: self-managed 3.5); site publishes it
+    webhooks.md: not available (available: self-managed 3.5); site publishes it
+    keys.md § Sign webhook events (line 25): Available on self-managed (GA, 3.5+), not self-managed 3.4; site keeps it
+```
+
+A mark written in a fragment names the fragment and its line in place of `line 25`.
+
 ## Pages
 
-Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../content-model/checks.md#22-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
+Every page each build publishes, sorted by address, with what search engines and agents are told about it: its title, its description, and its listing, and where the listing comes from, the page's own `listing` or a rule of [`[listing]`](../content-model/output.md#17-listing) and its line in `ascribe.toml`. It's the table a team would otherwise crawl its own site to get, made from the build before anything is deployed. The line above it gives the site's address, which each page's canonical address starts with.
 
 ```text
 Pages
@@ -99,14 +111,15 @@ Pages
 
 `ascribe report links` lists each link to another site that's broken or has moved, at its place in the source, and the links it holds back as unconfirmed because they answered on an earlier run. [Check external links](external-links.md) says what to do about each, and what the section remembers from one run to the next.
 
-## The site and agents
+## Delivery to agents
+@id: the-site-and-agents
 
-`ascribe report agents --site <URL>` runs the delivery spec's checker on a built site and reports each check that fails or warns by who changes what it checks: the hosting, or what Ascribe writes. [What to measure](../agents/measuring.md#check-what-the-site-delivers-to-agents) says what to do about each.
+`ascribe report delivery --site <URL>` runs the delivery spec's checker on a built site and reports each check that fails or warns by who changes what it checks: the hosting, or what Ascribe writes. [What to measure](../agents/measuring.md#check-what-the-site-delivers-to-agents) says what to do about each.
 
 From its second run on the same site, the section says which checks are failing since the last report, and how many that failed then no longer do:
 
 ```text
-Agents
+Delivery
   The delivery spec's checks on https://docs.example.com: 21 pass, 2 fail.
   23 checks: 21 passing, 2 failing, 1 of them failing since 9 October: redirect-behavior.
 ```
@@ -117,7 +130,7 @@ Every check runs every time: nothing the checker said is reused, because a publi
 
 ## Handing a section to an agent
 
-`--format prompt` writes one prompt about one section's problems, `problems`, `links`, or `agents`, for an agent to work through: each problem with what Ascribe knows about it, such as the sentence around a broken link or the setting to change, how to fix each kind, and the command that checks the work. It's nothing when the section finds nothing.
+`--format prompt` writes one prompt about one section's problems, `problems`, `links`, or `delivery`, for an agent to work through: each problem with what Ascribe knows about it, such as the sentence around a broken link or the setting to change, how to fix each kind, and the command that checks the work. It's nothing when the section finds nothing.
 
 ```sh
 ascribe report links --format prompt

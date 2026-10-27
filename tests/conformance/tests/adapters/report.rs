@@ -3,7 +3,7 @@
 //! `site`).
 //!
 //! Its diagnostics are the case's file-level diagnostics with those the
-//! report's `links` or `agents` section gives, through
+//! report's `links` or `delivery` section gives, through
 //! `ascribe_query::report`, the call `ascribe report` makes. Neither lychee
 //! nor afdocs is run, and nothing reaches the network: stand-ins answer from
 //! the address alone, so a case shows where a problem lands and what's
@@ -83,12 +83,12 @@ fn is_page_level(d: &ascribe_check::Diagnostic) -> bool {
     d.slug == ascribe_core::diagnostics::INTENDED_UNUSED
 }
 
-/// The case's project, and what the report's `links` or `agents` section
+/// The case's project, and what the report's `links` or `delivery` section
 /// finds in it.
 fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), AdapterError> {
     let project = super::check::project(case)?;
     let section = if case.expect.tags.iter().any(|t| t == "site") {
-        Section::Agents
+        Section::Delivery
     } else {
         Section::Links
     };
@@ -136,9 +136,9 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
     };
     let report =
         ascribe_query::report(&project, &options).map_err(|e| AdapterError(e.to_string()))?;
-    let found = match (report.links, report.agents) {
+    let found = match (report.links, report.delivery) {
         (Some(Ran::Done(links)), _) => links.diagnostics,
-        (_, Some(Ran::Done(agents))) => agents.diagnostics,
+        (_, Some(Ran::Done(delivery))) => delivery.diagnostics,
         (Some(Ran::NotRun(why)), _) | (_, Some(Ran::NotRun(why))) => {
             return Err(AdapterError(format!(
                 "the section didn't run: {}",

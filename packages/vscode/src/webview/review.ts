@@ -289,6 +289,12 @@ export class Review {
     base.title = `Compared with ${view.commit}, where this branch left ${view.base}`;
     info.append(base);
     if (view.page?.status === "added") info.append(" · a new page");
+    if (view.page?.moved_from !== undefined) {
+      info.append(` · moved from ${view.page.moved_from}`);
+      if (this.marks.length === 0 && view.page.page_changed.length === 0) {
+        info.append(", no change to the page");
+      }
+    }
     if (removed(view)) info.append(" · a removed page, as it was");
     if (view.causes.length > 0) {
       info.append(" · changed only through ");

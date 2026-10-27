@@ -1,0 +1,1 @@
+- **A page with no `title` can take its opening heading as one.** `frontmatter-missing-field` offers the fix, safe while nothing links to the heading, so `ascribe check --fix` titles a folder of pages at once. See [Bring existing docs to Ascribe](docs/content/existing-docs.md#fix-what-the-check-finds).

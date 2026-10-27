@@ -103,6 +103,12 @@ impl Repository {
         })
     }
 
+    /// Whether `HEAD` is a commit: false in a repository with no commit
+    /// yet.
+    pub fn has_commit(&self) -> bool {
+        self.commit_of("HEAD").is_some()
+    }
+
     /// The project's folder inside the repository.
     pub fn project_dir(&self) -> RelPath {
         RelPath::parse(&self.prefix).unwrap_or_default()
@@ -162,6 +168,12 @@ impl Repository {
             }
             Err(e) => Err(e),
         }
+    }
+
+    /// Whether `rev` names a commit git knows, such as a branch, a tag, or
+    /// `HEAD`.
+    pub fn knows(&self, rev: &str) -> bool {
+        self.commit_of(rev).is_some()
     }
 
     /// The commit a revision names, or `None`.

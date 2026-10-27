@@ -58,5 +58,15 @@
     "memory/lsp-100-edits-3000": 195.98,
     "memory/lsp-load-3000": 195.53,
     "search/synthetic-3000": 717.79
+  },
+  "quick": {
+    "margin": 4.0,
+    "floor_ms": 50.0,
+    "metrics": [
+      "check/synthetic-3000",
+      "lsp/keystroke-page-3000",
+      "lsp/keystroke-fragment-3000",
+      "memory/check-synthetic-3000"
+    ]
   }
 }

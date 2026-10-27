@@ -1,0 +1,5 @@
+---
+section: Review
+---
+
+**`ascribe diff`'s JSON carries a moved page as one page, `moved_from` naming where it was, and the pages a link changed through because a page moved as `moved_links`.** A page whose file git sees renamed, or whose move `ascribe.addresses` records, is listed at its new path with `status: "changed"`, compared with the page as it was at `moved_from`; its `counts` and `changes` are what differs besides the move, and `route` isn't in its `page_changed`. Both fields are additive, absent when there's no move, so `schema_version` stays 1. `status` keeps its three values, so a reader that doesn't know `moved_from` still reads a changed page where the page is now, not a removed page and a new one. _Why:_ a reviewer, an agent, and the CI report need the same view of a rename: listed as removed plus added, every reader has to compare two whole pages to see that nothing changed. _From:_ Kyle on [#1018](https://github.com/ascribed-dev/ascribe/issues/1018), from the technical writer review, 26 October 2026.

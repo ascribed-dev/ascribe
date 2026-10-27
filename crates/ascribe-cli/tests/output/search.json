@@ -5,8 +5,7 @@
   "builds": [
     "site",
     "site@3.4",
-    "cloud",
-    "self-managed-3.3"
+    "cloud"
   ],
   "places": [
     {
@@ -35,8 +34,7 @@
           "builds": [
             "site",
             "site@3.4",
-            "cloud",
-            "self-managed-3.3"
+            "cloud"
           ]
         }
       ],
@@ -69,8 +67,7 @@
           "builds": [
             "site",
             "site@3.4",
-            "cloud",
-            "self-managed-3.3"
+            "cloud"
           ]
         }
       ],

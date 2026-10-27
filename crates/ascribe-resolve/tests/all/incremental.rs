@@ -1243,6 +1243,44 @@ fn a_change_to_a_file_a_snippet_shows_reads_it_again_for_every_page_that_shows_i
     assert_eq!(shown_code(&inc, "guide.md").as_deref(), Some("print(4)\n"));
 }
 
+/// The code file id of each of a file's snippets that shows one.
+fn code_ids(project: &Project, file: &str) -> Vec<FileId> {
+    let index = project.file(&path(file)).expect("a file");
+    index
+        .snippets
+        .iter()
+        .filter_map(|s| project.snippet_at(&index.path, s.span))
+        .map(|snippet| snippet.file)
+        .collect()
+}
+
+#[test]
+fn a_code_file_first_read_by_an_update_gets_its_own_id() {
+    let (mut inc, _) = code_project();
+    let app = code_ids(&inc.snapshot(), "index.md");
+    let other = code_ids(&inc.snapshot(), "other.md");
+    assert_eq!(app.len(), 1);
+    assert_ne!(app, other);
+
+    inc.apply([edited(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: code:unshown.py\n",
+    )])
+    .unwrap();
+    let snapshot = inc.snapshot();
+    let unshown = code_ids(&snapshot, "index.md");
+    assert_eq!(unshown.len(), 1);
+    assert_ne!(unshown, app);
+    assert_ne!(unshown, other);
+    // The others keep theirs.
+    assert_eq!(code_ids(&snapshot, "_shown.md"), app);
+    assert_eq!(code_ids(&snapshot, "other.md"), other);
+    assert_eq!(
+        inc.ids().code(&path("code/unshown.py")),
+        unshown.first().copied()
+    );
+}
+
 #[test]
 fn deleting_the_folder_a_snippets_file_is_in_reads_it_again() {
     let (mut inc, fs) = code_project();

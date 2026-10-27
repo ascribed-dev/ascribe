@@ -308,9 +308,9 @@ pub(crate) struct FromGitJson {
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 pub(crate) struct MoveJson {
     /// The entry's key: where the page was.
-    key: String,
+    pub key: String,
     /// The entry's value: where it is now.
-    value: String,
+    pub value: String,
 }
 
 /// What `ascribe addresses list --format json` writes.
@@ -531,7 +531,7 @@ pub(crate) fn answer_move(
     let text = project.addresses_text().unwrap_or_default();
     if args.from_git {
         let (base, renames) = git_renames(project, args)?;
-        let moves = ascribe_check::addresses::git_moves(&file, &project.index(), &renames);
+        let moves = ascribe_check::addresses::git_moves(&file, project.index(), &renames);
         let mut after = file.clone();
         for (old, new) in &moves {
             after.record_move(old, new);
@@ -697,7 +697,7 @@ fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn
     let index = project.index();
     let listed: Vec<Redirects> = builds
         .iter()
-        .map(|build| redirects::of_build(&index, build))
+        .map(|build| redirects::of_build(index, build))
         .collect();
     let has_file = project.addresses().is_some();
     let result = match args.format {

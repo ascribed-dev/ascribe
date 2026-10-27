@@ -4,7 +4,7 @@ title: Troubleshooting review
 description: What to do when review shows no pull request, no comments, or no marks, says the project has errors, or won't start.
 ---
 
-The problems you can meet reviewing a pull request with Ascribe, in the page preview, the site preview, or the report from CI, by what you see. [Review](index.md) says how review works when nothing's wrong.
+The problems you can meet reviewing a pull request with Ascribe, in the page preview, the site preview, or the HTML preview from CI, by what you see. [Review](index.md) says how review works when nothing's wrong.
 
 ## No pull request found
 
@@ -48,7 +48,7 @@ The panel says the page's blocks carry no source anchors, or that most of its ch
 
 ## The project has errors
 
-The page preview says how many errors the project has, with **Show problems**; the site preview, the HTML report, and `ascribe diff` (on standard error) say so too.
+The page preview says how many errors the project has, with **Show problems**; the site preview, the HTML preview, and `ascribe diff` (on standard error) say so too.
 
 **Cause.** Review compares pages with errors as they are, and a page with an error can render oddly ([When the project has errors](how-it-works.md#when-the-project-has-errors), which also says why the numbers can differ).
 

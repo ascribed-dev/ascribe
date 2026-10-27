@@ -140,7 +140,7 @@ fn the_places_are_the_commands() {
             let builds: Vec<String> = build.into_iter().map(str::to_owned).collect();
             let command = ascribe_query::search(
                 &project,
-                &project.index(),
+                project.index(),
                 &Readings::default(),
                 &Search {
                     query,
@@ -216,14 +216,11 @@ fn a_build_other_than_the_editors_and_every_build() {
     assert_eq!(cloud["total"], 0);
     assert_eq!(
         cloud["nothing"],
-        "Builds not searched publish them: `site`, `site@3.4`, `self-managed-3.3`."
+        "Builds not searched publish them: `site`, `site@3.4`."
     );
     let every = search(&mut client, &f.path("ascribe.toml"), query, None);
     assert_eq!(lines(&every), ["install-agent.md:70"]);
-    assert_eq!(
-        every["places"][0]["builds"],
-        json!(["site", "site@3.4", "self-managed-3.3"])
-    );
+    assert_eq!(every["places"][0]["builds"], json!(["site", "site@3.4"]));
     let site = search(&mut client, &f.path("ascribe.toml"), query, Some("site"));
     assert_eq!(site["builds"], json!(["site"]));
     assert_eq!(lines(&site), ["install-agent.md:70"]);

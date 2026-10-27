@@ -1,11 +1,11 @@
 ---
 type: reference
 title: "The head, sitemap, `robots.txt`, and headers"
-description: "What @ascribed/astro writes from the page records for search engines and crawlers: each page's head, the sitemap, robots.txt, and the Markdown versions' response headers."
+description: "What `@ascribed/astro` writes from the page records for search engines and crawlers: each page's head, the sitemap, `robots.txt`, and the Markdown versions' response headers."
 permalink: search-engines
 ---
 
-Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/checks.md#22-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/checks.md#21-crawlers). `@ascribed/astro` writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Publishing](index.md) says what a project tells search engines and agents, and why.
+Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/output.md#17-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/output.md#18-crawlers). `@ascribed/astro` writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Publishing](index.md) says what a project tells search engines and agents, and why.
 
 ## The head
 
@@ -92,7 +92,7 @@ Disallow: /
 Sitemap: https://docs.example.com/sitemap.xml
 ```
 
-It writes a group for each purpose a project disallows, such as `training = "disallow"`, naming every crawler of that purpose Ascribe knows ([crawlers by purpose](../content-model/checks.md#crawlers-by-purpose)), each purpose once. Then it opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file: a project with no `[crawlers]` and an address gets the sitemap's line alone.
+It writes a group for each purpose a project disallows, such as `training = "disallow"`, naming every crawler of that purpose Ascribe knows ([crawlers by purpose](../content-model/output.md#crawlers-by-purpose)), each purpose once. Then it opens a `User-agent: *` group with each project's lines for every crawler, the lines before its first `User-agent` line, then adds the groups each project wrote whole, then the sitemap's address. Each project's paths have its base path before them. With no sitemap, there's no last line, and with nothing to say at all, no file: a project with no `[crawlers]` and an address gets the sitemap's line alone.
 
 - **Projects of one site must agree on each purpose,** since they share the file. One that allows a purpose and one that disallows it fail `astro build`, naming both, and `astro dev` serves no `robots.txt` until they agree. A project that leaves a purpose out agrees with either.
 - **A site with its own `robots.txt`** in `public/` keeps it, and the integration writes none. The build says so, with the lines Ascribe would have written; copy them into your file.
@@ -105,7 +105,7 @@ A page's Markdown version has no head, so the rule its page's head gives is a [r
 - `X-Robots-Tag: noindex` for a page that's `unlisted`, and `nosnippet` for one that's `unquoted`, the same rule as its head;
 - `Link: <https://docs.example.com/docs/guides/install/>; rel="canonical"` on every one, naming the page, so a search engine lists the page and not its Markdown copy, while an agent can still fetch either.
 
-The list also gives each [help entry's address](../permalinks/in-your-product.md#fetching-the-entry), such as `/docs/go/connect.json`, `Access-Control-Allow-Origin: *`, so a product on another origin can fetch it.
+The list also gives each [help entry's addresses](../permalinks/in-your-product.md#fetching-the-entry), such as `/docs/go/connect.json` and `/docs/go/connect.md`, `Access-Control-Allow-Origin: *`, so a product on another origin can fetch them, and the JSON a `Link` naming the Markdown as its alternate.
 
 `astro dev` sends them with each `.md` file, so you can try them with no host:
 
@@ -138,13 +138,13 @@ host = "netlify"
 ```
 
 - **`_headers`:** the [response headers](#response-headers) each Markdown version and help entry needs.
-- **`_redirects`:** a `301` from each address [`ascribe.addresses`](redirects.md) records a move from to where it leads now, so a reader with an old link lands on the page.
+- **`_redirects`:** a `301` from each address [`ascribe.addresses`](redirects.md) records a move from to where it leads now, so a reader with an old link lands on the page, and from each [permalink's address](redirects.md#permalinks-on-netlify) to its section.
 
 With several projects, each file holds the lines of each project that sets `host`, the first entry's first when two give one path.
 
 - **A site with its own `_headers`** in `public/` keeps it, and the integration never rewrites it. The build checks that it has Ascribe's lines, and fails when it doesn't, with the lines to add as its message. A line counts when it's under the same path, with the same value; the case of a header's name doesn't matter.
 - **A site with its own `_redirects`** in `public/` keeps it too: the built `_redirects` has Ascribe's lines first and the site's after them, since Netlify uses the first rule that matches, so a page's recorded move wins over a pattern of the site's.
-- **A redirect from an address a page of the site is at** fails the build, naming the line, since it would hide the page or never be used.
+- **A redirect from an address a page of the site is at** fails the build, naming the line, since it would hide the page or never be used. A permalink's rules are forced past its forwarding page on purpose, with `!`, so they don't count.
 - **A site whose Astro `base` isn't `/`** has no root to write the files to, so the build prints the lines instead, for the host's own configuration.
 
 Without `host`, nothing is written for a host, and the redirects and headers are in `_ascribe/redirects.json` and `_ascribe/headers.json`, for a deploy step to read.

@@ -228,6 +228,11 @@
       "description": "The page to read next: the Astro guide, by its permalink.",
       "type": "string"
     },
+    "pages": {
+      "description": "How many pages the content root held already. When it held any,\n`ascribe.toml` declares no page types, so none of them needs `type:`.",
+      "minimum": 0,
+      "type": "integer"
+    },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
@@ -245,7 +250,7 @@
       "description": "What eject did, when the templates were asked for; otherwise null.\nWhen its `refused` isn't empty, nothing was written."
     },
     "written": {
-      "description": "The files written, from the new project's folder, `/`-separated, in\nthe order they were written: with the templates, eject's files, then\n`ascribe.toml`. Empty when the templates were refused.",
+      "description": "The files written, from the new project's folder, `/`-separated, in\nthe order they were written: with the templates, eject's files, then\n`ascribe.toml`, then `ascribe.addresses`, unless one was there\nalready. Empty when the templates were refused.",
       "items": {
         "type": "string"
       },
@@ -258,6 +263,7 @@
     "written",
     "content_root",
     "content_root_made",
+    "pages",
     "templates",
     "next"
   ],

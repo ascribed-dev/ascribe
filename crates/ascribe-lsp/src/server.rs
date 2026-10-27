@@ -273,9 +273,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         guarded("start", || {
             core.start();
             core.register_watchers();
-            if core.busy() {
-                shared.idle.store(false, Ordering::SeqCst);
-            }
+            note_busy(&shared, &core);
         });
     }
     shared.wake.notify_all();
@@ -313,6 +311,14 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                         .ok();
                 } else {
                     let response = handle_request(&shared, request);
+                    // A request that queued work (the review's base, an
+                    // edit) answers only once that shows, so a client
+                    // waiting for the server to settle waits for it too.
+                    if note_busy(&shared, &shared.lock()) {
+                        shared.wake.notify_all();
+                        shared.prose_wake.notify_all();
+                        shared.addresses_wake.notify_all();
+                    }
                     connection.sender.send(response.into()).ok();
                 }
             }
@@ -422,10 +428,20 @@ fn handle_notification(shared: &Shared, notification: Notification) {
             // action (`$/cancelRequest`, `$/setTrace`, …).
             _ => {}
         }
-        if core.busy() {
-            shared.idle.store(false, Ordering::SeqCst);
-        }
+        note_busy(shared, &core);
     });
+}
+
+/// Marks the server busy when work is queued, before the workers have
+/// taken it: until then `idle` still holds the last round's answer. Called
+/// with the lock held, so a worker can't store `idle` in between. Returns
+/// whether the server is busy.
+fn note_busy(shared: &Shared, core: &Core) -> bool {
+    let busy = core.busy();
+    if busy {
+        shared.idle.store(false, Ordering::SeqCst);
+    }
+    busy
 }
 
 fn parse<T: serde::de::DeserializeOwned>(notification: &Notification) -> Option<T> {
@@ -1383,7 +1399,7 @@ fn addresses_worker(shared: &Shared) {
                         .map_or(Duration::ZERO, |at| SETTLE.saturating_sub(at.elapsed()));
                     if quiet.is_zero() {
                         core.addresses.dirty = false;
-                        if let Some(job) = Job::of(&core) {
+                        if let Some(job) = Job::of(&mut core) {
                             core.addresses.running = true;
                             break job;
                         }
@@ -1405,7 +1421,21 @@ fn addresses_worker(shared: &Shared) {
             }
         };
         let outcome = catch_unwind(AssertUnwindSafe(|| compare(&job, &listed)));
+        // The base's specs, read once for the project, so a link to an
+        // operation renamed since is offered the one in its place, as
+        // `ascribe check` offers it; a base that can't be read leaves the
+        // closest.
+        let apis = job
+            .read_apis
+            .then(|| ascribe_diff::base_apis(&job.root, None, false))
+            .flatten();
         let mut core = shared.lock();
+        if let Some(apis) = apis
+            && core.project_root().as_deref() == Some(job.root.as_path())
+        {
+            core.remember_base_apis(&apis);
+            shared.wake.notify_all();
+        }
         core.addresses.running = false;
         match outcome {
             // Sent only for the project still served.

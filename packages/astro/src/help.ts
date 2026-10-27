@@ -1,55 +1,18 @@
-// Each permalink's help at an address of its own, for a product to fetch its
+// Each permalink's help at addresses of its own, for a product to fetch its
 // line's: one entry of a build's `_ascribe/help.json` (output-layout contract
-// §1.7), as JSON. The current line's entries are beside its permalinks'
-// addresses, at `<path><name>.json`; an older line's are at `go/<name>.json`
-// under the line's own base path, `/docs/3.4/go/connect.json`, since the
-// permalinks' addresses are the current line's. The integration adds a route
-// (`help-route.ts`) for each of those folders, in `astro build` and `astro dev`.
-import { readFileSync } from "node:fs";
+// §1.7), as JSON, and its section as Markdown, for an agent to read the
+// section a permalink names in one fetch. The current line's entries are
+// beside its permalinks' addresses, at `<path><name>.json` and
+// `<path><name>.md`; an older line's are at `go/<name>.json` and
+// `go/<name>.md` under the line's own base path, `/docs/3.4/go/connect.json`,
+// since the permalinks' addresses are the current line's. The integration
+// adds a route (`help-route.ts`) for each of those folders and each format,
+// in `astro build` and `astro dev`.
 import path from "node:path";
+import { readHelp, type HelpFile } from "./help-file.js";
 import { permalinkPattern, readPermalinks } from "./permalinks.js";
 import { normalizeBase } from "./project.js";
 import { olderLines } from "./versions.js";
-
-/** The file's format version this reads. */
-const VERSION = 1;
-
-/** A permalink's section, as `_ascribe/help.json` has it. */
-interface HelpEntry {
-  title: string;
-  summary?: string;
-  text: string;
-  address?: string;
-  source: string;
-}
-
-/** `_ascribe/help.json`. */
-export interface HelpFile {
-  version: number;
-  /** The build's name, as `ascribe.toml` declares it. */
-  build: string;
-  /** For a line of a versioned build, the line. */
-  line?: string;
-  help: Record<string, HelpEntry>;
-}
-
-/** The file in a build's site output, or `undefined` when there isn't one. */
-export function readHelp(siteRoot: string): HelpFile | undefined {
-  const file = path.join(siteRoot, "_ascribe", "help.json");
-  let text: string;
-  try {
-    text = readFileSync(file, "utf8");
-  } catch {
-    return undefined;
-  }
-  const help = JSON.parse(text) as HelpFile;
-  if (help.version !== VERSION) {
-    throw new Error(
-      `@ascribed/astro: ${file} is version ${String(help.version)} of the help file, and this version of the integration reads version ${VERSION}. Update @ascribed/astro and @ascribed/cli together.`,
-    );
-  }
-  return help;
-}
 
 /** A folder of entries' addresses, from the host's root, and the file they're served from. */
 interface HelpFolder {
@@ -101,37 +64,74 @@ export function helpAddresses(siteRoots: readonly string[]): Map<string, HelpFil
   return addresses;
 }
 
-/** The route pattern for a folder's entries, as Astro takes it: under `base`, which Astro adds. */
-function helpPattern(folder: string, base: string): string {
-  return `${permalinkPattern(folder, base)}.json`;
+/** The formats an entry is served in, by the extension its address ends with. */
+const FORMATS = [".json", ".md"] as const;
+
+/** The route pattern for a folder's entries in a format, as Astro takes it: under `base`, which Astro adds. */
+function helpPattern(folder: string, base: string, extension: string): string {
+  return `${permalinkPattern(folder, base)}${extension}`;
 }
 
 /**
- * The route patterns the entries need, one for each folder that has any:
- * the current line's, then each older line's. Throws when a folder isn't
- * under `base`, since an Astro site serves nothing outside it.
+ * The route patterns the entries need, for each folder that has any, its
+ * JSON's and its Markdown's: the current line's, then each older line's.
+ * Throws when a folder isn't under `base`, since an Astro site serves
+ * nothing outside it.
  */
 export function helpPatterns(siteRoots: readonly string[], base: string): string[] {
   const patterns = helpFolders(siteRoots)
     .filter(({ help }) => Object.keys(help.help).length > 0)
-    .map(({ folder }) => helpPattern(folder, base));
+    .flatMap(({ folder }) => FORMATS.map((extension) => helpPattern(folder, base, extension)));
   return [...new Set(patterns)];
 }
 
 /**
+ * An entry's section as Markdown: its title as a heading, then its `text`,
+ * the section as the plain output writes it.
+ */
+export function helpMarkdown(help: HelpFile): string {
+  const [entry] = Object.values(help.help);
+  if (entry === undefined) return "";
+  const text = entry.text.trimEnd();
+  return text === "" ? `# ${entry.title}\n` : `# ${entry.title}\n\n${text}\n`;
+}
+
+/** What an entry's address answers: its body, and the body's media type. A record, so Astro takes it as props. */
+export interface HelpAnswer extends Record<string, unknown> {
+  body: string;
+  type: string;
+  /** For the JSON, where the same entry is as Markdown, its alternate. */
+  alternate?: string;
+}
+
+/**
  * `getStaticPaths` for the route at `routePattern`, one of `helpPatterns`:
- * one answer for each entry whose address it matches, the entry as JSON.
+ * one answer for each entry whose address it matches, the entry as JSON, or
+ * its section as Markdown.
  */
 export function helpPaths(
   siteRoots: readonly string[],
   base: string,
   routePattern: string,
-): { params: { id: string }; props: { body: string } }[] {
+): { params: { id: string }; props: HelpAnswer }[] {
   return [...helpAddresses(siteRoots)].flatMap(([address, help]) => {
     const name = path.posix.basename(address, ".json");
     const folder = address.slice(0, address.length - `${name}.json`.length);
-    return helpPattern(folder, base) === routePattern
-      ? [{ params: { id: name }, props: { body: `${JSON.stringify(help, null, 2)}\n` } }]
-      : [];
+    if (helpPattern(folder, base, ".json") === routePattern) {
+      return [
+        {
+          params: { id: name },
+          props: {
+            body: `${JSON.stringify(help, null, 2)}\n`,
+            type: "application/json",
+            alternate: `${folder}${name}.md`,
+          },
+        },
+      ];
+    }
+    if (helpPattern(folder, base, ".md") === routePattern) {
+      return [{ params: { id: name }, props: { body: helpMarkdown(help), type: "text/markdown" } }];
+    }
+    return [];
   });
 }

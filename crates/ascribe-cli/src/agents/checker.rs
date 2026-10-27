@@ -23,7 +23,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use ascribe_check::{Project, Reported, Severity, prose};
+use ascribe_check::{Project, Reported, Request, Severity, prose};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{RelPath, diagnostics};
 use ascribe_resolve::is_source_path;
@@ -43,7 +43,8 @@ pub const LIMIT: usize = 10;
 pub const IDLE: Duration = Duration::from_secs(10 * 60);
 
 /// What a check found, as a hook reports it: the counts, the first
-/// [`LIMIT`] errors as `ascribe check --format concise` writes them, and
+/// [`LIMIT`] errors as `ascribe check --format concise` writes them but for
+/// their fixes, and
 /// for a quick check the build it covered and the advice with a safe fix.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Found {
@@ -65,7 +66,7 @@ pub struct Found {
     #[serde(default)]
     pub fixable: usize,
     /// The first [`LIMIT`] of them: each one's line, as `--format concise`
-    /// writes it, and the title of its safe fix.
+    /// writes it but for its fix, and the title of its safe fix.
     #[serde(default)]
     pub fixes: Vec<(String, String)>,
     /// How many advice `ascribe.baseline` holds back in what was checked,
@@ -77,9 +78,30 @@ pub struct Found {
     /// why.
     #[serde(default)]
     pub baseline_problem: Option<String>,
+    /// For a quick check, how many of the advice in the files are what the
+    /// page's template left to fill in (`template-placeholder-left`,
+    /// `template-section-empty`), which have no fix: the agent writes them
+    /// while the file is still its own (#1005).
+    #[serde(default)]
+    pub unfilled: usize,
+    /// The first [`LIMIT`] of them, each one's line as `--format concise`
+    /// writes it but for its fix.
+    #[serde(default)]
+    pub unfilled_lines: Vec<String>,
 }
 
 impl Found {
+    /// Adds an advice the page's template left to fill in, once.
+    fn add_unfilled(&mut self, line: String) {
+        if self.unfilled_lines.contains(&line) {
+            return;
+        }
+        self.unfilled += 1;
+        if self.unfilled_lines.len() < LIMIT {
+            self.unfilled_lines.push(line);
+        }
+    }
+
     /// Adds an advice with a safe fix, once.
     fn add_fixable(&mut self, line: String, fix: &str) {
         if self.fixes.iter().any(|(l, _)| *l == line) {
@@ -90,6 +112,20 @@ impl Found {
             self.fixes.push((line, fix.to_owned()));
         }
     }
+}
+
+/// The diagnostics that say what a page's template left to fill in, which
+/// an agent that started the page from the template writes.
+const UNFILLED: [ascribe_core::DiagnosticSlug; 2] = [
+    diagnostics::TEMPLATE_PLACEHOLDER_LEFT,
+    diagnostics::TEMPLATE_SECTION_EMPTY,
+];
+
+/// Whether the diagnostic with `code` is one of [`UNFILLED`].
+fn is_unfilled(code: &str) -> bool {
+    ascribe_check::Registry::global()
+        .find(code)
+        .is_some_and(|entry| UNFILLED.iter().any(|slug| slug.as_str() == entry.slug))
 }
 
 /// The title of a diagnostic's first safe fix.
@@ -227,10 +263,10 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         .map(|i| &reported[i])
         .filter(|r| r.diagnostic.severity == Severity::Error)
         .collect();
+    // Without the fix `--format concise` adds: the hook says what to do
+    // itself, as the language server's lines do.
     let line_of = |r: &Reported| -> Result<String, String> {
-        let mut line = Vec::new();
-        concise::write_line(&mut line, files, r).map_err(|e| e.to_string())?;
-        Ok(String::from_utf8_lossy(&line).trim_end().to_owned())
+        Ok(concise::head(files, r).trim_end().to_owned())
     };
     let mut lines = Vec::new();
     for r in errors.iter().take(LIMIT) {
@@ -273,20 +309,22 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
                 .collect();
             ascribe_check::diagnose_every_build_in(project, &paths)
         });
-        // What the baseline lists is held back here too.
-        let across = match project.baseline() {
-            Some(Ok(baseline)) => {
-                ascribe_check::baseline::apply(project, baseline, across, false, &[]).diagnostics
-            }
-            _ => across,
+        // What the baseline lists is held back here too, as the check of
+        // the files holds it back: none of these entries is stale, since
+        // they're a few files' findings.
+        let request = Request {
+            editor_build,
+            baseline: matches!(project.baseline(), Some(Ok(_))),
+            ..Request::default()
         };
-        let across: Vec<Reported> = across
-            .into_iter()
-            .map(|diagnostic| Reported {
-                diagnostic,
-                repeats: 0,
-            })
-            .collect();
+        let across = ascribe_check::Found {
+            diagnostics: across,
+            ..ascribe_check::Found::default()
+        };
+        let across = request
+            .settle(project, across)
+            .map_err(|e| e.to_string())?
+            .reported;
         for r in concise::order(files, reported)
             .into_iter()
             .map(|i| &reported[i])
@@ -295,7 +333,9 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
             if r.diagnostic.severity != Severity::Advice {
                 continue;
             }
-            if let Some(fix) = safe_fix(&r.diagnostic) {
+            if UNFILLED.contains(&r.diagnostic.slug) {
+                found.add_unfilled(line_of(r)?);
+            } else if let Some(fix) = safe_fix(&r.diagnostic) {
                 found.add_fixable(line_of(r)?, fix);
             }
         }
@@ -829,9 +869,12 @@ impl Kept {
                         found.warnings += 1;
                         continue;
                     }
-                    // Advice reaches the agent only with a safe fix.
+                    // Advice reaches the agent only with a safe fix, or
+                    // when it's what the template left to fill in.
                     Severity::Advice => {
-                        if let Some(fix) = problem.safe_fixes.first() {
+                        if is_unfilled(&problem.code) {
+                            found.add_unfilled(line);
+                        } else if let Some(fix) = problem.safe_fixes.first() {
                             found.add_fixable(line, fix);
                         }
                         continue;

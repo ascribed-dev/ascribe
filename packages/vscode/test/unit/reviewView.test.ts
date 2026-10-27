@@ -170,7 +170,12 @@ describe("sourceFiles", () => {
         page({
           path: "upgrade.md",
           own_file_changed: false,
-          because: ["_fragments/requirements.md", "code:app.py#main", "ascribe.toml"],
+          because: [
+            "_fragments/requirements.md",
+            "code:app.py#main",
+            "api/openapi.yaml#createWidget",
+            "ascribe.toml",
+          ],
         }),
         page({ path: "new.md", status: "added" }),
         page({ path: "old.md", status: "removed" }),
@@ -185,9 +190,46 @@ describe("sourceFiles", () => {
         before: true,
         after: true,
       },
+      {
+        label: "api/openapi.yaml",
+        path: at("api", "openapi.yaml"),
+        before: true,
+        after: true,
+      },
       { label: "ascribe.toml", path: at("ascribe.toml"), before: true, after: true },
       { label: "new.md", path: at("docs", "new.md"), before: false, after: true },
       { label: "old.md", path: at("docs", "old.md"), before: true, after: false },
+    ]);
+  });
+
+  it("compares a page that moved with its file where it was", () => {
+    const moved_links = [{ from: "guides/configure.md", to: "guides/setup.md" }];
+    const files = sourceFiles(
+      [
+        // Named first as a page a link changed through.
+        page({ path: "guides/install.md", because: ["guides/setup.md"], moved_links }),
+        page({
+          path: "guides/setup.md",
+          own_file_changed: false,
+          moved_from: "guides/configure.md",
+        }),
+      ],
+      roots,
+    );
+    expect(files).toEqual([
+      {
+        label: "guides/install.md",
+        path: at("docs", "guides", "install.md"),
+        before: true,
+        after: true,
+      },
+      {
+        label: "guides/setup.md",
+        path: at("docs", "guides", "setup.md"),
+        before: true,
+        after: true,
+        basePath: at("docs", "guides", "configure.md"),
+      },
     ]);
   });
 

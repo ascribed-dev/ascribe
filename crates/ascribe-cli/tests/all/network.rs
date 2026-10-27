@@ -4,7 +4,8 @@
 //! reach another repository are run from one module of `ascribe-sources`, and
 //! only those two commands call into it. `tests/sources.rs` holds the same
 //! from the outside, by running every other command with `git`'s network
-//! turned off.
+//! turned off. The one socket is `ascribe preview`'s server, which listens
+//! at `127.0.0.1` alone and connects to nothing (decision #981).
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
@@ -70,9 +71,46 @@ fn no_network_library_is_linked() {
         );
     }
     for (path, text) in sources() {
+        if path == PREVIEW_SERVER {
+            continue;
+        }
         for socket in ["std::net", "TcpStream", "TcpListener", "UdpSocket"] {
             assert!(!text.contains(socket), "{path} uses {socket}");
         }
+    }
+}
+
+/// The preview's server, the one file that may use a socket.
+const PREVIEW_SERVER: &str = "crates/ascribe-cli/src/commands/preview/serve.rs";
+
+#[test]
+fn the_preview_only_listens_at_the_loopback_address() {
+    let text = fs::read_to_string(repo().join(PREVIEW_SERVER)).unwrap();
+    // What it does with the socket: listen, and answer what it accepts.
+    let code = text.split("#[cfg(test)]").next().unwrap();
+    for word in [
+        "TcpStream::connect",
+        "UdpSocket",
+        "Ipv4Addr::UNSPECIFIED",
+        "Ipv6Addr",
+        "0.0.0.0",
+    ] {
+        assert!(!code.contains(word), "{PREVIEW_SERVER} uses {word}");
+    }
+    let binds: Vec<&str> = code
+        .lines()
+        .filter(|line| line.contains("TcpListener::bind("))
+        .collect();
+    assert!(!binds.is_empty(), "{PREVIEW_SERVER} binds no listener");
+    assert!(
+        code.contains("SocketAddr::from((Ipv4Addr::LOCALHOST, port))"),
+        "{PREVIEW_SERVER} binds an address other than 127.0.0.1"
+    );
+    for line in binds {
+        assert!(
+            line.contains("TcpListener::bind(at("),
+            "{PREVIEW_SERVER} binds an address that isn't made by `at`, at 127.0.0.1: {line}"
+        );
     }
 }
 

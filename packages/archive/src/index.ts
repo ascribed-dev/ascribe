@@ -1,4 +1,4 @@
-// The search box of an archive's pages. `ascribe versions archive` writes
+// The search box of an archive's pages. `ascribe versions export` writes
 // this script, bundled, as the folder's `search.js`, and a `<script>` for it
 // in each page's sidebar: the box is drawn where that element is, so with
 // scripts off there's none. The index is `search-index.js`, added to the page
@@ -15,7 +15,7 @@ declare global {
 /** How many results are listed. */
 export const SHOWN = 20;
 
-/** Draws the box in place of `script`, its `data-index` and `data-root` saying where the index and the folder's top are. */
+/** Draws the box in place of `script`, its `data-index` and `data-root` saying where the index and the folder's top are, and its `data-label`, when it has one, what the box is labeled: `ascribe preview` names its build there. */
 export function mount(script: HTMLScriptElement): HTMLElement {
   const doc = script.ownerDocument;
   const indexSrc = script.dataset["index"] ?? "search-index.js";
@@ -26,7 +26,7 @@ export function mount(script: HTMLScriptElement): HTMLElement {
   box.setAttribute("role", "search");
   const label = doc.createElement("label");
   label.htmlFor = "archive-search-input";
-  label.textContent = "Search this version";
+  label.textContent = script.dataset["label"] ?? "Search this version";
   const input = doc.createElement("input");
   input.type = "search";
   input.id = "archive-search-input";

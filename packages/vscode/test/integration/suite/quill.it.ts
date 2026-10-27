@@ -109,7 +109,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
     );
     assert.ok(model.includes("  api (1 use)"), model.join("\n"));
     assert.ok(model.includes("Dimensions (2)"), model.join("\n"));
-    assert.ok(model.includes("Builds (4)"), model.join("\n"));
+    assert.ok(model.includes("Builds (3)"), model.join("\n"));
     const phrases = items.find((item) => item.label === "Phrases");
     const product = phrases?.children.find((item) => item.label === "product");
     assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
@@ -128,7 +128,7 @@ describe("the sidebar's This page, Pages, and Content model views on examples/qu
       "About",
       "  Address (/keys/)",
       "  Markdown (not published)",
-      "  Builds (Published by site, site@3.4, cloud, self-managed-3.3)",
+      "  Builds (Published by site, site@3.4, cloud)",
       "  Listing (Listed (the default))",
       ...connections,
     ];
@@ -787,7 +787,7 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
     const api = await activated();
     await api.ui.sidebar.filter("model", true);
     try {
-      const lines = await listed("model", "the unused entries", (l) => !l.includes("Builds (4)"));
+      const lines = await listed("model", "the unused entries", (l) => !l.includes("Builds (3)"));
       for (const line of lines.filter((l) => /^  \S/.test(l))) {
         assert.match(line, /\((unused|no pages)\)$/, lines.join("\n"));
       }
@@ -888,7 +888,7 @@ function lineOf(uri: vscode.Uri, text: string): number {
 }
 
 // The Project view's counts, each shown as current only while it is: every
-// build's problems, examples, overdue reviews, and the permalinks list from
+// build's problems, examples, overdue rechecks, and the permalinks list from
 // the last Check Every Build, while nothing in the project has changed since
 // (decision #654a); orphans and unused entries from the server's inventory,
 // as you type; and the agent files, after each save.
@@ -1008,20 +1008,20 @@ describe("the Project view on examples/quill", () => {
     return count;
   }
 
-  it("counts examples, overdue reviews for the day, and the permalinks list from the same check, out of date with it", async () => {
+  it("counts examples, overdue rechecks for the day, and the permalinks list from the same check, out of date with it", async () => {
     const api = await activated();
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(keys));
     await vscode.commands.executeCommand("ascribe.project.focus");
     await api.ui.project.choose("checkEveryBuild");
     await drawnIn("current");
-    for (const key of ["examples", "reviews", "permalinks"]) {
+    for (const key of ["examples", "rechecks", "permalinks"]) {
       const count = await countIn(key, "current", "none");
       assert.match(count.note, /^checked at /, count.note);
       // A zero is drawn dimmed, and a count above it isn't.
       assert.equal(count.dimmed, count.state === "none", `${key}: ${count.value}`);
     }
     await editing(keys, async () => {
-      for (const key of ["examples", "reviews", "permalinks"]) {
+      for (const key of ["examples", "rechecks", "permalinks"]) {
         const stale = await countIn(key, "outOfDate");
         assert.equal(stale.value, "—");
         assert.equal(stale.dimmed, false);

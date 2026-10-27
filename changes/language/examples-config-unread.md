@@ -1,0 +1,1 @@
+- **`ascribe check` reports an `ascribe.examples.toml` that no source reads.** One below a source's root was ignored without a word; now `check`, the editor, and `ascribe observe` say so, and how to fix it. See [tested examples](docs/content/examples/tested.md#1-say-which-files-are-examples).

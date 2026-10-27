@@ -27,9 +27,9 @@ const HEADER: &str = "@memo: Generated from the help text in crates/ascribe-cli/
 
 /// Options newer than their command, as `(command, option, availability)`:
 /// the reference marks each with `@available: <availability>`. An option no
-/// release has yet is `ascribe planned`; when a release ships it, name the
-/// release, as `ascribe 0.2.0`. Remove an entry when the option's command section says
-/// the same, or when every live line has the option.
+/// release has yet is `ascribe planned`. Remove an entry when a release ships
+/// it, since before 1.0 the docs don't say which release a feature arrived in
+/// (decision #973), or when the option's command section says the same.
 const AVAILABLE: &[(&str, &str, &str)] = &[];
 
 fn repo() -> PathBuf {
@@ -336,7 +336,7 @@ fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
 fn the_docs_list_of_permalinks_is_current() {
     let project = ascribe_check::Project::load(&repo().join("docs/ascribe.toml")).unwrap();
     let synced = ascribe_query::permalinks::sync(
-        &project.index(),
+        project.index(),
         project.permalinks(),
         project.permalinks_text(),
     )

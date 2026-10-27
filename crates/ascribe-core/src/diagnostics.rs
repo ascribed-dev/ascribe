@@ -468,7 +468,7 @@ pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-
 pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-missing");
 
 /// `ASC153`, advice, file level: a content check (area `pages`).
-pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
+pub const RECHECK_OVERDUE: DiagnosticSlug = DiagnosticSlug("recheck-overdue");
 
 /// `ASC154`, advice, page level: a content check (area `project`).
 pub const PAGE_ORPHAN: DiagnosticSlug = DiagnosticSlug("page-orphan");
@@ -595,7 +595,7 @@ pub const CONTENT_TYPE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("content-type-un
 /// `ASC198`, advice, file level: a content check (area `pages`).
 pub const DESCRIPTION_LINK: DiagnosticSlug = DiagnosticSlug("description-link");
 
-/// `ASC199`, advice, file level: a content check (area `examples`).
+/// `ASC199`, warning, file level: a content check (area `examples`).
 pub const EXAMPLE_STALE: DiagnosticSlug = DiagnosticSlug("example-stale");
 
 /// `ASC200`, advice, file level: a content check (area `examples`).
@@ -873,6 +873,27 @@ pub const OPERATION_LINK_NOT_OPERATION: DiagnosticSlug =
 /// `ASC282`, advice, file level: a content check (area `project`).
 pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-operation-unreferenced");
 
+/// `ASC283`, advice, file level: a content check (area `project`).
+pub const BUILD_FILTER_LINE_UNDECLARED: DiagnosticSlug =
+    DiagnosticSlug("build-filter-line-undeclared");
+
+/// `ASC284`, warning, file level: SPEC §8.2, "Attributes | A word after a
+/// fenced code block's language that starts like a pair a processor reads
+/// (its key in any case, then optional spaces and `=`) but isn't one".
+pub const INFO_PAIR_MALFORMED: DiagnosticSlug = DiagnosticSlug("info-pair-malformed");
+
+/// `ASC285`, warning, file level: a content check (area `examples`).
+pub const EXAMPLES_CONFIG_UNREAD: DiagnosticSlug = DiagnosticSlug("examples-config-unread");
+
+/// `ASC286`, error, file level: a content check (area `pages`).
+pub const TEMPLATE_PLACEHOLDER_PUBLISHED: DiagnosticSlug =
+    DiagnosticSlug("template-placeholder-published");
+
+/// The checks renamed, each by the name it had before, which still names
+/// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
+/// release (decision #953).
+pub const OLD_NAMES: &[(&str, DiagnosticSlug)] = &[("review-overdue", RECHECK_OVERDUE)];
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -1020,7 +1041,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     PAGE_DESCRIPTION_MISSING,
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
-    REVIEW_OVERDUE,
+    RECHECK_OVERDUE,
     PAGE_ORPHAN,
     FRAGMENT_UNUSED,
     PHRASE_UNUSED,
@@ -1145,6 +1166,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     API_EXAMPLE_SCHEMA_UNSUPPORTED,
     OPERATION_LINK_NOT_OPERATION,
     API_OPERATION_UNREFERENCED,
+    BUILD_FILTER_LINE_UNDECLARED,
+    INFO_PAIR_MALFORMED,
+    EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1155,7 +1180,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     PAGE_DESCRIPTION_MISSING,
     HEADING_LEVEL_SKIPPED,
     CODE_LANGUAGE_MISSING,
-    REVIEW_OVERDUE,
+    RECHECK_OVERDUE,
     PAGE_ORPHAN,
     FRAGMENT_UNUSED,
     PHRASE_UNUSED,
@@ -1204,6 +1229,9 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     SUMMARY_LONG,
     ADDRESSES_BASE_UNREADABLE,
     API_OPERATION_UNREFERENCED,
+    BUILD_FILTER_LINE_UNDECLARED,
+    EXAMPLES_CONFIG_UNREAD,
+    TEMPLATE_PLACEHOLDER_PUBLISHED,
 ];
 
 /// The configurable checks that are off unless a project names them in
@@ -1215,7 +1243,7 @@ pub const OFF_BY_DEFAULT: &[DiagnosticSlug] = &[SUMMARY_MISSING, SUMMARY_LONG];
 /// whose next step is `review`, each with the place its problems are reported
 /// at, in registry order. A test keeps it equal to the registry.
 pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
-    (REVIEW_OVERDUE, crate::Place::Page),
+    (RECHECK_OVERDUE, crate::Place::Page),
     (PAGE_ORPHAN, crate::Place::Page),
     (FRAGMENT_UNUSED, crate::Place::Page),
     (PHRASE_UNUSED, crate::Place::Entry),

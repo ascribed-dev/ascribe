@@ -122,6 +122,38 @@ describe("the built site", () => {
     expect(await response.text()).toBe(await readFile(`${distDir}/docs/index.md`, "utf8"));
   });
 
+  test("the changelog asked for as Markdown is /changelog.md, which its head names", async () => {
+    const response = await answer("/changelog/", "text/markdown");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+    expect(response.headers.get("content-location")).toBe("/changelog.md");
+    expect(await response.text()).toBe(await readFile(`${distDir}/changelog.md`, "utf8"));
+    const page = await (await answer("/changelog/", "text/html")).text();
+    expect(page).toContain('<link rel="alternate" type="text/markdown" href="/changelog.md">');
+  });
+
+  test("the changelog's Markdown has each release the page has, anchored as on the page", async () => {
+    const page = await readFile(`${distDir}/changelog/index.html`, "utf8");
+    const text = await readFile(`${distDir}/changelog.md`, "utf8");
+    const releases = Array.from(page.matchAll(/<h2 id="([^"]*)"/g), (match) => match[1] ?? "");
+    expect(releases).toContain("v0.4.4");
+    expect(
+      Array.from(text.matchAll(/^## <a id="([^"]*)"><\/a>/gm), (match) => match[1] ?? ""),
+    ).toEqual(releases);
+    // Every link, outside code, is one a reader of the file alone can follow.
+    const prose = text.replace(/(`+)[\s\S]*?\1/g, "");
+    expect(prose).toMatch(/\]\(https:\/\/[^)]+\/docs\//);
+    expect(prose).not.toMatch(/\]\((?!https?:|#|mailto:)/);
+  });
+
+  test("the docs' llms.txt lists the changelog's Markdown, under Optional", async () => {
+    const llms = await readFile(`${distDir}/docs/llms.txt`, "utf8");
+    const optional = llms.slice(llms.indexOf("\n## Optional\n"));
+    expect(optional).toMatch(
+      /^\n## Optional\n\n- \[Changelog\]\(https?:\/\/[^)]+\/changelog\.md\): /,
+    );
+  });
+
   test("a page outside the docs asked for as Markdown is its page", async () => {
     const response = await answer("/", "text/markdown");
     expect(response.status).toBe(200);
@@ -136,12 +168,23 @@ describe("the built site", () => {
     expect(await response.text()).toMatch(/^<!DOCTYPE html>/i);
   });
 
-  test("a permalink asked for as Markdown is its forwarding page", async () => {
-    const [page] = await forwardingPages();
-    expect(page).toBeDefined();
-    const response = await answer(page ?? "", "text/markdown");
+  test("a permalink asked for as Markdown is its section, from its .md", async () => {
+    const response = await answer("/go/ASC036/", "text/markdown");
     expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toMatch(/^text\/html/);
+    expect(response.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+    expect(response.headers.get("content-location")).toBe("/go/ASC036.md");
+    const text = await response.text();
+    expect(text).toBe(await readFile(`${distDir}/go/ASC036.md`, "utf8"));
+    // The section alone, under its heading, not the whole page.
+    expect(text).toMatch(/^# /);
+    expect(text.length).toBeLessThan(10_000);
+  });
+
+  test("a permalink's forwarding page names its section's Markdown and JSON", async () => {
+    const response = await answer("/go/ASC036/", "text/html");
+    const page = await response.text();
+    expect(page).toContain('<link rel="alternate" type="text/markdown" href="/go/ASC036.md">');
+    expect(page).toContain('<link rel="alternate" type="application/json" href="/go/ASC036.json">');
   });
 
   test("a missing page asked for as Markdown is still the 404 page", async () => {

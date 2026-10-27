@@ -30,12 +30,12 @@ impl ConformanceAdapter for BaselineAdapter {
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> {
         let project = project(case)?;
         let request = Request {
-            builds: &[],
             baseline: true,
+            ..Request::default()
         };
         let diagnostics = ascribe_check::diagnose_with(&project, &request)
             .map_err(|e| AdapterError(e.to_string()))?
-            .diagnostics;
+            .into_diagnostics();
         to_conformance(&project, diagnostics).map(Some)
     }
 }

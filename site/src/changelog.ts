@@ -529,3 +529,124 @@ function idOf(open: string): string {
 function textOf(html: string): string {
   return decodeEntities(html.replace(/<[^>]*>/g, ""));
 }
+
+/**
+ * The changelog as Markdown, for agents: `/changelog.md`, what the page shows
+ * in the form `body` writes it, with nothing collapsed or grouped.
+ *
+ * - Each `##` and `###` heading starts with an anchor, `<a id="…"></a>`, the
+ *   one `anchorReleases` gives it on the page (`v0.2.0`, `v0.2.0-the-language`),
+ *   and the unreleased section says it's unreleased, as the page does.
+ * - Each link is pointed as `pointLinks` points the page's, and then made
+ *   absolute against `site`, so a reader of the file alone can follow it.
+ * - The unreleased section, when it has no entries, is left out, as on the
+ *   page.
+ *
+ * `html` is `body` rendered: the headings' anchors are read from it, in order,
+ * since only the rendered heading has the text an anchor is made from.
+ */
+export async function changelogMarkdown(
+  body: string,
+  html: string,
+  targets: Targets,
+  site: URL,
+): Promise<string> {
+  const anchored = anchorReleases(html);
+  const ids = Array.from(anchored.matchAll(/<h[23] id="([^"]*)"/g), (match) =>
+    decodeEntities(match[1] ?? ""),
+  );
+  const shown = new Set(collapseEntries(anchored).contents.map((release) => release.id));
+  const lines = body.split("\n");
+  const out: string[] = [];
+  const dests = new Set<string>();
+  let fence: string | undefined;
+  let heading = 0;
+  let skipping = false;
+  for (const line of lines) {
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+    if (fence !== undefined) {
+      if (marker !== undefined && marker[0] === fence[0] && marker.length >= fence.length) {
+        fence = undefined;
+      }
+      if (!skipping) out.push(line);
+      continue;
+    }
+    if (marker !== undefined) {
+      fence = marker;
+      if (!skipping) out.push(line);
+      continue;
+    }
+    const atx = /^(#{2,3})[ \t]+(.*)$/.exec(line);
+    if (atx !== null) {
+      const id = ids[heading++];
+      if (id === undefined) throw new Error(`${changelogFile} has more headings than its page`);
+      const level = atx[1] ?? "";
+      if (level === "##") skipping = id === "unreleased" && !shown.has(id);
+      if (skipping) continue;
+      out.push(`${level} <a id="${encodeAttribute(id)}"></a>${atx[2] ?? ""}`);
+      if (level === "##" && id === "unreleased") {
+        out.push("", "In `main`, not yet released.");
+      }
+      continue;
+    }
+    if (skipping) continue;
+    for (const dest of linkDestinations(line)) dests.add(dest);
+    out.push(line);
+  }
+  if (heading !== ids.length) throw new Error(`${changelogFile} has fewer headings than its page`);
+
+  const problems: string[] = [];
+  const pointed = new Map<string, string>();
+  for (const dest of dests) {
+    const target = await pointLink(dest, targets);
+    if ("problem" in target) {
+      const lines = linesOf(body, dest);
+      const where = lines.length === 0 ? changelogFile : `${changelogFile}:${lines.join(", ")}`;
+      problems.push(`${where}: ${dest}: ${target.problem}`);
+    } else {
+      pointed.set(
+        dest,
+        target.href.startsWith("#") ? target.href : new URL(target.href, site).href,
+      );
+    }
+  }
+  if (problems.length > 0) throw new ChangelogLinkError(problems);
+
+  fence = undefined;
+  const text = out.map((line) => {
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+    if (fence !== undefined) {
+      if (marker !== undefined && marker[0] === fence[0] && marker.length >= fence.length) {
+        fence = undefined;
+      }
+      return line;
+    }
+    if (marker !== undefined) {
+      fence = marker;
+      return line;
+    }
+    return line.replace(INLINE, (whole, ticks: string | undefined, dest: string | undefined) => {
+      if (ticks !== undefined || dest === undefined) return whole;
+      const href = pointed.get(unwrap(dest));
+      return href === undefined ? whole : `](${href}`;
+    });
+  });
+  return `${text.join("\n").trimEnd()}\n`;
+}
+
+/** A code span, which is left alone, or the start of an inline link's destination. */
+const INLINE = /(`+)[\s\S]*?\1|\]\((<[^>\n]*>|[^\s()<>]+)(?=[\s)])/g;
+
+/** The destinations of a line's inline links, outside its code spans. */
+function linkDestinations(line: string): string[] {
+  const found: string[] = [];
+  for (const [, ticks, dest] of line.matchAll(INLINE)) {
+    if (ticks === undefined && dest !== undefined) found.push(unwrap(dest));
+  }
+  return found;
+}
+
+/** A destination without its angle brackets, `<…>`. */
+function unwrap(dest: string): string {
+  return dest.startsWith("<") ? dest.slice(1, -1) : dest;
+}

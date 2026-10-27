@@ -1,0 +1,43 @@
+# The fuzz targets (CONTRIBUTING.md, "Fuzzing"). A crate of its own, outside
+# the workspace, so libfuzzer-sys and its nightly toolchain never reach the
+# workspace's Cargo.lock or a pull request's checks (decision #1020).
+[package]
+name = "ascribe-fuzz"
+version = "0.0.0"
+edition = "2024"
+license = "MPL-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+ascribe-core = { path = "../crates/ascribe-core" }
+ascribe-syntax = { path = "../crates/ascribe-syntax" }
+ascribe-model = { path = "../crates/ascribe-model" }
+ascribe-fmt = { path = "../crates/ascribe-fmt" }
+
+# Not a member of the repository's workspace.
+[workspace]
+
+[[bin]]
+name = "parse"
+path = "fuzz_targets/parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "model"
+path = "fuzz_targets/model.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "format"
+path = "fuzz_targets/format.rs"
+test = false
+doc = false
+bench = false

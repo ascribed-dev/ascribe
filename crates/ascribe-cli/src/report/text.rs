@@ -168,16 +168,7 @@ pub fn write_tally(
         .to_string()
         .len();
     writeln!(out, "By code:")?;
-    for c in codes {
-        writeln!(
-            out,
-            "  {:>width$}  {} {} ({})",
-            c.count,
-            c.code,
-            c.slug,
-            c.severity.as_str()
-        )?;
-    }
+    write_code_lines(out, codes, width)?;
     writeln!(out, "By file:")?;
     for f in by_file.iter().take(TALLY_FILES) {
         writeln!(
@@ -201,8 +192,35 @@ pub fn write_tally(
     Ok(())
 }
 
+/// Writes a line for each code, as `--summary` does, with its count right
+/// aligned to the widest.
+pub fn write_codes(out: &mut dyn Write, codes: &[ByCode]) -> io::Result<()> {
+    let width = codes
+        .iter()
+        .map(|c| c.count)
+        .max()
+        .unwrap_or_default()
+        .to_string()
+        .len();
+    write_code_lines(out, codes, width)
+}
+
+fn write_code_lines(out: &mut dyn Write, codes: &[ByCode], width: usize) -> io::Result<()> {
+    for c in codes {
+        writeln!(
+            out,
+            "  {:>width$}  {} {} ({})",
+            c.count,
+            c.code,
+            c.slug,
+            c.severity.as_str()
+        )?;
+    }
+    Ok(())
+}
+
 /// `1 error, 2 warnings`, and `, 3 advice` when there's any.
-fn counted(counts: Counts) -> String {
+pub fn counted(counts: Counts) -> String {
     let mut text = format!(
         "{}, {}",
         plural(counts.errors, "error"),
@@ -358,7 +376,8 @@ fn write_diagnostic(
         );
     }
     // The first fix's title, which says what applying it does; else the
-    // registry's help, the next step `check`'s JSON gives as `help`.
+    // registry's help, the next step `check`'s JSON gives as `help`, with
+    // its Markdown links written for a terminal.
     let help = d.fixes.first().map(|fix| fix.title.as_str()).or_else(|| {
         Registry::global()
             .get(d.slug)
@@ -366,7 +385,7 @@ fn write_diagnostic(
             .filter(|help| !help.is_empty())
     });
     if let Some(help) = help {
-        report = report.with_help(shown.help(d.code, help));
+        report = report.with_help(shown.help(d.code, &super::links::plain(help)));
     }
     report.finish().write(cache, out)
 }

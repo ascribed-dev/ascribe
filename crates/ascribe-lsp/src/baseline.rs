@@ -2,8 +2,11 @@
 //! published, as `ascribe check` doesn't report it, and an entry that
 //! matches nothing is published on the file, as advice.
 //!
-//! The server checks a file at a time, so it holds back a file's
-//! diagnostics at a time ([`hold`]): an identity's order is among the
+//! It holds back what the baseline lists, and says which entries are
+//! stale, through the same `ascribe_check::Request` as `ascribe check
+//! --editor-build`, so the two hold back the same advice. The server checks
+//! a file at a time, so it holds back a file's diagnostics at a time
+//! ([`hold`]): an identity's order is among the
 //! findings of one file and one check, so that's the same as holding back
 //! the whole project's at once. What's held back is kept for the file
 //! ([`crate::core::Core`]'s `held`), with the entry that holds it in its
@@ -21,9 +24,9 @@
 use std::collections::{HashMap, HashSet};
 
 use ascribe_check::baseline::{self, BASELINE_FILE, Baseline, BaselineError, Held};
-use ascribe_check::identity::{Identity, identities, identities_in};
-use ascribe_check::{Diagnostic, Project, Registry};
-use ascribe_core::{LineIndex, RelPath, Span, diagnostics};
+use ascribe_check::identity::Identity;
+use ascribe_check::{Diagnostic, Project, Registry, Request};
+use ascribe_core::{LineIndex, RelPath, Span};
 use ascribe_model::ContentModel;
 use ascribe_resolve::FileSystem;
 use lsp_types::{
@@ -67,14 +70,24 @@ impl Now {
     }
 }
 
+/// What the editor checks, as `ascribe check --editor-build` asks for it:
+/// the editor's build, with the baseline. The baseline is the editor's
+/// ([`Now`]), its open buffer over the disk, so it's handed to the
+/// request's methods rather than read from the project.
+fn editor() -> Request<'static> {
+    Request {
+        editor_build: true,
+        baseline: true,
+        ..Request::default()
+    }
+}
+
 /// `diagnostics`, all of one file of `project`, with the advice the
-/// baseline lists set aside.
+/// baseline lists set aside, as every surface holds it back
+/// ([`Request::hold`]).
 pub(crate) fn hold(now: &Now, project: &Project, diagnostics: Vec<Diagnostic>) -> Held {
     match now.usable() {
-        Some(baseline) => {
-            let found = identities(project, &diagnostics);
-            baseline::hold(baseline, diagnostics, found)
-        }
+        Some(baseline) => editor().hold(project, baseline, diagnostics),
         None => Held {
             diagnostics,
             ..Held::default()
@@ -87,10 +100,7 @@ pub(crate) fn hold(now: &Now, project: &Project, diagnostics: Vec<Diagnostic>) -
 /// which the server checks without a project.
 pub(crate) fn hold_in(now: &Now, file: &str, text: &str, diagnostics: Vec<Diagnostic>) -> Held {
     match now.usable() {
-        Some(baseline) => {
-            let found = identities_in(file, text, &diagnostics);
-            baseline::hold(baseline, diagnostics, found)
-        }
+        Some(baseline) => editor().hold_in(baseline, file, text, diagnostics),
         None => Held {
             diagnostics,
             ..Held::default()
@@ -158,18 +168,13 @@ pub(crate) fn published(
             }]
         }
         Ok(_) if !every_build => Vec::new(),
-        Ok(baseline) => {
-            // Vale's, and the checks the editor doesn't run, such as
-            // `image-unused`: it found nothing of theirs to match.
-            let not_run: Vec<&str> = std::iter::once(diagnostics::PROSE)
-                .chain(ascribe_check::NOT_IN_EDITOR.iter().copied())
-                .map(|slug| slug.as_str())
-                .collect();
-            baseline::stale(&model.checks, baseline, matched, &not_run)
-                .iter()
-                .map(|d| to_lsp(d, &index, encoding, &|_| None))
-                .collect()
-        }
+        // Not Vale's, nor the checks the editor doesn't run, such as
+        // `image-unused`: it found nothing of theirs to match.
+        Ok(baseline) => editor()
+            .unmatched(model, baseline, matched)
+            .iter()
+            .map(|d| to_lsp(d, &index, encoding, &|_| None))
+            .collect(),
     }
 }
 

@@ -159,11 +159,25 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_templates::StatusAnswer>(),
     },
     Shape {
+        file: "new",
+        title: "NewReport",
+        written_by: "`ascribe new --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::new::NewJson>(),
+    },
+    Shape {
         file: "init",
         title: "InitReport",
         written_by: "`ascribe init --format json`",
         command: true,
         schema: |g| g.root_schema_for::<ascribe_templates::InitAnswer>(),
+    },
+    Shape {
+        file: "rename",
+        title: "RenameReport",
+        written_by: "`ascribe rename --format json`, and the MCP server's `ascribe_rename`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::rename::RenameJson>(),
     },
     Shape {
         file: "fmt",
@@ -278,11 +292,11 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::versions::ReleaseJson>(),
     },
     Shape {
-        file: "versions-archive",
-        title: "VersionsArchiveReport",
-        written_by: "`ascribe versions archive --format json`",
+        file: "versions-export",
+        title: "VersionsExportReport",
+        written_by: "`ascribe versions export --format json`",
         command: true,
-        schema: |g| g.root_schema_for::<crate::commands::versions::ArchiveJson>(),
+        schema: |g| g.root_schema_for::<crate::commands::versions::ExportJson>(),
     },
     Shape {
         file: "versions-retire",

@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Put the docs in a site with more than the docs
-description: Serve the docs under a path, such as /docs/, in an Astro site whose home page and other pages are your own or a second Ascribe project.
+description: "Serve the docs under a path, such as `/docs/`, in an Astro site whose home page and other pages are your own or a second Ascribe project."
 ---
 
 A site often has more than its docs: a home page at `/`, with the docs at `/docs/`. This guide puts an Ascribe project's docs under a path of one Astro site, and leaves the rest of the site to your own pages, or to a second Ascribe project.

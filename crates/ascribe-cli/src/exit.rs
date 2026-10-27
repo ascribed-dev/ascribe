@@ -59,6 +59,7 @@ mod tests {
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::permalinks::PermalinksError;
+    use crate::commands::preview::PreviewError;
     use crate::commands::rename::RenameCommandError;
     use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
@@ -354,8 +355,20 @@ mod tests {
         ),
         ("init_folder_refused", "init's folder is a file"),
         (
+            "init_content_root_refused",
+            "init's content root isn't a folder inside the project's",
+        ),
+        (
+            "init_templates_refused",
+            "init was asked for the templates in a folder of pages",
+        ),
+        (
             "init_unwritable",
             "init can't write ascribe.toml or make the content root",
+        ),
+        (
+            "preview_port_unavailable",
+            "preview can't listen on its port",
         ),
     ];
 
@@ -551,6 +564,8 @@ mod tests {
             match e {
                 ascribe_templates::InitError::Project { .. }
                 | ascribe_templates::InitError::NotAFolder { .. }
+                | ascribe_templates::InitError::ContentRoot { .. }
+                | ascribe_templates::InitError::TemplatesWithPages { .. }
                 | ascribe_templates::InitError::Templates(_)
                 | ascribe_templates::InitError::Write { .. } => {}
             }
@@ -613,6 +628,11 @@ mod tests {
                 RenameCommandError::BadTarget { .. } | RenameCommandError::Unwritable { .. } => {}
             }
         }
+        fn preview(e: &PreviewError) {
+            match e {
+                PreviewError::Listen { .. } => {}
+            }
+        }
         let _ = (
             locate,
             load,
@@ -639,6 +659,7 @@ mod tests {
             templates,
             templates_command,
             init,
+            preview,
         );
 
         let store_errors = || {
@@ -815,6 +836,14 @@ mod tests {
             }),
             Box::new(ascribe_templates::InitError::Project { found: path() }),
             Box::new(ascribe_templates::InitError::NotAFolder { folder: path() }),
+            Box::new(ascribe_templates::InitError::ContentRoot {
+                given: text(),
+                reason: "isn't a relative path",
+            }),
+            Box::new(ascribe_templates::InitError::TemplatesWithPages {
+                pages: 2,
+                content_root: text(),
+            }),
             Box::new(ascribe_templates::InitError::Templates(
                 ascribe_templates::EjectError::Write {
                     path: text(),
@@ -824,6 +853,10 @@ mod tests {
             Box::new(ascribe_templates::InitError::Write {
                 path: text(),
                 reason: text(),
+            }),
+            Box::new(PreviewError::Listen {
+                address: text(),
+                message: text(),
             }),
             Box::new(TemplatesError::NoProject(LocateError::NotFound {
                 dir: path(),

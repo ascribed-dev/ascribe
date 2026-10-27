@@ -1,6 +1,6 @@
 //! The archive: one line of a versioned build rendered once more, by
 //! Ascribe alone, into a folder of HTML that needs nothing else
-//! (`ascribe versions archive`, the archive contract in
+//! (`ascribe versions export`, the archive contract in
 //! `docs/content/contracts/archive.md`).
 //!
 //! The archive is a fourth emitter, `archive`, that `ascribe build` never
@@ -19,6 +19,9 @@
 //! and at any address. A link out of the line, and a link to an address
 //! under the site that no page of the line has, is written as its text,
 //! and listed in [`Archive::unlinked`].
+//!
+//! [`preview`] renders any build the same way, for `ascribe preview`: the
+//! same files, under a statement that the folder is a preview.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -53,6 +56,10 @@ const CONTENTS: &str = "contents.html";
 /// What keeps crawlers out of a host that serves the folder at its own
 /// origin.
 const ROBOTS: &str = "robots.txt";
+
+/// The id of each page's `<main>`, which the skip link leads to: prefixed,
+/// as no heading's id of a page is in practice.
+const MAIN_ID: &str = "archive-main";
 
 /// The element library's stylesheet, as `@ascribed/elements` ships it.
 const ELEMENTS_CSS: &str = include_str!("../../../../packages/elements/css/style.css");
@@ -125,17 +132,67 @@ pub fn archive(
     let model = index.model();
     let router = AstroRouter::from_consumer(&model.consumer);
     let resolved = index.resolve_build(build, &router);
-    let statement = Statement {
-        what: format!(
-            "{} {}",
-            model.value_label(target).unwrap_or(target),
-            line.line.text
+    let what = format!(
+        "{} {}",
+        model.value_label(target).unwrap_or(target),
+        line.line.text
+    );
+    let link = match &options.current {
+        Some(url) => format!(
+            "<span class=\"archive-current\"> <a href=\"{}\">Read the current documentation.</a></span>",
+            encode(url)
         ),
-        current: options.current.clone(),
+        None => String::new(),
     };
-    let emitter = ArchiveEmitter::new(index, &resolved, statement);
+    let statement = Statement {
+        html: format!(
+            "<header class=\"archive-statement\">\n<p>Documentation for {}. This version is no longer maintained.{link}</p>\n</header>\n",
+            encode(&what)
+        ),
+        what,
+        search: None,
+    };
+    render(index, root, build, &resolved, statement)
+}
+
+/// Renders `build`, any build, as an archive renders a line, for `ascribe
+/// preview`: every file, in memory, under a statement that it's a preview.
+/// [`crate::OutputDir::replace_archive`] writes them.
+///
+/// A page with errors is rendered as far as it resolves, as the editor's
+/// preview renders it; a link to an address no page has is written as its
+/// text, as in an archive.
+///
+/// # Errors
+///
+/// A page can't be rendered.
+pub fn preview(project: &Project, root: &Path, build: &Build) -> Result<Archive, EmitError> {
+    let index = project.for_build(build);
+    let index = index.as_ref();
+    let router = AstroRouter::from_consumer(&index.model().consumer);
+    let resolved = index.resolve_build(build, &router);
+    let statement = Statement {
+        what: format!("{} preview", build.name),
+        html: format!(
+            "<header class=\"archive-statement\">\n<p>A preview of build <code>{}</code>, written by <code>ascribe preview</code>. The published site has its own look.</p>\n</header>\n",
+            encode(&build.name)
+        ),
+        search: Some(format!("Search build {}", build.name)),
+    };
+    render(index, root, build, &resolved, statement)
+}
+
+/// Renders a resolved build as an archive's files, under `statement`.
+fn render(
+    index: &Project,
+    root: &Path,
+    build: &Build,
+    resolved: &ResolvedBuild,
+    statement: Statement,
+) -> Result<Archive, EmitError> {
+    let emitter = ArchiveEmitter::new(index, resolved, statement);
     let cx = EmitContext::new(index, root, build);
-    let emission = emit(&emitter, &cx, &resolved)?;
+    let emission = emit(&emitter, &cx, resolved)?;
     let pages = emission
         .files
         .iter()
@@ -175,10 +232,14 @@ pub fn page_file(page: &RelPath) -> RelPath {
 
 /// The statement at the top of every page.
 struct Statement {
-    /// The line, as a person reads it: `self-managed 3.4`.
+    /// What the folder is, after each page's title: the line, as a person
+    /// reads it, `self-managed 3.4`.
     what: String,
-    /// The address of the current documentation.
-    current: Option<String>,
+    /// The statement, as HTML.
+    html: String,
+    /// What the search box is labeled, when it isn't the script's own
+    /// "Search this version".
+    search: Option<String>,
 }
 
 /// A page in the archive's navigation.
@@ -555,7 +616,9 @@ impl ArchiveEmitter {
     ) -> String {
         let stylesheet = RelPath::parse(ARCHIVE_STYLESHEET).unwrap_or_else(|_| RelPath::root());
         let mut out = String::new();
-        out.push_str("<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n");
+        // The content model has no project language yet, so every page is
+        // English until it has one (decision #1017).
+        out.push_str("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
         out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
         out.push_str("<meta name=\"robots\" content=\"noindex\">\n");
         // The archive's own scripts, from the folder: `'self'` where it's
@@ -569,32 +632,27 @@ impl ArchiveEmitter {
             "<link rel=\"stylesheet\" href=\"{}\">\n</head>\n<body>\n",
             encode(&relative(dir, &stylesheet))
         ));
-        out.push_str(&self.statement_html());
+        // Past the statement and the sidebar, which at a phone's width come
+        // before the page, every page of the line listed in it.
+        out.push_str(&format!(
+            "<a class=\"archive-skip\" href=\"#{MAIN_ID}\">Skip to content</a>\n"
+        ));
+        out.push_str(&self.statement.html);
         match current {
             Some(current) => {
                 out.push_str("<div class=\"archive-layout\">\n");
                 out.push_str(&self.sidebar(dir, current));
-                out.push_str(&format!("<main class=\"archive-page\">\n{main}</main>\n"));
+                out.push_str(&format!(
+                    "<main id=\"{MAIN_ID}\" class=\"archive-page\">\n{main}</main>\n"
+                ));
                 out.push_str("</div>\n");
             }
-            None => out.push_str(&format!("<main class=\"archive-all\">\n{main}</main>\n")),
+            None => out.push_str(&format!(
+                "<main id=\"{MAIN_ID}\" class=\"archive-all\">\n{main}</main>\n"
+            )),
         }
         out.push_str("</body>\n</html>\n");
         out
-    }
-
-    fn statement_html(&self) -> String {
-        let link = match &self.statement.current {
-            Some(url) => format!(
-                "<span class=\"archive-current\"> <a href=\"{}\">Read the current documentation.</a></span>",
-                encode(url)
-            ),
-            None => String::new(),
-        };
-        format!(
-            "<header class=\"archive-statement\">\n<p>Documentation for {}. This version is no longer maintained.{link}</p>\n</header>\n",
-            encode(&self.statement.what)
-        )
     }
 
     /// The sidebar: the contents page, then each folder's pages, with the
@@ -611,8 +669,14 @@ impl ArchiveEmitter {
         // The search box, which the script draws in its place: with
         // scripts off, there's none.
         let file = |name: &str| RelPath::parse(name).unwrap_or_else(|_| RelPath::root());
+        let label = self
+            .statement
+            .search
+            .as_ref()
+            .map(|label| format!(" data-label=\"{}\"", encode(label)))
+            .unwrap_or_default();
         out.push_str(&format!(
-            "<script src=\"{}\" data-index=\"{}\" data-root=\"{}\" defer></script>\n",
+            "<script src=\"{}\" data-index=\"{}\" data-root=\"{}\"{label} defer></script>\n",
             encode(&relative(dir, &file(SEARCH_SCRIPT))),
             encode(&relative(dir, &file(SEARCH_INDEX))),
             encode(&root_of(dir)),

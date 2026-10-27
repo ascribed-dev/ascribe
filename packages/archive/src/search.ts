@@ -1,7 +1,7 @@
 // Searching an archive's index: which pages and headings a query finds,
 // best first, and the words around each match.
 
-/** The index `ascribe versions archive` writes in `search-index.js`. */
+/** The index `ascribe versions export` writes in `search-index.js`. */
 export interface Index {
   version: number;
   /** Every page, in the sidebar's order. */

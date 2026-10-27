@@ -1,28 +1,29 @@
 ---
 type: how-to
-title: Archive and retire a line
-description: Keep a copy of a release line that needs nothing else, host it, then take the line out of the source and send its addresses on.
+title: Export and retire a line
+description: Export a release line to a folder of HTML that needs nothing else, host it, then take the line out of the source and send its addresses on.
 ---
 
-Before a line leaves the window of live versions, keep a copy of it that needs nothing else, then take it out of the source so the pages stop carrying it. The order matters: once the line is retired, the source no longer holds what its archive needs.
+Before a line leaves the window of live versions, export it into an archive, a copy that needs nothing else, then retire it: take it out of the source so the pages stop carrying it, and record it as archived. The order matters: once the line is retired, the source no longer holds what its archive needs.
 
 ## Before you start
 
 - The line is the oldest live line of a [versioned build](index.md), and every line's content is still in the source.
 - Commit your work first: `ascribe versions retire` writes only files git can put back as they were.
 
-## Archive and retire a line
+## Export and retire a line
+@id: archive-and-retire-a-line
 
-### 1. Archive the line
+### 1. Export the line
 @id: archive-a-line
 
 ```sh
-ascribe versions archive "self-managed 3.4" --to archive/3.4 --current https://docs.example.com/docs/
+ascribe versions export "self-managed 3.4" --to archive/3.4 --current https://docs.example.com/docs/
 ```
 
 The command checks the line's build first, and writes nothing on an error. It names each link it wrote as its text, since it led out of the line, and says what to add to `ascribe.toml` once the archive is hosted. In `examples/quill`:
 
-@snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-archive.txt
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-export.txt
 
 ### 2. Look over the archive
 
@@ -62,7 +63,7 @@ It moves 3.4 from `live` to `archived`, with its address and the day it ended, s
 | `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` | `self-managed (ga 3.5, deprecated 3.6)` |
 | `cloud, self-managed 3.4` | `cloud, self-managed` |
 
-No live line's output changes, and the command proves it by building before and after. A build that isn't a line, such as a badge build that shows "3.4+", does change: the command names its pages, and needs `--force` to go ahead. Run it with `--dry-run` first to read what it would do, as in `examples/quill`:
+No live line's output changes, and the command proves it by building before and after. A build that isn't a line, such as a filter build for an older version, can change: the command names its pages, and needs `--force` to go ahead. When a page's only change is self-managed's part of its availability lines, as in a cloud build that shows "self-managed (preview, 3.4+)", the change is expected: the command lists it apart and goes ahead without `--force`. Run it with `--dry-run` first to read what it would do, as in `examples/quill`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-retire.txt
 
@@ -92,6 +93,6 @@ Read the list, then run it again with `--remove-unused` to delete them. A mark t
 
 ## See also
 
-- [`ascribe versions archive`](release.md#cli-versions-archive) and [`ascribe versions retire`](release.md#cli-versions-retire): their options, and when each refuses.
+- [`ascribe versions export`](release.md#cli-versions-export) and [`ascribe versions retire`](release.md#cli-versions-retire): their options, and when each refuses.
 - [The archive contract](../contracts/archive.md): the folder's layout.
 - [Publish a site for each version](index.md).

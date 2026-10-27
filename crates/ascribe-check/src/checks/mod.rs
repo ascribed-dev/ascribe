@@ -11,7 +11,7 @@
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
-//! | `content` | A page's description and review date, code blocks' languages |
+//! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
@@ -41,7 +41,8 @@ use ascribe_syntax::{
 
 use crate::{Diagnostic, Project, SourceFile};
 
-pub(crate) use sources::{check_examples, check_sources};
+pub use sources::unread_config_issue;
+pub(crate) use sources::{check_examples, check_sources, check_unread_configs};
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {
@@ -56,6 +57,9 @@ struct Ctx<'a> {
     /// The text of the file's first paragraph, for a prompt about its
     /// description.
     first_paragraph: Option<String>,
+    /// Whether the page is a draft, `draft: true` (SPEC §2.1), once the
+    /// frontmatter is checked: no build publishes it.
+    draft: bool,
     /// The page's content type, once the frontmatter is checked: `None` for
     /// a fragment, and for a page whose type is missing or unknown.
     page_type: Option<&'a ContentType>,
@@ -118,12 +122,14 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
+        draft: false,
         page_type: None,
         mark_scopes: Vec::new(),
         marked_examples: false,
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
+    cx.title_from_heading(doc.frontmatter.as_ref(), &doc.blocks);
     cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
     if cx.marked_examples {
@@ -139,8 +145,9 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
 
 impl Ctx<'_> {
     /// Fixes for the parser's issues whose replacement is certain: a
-    /// misspelled directive (the suggested one) and text that doesn't belong
-    /// on a directive line (remove it).
+    /// misspelled directive (the suggested one), attributes written without
+    /// their braces (add them), and other text that doesn't belong on a
+    /// directive line (remove it).
     fn parser_fixes(&mut self) {
         let text = self.file.text.clone();
         let id = self.id;
@@ -167,6 +174,30 @@ impl Ctx<'_> {
                     edits: vec![TextEdit::replace(Span::new(span.start(), end), suggestion)],
                     // The nearest name, which may not be the one meant.
                     applicability: Applicability::Unsafe,
+                }
+            } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT
+                && issue.variant == Some("braces")
+            {
+                let (Some(pairs), Some(attributes)) = (issue.arg("pairs"), issue.arg("attributes"))
+                else {
+                    continue;
+                };
+                let pairs = Span::new(span.start(), span.start() + pairs.len());
+                // `type=warning: text` has its meaning certain once braced;
+                // without a primary, the line might have been meant otherwise.
+                let after = text[pairs.end()..span.end()].trim_start_matches([' ', '\t']);
+                let primary = after
+                    .strip_prefix(':')
+                    .is_some_and(|p| !p.trim_matches([' ', '\t']).is_empty());
+                Fix {
+                    title: format!("Put `{}` in braces", &text[pairs.range()]),
+                    file: id,
+                    edits: vec![TextEdit::replace(pairs, format!("{{{attributes}}}"))],
+                    applicability: if primary {
+                        Applicability::Safe
+                    } else {
+                        Applicability::Unsafe
+                    },
                 }
             } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT {
                 let before = &text[..span.start()];
@@ -223,6 +254,7 @@ impl Ctx<'_> {
                 }
                 BlockKind::CodeBlock(code) => {
                     self.check_code_language(block, code);
+                    self.check_info_pairs(code);
                     let info = InfoString::parse(&code.info);
                     self.marked_examples |=
                         info.get("request").is_some() || info.get("response").is_some();
@@ -328,6 +360,7 @@ impl Ctx<'_> {
             &schema,
             d.attributes.as_ref(),
             d.attributes_closed,
+            d.unexpected.is_none(),
             d.name_span,
         );
         // An unclosed attribute block hides the rest of the line (SPEC §3.3).

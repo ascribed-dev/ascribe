@@ -1,0 +1,1 @@
+- **Fixed:** the docs now say a retired address gets a page saying why it was removed. Files Ascribe writes lists the redirects and pages `@ascribed/astro` writes from `ascribe.addresses`. See [Keep the addresses you've published](docs/content/publishing/redirects.md).

@@ -218,7 +218,7 @@
       "type": "object"
     },
     "FormattedPiece": {
-      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the review report's, writes it the same way.",
+      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the HTML preview's, writes it the same way.",
       "properties": {
         "type": {
           "$ref": "#/$defs/PieceKind",
@@ -235,11 +235,29 @@
       ],
       "type": "object"
     },
+    "MovedPage": {
+      "description": "A page that moved: where it was, and where it is, by content path.",
+      "properties": {
+        "from": {
+          "description": "Where it was, in the base.",
+          "type": "string"
+        },
+        "to": {
+          "description": "Where it is now.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
     "PageDiff": {
       "description": "What changed on one page of a build.",
       "properties": {
         "because": {
-          "description": "The other changed files the page's change can come from: fragments it\nincludes and pages its links take a title or a heading from, in path\norder; then the snippets whose code changed, by address\n(`code:app.py#main`); and `ascribe.toml` (last) when the content model\nis a cause.",
+          "description": "The other changed files the page's change can come from: fragments it\nincludes and pages its links take a title or a heading from, in path\norder; then the snippets whose code changed, by address\n(`code:app.py#main`); then the operations of a declared API whose spec\nchanged what the page writes for them, an `@operation`'s method, path,\nsummary, or deprecation, or a link's address, each by its spec's path\nfrom the project root, `#`, and the fragment the page names it by\n(`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the\ncontent model is a cause. The kinds are told apart by their form: a\ncontent file's path ends in `.md`, a snippet's address has its\nsource's name and `:` before its path, and an operation's has a `#`\nand neither.",
           "items": {
             "type": "string"
           },
@@ -256,12 +274,26 @@
           "$ref": "#/$defs/Counts",
           "description": "How many changes of each kind."
         },
+        "moved_from": {
+          "description": "For a page that moved, the content path it was at: git sees its\nfile renamed, or `ascribe.addresses` records the move. The page is\nlisted once, at `path`, compared with the page as it was at\n`moved_from`; `status` is `changed`, and its `counts` and `changes`\nare what differs besides the move, none for a page that only moved.\nAbsent for a page that didn't move.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "moved_links": {
+          "description": "The pages among `because` whose only change is that they moved, each\nby where it was and where it is: a link on this page leads to its new\naddress. Absent when there's none.",
+          "items": {
+            "$ref": "#/$defs/MovedPage"
+          },
+          "type": "array"
+        },
         "own_file_changed": {
           "description": "Whether the page's own file changed (or exists on one side only).",
           "type": "boolean"
         },
         "page_changed": {
-          "description": "What changed about the page itself besides its blocks, in this\norder: `title`, `frontmatter`, `availability` (the page-level one),\nand `route`. Empty for an added or removed page.",
+          "description": "What changed about the page itself besides its blocks, in this\norder: `title`, `frontmatter`, `availability` (the page-level one),\nand `route`. Empty for an added or removed page. A moved page's\nroute moves with it, so it isn't listed for one.",
           "items": {
             "type": "string"
           },

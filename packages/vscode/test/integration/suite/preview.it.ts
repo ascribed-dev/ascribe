@@ -120,18 +120,12 @@ describe("the preview, with the real language server on examples/quill", () => {
     assert.equal(preview.build(), "cloud");
     assert.deepEqual(
       cloud.result.builds.map((b) => b.name),
-      ["site", "cloud", "self-managed-3.3"],
+      ["site", "cloud"],
     );
-
-    await preview.receive({ type: "build", name: "self-managed-3.3" });
-    const sm = await drawnFor((r) => r.result.build === "self-managed-3.3");
-    assert.ok(!firstLine(sm).includes("Streaming sync"));
 
     // Back to the editor's build: the picker's default.
     preview.selectBuild("site");
-    const site = await drawnFor(
-      (r) => r.result.build === "site" && r.seq > sm.seq && firstLine(r).includes("Streaming sync"),
-    );
+    const site = await drawnFor((r) => r.result.build === "site" && r.seq > cloud.seq);
     assert.match(firstLine(site), /Point the agent at your server/);
   });
 
@@ -370,10 +364,7 @@ describe("Search Pages as Readers See Them on examples/quill", () => {
     await vscode.commands.executeCommand("ascribe.switchBuild");
     try {
       const [nothing] = await api.ui.search.items(query);
-      assert.equal(
-        nothing?.label,
-        "Builds not searched publish them: `site`, `site@3.4`, `self-managed-3.3`.",
-      );
+      assert.equal(nothing?.label, "Builds not searched publish them: `site`, `site@3.4`.");
       assert.equal(nothing?.place, undefined);
       assert.deepEqual(await descriptions(query, true), ["install-agent.md:70 · Connect to Quill"]);
     } finally {

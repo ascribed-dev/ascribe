@@ -48,6 +48,7 @@ site = "https://docs.quill.dev"
 agents = false
 
 # Self-managed Quill's live lines, oldest first: 3.5 is the current line.
+# The site build publishes each, so there's no build for an older line.
 [releases.self-managed]
 live = ["3.4", "3.5"]
 
@@ -65,11 +66,11 @@ versions = "self-managed"
 variants = { deployment = "cloud" }
 availability = { filter = "cloud" }
 
-# Self-managed 3.3: every arm kept, content not available on self-managed 3.3
-# removed (such as the streaming-sync section, in preview from 3.4).
-[builds."self-managed-3.3"]
-variants = "switch"
-availability = { filter = "self-managed 3.3" }
-
 [editor]
 build = "site"
+
+# The pages keep the versions their marks name, as the site's badges show
+# them: Appendix B's page is `cloud, self-managed preview 3.3`, though 3.3 is
+# older than every live line.
+[checks]
+available-same-in-every-line = "off"

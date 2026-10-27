@@ -109,3 +109,16 @@ pub(super) fn is_text_primary(node: Node<'_>) -> bool {
             .is_ok_and(|ast| matches!(ast.value, NodeValue::AscribeLine(..)))
     })
 }
+
+/// The number of line endings in `text`: `\n`, `\r\n`, and a lone `\r`, as
+/// `Parser::parse` splits lines. Upstream counts a frontmatter's lines, and
+/// the fork the lines definitions take from a paragraph, so the lines after
+/// them are numbered as `parse` numbers them.
+pub(super) fn line_endings(text: &str) -> usize {
+    let bytes = text.as_bytes();
+    bytes
+        .iter()
+        .enumerate()
+        .filter(|&(i, &b)| b == b'\n' || (b == b'\r' && bytes.get(i + 1) != Some(&b'\n')))
+        .count()
+}
