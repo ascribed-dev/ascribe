@@ -189,7 +189,6 @@ const EXCEPTIONS: &[(Rule, &[&str])] = &[
             "agents index",
         ],
     ),
-    (Rule::ExitCode, &["check"]),
     (
         Rule::FormatValues,
         &[

@@ -534,8 +534,9 @@ fn synopsis(commands: &[(String, &Command)]) -> String {
 }
 
 /// How an argument is written in the synopsis: `[--build <NAME>]...`,
-/// `[--format text|json]`, `[--check]`, `[PATHS]...`, and without brackets
-/// when it's required: `TARGET --from <PAGE>`.
+/// `[--format text|json]`, `[--exit-code[=error|warning]]`, `[--check]`,
+/// `[PATHS]...`, and without brackets when it's required: `TARGET --from
+/// <PAGE>`.
 fn usage(arg: &Arg) -> String {
     let values: Vec<String> = arg
         .get_possible_values()
@@ -551,6 +552,12 @@ fn usage(arg: &Arg) -> String {
     };
     let repeated = matches!(arg.get_action(), ArgAction::Append) && !delimited;
     let written = match arg.get_long() {
+        // A value that may be left out is given with `=`.
+        Some(long)
+            if takes_value(arg) && arg.get_num_args().is_some_and(|n| n.min_values() == 0) =>
+        {
+            format!("[--{long}[={value}]]")
+        }
         Some(long) if takes_value(arg) => format!("[--{long} {value}]"),
         Some(long) => format!("[--{long}]"),
         None => format!("[{}]", value_name(arg)),

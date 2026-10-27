@@ -87,12 +87,21 @@ The output starts with a line for each file changed (`fixed 2 problems in docs/g
 
 In VS Code, **Source Action… → Apply the safe fixes in this page** applies a page's safe fixes the same way, to the text in the editor, saved or not, for the problems the editor shows, and can run each time you save. See [Apply the safe fixes](../editor/problems.md#apply-the-safe-fixes).
 
+### Failing on warnings
+@available: ascribe planned
+
+`--exit-code=<level>` says the least problem that fails the command: `error`, which `--exit-code` alone means and the command does without it, or `warning`, for CI. `--deny-warnings` is the same as `--exit-code=warning`, and when both are given, the last one counts. The level follows `=`, so `ascribe check --exit-code docs/guides` checks the folder. Advice never fails the command, so `advice` isn't a level.
+
+```console
+$ ascribe check --exit-code=warning
+```
+
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
-| `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`, and advice never does. |
-| `1` | There are errors, or warnings with `--deny-warnings`. |
+| `0` | No errors. Warnings don't fail the command unless you pass `--exit-code=warning` or `--deny-warnings`, and advice never does. |
+| `1` | There are errors, or warnings with `--exit-code=warning` or `--deny-warnings`. |
 | `2` | The project couldn't be checked: a usage error, a `--code` no diagnostic has, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), a path that doesn't exist or isn't in the project, an `ascribe.baseline` with a line that doesn't parse (the error names it; `--no-baseline` checks without the file), or, with `--fix`, a file it fixed that can't be written. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
 ### Text output
