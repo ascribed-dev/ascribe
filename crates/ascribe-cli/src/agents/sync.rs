@@ -337,6 +337,7 @@ pub fn plan(project: &Project, asked: &[Target], options: &Options) -> Result<Pl
     let needs_repository = asked.contains(&Target::Copilot) || options.cloud;
     let (here, prefix, root, mut notes) = locate(project, needs_repository)?;
     let (runs, skill_runs) = commands_of(options.command.as_deref(), &here, &root);
+    let skill_config = config_of(&prefix, &here, &root);
     let commands = |text: &str| command::with_command(text, &runs);
     let index = project.index();
     let name = if prefix.is_root() {
@@ -439,13 +440,13 @@ pub fn plan(project: &Project, asked: &[Target], options: &Options) -> Result<Pl
     // The skill, for every agent, and for Claude Code where it looks.
     let glob = content_glob(index, &prefix);
     let agents_skill = under(&root, ".agents/skills").join(skill::NAME);
-    for (file, text) in skill::files(None, &skill_runs) {
+    for (file, text) in skill::files(None, &skill_runs, skill_config.as_deref()) {
         let path = under(&agents_skill, file);
         add(path, &|_| Ok(text.clone()), BLOCK, READ_SKILLS)?;
     }
     if claude {
         let paths = claude_skill_paths(&claude_skill, &glob)?;
-        for (file, text) in skill::files(Some(&paths), &skill_runs) {
+        for (file, text) in skill::files(Some(&paths), &skill_runs, skill_config.as_deref()) {
             let path = under(&claude_skill, file);
             add(path, &|_| Ok(text.clone()), BLOCK, READ_CLAUDE)?;
         }
@@ -816,6 +817,21 @@ fn commands_of(given: Option<&str>, here: &Path, root: &Path) -> (String, String
     (runs, skill)
 }
 
+/// The folder the skill's commands that work on the whole project are
+/// given with `--config`, so that they work from the repository's root:
+/// the project's, `prefix`, when it isn't at the root. The skill at `root`
+/// is every project's in the repository, so only when the project in
+/// `here` is the only one.
+fn config_of(prefix: &RelPath, here: &Path, root: &Path) -> Option<String> {
+    if prefix.is_root() {
+        return None;
+    }
+    // Outside FileSystem: the repository's other projects.
+    let projects = Project::find_below(root, 2);
+    let only = projects == [here] && !root.join(ascribe_check::MODEL_FILE).is_file();
+    only.then(|| prefix.as_str().to_owned())
+}
+
 /// A `CLAUDE.md`, and the line that imports `AGENTS.md` from it.
 type Import = (PathBuf, &'static str);
 
@@ -945,8 +961,9 @@ mod tests {
         let text = skill::skill_md(
             Some(&["a/**/*.md".to_owned(), "b/**/*.md".to_owned()]),
             command::PLAIN,
+            None,
         );
         assert_eq!(skill_paths(&text), ["a/**/*.md", "b/**/*.md"]);
-        assert!(skill_paths(&skill::skill_md(None, command::PLAIN)).is_empty());
+        assert!(skill_paths(&skill::skill_md(None, command::PLAIN, None)).is_empty());
     }
 }
