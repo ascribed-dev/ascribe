@@ -7295,7 +7295,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Load a project once: one workspace type for the commands, the MCP server, the hook server, and the language server"
     },
     {
