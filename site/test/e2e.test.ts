@@ -315,7 +315,7 @@ test("the audiences each say what leads for them and link to where they start", 
     starts.push((await entry.locator("p:last-child a").getAttribute("href")) ?? "");
   }
   expect(starts).toEqual(
-    ["getting-started", "directives", "agents-guide"].map((name) => `${site}/go/${name}/`),
+    ["for-engineers", "for-writers", "for-agent-builders"].map((name) => `${site}/go/${name}/`),
   );
   // Side by side on a wide screen.
   const tops = await entries.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));

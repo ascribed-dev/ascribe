@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` format contract: checks, permalinks, and listing"
+nav-label: "Checks, permalinks, and listing"
 description: "The normative contract for the content model's checks, permalinks, crawlers, listing, APIs, and defaults."
 ---
 

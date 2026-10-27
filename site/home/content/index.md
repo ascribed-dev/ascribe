@@ -145,7 +145,7 @@ Leads with [checked like code](#checks) and examples from real code.
 
 They get writing tools without leaving the editor, the repository, or CI.
 
-[Getting started]({site}/go/getting-started/)
+[The path for engineers]({site}/go/for-engineers/)
 @end
 
 @audience-entry:
@@ -155,7 +155,7 @@ Leads with [the tools of a docs team](#tools).
 
 They get reuse, variants, versions, a glossary, and preview, without leaving the repository where the engineers who review them work.
 
-[Writing a page]({site}/go/directives/)
+[The path for writers]({site}/go/for-writers/)
 @end
 
 @audience-entry:
@@ -165,7 +165,7 @@ Leads with [the rules, the checks, and the outputs](#for-agents).
 
 An agent writing pages has a deterministic check to run. An agent reading them gets Markdown and an index, not a page of HTML.
 
-[Agents]({site}/go/agents-guide/)
+[The path for agent builders]({site}/go/for-agent-builders/)
 @end
 @end
 

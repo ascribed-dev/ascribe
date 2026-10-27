@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` format contract: consumer, builds, and sources"
+nav-label: "Consumer, builds, and sources"
 description: "The normative contract for the content model's consumer, builds, editor, and sources."
 ---
 

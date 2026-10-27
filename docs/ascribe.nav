@@ -102,10 +102,11 @@ folder = "command/"
 label = "The command"
 pages = ["questions.md", "site-output.md", "project-files.md"]
 
-# Contracts keep an order of their own.
+# Contracts keep an order of their own, in a section at the end apart from the
+# guides.
 [[sections]]
 folder = "contracts/"
-label = "Contracts"
+label = "For implementers"
 pages = [
   "content-model.md",
   "site-render.md",
