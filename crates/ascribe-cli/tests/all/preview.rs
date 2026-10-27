@@ -142,7 +142,7 @@ fn a_fresh_project_is_served_with_its_problems_printed_and_rendered_again_on_a_c
     );
     assert!(
         preview.printed.contains(
-            "checked 1 file for every build, reported on 1: 1 error, 0 warnings, 0 advice\n\
+            "checked 1 file for every build, 1 with problems: 1 error, 0 warnings, 0 advice\n\
              rendered build `site`: 1 page, 0 assets, in .ascribe/preview\n"
         ),
         "{}",
@@ -166,7 +166,7 @@ fn a_fresh_project_is_served_with_its_problems_printed_and_rendered_again_on_a_c
 
     // A new page fixes the link, and the build is rendered again.
     page(dir.path(), "setup.md", "Setup", "Set it up.");
-    preview.until("checked 2 files for every build, reported on 2: 0 errors");
+    preview.until("checked 2 files for every build, 2 with problems: 0 errors");
     preview.until("rendered build `site`: 2 pages");
     let (status, body) = get(&address, "/setup.html");
     assert_eq!(status, "HTTP/1.1 200 OK");

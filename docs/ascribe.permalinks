@@ -2,6 +2,8 @@
 version = 1
 
 [permalinks]
+121-releasestarget = "content-model/variation.md#121-releasestarget"
+22-checks = "content-model/checks.md#22-checks"
 7-source-anchors = "contracts/site-render.md#7-source-anchors"
 ASC001 = "_generated/diagnostics-directives.md#ASC001"
 ASC002 = "_generated/diagnostics-directives.md#ASC002"

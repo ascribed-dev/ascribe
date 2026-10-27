@@ -132,7 +132,7 @@
           "type": "array"
         },
         "help": {
-          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode, in Markdown, whose links are the docs' permalinks, such as\n`https://ascribed-dev.com/go/19-checks/`.",
+          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode, in Markdown, whose links are the docs' permalinks, such as\n`https://ascribed-dev.com/go/22-checks/`.",
           "type": "string"
         },
         "message": {

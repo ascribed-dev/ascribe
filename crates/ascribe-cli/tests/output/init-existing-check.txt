@@ -1,1 +1,1 @@
-checked 4 files for every build, reported on 4: 0 errors, 0 warnings, 0 advice, 3 in the baseline
+checked 4 files for every build, 0 with problems: 0 errors, 0 warnings, 0 advice, 3 in the baseline

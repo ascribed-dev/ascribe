@@ -179,7 +179,7 @@ It checks the build as `ascribe check --build` does, and prints the problems as 
 Then it serves the folder at `http://127.0.0.1:4880/`, and prints the address to open:
 
 ```text
-checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice
+checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice
 rendered build `site`: 1 page, 0 assets, in .ascribe/preview
 previewing build `site` at http://127.0.0.1:4880/
 it renders again as the project's files change; Ctrl-C stops it

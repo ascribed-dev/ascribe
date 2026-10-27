@@ -798,7 +798,7 @@ export interface Entry {
   /**
    * How to fix it, in general: the diagnostics reference's advice for its
    * code, in Markdown, whose links are the docs' permalinks, such as
-   * `https://ascribed-dev.com/go/19-checks/`.
+   * `https://ascribed-dev.com/go/22-checks/`.
    */
   help: string;
   /**
