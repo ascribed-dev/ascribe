@@ -8622,7 +8622,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1189"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`addresses move`/`retire` with `--config` read a page's path from the content root, not the current folder"
     },
     {
@@ -8638,8 +8638,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1192"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "In progress",
       "title": "CLI conventions: the groups after --format json"
     }
   ]
