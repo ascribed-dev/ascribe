@@ -15,7 +15,7 @@ The preview shows images and files from the content root, and from directories e
 
 A [`@snippet`](../writing/directives.md#snippet) follows its code file on disk: when the file is saved, created, or deleted, by you or by a branch switch, every page that shows it, directly or through a fragment, is checked again, and the preview of one redraws. An unsaved edit to the code file isn't read until it's saved: a snippet shows the file as a build reads it. A file no snippet shows starts nothing.
 
-A [tested example](../examples/tested.md)'s problems, `example-stale` and `example-unobserved`, follows its own file, its source's observations, and `ascribe.examples.toml` the same way: when you save the example, when `ascribe observe` writes an observation, or when the config changes on disk, the pages that show the source's examples are checked again, and the preview's tested line follows.
+A [tested example](../examples/tested.md)'s problems, `example-stale` and `example-unobserved`, follow their own file, their source's observations, and `ascribe.examples.toml` the same way: when you save the example, when `ascribe observe` writes an observation, or when the config changes on disk, the pages that show the source's examples are checked again, and the preview's tested line follows.
 
 ## Site preview
 
