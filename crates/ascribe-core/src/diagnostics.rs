@@ -889,6 +889,9 @@ pub const EXAMPLES_CONFIG_UNREAD: DiagnosticSlug = DiagnosticSlug("examples-conf
 pub const TEMPLATE_PLACEHOLDER_PUBLISHED: DiagnosticSlug =
     DiagnosticSlug("template-placeholder-published");
 
+/// `ASC287`, warning, file level: a content check (area `pages`).
+pub const GITHUB_ALERT: DiagnosticSlug = DiagnosticSlug("github-alert");
+
 /// The checks renamed, each by the name it had before, which still names
 /// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
 /// release (decision #953).
@@ -1170,6 +1173,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     INFO_PAIR_MALFORMED,
     EXAMPLES_CONFIG_UNREAD,
     TEMPLATE_PLACEHOLDER_PUBLISHED,
+    GITHUB_ALERT,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1232,6 +1236,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     BUILD_FILTER_LINE_UNDECLARED,
     EXAMPLES_CONFIG_UNREAD,
     TEMPLATE_PLACEHOLDER_PUBLISHED,
+    GITHUB_ALERT,
 ];
 
 /// The configurable checks that are off unless a project names them in

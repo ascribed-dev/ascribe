@@ -253,6 +253,20 @@ Error · file level · next step: write · configurable in `[checks]` · Ascribe
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
+### ASC287 `github-alert`
+@id {permalink=true}: ASC287
+@summary: A block quote's first line is one of GitHub's alert markers, `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]`, in any case. A quote that mentions a marker later isn't looked at.
+
+Warning · file level · next step: fix · configurable in `[checks]` · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
+
+**When:** A block quote's first line is one of GitHub's alert markers, `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]`, in any case. A quote that mentions a marker later isn't looked at.
+
+**Message:** `{marker}` is GitHub's alert syntax, which Ascribe shows as a plain block quote that starts with `{marker}`; write the quote as `{note}`
+
+**Fix:** Write the callout as a `@note` of the same type: GitHub's `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` are `@note`'s types `note`, `tip`, `important`, `warning`, and `caution`. The fix does it, keeping the quote's content: `@note {type=tip}: …` for one paragraph, or `@note {type=tip}:` and `@end` around several blocks. Every output then shows it as a callout: the site as a note, and the Markdown output as a block quote that starts with its type, which reads the same on GitHub and anywhere else.
+
+**Read more:** [`@note`](../writing/directives.md#note) in the directive reference.
+
 ## Across the project
 
 ### ASC154 `page-orphan`
