@@ -11,7 +11,12 @@ Before writing a page about a subject, run `cargo run -q -p ascribe-cli -- searc
 
 A page says what type it is with `type:` in its frontmatter, first, and its other fields are its type's. A file or folder whose name starts with `_` is a fragment, which pages `@include`, not a page, and names no type.
 
-- …and 6 more: `cargo run -q -p ascribe-cli -- model docs --section types`
+- `index`: frontmatter `title` (string, required), `description` (string, required)
+- `reference`: Looking up a command, a key of ascribe.toml, a directive, a diagnostic, the editor's features and settings, or a contract's rules
+- `how-to`: Doing one thing with Ascribe once you know what it is: publishing a site, reviewing a pull request, keeping examples in step with code, setting up an agent, checking prose, acting on a report, publishing permalinks, taking the page templates, keeping a page's reasons in memos, or setting up a glossary
+- `tutorial`: Learning Ascribe by building an example project a step at a time: a first project, then content that varies
+- `concept`: Understanding an idea behind the docs a team publishes, such as what Ascribe can't measure and where to look instead
+- `troubleshooting`: Finding out why something isn't working, from what it shows, and what to do about it
 
 ### Phrases
 
@@ -25,26 +30,29 @@ Write the phrase (`{version}`), not the text it stands for.
 
 ### Directives this project uses
 
-- `@id: <id>` on the line under a heading: an id for links to it that doesn't change with its text
-- `@include: <file>.md`, or `@include: <file>.md#<id>` for one section: another file's content, in place
-- `@variant {<dimension>=<value>}:` before each arm, and one `@end` after the last: content that differs by a dimension. Here: dimensions `pm` (`npm`, `pnpm`), `release` (`ascribe`)
-- `@available: <spec>` under a heading or above a block: where it applies, as targets with an optional state and version (`ascribe`), or a feature's key
-- `@note {type=<type>}: <text>`, or `@note:` … `@end` around several blocks: a callout. Here: types `note`, `tip`, `important`, `warning`, `caution`
-- `@steps` on the line above an ordered list: the list is a procedure
-- `.<Title>` on its own line, then `@details:` … `@end`: collapsible content; the title is required
-- …and 4 more, in the directive reference below
+Each one's syntax is in the `ascribe` skill's `references/directives.md`, and in the directive reference below.
+
+- `@id`
+- `@include`
+- `@variant`: dimensions `pm` (`npm`, `pnpm`), `release` (`ascribe`)
+- `@available`: targets such as `ascribe`
+- `@note`: types `note`, `tip`, `important`, `warning`, `caution`
+- `@steps`
+- `@details`
+- `@snippet`: sources `code`
+- `@memo`
+- `@term`
+- `@summary`
 
 ### Links
 
-Link to the source file, with a relative path such as `../guides/install.md#configure`, not to the site's address. `cargo run -q -p ascribe-cli -- outline <page>` lists a page's headings with their ids, and `cargo run -q -p ascribe-cli -- link <target> --from <page>` says whether a link works and what to write. A product's message that links to these docs by a permalink can read what the docs will show for it first: `cargo run -q -p ascribe-cli -- resolve go:<name> --config docs` prints the help a product shows, from the build's `help.json`. Give a heading with a permalink a summary, a sentence or two a product shows with its help: `@summary` on the line above a paragraph of the section that reads well alone, or `@summary: <text>` under the heading and its `@id` when none does, as for a lead-in to a list. Keep it under 300 characters.
+Link to the source file, with a relative path such as `../guides/install.md#configure`, not to the site's address. `cargo run -q -p ascribe-cli -- outline <page>` lists a page's headings with their ids, and `cargo run -q -p ascribe-cli -- link <target> --from <page>` says whether a link works and what to write. A product's message that links to these docs by a permalink can read what the docs will show for it first: `cargo run -q -p ascribe-cli -- resolve go:<name> --config docs` prints the help a product shows, from the build's `help.json`.
 
 ### Moving pages
 
 This project keeps the addresses it has published in `ascribe.addresses`, so a reader's old link still leads somewhere. Move or rename a page with `cargo run -q -p ascribe-cli -- rename <page> <new>`, which records the move. After moving pages with `git mv`, run `cargo run -q -p ascribe-cli -- addresses move --config docs --from-git` to record the moves git sees. For a page you delete on purpose, forward its address to the page that covers it now, with `cargo run -q -p ascribe-cli -- addresses move --config docs <old> <page>`, or retire it, with `cargo run -q -p ascribe-cli -- addresses retire --config docs <old> --reason "<why>"`. `cargo run -q -p ascribe-cli -- check` reports `address-lost` for a page that's gone without either.
 
 ### More
-
-To see what a reader of the site gets, not only a reader of the Markdown, run `cargo run -q -p ascribe-cli -- resolve <page> --build <name> --emit site`, or call `ascribe_resolve` with `emit: "site"`: the page as the site output gives it to the site, with Ascribe's elements. How to read them: https://ascribed-dev.com/go/reading-site-output/
 
 `cargo run -q -p ascribe-cli -- model docs` shows everything the content model allows. Every directive: https://ascribed-dev.com/go/directives/
 <!-- ascribe:agents end -->
