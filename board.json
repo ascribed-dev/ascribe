@@ -6976,7 +6976,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1156"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Restate the spec's principles and binding summary to match the features they now cover"
     },
     {
@@ -7029,8 +7029,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1164"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Call an API reference's address template something other than \"template\""
     },
     {
@@ -7220,7 +7223,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1155"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "CI: flag a change with no changelog entry, and a contract change with no decision"
     },
     {
@@ -7356,7 +7359,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1150"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "One command that rewrites every generated file"
     },
     {
@@ -7440,8 +7443,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1004"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlCs0",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1163"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "AGENTS.md: a by-task table of what each common change touches"
     },
     {
@@ -7549,7 +7555,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1153"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Make example-stale a warning, so CI fails when a tested example changed"
     },
     {
@@ -7881,8 +7887,11 @@
         "enhancement",
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1160"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Agent Markdown and llms.txt: say what the page is for and which release the build describes"
     },
     {
@@ -8007,8 +8016,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1035"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDlDiI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1161"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Docs: small reader fixes (a scrollable table, leads, a repeated heading, alt text)"
     },
     {
@@ -8221,7 +8233,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1111"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Load a project once, phase 1: read each source once and index once in every command"
     },
     {
@@ -8433,9 +8445,66 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1158"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "A table body cell's span is one byte short after an indented header and an aligned delimiter"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\n`cargo deny --locked check advisories` (rust.yml's dependencies job, and `pnpm check:all`) now fails with [RUSTSEC-2024-0449](https://rustsec.org/advisories/RUSTSEC-2024-0449): `unsafe-libyaml` 0.2.11 is unmaintained. Its repository was archived in March 2024, and it's a c2rust translation of libyaml, so bugs found in it won't be fixed upstream. The advisory says no safe upgrade is available. The step doesn't fail CI, since a new advisory can appear with no change here (CONTRIBUTING.md asks for this issue).\n\nIt comes in through `serde_yaml_ng` 0.10 (the workspace dependency in `Cargo.toml`), which `ascribe-check`, `ascribe-cli`, `ascribe-diff`, `ascribe-emit`, `ascribe-lsp`, `ascribe-model`, `ascribe-query`, `ascribe-resolve`, and `ascribe-templates` use, for frontmatter and the OpenAPI specs among other things.\n\nThe advisory suggests YAML parsers in safe Rust: [saphyr](https://crates.io/crates/saphyr) (with [serde-saphyr](https://crates.io/crates/serde-saphyr) for serde) or [noyalib](https://crates.io/crates/noyalib).\n\n**Done when:** one of these holds, with the choice recorded:\n\n- `serde_yaml_ng` is replaced by a YAML parser in safe Rust, with every output, diagnostic, and JSON byte for byte the same (`node scripts/compare/outputs.ts --base main`), or with any difference named and accepted by a decision; or\n- RUSTSEC-2024-0449 is ignored in `.cargo/deny.toml` with this issue as the reason, if the risk is accepted for now.\n\nFound by `pnpm check:all` while working on #977 (#1156), which doesn't touch dependencies.",
+        "number": 1157,
+        "repository": "ascribed-dev/ascribe",
+        "title": "cargo deny reports unsafe-libyaml as unmaintained (RUSTSEC-2024-0449), through serde_yaml_ng",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1157"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDwFtY",
+      "labels": [
+        "enhancement"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "A table body cell's span is one byte short after an indented header and an aligned delimiter"
+      "title": "cargo deny reports unsafe-libyaml as unmaintained (RUSTSEC-2024-0449), through serde_yaml_ng"
+    },
+    {
+      "content": {
+        "body": "Found by the `parse` fuzz target while working on #1149 (PR #1158). It fails on main too and doesn't involve tables.\n\n## What's wrong\n\nWhen a paragraph's continuation line is indented and a code span on it runs onto the next line, the text after the code span gets a span that overlaps the code span's:\n\n```text\n\"x\\n `\\n`c\"\n  inline Span { start: 6, end: 7 } \"c\": overlaps the inline before it\n\"\\x0b\\n `\\na`c\"\n  inline Span { start: 7, end: 8 } \"c\": overlaps the inline before it\n```\n\nThe fuzzer's original inputs were `\"\\0\\r `\\n`D\"` and `\"\\x0b\\n `\\n`c\"`; `cargo fuzz tmin` and some hand reduction brought them down to the first line above. Without the indent (`\"x\\n`\\n`c\"`) or without the line break inside the code span (`\"\\x0b\\n `a`c\"`), the spans are right. So the code span's end is likely computed without the continuation line's stripped indent (the paragraph's `line_offsets`) once it crosses a line, and comes out one byte late per indent space.\n\n## Done when\n\n- The text after such a code span has the span of its own text, and these inputs are in `directives_in_every_container` (`crates/ascribe-syntax/tests/all/spans.rs`).\n- The `parse` fuzz target runs clean on them.",
+        "number": 1159,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Text after a code span that starts on an indented continuation line overlaps the code span",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1159"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDwGoY",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Text after a code span that starts on an indented continuation line overlaps the code span"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\n#1005's decision builds on `draft: true`: a template's leftover placeholder is an error on a page that publishes and advice on a draft, and `ascribe new` writes `draft: true`. The issue says main has it, but it doesn't: nothing in SPEC.md, the content model, `check`, or `build` reads a `draft` key, and a page with `draft: true` today is an undeclared frontmatter field. Kyle chose to add it as its own change first, then finish #1005 on top of it (26 October 2026, in the #1005 thread).\n\n**Done when:**\n\n- `draft: true` in a page's frontmatter is a reserved key, like `type` and `intended`, defined in SPEC.md with the decision recorded in `project-docs/decisions/`, since SPEC.md is a contract.\n- A draft page is left out of every build: no site page, no plain or JSON output, no nav entry, no search record, sitemap entry, or `llms.txt` line. The build view and `ascribe/buildView` dim it, as they dim what a build leaves out.\n- A link from a published page to a draft page is reported, since the reader would get nothing there (which diagnostic and level is the implementor's call, following the existing pattern for content a build leaves out).\n- `ascribe check` still checks a draft page, so a writer sees its problems while writing.\n- Conformance cases, docs under `docs/content/` (frontmatter reference), and a `changes/` entry.\n\n**Then:** #1005 makes `template-placeholder-left` an error on a page without `draft: true` and advice on a draft, and `ascribe new` and VS Code's New Page write `draft: true`. Its `ascribe new` and hook parts are on branch `claude/project-thread-2qu1il`, waiting on this.",
+        "number": 1162,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Keep a page that isn't ready out of every build with `draft: true`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1162"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDwNu4",
+      "labels": [
+        "enhancement"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1165"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "Keep a page that isn't ready out of every build with `draft: true`"
     }
   ]
 }
