@@ -857,6 +857,9 @@ fn page_mark(
 ) -> (&'static str, String) {
     let front = file.and_then(|f| f.frontmatter.as_ref());
     match reason {
+        // No build publishes a draft, so no other build keeps one and the
+        // report never lists it.
+        DropReason::Draft => ("draft", "true".to_owned()),
         DropReason::Unavailable => (
             "availability",
             front

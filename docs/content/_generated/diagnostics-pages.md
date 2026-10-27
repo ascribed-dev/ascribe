@@ -81,7 +81,7 @@ Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 
 **Message:** build `{build}` doesn't publish `{path}`, so this link would be broken in that build; move the link into a `@variant` arm the build removes
 
-**Fix:** Put the link in a `@variant` arm that the same build removes, or publish the page in that build.
+**Fix:** Put the link in a `@variant` arm that the same build removes, or publish the page in that build. A link to a draft waits until the draft is published: take it out, or remove the page's `draft: true`.
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 

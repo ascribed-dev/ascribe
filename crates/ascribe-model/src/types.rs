@@ -309,6 +309,7 @@ impl Cx<'_> {
                     | "replaces"
                     | "type"
                     | "nav-label"
+                    | "draft"
             )
         {
             match self.schema.owner {

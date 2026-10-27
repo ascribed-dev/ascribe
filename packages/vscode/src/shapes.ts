@@ -1080,7 +1080,7 @@ export interface InventoryValue {
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */
-export type LeftOut = "variant" | "availability";
+export type LeftOut = "variant" | "availability" | "draft";
 
 /** A file to create, empty. */
 export interface LspCreateFile {

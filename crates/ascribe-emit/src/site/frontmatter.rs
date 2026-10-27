@@ -25,7 +25,8 @@
 //! page's record in `_ascribe/pages.json` holds it, as every output reads
 //! it. So is `replaces`, a source path a layout can't use:
 //! `_ascribe/versions.json` says which page replaces which, and `nav-label`:
-//! `_ascribe/nav.json` has it as the page's label.
+//! `_ascribe/nav.json` has it as the page's label. So is `draft`: a page in
+//! the output is published, so it's `false` wherever it's written.
 //!
 //! A field that sets `inline = "code"` is written as its plain text, for a
 //! layout's `<title>`, search, and sorting, and its formatted form goes under
@@ -47,7 +48,7 @@
 //! ```
 
 use ascribe_model::{Listing, Segment};
-use ascribe_resolve::{NAV_LABEL, REPLACES, ResolvedPage};
+use ascribe_resolve::{DRAFT, NAV_LABEL, REPLACES, ResolvedPage};
 use serde_yaml_ng::{Mapping, Value};
 
 use super::blocks::availability_target;
@@ -80,6 +81,7 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
     map.remove(Listing::KEY);
     map.remove(REPLACES);
     map.remove(NAV_LABEL);
+    map.remove(DRAFT);
     let key = Value::String("formatted".to_owned());
     map.remove(&key);
     if !page.formatted.is_empty() {
