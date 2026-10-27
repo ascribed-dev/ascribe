@@ -1,0 +1,1 @@
+- **Each diagnostic's header line links its words to what they mean.** The severity, level, next step, "configurable", and "acknowledged" link to their definitions, and three long diagnostics pages are split to fit. See [Diagnostics](docs/content/checks/diagnostics.md).

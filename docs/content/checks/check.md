@@ -217,7 +217,7 @@ docs/install.md:5
 
 With `--format json` and `--check`, it writes the edits it would make and no file: what a tool that applies edits itself needs, such as the MCP server's `ascribe_fmt`. An edit has the shape of a fix's edit in [`ascribe check`'s JSON](check.md#json-output), and the [schema](../contracts/json-reports.md#ascribe-fmt) has every field.
 
-A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/pages.md#ASC123)), and the other files are still formatted.
+A symbolic link it leaves alone is reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics/sources.md#ASC123)), and the other files are still formatted.
 
 | Code | Meaning |
 |---|---|

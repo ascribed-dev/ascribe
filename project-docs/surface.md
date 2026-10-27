@@ -915,8 +915,10 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/diagnostics/content-model.md` | Diagnostics: the content model | reference |
 | `checks/diagnostics/directives.md` | Diagnostics: directives | reference |
 | `checks/diagnostics/output-checks.md` | Diagnostics: content checks of outputs and the site | reference |
-| `checks/diagnostics/pages.md` | Diagnostics: links, pages, and sources | reference |
+| `checks/diagnostics/pages.md` | Diagnostics: links and pages | reference |
+| `checks/diagnostics/project-checks.md` | Diagnostics: content checks across the project | reference |
 | `checks/diagnostics/project-files.md` | Diagnostics: the addresses file and API specs | reference |
+| `checks/diagnostics/sources.md` | Diagnostics: sources, memo files, and navigation | reference |
 | `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |
 | `checks/report.md` | The project report | how-to |
