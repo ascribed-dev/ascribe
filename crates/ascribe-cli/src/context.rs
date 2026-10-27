@@ -33,7 +33,7 @@ impl Coded for Failure {
 /// Finds the content model (`--config`, or the nearest `ascribe.toml` in the
 /// current directory or a parent) and loads the project. Every command that
 /// works on a project loads it here; `fmt` takes only the first half, with
-/// [`Project::load_model`].
+/// [`ascribe_check::LOADER`]'s [`load_model`](ascribe_workspace::Loader::load_model).
 pub fn load_project(global: &Global) -> Result<Project, Failure> {
     let config = locate(global).map_err(Failure::Config)?;
     let project = Project::load(&config).map_err(Failure::Load)?;
