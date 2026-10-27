@@ -103,7 +103,7 @@ pub fn in_project(command: &str, root: &Path) -> bool {
     }
     // Through links, so a link can't hide that it's inside, and as far as
     // the path exists, so a program not there yet compares like its folder.
-    let real = crate::scope::real;
+    let real = ascribe_check::real_path;
     real(path).starts_with(real(root))
 }
 

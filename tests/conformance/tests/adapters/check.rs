@@ -76,7 +76,8 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
     Ok(Project::new(
         Workspace::load_with(ascribe_check::LOADER.side_files, model, content_root, fs).snapshot(),
     )
-    .with_today(today))
+    .with_today(today)
+    .with_plain_markdown(ascribe_emit::plain_markdown))
 }
 
 /// `check_files` on the case's project, without what an acknowledgement

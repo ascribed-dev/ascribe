@@ -404,8 +404,13 @@ fn resolved_rows(
         if listing.is_none() || build.name == editor.name {
             listing = Some(listing_of(ctx, file, build, &resolved));
         }
-        let Some(characters) = ascribe_check::page::markdown_size(index, root, build, &resolved)
-        else {
+        let Some(characters) = ascribe_check::page::markdown_size(
+            ascribe_emit::plain_markdown,
+            index,
+            root,
+            build,
+            &resolved,
+        ) else {
             continue;
         };
         // The first of the largest, as `page-size` names it.

@@ -80,7 +80,7 @@ struct Checked {
 impl Loaded {
     /// A snapshot of a project, checked as on today.
     pub fn new(snapshot: WorkspaceSnapshot) -> Loaded {
-        let project = Project::new(snapshot.clone()).with_today(crate::clock::today());
+        let project = crate::context::checked_snapshot(snapshot.clone());
         Loaded::over(snapshot, project)
     }
 

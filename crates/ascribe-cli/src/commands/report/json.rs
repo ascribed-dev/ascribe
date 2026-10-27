@@ -5,13 +5,13 @@
 
 use std::io::{self, Write};
 
-use ascribe_check::links::Answer;
 use ascribe_check::{Diagnostic, Next};
 use ascribe_model::{ListingFrom, ListingLevel};
 use ascribe_query::report::{
     BuildPages, Builds, Delivery, LeftContent, LeftPage, Links, NotRun, Pages, Problems, Ran,
     Report, Section,
 };
+use ascribe_report::links::Answer;
 use ascribe_resolve::pages::PageRecord;
 use serde::Serialize;
 
@@ -841,7 +841,7 @@ fn delivery_json(delivery: &Delivery, files: &FileTable, limit: usize) -> Delive
                 category: r.category.clone(),
                 status: r.status.as_str(),
                 message: r.message.clone(),
-                owner: ascribe_check::site::owner(&r.id).as_str(),
+                owner: ascribe_report::site::owner(&r.id).as_str(),
             })
             .collect(),
         diagnostics: Capped::of(delivery.diagnostics.iter(), limit, |d| entry(files, d, 0)),

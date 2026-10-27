@@ -35,7 +35,7 @@ use ascribe_resolve::{RefKind, Target};
 use serde::Deserialize;
 
 use crate::tool::{self, ToolError};
-use crate::{Diagnostic, Project};
+use ascribe_check::{Diagnostic, Project};
 
 pub use cache::Cache;
 pub use history::History;

@@ -19,7 +19,9 @@ toml.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 ascribe-check.workspace = true
+ascribe-report.workspace = true
 ascribe-core.workspace = true
+ascribe-emit.workspace = true
 ascribe-fmt.workspace = true
 ascribe-model.workspace = true
 ascribe-query.workspace = true

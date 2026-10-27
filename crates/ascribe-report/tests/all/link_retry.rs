@@ -1,5 +1,5 @@
 //! An address that answers with a server error is asked about again
-//! (`ascribe_check::links::check`), against a local server that answers 500
+//! (`ascribe_report::links::check`), against a local server that answers 500
 //! and then 200: the second answer is the one that counts. When asking
 //! again fails, the first answer stands, and isn't said to be the second.
 
@@ -13,9 +13,9 @@ use std::thread;
 use std::time::Duration;
 
 use ascribe_check::Project;
-use ascribe_check::links::{self, Answer, LinkChecker, Request};
-use ascribe_check::tool::ToolError;
 use ascribe_core::{FileId, RelPath};
+use ascribe_report::links::{self, Answer, LinkChecker, Request};
+use ascribe_report::tool::ToolError;
 
 /// A server on a port of its own that answers each request with the next of
 /// `statuses`, and closes after the last.

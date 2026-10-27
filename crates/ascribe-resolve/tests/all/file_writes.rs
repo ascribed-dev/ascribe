@@ -1,6 +1,6 @@
 //! A library returns what to write, and its caller writes it: `check --fix`
 //! gets each file's new text, and `ascribe report` hands the link cache and
-//! the histories an `ascribe_check::store::Store`. This test finds every
+//! the histories an `ascribe_report::store::Store`. This test finds every
 //! other place in the library crates' source that writes to the disk, and
 //! fails unless the code says why it writes there itself: a comment
 //! containing `Library write:` in the same paragraph (no blank line between
@@ -136,7 +136,7 @@ fn every_library_write_says_why() {
         found.is_empty(),
         "These library crates write to the disk themselves. Return what to \
          write and let the caller write it, as `check --fix` does, or take an \
-         `ascribe_check::store::Store` from the caller, as the link cache does; \
+         `ascribe_report::store::Store` from the caller, as the link cache does; \
          or say why the library must write here with a comment containing \
          `{MARKER}` just above:\n{}",
         found.join("\n")
