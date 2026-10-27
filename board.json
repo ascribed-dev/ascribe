@@ -7419,8 +7419,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1204"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Split ascribe-check: project loading, and the report's tools and caches, out of the checker"
     },
     {
@@ -8332,7 +8335,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Load a project once, phase 4: keep the MCP server's projects up to date instead of loading them again"
     },
     {
@@ -8651,7 +8654,8 @@
         "rust"
       ],
       "linked pull requests": [
-        "https://github.com/ascribed-dev/ascribe/pull/1192"
+        "https://github.com/ascribed-dev/ascribe/pull/1192",
+        "https://github.com/ascribed-dev/ascribe/pull/1203"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
