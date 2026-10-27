@@ -162,6 +162,7 @@ fn checked(global: &Global, err: &mut dyn Write) -> Result<(check::Outcome, Vec<
         summary: false,
         format: check::Format::Text,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,

@@ -821,6 +821,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
             check::Format::Concise
         },
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,

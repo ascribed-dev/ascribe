@@ -404,6 +404,7 @@ fn fix(projects: &dyn Projects, arguments: &Arguments) -> Result<String, String>
         summary: false,
         format: check::Format::Prompt,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
