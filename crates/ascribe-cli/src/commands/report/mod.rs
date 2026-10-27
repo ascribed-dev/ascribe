@@ -350,17 +350,17 @@ pub(crate) fn report(
 fn failure_message(failure: Failure) -> String {
     match failure {
         Failure::Config(e) => e.to_string(),
-        Failure::Load(ascribe_check::LoadError::Model { diagnostics, .. }) => {
+        Failure::Load(ascribe_workspace::LoadError::Model { issues, .. }) => {
             let mut text = format!(
                 "{} has errors, so nothing can be reported",
                 ascribe_check::MODEL_FILE
             );
-            for d in diagnostics {
+            for d in issues.iter().map(ascribe_check::Diagnostic::from_issue) {
                 text.push_str(&format!("\n  {}", d.message));
             }
             text
         }
-        Failure::Load(e @ ascribe_check::LoadError::Read { .. }) => e.to_string(),
+        Failure::Load(e @ ascribe_workspace::LoadError::Read { .. }) => e.to_string(),
     }
 }
 

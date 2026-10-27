@@ -4,7 +4,6 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::Project;
 use ascribe_check::prose::{Ejected, eject};
 use clap::{Args as ClapArgs, Subcommand};
 use serde::Serialize;
@@ -72,9 +71,11 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 fn run_eject(global: &Global, args: &EjectArgs) -> ExitCode {
     let mut out = std::io::stdout().lock();
     let mut err = std::io::stderr().lock();
-    let loaded = locate(global)
-        .map_err(Failure::Config)
-        .and_then(|config| Project::load_model(&config).map_err(Failure::Load));
+    let loaded = locate(global).map_err(Failure::Config).and_then(|config| {
+        ascribe_check::LOADER
+            .load_model(&config)
+            .map_err(Failure::Load)
+    });
     let file = match loaded {
         Ok(file) => file,
         Err(e) => return exit::code(exit::fail(&mut err, &e)),

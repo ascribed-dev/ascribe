@@ -68,10 +68,16 @@ fn copy_dir(from: &Path, to: &Path) {
 /// The project in `dir`, loaded as a command loads it, through a counting
 /// file system over the disk.
 fn load(dir: &Path) -> (Project, Arc<Counting>) {
-    let model = Project::load_model(&dir.join("ascribe.toml")).expect("Quill's model loads");
+    let model = ascribe_check::LOADER
+        .load_model(&dir.join("ascribe.toml"))
+        .expect("Quill's model loads");
     let layout = Layout::from_model(&model.model);
     let counting = Counting::new(Arc::new(DiskFs::with_listing_cache(dir, &layout)));
-    let project = Project::load_from(model, layout.content_root, counting.clone());
+    let project = Project::from_loaded(ascribe_check::LOADER.load_from(
+        model,
+        layout.content_root,
+        counting.clone(),
+    ));
     (project, counting)
 }
 

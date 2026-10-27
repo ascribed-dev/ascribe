@@ -47,7 +47,9 @@ fn run_with(
     to: &str,
     keep_type: bool,
 ) -> Result<EjectAnswer, EjectError> {
-    let file = Project::load_model(&dir.join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.join("ascribe.toml"))
+        .expect("the model loads");
     let names: Vec<String> = names.iter().map(|n| (*n).to_owned()).collect();
     let to = RelPath::parse(to).expect("a relative path");
     let fs = DiskFs::new(dir, &Layout::from_model(&file.model));
@@ -132,7 +134,9 @@ fn a_clean_project_gets_the_template_its_guide_ascribe_s_notes_the_lock_and_the_
     );
     // The project loads with its files checked, and the type's template and
     // guide are the ones the lock records.
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let how_to = file
         .model
         .types
@@ -262,7 +266,9 @@ fn a_type_kept_gets_its_template_and_guide_from_the_lock_and_ascribe_toml_is_unt
     assert_eq!(read(dir.path(), "ascribe.toml"), model);
     let lock = read(dir.path(), "templates/templates.lock");
     assert!(lock.contains("name = \"how-to\""), "{lock}");
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let how_to = file.model.types.iter().find(|t| t.name == "how-to");
     assert!(how_to.is_some_and(|t| {
         t.template
@@ -341,7 +347,9 @@ fn the_docs_reference_is_what_keeping_the_type_leaves_apart_from_its_purpose() {
     let dir = project(&model);
     keeping(dir.path(), &["reference"]).expect("ejected");
     assert_eq!(read(dir.path(), "ascribe.toml"), model);
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let reference = file.model.types.iter().find(|t| t.name == "reference");
     assert!(reference.is_some_and(|t| {
         t.template
@@ -480,7 +488,9 @@ fn another_folder_is_written_into_and_named_from_the_project_s_folder() {
     assert!(
         read(dir.path(), "ascribe.toml").contains("template = \"writing/starters/how-to.md\"\n")
     );
-    Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
 }
 
 #[test]
@@ -545,7 +555,9 @@ fn a_project_with_no_types_keeps_the_page_type_its_pages_had() {
         text.starts_with("spec = \"0.1\"\n\n[types.page]\n\n[types.how-to]\n"),
         "{text}"
     );
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let names: Vec<&str> = file.model.types.iter().map(|t| t.name.as_str()).collect();
     assert_eq!(names, ["page", "how-to"]);
 }
@@ -556,7 +568,9 @@ fn an_empty_types_table_declares_no_type_and_keeps_the_page_type() {
     let dir = project(model);
     let answer = run(dir.path(), &["how-to"], "templates").expect("ejected");
     assert!(answer.page_declared);
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let names: Vec<&str> = file.model.types.iter().map(|t| t.name.as_str()).collect();
     assert_eq!(names, ["page", "how-to"]);
     // The page there names no type: it's listed, to be given `type: page`.
@@ -588,7 +602,10 @@ fn a_project_given_the_whole_set_checks_clean() {
         .map(|t| t.name)
         .collect();
     assert_eq!(names, set);
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::LOADER
+        .load(&dir.path().join("ascribe.toml"))
+        .map(Project::from_loaded)
+        .expect("the project loads");
     let types: Vec<&str> = project
         .model()
         .types
@@ -622,7 +639,10 @@ fn a_page_copied_from_each_template_reports_its_placeholders() {
         let page = format!("docs/{}/page.md", template.name);
         std::fs::create_dir_all(dir.path().join("docs").join(&template.name)).expect("made");
         std::fs::write(dir.path().join(&page), text).expect("written");
-        let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+        let project = ascribe_check::LOADER
+            .load(&dir.path().join("ascribe.toml"))
+            .map(Project::from_loaded)
+            .expect("the project loads");
         let found = ascribe_check::check_all_builds(&project);
         std::fs::remove_file(dir.path().join(&page)).expect("removed");
 
@@ -698,7 +718,9 @@ fn a_type_added_takes_another_type_s_declarations_of_its_fields() {
         ),
         "{model}"
     );
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let types = &file.model.types;
     let field = |ty: &str, name: &str| {
         types

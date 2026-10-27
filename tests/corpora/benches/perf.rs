@@ -648,7 +648,8 @@ fn main() {
         3,
     );
     println!();
-    let model = Project::load_model(&root.join("ascribe.toml"))
+    let model = ascribe_check::LOADER
+        .load_model(&root.join("ascribe.toml"))
         .expect("the converted model loads")
         .model;
     let pages: Vec<String> = converted

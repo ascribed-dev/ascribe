@@ -27,12 +27,13 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{Diagnostic, LoadError, LocateError, Project};
+use ascribe_check::Diagnostic;
 use ascribe_core::diagnostics::{MODEL_TOML_SYNTAX, SOURCE_UNREADABLE};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, FileId, Issue, LineIndex, Location, Span, TextEdit};
 use ascribe_fmt::{FormatFilesError, Formatted};
 use ascribe_resolve::{DiskFs, Layout};
+use ascribe_workspace::{LoadError, LocateError};
 use clap::{Args as ClapArgs, ValueEnum};
 use serde::Serialize;
 
@@ -328,9 +329,7 @@ impl Coded for FmtError {
 /// The slugs of the content model's problems.
 fn model_slugs(error: &LoadError) -> Vec<&str> {
     match error {
-        LoadError::Model { diagnostics, .. } => {
-            diagnostics.iter().map(|d| d.slug.as_str()).collect()
-        }
+        LoadError::Model { issues, .. } => issues.iter().map(|i| i.slug.as_str()).collect(),
         // The file couldn't be read, or isn't UTF-8: the content model's
         // syntax error.
         LoadError::Read { .. } => vec![MODEL_TOML_SYNTAX.as_str()],
@@ -345,10 +344,12 @@ fn format_all(
     on_changed: &mut dyn FnMut(&Path, &str, &[TextEdit]),
 ) -> Result<Formatted, FmtError> {
     let config = locate(global)?;
-    let file = Project::load_model(&config).map_err(|error| FmtError::Model {
-        config: config.clone(),
-        error,
-    })?;
+    let file = ascribe_check::LOADER
+        .load_model(&config)
+        .map_err(|error| FmtError::Model {
+            config: config.clone(),
+            error,
+        })?;
     let model = file.model;
     let boundary = DiskFs::new(file.root, &Layout::from_model(&model));
     Ok(ascribe_fmt::format_files(

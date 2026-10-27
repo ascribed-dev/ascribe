@@ -114,6 +114,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "insta",
  "proptest",
  "serde",
@@ -145,6 +146,7 @@ dependencies = [
  "ascribe-resolve",
  "ascribe-sources",
  "ascribe-templates",
+ "ascribe-workspace",
  "clap",
  "insta",
  "schemars",
@@ -178,6 +180,7 @@ dependencies = [
  "ascribe-query",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "insta",
  "serde",
  "serde_json",
@@ -208,6 +211,7 @@ dependencies = [
  "ascribe-resolve",
  "ascribe-syntax",
  "ascribe-synthetic",
+ "ascribe-workspace",
  "serde",
  "serde_json",
  "serde_yaml_ng",
@@ -303,6 +307,7 @@ dependencies = [
  "ascribe-syntax",
  "ascribe-synthetic",
  "ascribe-templates",
+ "ascribe-workspace",
  "crossbeam-channel",
  "lsp-server",
  "lsp-types",
@@ -405,6 +410,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "schemars",
  "serde",
  "serde_yaml_ng",
@@ -413,6 +419,17 @@ dependencies = [
  "thiserror",
  "toml",
  "toml_edit",
+]
+
+[[package]]
+name = "ascribe-workspace"
+version = "0.4.4"
+dependencies = [
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-resolve",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]

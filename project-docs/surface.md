@@ -1043,6 +1043,7 @@ READMEs published with a package, a crate, or the repository:
 | `crates/ascribe-sources/README.md` |
 | `crates/ascribe-syntax/README.md` |
 | `crates/ascribe-templates/README.md` |
+| `crates/ascribe-workspace/README.md` |
 | `docs/README.md` |
 | `packages/archive/README.md` |
 | `packages/astro/README.md` |

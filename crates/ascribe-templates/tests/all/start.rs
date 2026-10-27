@@ -19,7 +19,9 @@ fn project() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("a temporary folder");
     std::fs::write(dir.path().join("ascribe.toml"), MODEL).expect("written");
     std::fs::create_dir(dir.path().join("docs")).expect("made");
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let fs = DiskFs::new(dir.path(), &Layout::from_model(&file.model));
     let names = ["how-to".to_owned()];
     let answer = eject(
@@ -45,7 +47,10 @@ fn run(
     title: &str,
     path: Option<&str>,
 ) -> Result<NewPage, StartError> {
-    let project = Project::load(&dir.join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::LOADER
+        .load(&dir.join("ascribe.toml"))
+        .map(Project::from_loaded)
+        .expect("the project loads");
     let path = path.map(|p| RelPath::parse(p).expect("a relative path"));
     start(&project, type_name, Some(title), path.as_ref())
 }
@@ -178,7 +183,10 @@ fn an_unknown_type_or_a_title_with_no_name_in_it_is_refused() {
 #[test]
 fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
     let dir = project();
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::LOADER
+        .load(&dir.path().join("ascribe.toml"))
+        .map(Project::from_loaded)
+        .expect("the project loads");
     let model = project.model();
     let takes = |folder: &str| -> Vec<&str> {
         let folder = RelPath::parse(folder).expect("a relative path");
@@ -198,7 +206,10 @@ fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
 #[test]
 fn with_no_title_the_page_keeps_the_templates_and_needs_a_path() {
     let dir = project();
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::LOADER
+        .load(&dir.path().join("ascribe.toml"))
+        .map(Project::from_loaded)
+        .expect("the project loads");
     let path = RelPath::parse("rotate.md").expect("a relative path");
     let page = start(&project, "how-to", None, Some(&path)).expect("started");
     let how_to = set()

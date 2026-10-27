@@ -1,6 +1,6 @@
 # ascribe-check
 
-The checks, and loading a project from disk to run them on. Every diagnostic Ascribe reports comes from here: `ascribe check`, `ascribe build`, and the language server all call the same functions, which is what keeps their results identical (SPEC §8).
+The checks, and the project they run on. Every diagnostic Ascribe reports comes from here: `ascribe check`, `ascribe build`, and the language server all call the same functions, which is what keeps their results identical (SPEC §8).
 
 Which diagnostics exist, with their codes, severities, and messages, is defined in one file, `tests/conformance/diagnostics.toml`. The [diagnostics reference](https://ascribed-dev.com/go/diagnostics/) is generated from it.
 
@@ -8,8 +8,8 @@ Which diagnostics exist, with their codes, severities, and messages, is defined 
 
 | Module | Main types and functions | What it does |
 |---|---|---|
-| `src/project.rs` | `Project`, `SourceFile`, `LoadError`, `Project::locate`, `Project::load`, `Project::load_model`, `Project::index` | A project as the checks see it: the content model and every source file's text, read through `ascribe_resolve::DiskFs`. `Project::locate` finds the content model a command works on, and `Project::load` is how the commands load a project (`fmt` takes only `load_model`); `load_from` loads through any `FileSystem`; `index` is the source index, built once from the texts loading read, which the page-level checks and the commands that resolve builds share; `from_parts_with_fs` builds one over another `FileSystem`, as the language server does. |
-| `src/type_files.rs` | `type_files::load_model`, `type_files::check` | The files a content type names, `template` and `guide`: each is there, inside the project's folder and outside its content root and output directory, through `FileSystem`, and a template reads as a page. `load_model` loads `ascribe.toml` and checks them, for `Project::load_model` and the language server, so a problem with one is the content model's. |
+| `src/project.rs` | `Project`, `LOADER`, `Project::load`, `Project::from_loaded`, `Project::index` | A project as the checks see it: the content model and every source file's text. `ascribe-workspace` finds and reads a project; `LOADER` is what it loads one with, this crate's content model loader (`type_files::load_model`) and side files (`SIDE_FILES`), and `Project::from_loaded` builds a `Project` from what it read. `Project::load` is the two at once, on the disk; `index` is the source index, built once from the texts loading read, which the page-level checks and the commands that resolve builds share; `from_parts_with_fs` builds one over another `FileSystem`, as the language server does. |
+| `src/type_files.rs` | `type_files::load_model`, `type_files::check` | The files a content type names, `template` and `guide`: each is there, inside the project's folder and outside its content root and output directory, through `FileSystem`, and a template reads as a page. `load_model` loads `ascribe.toml` and checks them, for `LOADER` and the language server, so a problem with one is the content model's. |
 | `src/builds.rs` | `select_builds`, `diagnose`, `UnknownBuild` | What `ascribe check` and `ascribe build` call: the builds named by `--build`, and their diagnostics, each problem once. `diff` and `drift` choose builds with `select_builds` too. |
 | `src/lib.rs` | `check_files` | The file-level checks over every file: the content model's warnings, the lock and the copies of sources, then each file's diagnostics, in file order and source order. |
 | `src/checks/` | `check_file` | The file-level checks of one file (SPEC §8.1): the parser's issues, then attributes (`attrs.rs`), availability (`avail.rs`), frontmatter (`frontmatter.rs`), references and snippets (`refs.rs`), sources in other repositories (`sources.rs`), and the advice about a page's content: its description, its recheck date, and code blocks' languages (`content.rs`). |
@@ -19,7 +19,7 @@ Which diagnostics exist, with their codes, severities, and messages, is defined 
 | `src/yaml.rs` | | Where a key or value is in a frontmatter block, so a problem is reported at its line. |
 
 ```rust,ignore
-let config = ascribe_check::Project::locate(None)?;
+let config = ascribe_workspace::locate(None)?;
 let project = ascribe_check::Project::load(&config)?;
 let found = ascribe_check::diagnose(&project, &[])?;
 ```
@@ -30,12 +30,12 @@ let found = ascribe_check::diagnose(&project, &[])?;
 - **The rules for references and snippets aren't here.** Whether a link, image, include, or snippet resolves is decided by `ascribe_resolve::references` and `ascribe_resolve::snippet`, which the source index uses too. This crate words and reports what they find.
 - **Every message comes from the registry.** A check reports an `Issue` with a slug from `ascribe_core::diagnostics`; `Registry` gives it its code, severity, and text.
 - **A problem is reported once, where it's caused.** Inside included content, that's the outermost include, with the place in the fragment as related information.
-- **It depends on `ascribe-core`, `ascribe-syntax`, `ascribe-model`, `ascribe-resolve`, and `ascribe-emit`,** and on no crate that uses it: not `ascribe-diff`, `ascribe-lsp`, or `ascribe-cli`. `page-size` measures a page's plain Markdown as `ascribe-emit` writes it, so `ascribe-emit` must never use this crate.
+- **It depends on `ascribe-core`, `ascribe-syntax`, `ascribe-model`, `ascribe-resolve`, `ascribe-workspace`, and `ascribe-emit`,** and on no crate that uses it: not `ascribe-diff`, `ascribe-lsp`, or `ascribe-cli`. `page-size` measures a page's plain Markdown as `ascribe-emit` writes it, so `ascribe-emit` must never use this crate.
 - **It doesn't read the clock.** `recheck-overdue` compares a date with the day the caller gives `Project::with_today`; a project without one doesn't report it.
 
 ## Tests
 
-- `tests/all/commands.rs`: what the commands call, each with a typed result: `locate`, `load_model`, `select_builds`, and `diagnose`.
+- `tests/all/commands.rs`: what the commands call, each with a typed result: `LOADER`, `select_builds`, and `diagnose`.
 - `tests/all/checks.rs`: the file-level checks, on small projects in memory or in a temporary folder.
 - `tests/all/page.rs`: the page-level checks.
 - `tests/all/page_index.rs`: checking resolved pages over an index the caller already has reports what `check` reports.

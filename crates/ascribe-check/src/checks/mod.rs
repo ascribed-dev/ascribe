@@ -42,8 +42,9 @@ use ascribe_model::{ContentModel, ContentType};
 use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Heading, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
 };
+use ascribe_workspace::SourceFile;
 
-use crate::{Diagnostic, Project, SourceFile};
+use crate::{Diagnostic, Project};
 
 pub use phrase_text::with_phrases;
 pub use sources::unread_config_issue;

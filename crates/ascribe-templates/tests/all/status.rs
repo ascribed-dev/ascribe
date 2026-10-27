@@ -7,7 +7,6 @@
 
 use std::path::Path;
 
-use ascribe_check::Project;
 use ascribe_core::RelPath;
 use ascribe_resolve::{DiskFs, Layout};
 use ascribe_templates::{
@@ -22,7 +21,9 @@ fn project(names: &[&str]) -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("a temporary folder");
     std::fs::write(dir.path().join("ascribe.toml"), MODEL).expect("written");
     std::fs::create_dir(dir.path().join("docs")).expect("made");
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let names: Vec<String> = names.iter().map(|n| (*n).to_owned()).collect();
     let fs = DiskFs::new(dir.path(), &Layout::from_model(&file.model));
     let answer = eject(

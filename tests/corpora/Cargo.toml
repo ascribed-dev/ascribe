@@ -19,6 +19,7 @@ ascribe-model.workspace = true
 ascribe-resolve.workspace = true
 ascribe-synthetic.workspace = true
 ascribe-syntax.workspace = true
+ascribe-workspace.workspace = true
 toml.workspace = true
 
 [dev-dependencies]
