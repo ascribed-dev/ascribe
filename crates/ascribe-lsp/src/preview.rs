@@ -368,12 +368,12 @@ impl Core {
         let content_root = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
         let content_path = relative_path(&content_root, &document).filter(RelPath::is_inside);
         Ok(Target {
-            snapshot: loaded.inc.snapshot(),
-            model: loaded.model.clone(),
+            snapshot: loaded.workspace.index_snapshot(),
+            model: loaded.model().clone(),
             routes: self.preview_routes.clone(),
             root: loaded.root.clone(),
             content_root,
-            output_dir: normalize(&loaded.root.join(&loaded.model.project.output_dir)),
+            output_dir: normalize(&loaded.root.join(&loaded.model().project.output_dir)),
             document_version: self.docs.get(&document).map(|d| d.version),
             document,
             content_path,
@@ -381,7 +381,7 @@ impl Core {
                 "ascribe.toml currently has errors; this is the last version of the project that loaded."
                     .to_owned()
             }),
-            model_text: loaded.model_text.clone(),
+            model_text: loaded.model_text().to_owned(),
             review: self.review.clone(),
         })
     }

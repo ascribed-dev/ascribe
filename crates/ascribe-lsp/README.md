@@ -3,9 +3,9 @@
 The Ascribe language server, run as `ascribe lsp` (LSP over stdio). It keeps a
 project in memory, follows every change to it, and publishes the diagnostics
 `ascribe check --build <editor build>` reports, as the author types. It
-computes nothing itself: every diagnostic comes from `ascribe_check`, over a
-`ascribe_resolve::IncrementalProject`, so the editor and the command line can't
-disagree (SPEC §8, §10).
+computes nothing itself: every diagnostic comes from `ascribe_check`, over an
+`ascribe_workspace::Workspace`, as a command's does, so the editor and the
+command line can't disagree (SPEC §8, §10).
 
 It provides initialization, document and file synchronization, diagnostics, and
 semantic tokens; completion, hover, go to definition, find references, document
@@ -957,17 +957,21 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
 
 ## How it works
 
-- **The project** is an `ascribe_resolve::IncrementalProject` built from the
-  `ascribe.toml` found as [The project](#the-project) says. File ids follow `ascribe-resolve`: source files
-  have ids from 1, `ascribe.toml` is 0, an id names a path and is never reused.
-- **Changes** reach it as `Change`s from three sources: open documents
-  (`didOpen`, `didChange`, `didClose`; an open document's text wins over the
-  file on disk, and closing one reverts to the disk), the file watcher (files
-  and directories created, changed, deleted, or moved by anything else, sources
-  and assets alike), and `ascribe.toml` (open or on disk). `ascribe.nav`,
-  open or on disk, is read again when it changes, and the long-lived project
-  takes its navigation (`Change::Nav`).
-- **The model.** An `ascribe.toml` that loads is applied as `Change::Model`
+- **The project** is an `ascribe_workspace::Workspace` loaded from the
+  `ascribe.toml` found as [The project](#the-project) says, through
+  `ascribe_edit::fsx::LayerFs`: the disk, with the open documents' buffers
+  over it. File ids follow `ascribe-resolve`: source files have ids from 1,
+  `ascribe.toml` is 0, an id names a path and is never reused.
+- **Changes** reach it through `Workspace::apply`, from three sources: open
+  documents (`didOpen`, `didChange`, `didClose`; an open document's text wins
+  over the file on disk, and closing one reverts to the disk), the file
+  watcher (files and directories created, changed, deleted, or moved by
+  anything else, sources and assets alike), and `ascribe.toml` (open or on
+  disk). A side file, open or on disk, is read again when it changes, and
+  what its `Stale` names follows it: the source index takes `ascribe.nav`'s
+  navigation and `ascribe.addresses`' records, and `ascribe.baseline` is
+  matched again. An open memo file's buffer is read again as it's typed.
+- **The model.** An `ascribe.toml` that loads is applied as `Changed::Model`
   (`ascribe-resolve`'s tiers decide what is re-parsed, re-indexed, or re-resolved). One
   that doesn't load has its problems published on `ascribe.toml`, and the
   project keeps the last model that did; every other file's diagnostics are
@@ -1034,9 +1038,10 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   when the editor's build is every build, and never Vale's or those of the
   checks the editor doesn't run (`NOT_IN_EDITOR`); a line that
   doesn't parse is published there as an error, and nothing is held back.
-- **Stale results.** A worker thread computes from a `Snapshot`. Before it
-  publishes a file's diagnostics it checks, under the lock that serializes
-  every change, that `IncrementalProject::is_file_current` holds for the file
+- **Stale results.** A worker thread computes from a `WorkspaceSnapshot` and
+  the source index's `Snapshot` it was taken with. Before it publishes a
+  file's diagnostics it checks, under the lock that serializes every change,
+  that `Workspace::is_file_current` holds for the file
   and that an open document still has the version the result was computed for.
   A result that fails either check is dropped, and the file stays queued for the
   newer snapshot. Work overtaken by a newer edit is abandoned between stages.

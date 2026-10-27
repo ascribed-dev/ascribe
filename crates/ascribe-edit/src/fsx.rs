@@ -1,112 +1,39 @@
-//! The file systems the server hands to the project and to the checks.
+//! The file system the server loads its project through, and the checks
+//! read: the disk, with the editor's open buffers over it.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::io;
-use std::sync::{Mutex, PoisonError, RwLock};
+use std::sync::{PoisonError, RwLock};
 
 use ascribe_core::RelPath;
 use ascribe_resolve::{DiskFs, FileSystem, Probe, Sources, in_nested_project};
 
-/// The disk with the editor's open source buffers over it, for loading a
-/// project: what the project reads for a source is the buffer when there is
-/// one (an open document's contents win over the file on disk). A buffer in a
-/// nested project's folder isn't a source, as the file on disk isn't.
+/// The disk with the editor's open buffers over it, as a project's
+/// `Workspace` is loaded through it and its checks read it.
 ///
-/// It answers each probe from the disk once and remembers the answer. The
-/// incremental project asks its base whether a non-source file was there
-/// *before* an update ("the base plus the changes reported so far"), and by the
-/// time the editor reports a file created or deleted the disk already shows the
-/// new state; remembering what the disk said when a reference first looked
-/// keeps the base what it was when the project read it, and the reported
-/// changes layered over it (`ascribe_resolve::incremental`) do the rest.
-pub struct BufferFs {
-    disk: DiskFs,
-    buffers: BTreeMap<RelPath, String>,
-    probes: Mutex<HashMap<RelPath, Probe>>,
-}
-
-impl BufferFs {
-    /// `disk`, with `buffers` read in place of the files they name.
-    pub fn new(disk: DiskFs, buffers: BTreeMap<RelPath, String>) -> BufferFs {
-        BufferFs {
-            disk,
-            buffers,
-            probes: Mutex::new(HashMap::new()),
-        }
-    }
-}
-
-impl FileSystem for BufferFs {
-    fn sources(&self) -> Sources {
-        let mut sources = self.disk.sources();
-        for path in self.buffers.keys() {
-            if !sources.paths.contains(path) && !in_nested_project(path, &sources.nested) {
-                sources.paths.push(path.clone());
-            }
-        }
-        // A directory that couldn't be listed stays listed, but a file the
-        // editor holds is readable whatever the disk says about it.
-        sources
-            .unreadable
-            .retain(|u| !self.buffers.contains_key(&u.path));
-        sources.paths.sort();
-        sources
-    }
-
-    fn read(&self, path: &RelPath) -> io::Result<String> {
-        match self.buffers.get(path) {
-            Some(text) => Ok(text.clone()),
-            None => self.disk.read(path),
-        }
-    }
-
-    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
-        self.disk.read_file(project_path)
-    }
-
-    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
-        self.disk.real_path(project_path)
-    }
-
-    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
-        self.disk.files_in(project_dir)
-    }
-
-    fn files_named(
-        &self,
-        project_dir: &RelPath,
-        name: &str,
-        enter: &dyn Fn(&RelPath) -> bool,
-    ) -> Vec<RelPath> {
-        self.disk.files_named(project_dir, name, enter)
-    }
-
-    fn probe(&self, project_path: &RelPath) -> Probe {
-        let mut probes = self.probes.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Some(answer) = probes.get(project_path) {
-            return answer.clone();
-        }
-        let answer = self.disk.probe(project_path);
-        probes.insert(project_path.clone(), answer.clone());
-        answer
-    }
-}
-
-/// What the file-level checks probe for files that aren't sources: the disk,
-/// with the files the editor and the file watcher have reported appearing or
-/// disappearing layered over it. It answers exactly as the incremental
-/// project's own overlay does (`ascribe_resolve::incremental`), so the checks
-/// and the source index agree on which images exist.
+/// The open sources' buffers are read in place of the files on disk when
+/// the project is loaded (an open document's contents win over the file),
+/// and a buffer in a nested project's folder isn't a source, as the file on
+/// disk isn't. They're the buffers as the project was loaded: each edit
+/// after that is a change the `Workspace` takes, and a project loaded again
+/// is loaded through a new layer.
 ///
-/// It's shared and updated as changes arrive; a result computed from an older
-/// snapshot is dropped by the currency check before it's published, so a
-/// probe that sees a newer state than its snapshot can't reach the editor.
+/// For files that aren't sources it answers as the disk does, with the
+/// files the editor and the file watcher have reported appearing or
+/// disappearing layered over it, exactly as the incremental project's own
+/// overlay does (`ascribe_resolve::incremental`), so the checks and the
+/// source index agree on which images exist. It's shared and updated as
+/// changes arrive; a result computed from an older snapshot is dropped by
+/// the currency check before it's published, so a probe that sees a newer
+/// state than its snapshot can't reach the editor.
 ///
 /// It also holds the buffers of the open files that aren't sources but are
 /// read as the editor has them: memo files (SPEC §7.7), which a memo store
-/// reads through it, and `ascribe.nav` (SPEC §7.8), which the checks do.
+/// reads through it, and the side files whose open buffer wins, as
+/// `ascribe.nav` (SPEC §7.8).
 pub struct LayerFs {
     disk: DiskFs,
+    sources: BTreeMap<RelPath, String>,
     layers: RwLock<Layers>,
     buffers: RwLock<BTreeMap<RelPath, String>>,
 }
@@ -120,8 +47,15 @@ struct Layers {
 impl LayerFs {
     /// `disk`, with no buffer over it yet.
     pub fn new(disk: DiskFs) -> LayerFs {
+        LayerFs::with_sources(disk, BTreeMap::new())
+    }
+
+    /// `disk`, with `sources`, by content path, read in place of the files
+    /// they name.
+    pub fn with_sources(disk: DiskFs, sources: BTreeMap<RelPath, String>) -> LayerFs {
         LayerFs {
             disk,
+            sources,
             layers: RwLock::new(Layers::default()),
             buffers: RwLock::new(BTreeMap::new()),
         }
@@ -154,11 +88,26 @@ impl LayerFs {
 
 impl FileSystem for LayerFs {
     fn sources(&self) -> Sources {
-        self.disk.sources()
+        let mut sources = self.disk.sources();
+        for path in self.sources.keys() {
+            if !sources.paths.contains(path) && !in_nested_project(path, &sources.nested) {
+                sources.paths.push(path.clone());
+            }
+        }
+        // A directory that couldn't be listed stays listed, but a file the
+        // editor holds is readable whatever the disk says about it.
+        sources
+            .unreadable
+            .retain(|u| !self.sources.contains_key(&u.path));
+        sources.paths.sort();
+        sources
     }
 
     fn read(&self, path: &RelPath) -> io::Result<String> {
-        self.disk.read(path)
+        match self.sources.get(path) {
+            Some(text) => Ok(text.clone()),
+            None => self.disk.read(path),
+        }
     }
 
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {

@@ -3,7 +3,6 @@
 //! [`Workspace`] over the same file systems, and the same [`Ctx`] for each
 //! source file, so the command and the editor change the same places.
 
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
@@ -13,7 +12,7 @@ use ascribe_model::{ContentModel, SourceBound};
 use ascribe_resolve::{DiskFs, Layout};
 use ascribe_workspace::{LoadError, Workspace};
 
-use crate::fsx::{BufferFs, LayerFs};
+use crate::fsx::LayerFs;
 use crate::nav::Ctx;
 use crate::position::Encoding;
 
@@ -45,7 +44,8 @@ pub struct Loaded {
     pub model: Arc<ContentModel>,
     /// Its text.
     pub model_text: String,
-    /// The project's files that aren't sources.
+    /// The disk the project was read through, and its files that aren't
+    /// sources are.
     pub fs: Arc<LayerFs>,
 }
 
@@ -71,14 +71,13 @@ pub fn load(config: &Path) -> Load {
     let model_text = file.text.clone();
     let model = Arc::new(file.model.clone());
     let layout = Layout::from_model(&model);
-    let disk = DiskFs::new(&root, &layout);
+    let fs = Arc::new(LayerFs::new(DiskFs::new(&root, &layout)));
     let workspace = Workspace::load_with(
         loader.side_files,
         file,
         layout.content_root.clone(),
-        Arc::new(BufferFs::new(disk.clone(), BTreeMap::new())),
+        fs.clone(),
     );
-    let fs = Arc::new(LayerFs::new(disk));
     Load::Loaded(Box::new(Loaded {
         config,
         root,

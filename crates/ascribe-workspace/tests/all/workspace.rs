@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 use ascribe_core::{FileId, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{FileSystem, Layout, MemoryFs, Probe, Sources};
-use ascribe_workspace::{ModelFile, SharedFs, Workspace, WorkspaceSnapshot};
+use ascribe_workspace::{Changed, ModelFile, SharedFs, Workspace, WorkspaceSnapshot};
 
 const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[builds.site]\n";
 
@@ -206,4 +206,64 @@ fn text_laid_over_a_snapshot_is_indexed_again() {
     assert_eq!(ids(&replaced), before);
     assert!(replaced.index().problems(&guide).is_empty());
     assert!(!snapshot.index().problems(&guide).is_empty());
+}
+
+/// The files of [`memory`], with a memo file whose text can change
+/// underneath, as an open buffer's does.
+struct MemoBuffer {
+    inner: MemoryFs,
+    text: Mutex<String>,
+}
+
+const MEMO: &str = "memos/note.md";
+
+impl FileSystem for MemoBuffer {
+    fn sources(&self) -> Sources {
+        self.inner.sources()
+    }
+
+    fn read(&self, path: &RelPath) -> io::Result<String> {
+        self.inner.read(path)
+    }
+
+    fn probe(&self, project_path: &RelPath) -> Probe {
+        self.inner.probe(project_path)
+    }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        if project_path.as_str() == MEMO {
+            return Ok(self.text.lock().unwrap().clone().into_bytes());
+        }
+        self.inner.read_file(project_path)
+    }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        self.inner.real_path(project_path)
+    }
+
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        if project_dir.as_str() == "memos" {
+            return vec![path(MEMO)];
+        }
+        self.inner.files_in(project_dir)
+    }
+}
+
+#[test]
+fn a_memo_file_read_again_is_read_when_its_asked_for_next() {
+    let fs = Arc::new(MemoBuffer {
+        inner: memory(),
+        text: Mutex::new("Before.\n".to_owned()),
+    });
+    let mut workspace = load(fs.clone());
+    let text = |w: &Workspace| w.snapshot().memos()[0].text.clone();
+    assert_eq!(text(&workspace), "Before.\n");
+    *fs.text.lock().unwrap() = "After.\n".to_owned();
+    // Kept with the snapshot until it's told.
+    assert_eq!(text(&workspace), "Before.\n");
+    let updated = workspace
+        .apply([Changed::Read(path(MEMO))])
+        .expect("applies");
+    assert!(updated.changed && updated.across);
+    assert_eq!(text(&workspace), "After.\n");
 }

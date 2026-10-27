@@ -48,13 +48,15 @@ use crate::uri::path_to_uri;
 /// What one round of diagnostics has to do.
 pub(crate) struct Job {
     pub epoch: u64,
+    /// The source index, at the version the round computes.
     pub snapshot: Snapshot,
+    /// The project at the same version, as the checks read it.
+    pub workspace: WorkspaceSnapshot,
     /// The files to compute.
     pub files: BTreeSet<RelPath>,
     pub root: PathBuf,
     pub model: Arc<ContentModel>,
     pub model_text: String,
-    pub fs: Arc<LayerFs>,
     pub encoding: Encoding,
     /// The version of each open document among `files`, when the job was
     /// taken: what the results are for.
@@ -180,7 +182,8 @@ impl Core {
         if loaded.dirty.is_empty() && !loaded.across_dirty {
             return None;
         }
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
+        let workspace = loaded.workspace.snapshot();
         let files = with_included(
             &snapshot,
             &mut loaded.direct_includes,
@@ -196,11 +199,11 @@ impl Core {
         Some(Job {
             epoch: loaded.epoch,
             snapshot,
+            workspace,
             files,
             root: loaded.root.clone(),
-            model: loaded.model.clone(),
-            model_text: loaded.model_text.clone(),
-            fs: loaded.fs.clone(),
+            model: loaded.model().clone(),
+            model_text: loaded.model_text().to_owned(),
             encoding,
             versions,
             cache: loaded.cache.clone(),
@@ -274,7 +277,7 @@ impl Core {
         let mut ready = Vec::new();
         for (path, diagnostics, shown, held, matched) in results {
             let abs = loaded.source_path(&path);
-            let current = loaded.inc.is_file_current(&job.snapshot, &path);
+            let current = loaded.workspace.is_file_current(&job.snapshot, &path);
             let version = self.docs.get(&abs).map(|d| d.version);
             if current && version == job.versions.get(&path).copied() {
                 loaded.matched.insert(path, matched);
@@ -749,21 +752,15 @@ fn run_across(
     found
 }
 
-/// The checked project of a snapshot: its sources with the snapshot's ids, its
-/// source index, and the files the editor and the watcher reported over the
-/// disk.
+/// The checked project of a round: the project as it was when the round
+/// was taken, read through the files the editor and the watcher reported
+/// over the disk.
 fn check_project_of(job: &Job) -> Project {
-    Project::new(snapshot_of(
-        &job.snapshot,
-        job.root.clone(),
-        &job.model,
-        &job.model_text,
-        &job.fs,
-    ))
-    .with_today(job.today)
-    .with_plain_markdown(ascribe_emit::plain_markdown)
-    // The editor reports a personal memo's problems as a team memo's.
-    .with_personal_memos()
+    Project::new(job.workspace.clone())
+        .with_today(job.today)
+        .with_plain_markdown(ascribe_emit::plain_markdown)
+        // The editor reports a personal memo's problems as a team memo's.
+        .with_personal_memos()
 }
 
 /// The checks' snapshot of `snapshot`: its files and their ids, over `fs`,

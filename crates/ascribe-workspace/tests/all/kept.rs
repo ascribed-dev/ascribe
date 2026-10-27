@@ -151,6 +151,22 @@ fn a_code_file_outside_the_projects_folder_is_followed() {
 }
 
 #[test]
+fn a_code_file_changed_before_the_first_call_is_followed() {
+    let dir = project();
+    let mut kept = kept(dir.path());
+    // Stamped as it was loaded, so a change before any refresh is seen.
+    write(&dir.path().join("code/app.py"), "print(22)\n");
+    kept.refresh(SourceBound::Anywhere).unwrap();
+    let snapshot = kept.snapshot();
+    let index = snapshot.index();
+    let page = index.file(&path("index.md")).unwrap();
+    let code = index
+        .snippet_at(&page.path, page.snippets[0].span)
+        .map(|s| s.code.clone());
+    assert_eq!(code.as_deref(), Some("print(22)\n"));
+}
+
+#[test]
 fn a_nested_project_appearing_loads_the_project_again() {
     let dir = project();
     let docs = dir.path().join("project/docs");

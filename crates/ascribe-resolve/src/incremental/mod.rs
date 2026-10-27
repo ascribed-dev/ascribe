@@ -674,7 +674,10 @@ impl IncrementalProject {
 
     /// Makes what an update reads of the loaded files, once: the parse
     /// cache, the signatures, the dependencies, and the include revisions.
-    fn prepare(&mut self) {
+    /// A project loaded with [`IncrementalProject::load_deferred`] that will
+    /// be updated, and whose first update should cost no more than the
+    /// next, makes them now.
+    pub fn prepare(&mut self) {
         if self.prepared {
             return;
         }
