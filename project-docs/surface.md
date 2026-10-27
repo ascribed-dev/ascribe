@@ -117,7 +117,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-273 in all. By severity: 62 advice, 182 error, 29 warning. By level: 243 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 170 write.
+273 in all. By severity: 61 advice, 182 error, 30 warning. By level: 243 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 170 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -308,7 +308,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC196` | `content-type-missing` | error | choose | this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values} |
 | `ASC197` | `content-type-unknown` | error | choose | `{type}` isn't a content type; the types are: {values} |
 | `ASC198` | `description-link` | advice | write | a description is plain text, so `{link}` isn't a link: a search result and a link preview show its brackets and destination, and `ascribe check` and `ascribe rename` don't see it |
-| `ASC199` | `example-stale` | advice | outside | `{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again |
+| `ASC199` | `example-stale` | warning | outside | `{path}` changed after its last test run, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` to test it again |
 | `ASC200` | `example-unobserved` | advice | outside | `{path}` is an example, and no test run has covered it, so the page doesn't say what it was tested with; run `ascribe observe` in `{folder}` |
 | `ASC201` | `examples-config-invalid` | warning | outside | the examples of source `{source}` can't be checked: `{file}` can't be read: {detail} |
 | `ASC202` | `observation-file-missing` | advice | outside | `{observation}` lists `{path}`, which isn't in `{folder}`; run `{command}` there to write the observation again |

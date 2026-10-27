@@ -595,7 +595,7 @@ pub const CONTENT_TYPE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("content-type-un
 /// `ASC198`, advice, file level: a content check (area `pages`).
 pub const DESCRIPTION_LINK: DiagnosticSlug = DiagnosticSlug("description-link");
 
-/// `ASC199`, advice, file level: a content check (area `examples`).
+/// `ASC199`, warning, file level: a content check (area `examples`).
 pub const EXAMPLE_STALE: DiagnosticSlug = DiagnosticSlug("example-stale");
 
 /// `ASC200`, advice, file level: a content check (area `examples`).

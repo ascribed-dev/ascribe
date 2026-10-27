@@ -3749,7 +3749,7 @@ description = { type = "string?", role = "description" }
 [[diagnostic]]
 code = "ASC199"
 slug = "example-stale"
-severity = "advice"
+severity = "warning"
 level = "file"
 next = "outside"
 evidence = []
