@@ -80,7 +80,7 @@ pub struct LinkOperation {
     pub deprecated: bool,
     /// Its address in the published reference, as the editor's build writes
     /// the link; `null` when the reference has none for it: an operation
-    /// with no id, under a template.
+    /// with no id, under an address pattern.
     pub address: Option<String>,
 }
 
