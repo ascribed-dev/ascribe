@@ -1,0 +1,8 @@
+description: >-
+  A marker is read in any case, as GitHub reads it.
+spec: ["4.5"]
+tags: [check]
+
+diagnostics:
+  - {slug: github-alert, line: 5, column: 3}
+  - {slug: github-alert, line: 8, column: 3}

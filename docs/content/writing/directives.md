@@ -203,6 +203,15 @@ Several blocks,
 - With a trailing colon, the note is a container.
 - A note may have a title.
 
+A page brought over from GitHub may write a callout as GitHub's alert, a block quote whose first line is `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]`. Ascribe shows that as a plain quote, so `ascribe check` warns about it (`github-alert`), and its fix, which `ascribe check --fix` applies, writes the `@note` of the same type, keeping the quote's content:
+
+```markdown
+> [!TIP]
+> Quill runs in the browser too.
+```
+
+becomes `@note {type=tip}: Quill runs in the browser too.` A quote of several blocks becomes the container, `@note {type=tip}:` through `@end`.
+
 ## `@steps`
 
 ([SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps))

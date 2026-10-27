@@ -5192,3 +5192,33 @@ reference = "content-model/output.md#18-sourcesname"
 when = "An `ascribe.examples.toml` is in the folder of a source in the same repository, below its root, in a folder the source may read files from, and no source's root holds it, so no source reads it. Reported at the file, once for each"
 message = "`{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = \"{folder}\"`, or move the file to `{root}`"
 fix = "Ascribe reads a source's tested examples from the `ascribe.examples.toml` at the root of its `path`, and the observations beside it. To keep the config beside the tests it runs, declare a source whose `path` is the config's folder, and write the snippets of its files with that source's name; the folder can stay inside the other source's too. Or move the config, and its `examples.observations/`, to the root of the source the snippets name, with its `include` and `test` written from there, and run `ascribe observe` there. A folder that holds an `ascribe.toml` is a project of its own, and isn't looked in."
+
+[[diagnostic]]
+code = "ASC287"
+slug = "github-alert"
+severity = "warning"
+level = "file"
+next = "fix"
+evidence = []
+configurable = true
+area = "pages"
+spec = "4.5"
+reference = "writing/directives.md#note"
+when = "A block quote's first line is one of GitHub's alert markers, `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]`, in any case. A quote that mentions a marker later isn't looked at"
+message = "`{marker}` is GitHub's alert syntax, which Ascribe shows as a plain block quote that starts with `{marker}`; write the quote as `{note}`"
+fix = "Write the callout as a `@note` of the same type: GitHub's `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` are `@note`'s types `note`, `tip`, `important`, `warning`, and `caution`. The fix does it, keeping the quote's content: `@note {type=tip}: …` for one paragraph, or `@note {type=tip}:` and `@end` around several blocks. Every output then shows it as a callout: the site as a note, and the Markdown output as a block quote that starts with its type, which reads the same on GitHub and anywhere else."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+> [!TIP]
+> Quill runs in the browser too.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Quill runs in the browser too.
+'''
