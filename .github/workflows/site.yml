@@ -46,7 +46,23 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo build -p ascribe-cli --locked
-      - run: target/debug/ascribe check --deny-warnings --config docs
+      # Against the base, as docs/content/checks/ci.md says, so a docs page
+      # moved or removed without an entry in docs/ascribe.addresses fails: on
+      # a pull request the branch it targets, in the merge queue the queue's
+      # base, on a push the commit before it. The nightly and manual runs
+      # compare with the default branch.
+      - name: ascribe check docs/, against the base
+        env:
+          MERGE_GROUP_BASE: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          case "$GITHUB_EVENT_NAME" in
+            pull_request) base=(--base "origin/$GITHUB_BASE_REF") ;;
+            merge_group) base=(--base "$MERGE_GROUP_BASE" --base-exact) ;;
+            push) base=(--base "$PUSH_BEFORE" --base-exact) ;;
+            *) base=() ;;
+          esac
+          target/debug/ascribe check --deny-warnings --config docs "${base[@]}"
       - run: target/debug/ascribe fmt --check --config docs
       - run: target/debug/ascribe check --deny-warnings --config site/home
       - run: target/debug/ascribe fmt --check --config site/home

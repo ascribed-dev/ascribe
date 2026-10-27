@@ -14,7 +14,7 @@ In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) lists the 
 ## Link from your product
 @id: linking-from-a-product
 
-A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../content-model/content.md#dimensions):
+A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../content-model/variation.md#dimensions):
 
 ```ts
 // The docs' permalinks, as `[consumer]` publishes them.

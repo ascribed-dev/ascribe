@@ -45,7 +45,7 @@ version = 1
 ```
 
 - **`[moved]`:** where each key's addresses lead now. A key is a page's path from the content root, which stands for every address the page was published at, its Markdown version's too; a file's path, `#`, and a heading's id, with the file the `@id` is written in, a fragment's once for every page that includes it; `go:` and a [permalink](../permalinks/index.md)'s name, for one no heading or page declares any more; or an address from the host's root, starting with `/`, from before the project used Ascribe. A value is a page's path, and optionally `#` and a heading's id, or, for a `go:` key, `go:` and another permalink's name, which makes the key an alias of it ([when a section moves or goes away](../permalinks/index.md#moving-aliasing-and-retiring)).
-- **`[retired]`:** the addresses removed on purpose, each key as `[moved]`'s, with why. A reader who follows an old link gets the host's not-found page; a retired permalink's address shows the reason.
+- **`[retired]`:** the addresses removed on purpose, each key as `[moved]`'s, with why. A reader who follows an old link gets [a page that says what was removed and why](#a-retired-addresss-page), answering 404; a retired permalink's address shows the reason.
 - **`[former]`:** the routing settings the docs were published under before, each oldest first: `base-path`, `permalink-path`, and `agents`, each a list of values, and `builds`, a table from a build's old name to its new one. [`ascribe check --fix` writes it](#a-settings-change) when a setting changes.
 
 Its format is in [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file).
@@ -209,7 +209,7 @@ With `host = "netlify"`, the `_redirects` the build writes forwards each permali
 /docs/go/legacy-sync/ /docs/go/legacy-sync/ 410!
 ```
 
-- **An address with a [dimension](../content-model/content.md#dimensions)'s parameter,** such as `?pm=pnpm`, gets the forwarding page instead, whose script sets the reader's choice before it forwards: a line for each dimension, ahead of the `301`, since Netlify uses the first rule that matches.
+- **An address with a [dimension](../content-model/variation.md#dimensions)'s parameter,** such as `?pm=pnpm`, gets the forwarding page instead, whose script sets the reader's choice before it forwards: a line for each dimension, ahead of the `301`, since Netlify uses the first rule that matches.
 - **A retired permalink's address** serves its page, which says why it was removed, with a `410`, which tells a fetcher it's gone on purpose.
 - **`!`** forces each rule past the forwarding page at the address, which Netlify would serve otherwise.
 

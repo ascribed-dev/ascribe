@@ -19,7 +19,7 @@ ascribe.toml:7: [ASC282] no page links to `deleteInvoice` (DELETE /invoices/{id}
 
 An operation the spec marks `deprecated: true` isn't reported, since it's on its way out. An operation with no id is named by its method and path.
 
-For an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#19-checks):
+For an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#22-checks):
 
 ```toml
 [checks]

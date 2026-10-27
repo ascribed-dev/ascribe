@@ -49,7 +49,7 @@ To test it again, run `ascribe observe` in that folder and commit the observatio
 
 To have CI write a new observation, run `ascribe observe` in a job that has what the test needs, and commit `examples.observations/` from there, or keep it as an artifact to commit by hand. When the code is [in another repository](../examples/tested.md#when-the-code-is-in-another-repository), it's that repository's CI that runs it, and the next `ascribe sources update` brings the observation here; until then, an update pull request that brings a stale example fails this check.
 
-To let a stale example pass, set `example-stale = "advice"` in [`[checks]`](../content-model/checks.md#19-checks).
+To let a stale example pass, set `example-stale = "advice"` in [`[checks]`](../content-model/checks.md#22-checks).
 
 ## See also
 

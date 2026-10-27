@@ -46,6 +46,7 @@ Paths are from the folder that holds `ascribe.toml`, except where a row says the
 | The files you name with `--into` and `--pages` | [`ascribe agents index`](../agents/commands.md#cli-agents-index): the index of the docs between its markers in the `--into` file, such as your product's `AGENTS.md`, and the pages' Markdown versions in the `--pages` folder ([Index your docs for your product's agents](../agents/product-index.md)). | Yes |
 | `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours ([Set up a site](../astro/index.md#set-up-a-site)). | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
+| `dist/_redirects`, `dist/_headers`, and `dist/_ascribe/gone/` | `@ascribed/astro`, when it builds, in the Astro root's output folder: with `host` in `[consumer]`, the host's files, whose `_redirects` has a line for each address [`ascribe.addresses`](../publishing/redirects.md#what-the-build-writes) records a move or a retirement of ([the host's files](../publishing/site.md#the-hosts-files)), and in `_ascribe/gone/` under the base path, a page for each retired address, saying what was removed and why ([A retired address's page](../publishing/redirects.md#a-retired-addresss-page)). Astro's starters leave `dist/` out of git. | No |
 
 ## What deleting them costs
 

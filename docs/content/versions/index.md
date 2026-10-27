@@ -50,7 +50,7 @@ planned = ["3.6"]
 "3.3" = {}
 ```
 
-Content marked for a planned version reads "planned" until its line ships, and a line whose `ends` has passed is reported until you archive it. The [`[releases]` reference](../content-model/content.md#71-releasestarget) has each key and what the checks find in the marks once the list is there.
+Content marked for a planned version reads "planned" until its line ships, and a line whose `ends` has passed is reported until you archive it. The [`[releases]` reference](../content-model/variation.md#121-releasestarget) has each key and what the checks find in the marks once the list is there.
 
 ### 3. Version a build
 @id: build-a-site-for-each-line

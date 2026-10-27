@@ -24,6 +24,11 @@ fn agents_model() -> String {
     model
 }
 
+/// What the full model's builds that aren't versioned say they describe,
+/// after `llms.txt`'s summary and each page's pointer (decision #1028).
+const RELEASES: &str = " This documentation describes Self-managed 3.5 and 3.4. \
+    Anything marked planned isn't in any of those releases yet.";
+
 /// Every file the plain output for agents writes for a build.
 fn plain_files(project: &Project, build: &str) -> BTreeMap<String, String> {
     emit_build(
@@ -67,7 +72,10 @@ fn each_page_is_published_at_its_route_with_md_and_points_at_the_index() {
     assert_eq!(pages, ["guides/my-setup.md", "index.md"]);
     assert_eq!(
         files["guides/my-setup.md"],
-        "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/docs/llms.txt).\n\n# Set up\n\nSteps.\n"
+        format!(
+            "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/docs/llms.txt).{RELEASES}\n\n\
+             # Set up\n\n> Guide\n\nSteps.\n"
+        )
     );
 }
 
@@ -127,13 +135,15 @@ fn llms_txt_is_named_and_summarized_by_the_home_page_and_sectioned_by_the_naviga
     let files = plain_files(&project, "site");
     assert_eq!(
         files["llms.txt"],
-        "# Quill\n\n> Docs for Quill, the editor.\n\n\
-         ## Start\n\n\
-         - [Quill](https://docs.quill.dev/docs/index.md): Docs for Quill, the editor.\n\
-         - [Install](https://docs.quill.dev/docs/install.md)\n\n\
-         ## How-to guides\n\n\
-         - [How-to guides](https://docs.quill.dev/docs/guides.md)\n\
-         - [Sync](https://docs.quill.dev/docs/guides/sync.md): Keep two copies the same.\n"
+        format!(
+            "# Quill\n\n> Docs for Quill, the editor.{RELEASES}\n\n\
+             ## Start\n\n\
+             - [Quill](https://docs.quill.dev/docs/index.md): Docs for Quill, the editor.\n\
+             - [Install](https://docs.quill.dev/docs/install.md)\n\n\
+             ## How-to guides\n\n\
+             - [How-to guides](https://docs.quill.dev/docs/guides.md)\n\
+             - [Sync](https://docs.quill.dev/docs/guides/sync.md): Keep two copies the same.\n"
+        )
     );
 }
 
@@ -162,7 +172,7 @@ fn llms_txt_follows_ascribe_nav_with_nested_sections_folded_in_reading_order() {
     assert_eq!(
         files["llms.txt"],
         format!(
-            "# Home\n\n> Every page of this documentation, each linked to its Markdown version.\n\n\
+            "# Home\n\n> Every page of this documentation, each linked to its Markdown version.{RELEASES}\n\n\
              ## Start\n\n\
              - [Home]({})\n- [Install]({})\n- [About]({})\n\n\
              ## Look it up\n\n\
@@ -327,8 +337,8 @@ fn a_link_to_a_page_leads_to_its_markdown_and_its_fragment_to_the_same_heading_t
     assert_eq!(
         files["index.md"],
         format!(
-            "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/docs/llms.txt).\n\n\
-             # Home\n\n\
+            "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/docs/llms.txt).{RELEASES}\n\n\
+             # Home\n\n> Guide\n\n\
              [Sync]({sync}), [first]({sync}#set-up), [connect]({sync}#connect), \
              [npm]({sync}#install-npm), [Yarn]({sync}#install-yarn), [again]({sync}#set-up-1). \
              Rotate your [API key](https://docs.quill.dev/docs/reference/glossary.md#api-key).\n"
@@ -367,5 +377,101 @@ fn without_agents_a_link_keeps_the_pages_address() {
         files["index.md"].contains("(https://docs.quill.dev/docs/guides/sync#link-up)"),
         "{}",
         files["index.md"]
+    );
+}
+
+#[test]
+fn a_page_s_markdown_says_its_type_and_description_after_its_title() {
+    let project = memory_project(
+        &agents_model(),
+        &[
+            ("index.md", "---\ntype: guide\ntitle: Home\n---\n"),
+            (
+                "guides/sync.md",
+                "---\ntype: guide\ntitle: Sync\navailable: cloud\n\
+                 description: Keep *two* copies the same.\n---\n\nSteps.\n",
+            ),
+            (
+                "reference/options.md",
+                "---\ntype: reference\ntitle: Options\n---\n\nEach option.\n",
+            ),
+        ],
+    );
+    let files = plain_files(&project, "site");
+    let sync = &files["guides/sync.md"];
+    let after_pointer = |page: &str| page.split_once("\n\n").map(|(_, rest)| rest.to_owned());
+    // After the availability line, as the site shows it, and as plain text,
+    // as llms.txt lists it.
+    assert_eq!(
+        after_pointer(sync).as_deref(),
+        Some(
+            "# Sync\n\nAvailable: Quill Cloud (GA)\n\n> Guide · Keep two copies the same.\n\nSteps.\n"
+        ),
+        "{sync}"
+    );
+    // A type with no description field says the type alone.
+    assert_eq!(
+        after_pointer(&files["reference/options.md"]).as_deref(),
+        Some("# Options\n\n> Reference\n\nEach option.\n")
+    );
+}
+
+#[test]
+fn a_build_that_filters_for_a_version_says_it_describes_that_version() {
+    let project = memory_project(
+        &agents_model(),
+        &[("index.md", "---\ntype: guide\ntitle: Home\n---\n")],
+    );
+    let pointer = |build: &str| {
+        let files = plain_files(&project, build);
+        let page = files["index.md"].lines().next().map(str::to_owned);
+        let summary = files["llms.txt"].lines().nth(2).map(str::to_owned);
+        (page, summary)
+    };
+    let (page, summary) = pointer("self-managed-3.5");
+    assert_eq!(
+        page.as_deref(),
+        Some(
+            "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/docs/llms.txt). \
+             This documentation describes Self-managed 3.5."
+        )
+    );
+    assert_eq!(
+        summary.as_deref(),
+        Some(
+            "> Every page of this documentation, each linked to its Markdown version. \
+             This documentation describes Self-managed 3.5."
+        )
+    );
+    // Filtered for a target with no lines, it names no release: what
+    // another target's releases have is gone.
+    let (page, summary) = pointer("cloud");
+    assert_eq!(
+        page.as_deref(),
+        Some(
+            "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/docs/llms.txt)."
+        )
+    );
+    assert_eq!(
+        summary.as_deref(),
+        Some("> Every page of this documentation, each linked to its Markdown version.")
+    );
+}
+
+#[test]
+fn a_project_without_types_or_releases_writes_nothing_more() {
+    let model = "spec = \"0.1\"\n\
+        [consumer]\nsite = \"https://docs.example.com\"\nagents = true\n";
+    let project = memory_project(model, &[("index.md", "---\ntitle: Home\n---\n\nHello.\n")]);
+    let files = plain_files(&project, "site");
+    assert_eq!(
+        files["index.md"],
+        "> For the complete documentation index, see [llms.txt](https://docs.example.com/llms.txt).\n\n\
+         # Home\n\nHello.\n"
+    );
+    assert!(
+        files["llms.txt"].starts_with("# Home\n\n> Every page"),
+        "{}",
+        files["llms.txt"]
     );
 }

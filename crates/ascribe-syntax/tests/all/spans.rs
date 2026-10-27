@@ -114,6 +114,12 @@ fn directives_in_every_container() {
         " \x0b\n:-\nc",
         "  a | b\n:- | -:\nc | d\n   e | f\n",
         "> s\n>:-\n>  cc\n",
+        // A code span that starts on an indented continuation line and ends on the next (#1159).
+        "x\n `\n`c",
+        "\x0b\n `\na`c",
+        "\0\r `\n`D",
+        "x\n  ``a\n   b``c\n",
+        "> x\n>  `a\n>   b` c\n",
     ] {
         assert_exact("container case", source);
     }

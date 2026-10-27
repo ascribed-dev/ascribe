@@ -123,7 +123,7 @@ ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 
 A placeholder left is advice in a [draft](../writing/frontmatter.md#a-draft), a page with `draft: true` ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), so a page you're still writing isn't covered in errors. In a page that publishes, it's an error ([`template-placeholder-published`](../checks/diagnostics/content-checks.md#ASC286)): readers would read the template's words, so `ascribe check` fails, `ascribe build` writes nothing, and the editor, the agents' hook, and the MCP tools report it the same way. A page started with `ascribe new` or **New Page** is a draft until you take the line out. A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says how many are left, and **Go to Next Placeholder** goes to the next one.
 
-The check finds only what was never touched, so read a page through before publishing it. To turn any of these checks off, or set another level, set its level in [`[checks]`](../content-model/checks.md#19-checks).
+The check finds only what was never touched, so read a page through before publishing it. To turn any of these checks off, or set another level, set its level in [`[checks]`](../content-model/checks.md#22-checks).
 
 ## See also
 

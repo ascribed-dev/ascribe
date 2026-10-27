@@ -7,13 +7,13 @@ description: What a release line is, what each line's output holds and says abou
 A product a team supports in more than one version needs docs for each. Ascribe makes them from one source, the marks the pages already have, in four levels a project opts into one at a time:
 
 1. **No versions.** The default. Nothing to configure, and nothing changes.
-2. **One site that knows its versions.** [`[releases]`](../content-model/content.md#71-releasestarget) lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
+2. **One site that knows its versions.** [`[releases]`](../content-model/variation.md#121-releasestarget) lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
 3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, with links from one line to another, and an older line that says what it is and where the current one is. [Publish a site for each version](index.md) sets it up.
 4. **An archive.** A line rendered once more into a folder of HTML that needs nothing else, kept after it leaves the window. [Export and retire a line](archive.md) makes one.
 
 ## Lines
 
-A **line** is a version as a project writes it, and holds every version that starts with it: `3.4` holds `3.4.0`, `3.4.2`, and `3.4.2.1`. A line is **live** when a reader can be on it, **planned** before it ships, and **archived** once it has left; the newest live line is the **current line**. The [`[releases]` reference](../content-model/content.md#71-releasestarget) has the keys and their rules, and what `ascribe check` reports about the versions the marks name once the list is there.
+A **line** is a version as a project writes it, and holds every version that starts with it: `3.4` holds `3.4.0`, `3.4.2`, and `3.4.2.1`. A line is **live** when a reader can be on it, **planned** before it ships, and **archived** once it has left; the newest live line is the **current line**. The [`[releases]` reference](../content-model/variation.md#121-releasestarget) has the keys and their rules, and what `ascribe check` reports about the versions the marks name once the list is there.
 
 A phrase can follow the list: `release = { line = "self-managed" }` makes `{release}` the current line, and in an older line's output of a versioned build, that line.
 
@@ -55,7 +55,7 @@ A reader who lands on an older line from a search should know it's older, and fi
 
   > Documentation for Self-managed 3.4. Support ends on 31 January 2027. The current version is 3.5: <https://docs.example.com/docs/install/>.
 
-  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/content.md#dimensions), or by `[releases.<target>] label` for a target of the implicit `release` dimension.
+  The current line's says its own version alone. The date comes from `ends`, and the sentence is left out without one; the target is named by its [label](../content-model/variation.md#dimensions), or by `[releases.<target>] label` for a target of the implicit `release` dimension.
 - **A site's banner** says the same to a person: [`VersionBanner.astro`](#the-astro-components) with Astro, or the site's own from `versions.json`.
 
 Nothing is added to `robots.txt`. An older line is kept out of an index by its pages, not by a rule over its folder, which would also stop a crawler reading the canonical link.

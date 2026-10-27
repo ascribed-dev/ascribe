@@ -92,27 +92,27 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 | Section | What it's for | In the reference |
 |---|---|---|
-| Top level: `spec` | The only other top-level keys are `[from]` (§2.1) and the tables in §3–§22, `[releases]` (§7.1) and `[[intended]]` (§19.1) among them. | §2 |
+| Top level: `spec` | The only other top-level keys are `[from]` (§2.1) and the tables in §3–§23, `[releases]` (§12.1) and `[[intended]]` (§22.1) among them. | §2 |
 | `[project]` | Where the source lives and where builds write. | §3 |
 | `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
-| `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §6 |
-| `[versions]` | How versions in availability specs are compared (SPEC §4.4). | §7 |
-| `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §8 |
-| `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §9 |
-| `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §10 |
-| `[phrases]` | The phrases registry (SPEC §5.1). | §11 |
-| `[glossary]` | The glossary (SPEC §5.4): the pages that hold its terms, and how occurrences are matched. | §12 |
-| `[images]` | Image attributes (SPEC §5.3): which keys may appear in an attribute block after an image, and their types. | §13 |
-| `[widgets.<name>]` | Project widgets (SPEC §6): directives a documentation set defines. | §14 |
+| `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §6 |
+| `[phrases]` | The phrases registry (SPEC §5.1). | §7 |
+| `[glossary]` | The glossary (SPEC §5.4): the pages that hold its terms, and how occurrences are matched. | §8 |
+| `[images]` | Image attributes (SPEC §5.3): which keys may appear in an attribute block after an image, and their types. | §9 |
+| `[widgets.<name>]` | Project widgets (SPEC §6): directives a documentation set defines. | §10 |
+| `[dimensions.<name>]` | A **dimension** is an axis content varies along (SPEC §4.3), and whose values are availability targets (SPEC §4.4). | §11 |
+| `[versions]` | How versions in availability specs are compared (SPEC §4.4). | §12 |
+| `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §13 |
+| `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §14 |
 | `[consumer]` | The consumer profile (SPEC §9.5): how the site output fits a specific consumer. | §15 |
 | `[builds.<name>]` | Named builds (SPEC §9.3). | §16 |
-| `[editor]` | Settings for the authoring environment (SPEC §10). | §17 |
-| `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §18 |
-| `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §19 |
-| `[permalinks]` | `ascribe.toml` has no `[permalinks]` any more. | §20 |
-| `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §21 |
-| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §22 |
-| `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §23 |
+| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §17 |
+| `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §18 |
+| `[permalinks]` | `ascribe.toml` has no `[permalinks]` any more. | §19 |
+| `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §20 |
+| `[apis.<name>]` | OpenAPI specs that pages link into, by name: each one's file, and where its reference is published. | §21 |
+| `[checks]` | How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. | §22 |
+| `[editor]` | Settings for the authoring environment (SPEC §10). | §23 |
 
 ## Diagnostics
 
@@ -925,25 +925,29 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `command/project-files.md` | Files Ascribe writes | reference |
 | `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search` | reference |
 | `command/site-output.md` | A page in the site output | reference |
-| `content-model/checks.md` | `ascribe.toml`: checks, permalinks, and listing | reference |
-| `content-model/content.md` | `ascribe.toml`: dimensions, phrases, and widgets | reference |
+| `content-model/checks.md` | `ascribe.toml`: checks and the editor | reference |
+| `content-model/content.md` | `ascribe.toml`: what pages hold | reference |
 | `content-model/glossary.md` | Set up a glossary | how-to |
 | `content-model/index.md` | `ascribe.toml` reference | reference |
-| `content-model/output.md` | `ascribe.toml`: consumer, builds, and sources | reference |
+| `content-model/output.md` | `ascribe.toml`: where pages are published | reference |
+| `content-model/sources.md` | `ascribe.toml`: what pages draw from | reference |
+| `content-model/variation.md` | `ascribe.toml`: how content varies | reference |
 | `contracts/archive.md` | Archive contract | reference |
 | `contracts/assets.md` | Asset contract | reference |
 | `contracts/content-model.md` | `ascribe.toml` format contract | reference |
-| `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks, permalinks, and listing | reference |
-| `contracts/content-model/content.md` | `ascribe.toml` format contract: dimensions, phrases, and widgets | reference |
-| `contracts/content-model/output.md` | `ascribe.toml` format contract: consumer, builds, and sources | reference |
+| `contracts/content-model/checks.md` | `ascribe.toml` format contract: checks and the editor | reference |
+| `contracts/content-model/content.md` | `ascribe.toml` format contract: what pages hold | reference |
+| `contracts/content-model/output.md` | `ascribe.toml` format contract: where pages are published | reference |
+| `contracts/content-model/sources.md` | `ascribe.toml` format contract: what pages draw from | reference |
 | `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
+| `contracts/content-model/variation.md` | `ascribe.toml` format contract: how content varies | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
-| `contracts/json-reports/addresses.md` | JSON reports: `ascribe addresses` | reference |
+| `contracts/json-reports/addresses.md` | JSON reports: `ascribe permalinks` and `ascribe addresses` | reference |
 | `contracts/json-reports/diff.md` | JSON reports: `ascribe diff` and `ascribe drift` | reference |
-| `contracts/json-reports/model.md` | JSON reports: `ascribe model` | reference |
+| `contracts/json-reports/model.md` | JSON reports: `ascribe init` and `ascribe model` | reference |
 | `contracts/json-reports/questions.md` | JSON reports: the commands that answer questions | reference |
 | `contracts/json-reports/report.md` | JSON reports: `ascribe report` | reference |
-| `contracts/json-reports/sources.md` | JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks` | reference |
+| `contracts/json-reports/sources.md` | JSON reports: `ascribe sources` and `ascribe observe` | reference |
 | `contracts/json-reports/templates.md` | JSON reports: `ascribe templates` | reference |
 | `contracts/json-reports/versions.md` | JSON reports: `ascribe versions` | reference |
 | `contracts/navigation.md` | The navigation contract | reference |
@@ -1071,6 +1075,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent. | Yes |
 | `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
+| `dist/_redirects`, `dist/_headers`, and `dist/_ascribe/gone/` | `@ascribed/astro`, when it builds, in the Astro root's output folder: with `host` in `[consumer]`, the host's files, whose `_redirects` has a line for each address `ascribe.addresses` records a move or a retirement of, and in `_ascribe/gone/` under the base path, a page for each retired address, saying what was removed and why. Astro's starters leave `dist/` out of git. | No |
 
 ## What nothing declares
 

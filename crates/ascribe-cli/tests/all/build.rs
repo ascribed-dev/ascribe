@@ -791,7 +791,7 @@ fn each_line_points_agents_to_its_own_markdown_and_index() {
     assert!(
         index.starts_with(
             "# Home (self-managed 3.4)\n\n> Every page of this documentation, each linked to its \
-             Markdown version.\n\nThis is an older version. The current version is 3.5: \
+             Markdown version. This documentation describes self-managed 3.4.\n\nThis is an older version. The current version is 3.5: \
              [llms.txt](https://docs.example.com/docs/llms.txt).\n"
         ),
         "{index}"
