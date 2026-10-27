@@ -75,7 +75,7 @@ pub use builds::{
     diagnose_with, select_builds,
 };
 use checks::{check_examples, check_sources, check_unread_configs};
-pub use checks::{check_file, unread_config_issue};
+pub use checks::{check_file, unread_config_issue, with_phrases};
 pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
 pub use evidence::GATHERED as GATHERED_EVIDENCE;
 pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};

@@ -892,6 +892,9 @@ pub const TEMPLATE_PLACEHOLDER_PUBLISHED: DiagnosticSlug =
 /// `ASC287`, warning, file level: a content check (area `pages`).
 pub const GITHUB_ALERT: DiagnosticSlug = DiagnosticSlug("github-alert");
 
+/// `ASC288`, advice, file level: a content check (area `pages`).
+pub const PHRASE_TEXT_WRITTEN: DiagnosticSlug = DiagnosticSlug("phrase-text-written");
+
 /// The checks renamed, each by the name it had before, which still names
 /// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
 /// release (decision #953).
@@ -1174,6 +1177,7 @@ pub const ALL: &[DiagnosticSlug] = &[
     EXAMPLES_CONFIG_UNREAD,
     TEMPLATE_PLACEHOLDER_PUBLISHED,
     GITHUB_ALERT,
+    PHRASE_TEXT_WRITTEN,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1237,6 +1241,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     EXAMPLES_CONFIG_UNREAD,
     TEMPLATE_PLACEHOLDER_PUBLISHED,
     GITHUB_ALERT,
+    PHRASE_TEXT_WRITTEN,
 ];
 
 /// The configurable checks that are off unless a project names them in
@@ -1260,4 +1265,5 @@ pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
     (AVAILABILITY_LEFT_BEHIND, crate::Place::Entry),
     (TITLE_HEADING_DIFFERS, crate::Place::Page),
     (HTML_COMMENT, crate::Place::Block),
+    (PHRASE_TEXT_WRITTEN, crate::Place::Block),
 ];

@@ -1,0 +1,8 @@
+description: >-
+  A phrase's value isn't looked for in code, in the label of a reference
+  link or an autolink's text, after a backslash or between braces, or in a
+  heading marked `@term`, which names the term itself.
+spec: ["5.1", "5.4"]
+tags: [check]
+
+diagnostics: []

@@ -9,6 +9,6 @@ description: Run Quill in the browser with no local setup.
 
 Open the playground at play.quill.dev and paste a page of your docs.
 
-![The Quill playground](playground.png){width=600}
+![The {product} playground](playground.png){width=600}
 
 To keep your changes, [install the agent](install-agent.md).

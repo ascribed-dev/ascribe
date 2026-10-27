@@ -445,7 +445,7 @@ description: \"Replace the keys Quill signs releases with, without a release goi
 
 ## Overview
 
-This guide explains how to replace the keys Quill signs releases with.
+This guide explains how to replace the keys {product} signs releases with.
 
 ## Before you start
 
@@ -463,7 +463,7 @@ Before you rotate the keys, ensure:
 
 ## See also
 
-* [Install Quill](../install.md)
+* [Install {product}](../install.md)
 ";
 
 /// The phase's goal, in a copy of `examples/getting-started`: eject the

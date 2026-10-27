@@ -32,7 +32,7 @@ Write the phrase (`{version}`), not the text it stands for.
 - `@note {type=<type>}: <text>`, or `@note:` … `@end` around several blocks: a callout. Here: types `note`, `tip`, `important`, `warning`, `caution`
 - `@steps` on the line above an ordered list: the list is a procedure
 - `.<Title>` on its own line, then `@details:` … `@end`: collapsible content; the title is required
-- …and 4 more, in the directive reference below
+- …and 5 more, in the directive reference below
 
 ### Links
 

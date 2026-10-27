@@ -18,7 +18,7 @@ content-root = "docs"
 
 [phrases]
 product = "Quill"
-spare = "Nothing"
+spare = "Spare parts"
 
 [dimensions.deployment]
 values = ["cloud", "self-managed"]
@@ -144,7 +144,7 @@ fn a_model_change_runs_them_again() {
     client.settle();
     let config = f.path("ascribe.toml");
     client.open(&config, 1, MODEL);
-    let without = MODEL.replace("spare = \"Nothing\"\n", "");
+    let without = MODEL.replace("spare = \"Spare parts\"\n", "");
     client.replace(&config, 2, &without);
     client.settle();
     assert_eq!(client.codes(&config), ["feature-unused"]);
