@@ -147,6 +147,8 @@ fn canonical(file: &Path) -> Option<PathBuf> {
         Some(parent) if !parent.as_os_str().is_empty() => parent,
         _ => Path::new("."),
     };
+    // Outside FileSystem: where the folder of a file the command writes is,
+    // to ask git about it; nothing is read.
     Some(std::fs::canonicalize(folder).ok()?.join(name))
 }
 
