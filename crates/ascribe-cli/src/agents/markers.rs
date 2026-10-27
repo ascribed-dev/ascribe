@@ -114,6 +114,52 @@ impl Markers<'_> {
             Some(at) if text[..at].ends_with('\r') => "\r\n",
             _ => "\n",
         };
+        match self.span(text)? {
+            None => {
+                let mut out = text.to_owned();
+                if !out.is_empty() {
+                    if !out.ends_with('\n') {
+                        out.push_str(newline);
+                    }
+                    out.push_str(newline);
+                }
+                out.push_str(&self.block(body, "", newline));
+                Ok(out)
+            }
+            Some((start, end, indent)) => Ok(format!(
+                "{}{}{}",
+                &text[..start],
+                self.block(body, indent, newline),
+                &text[end..]
+            )),
+        }
+    }
+
+    /// `text` without this block, or `None` when it has none. A block at
+    /// the end of the file takes the blank line `place` put before it.
+    pub fn remove(&self, text: &str) -> Result<Option<String>, Damage> {
+        let Some((start, end, _)) = self.span(text)? else {
+            return Ok(None);
+        };
+        let mut before = &text[..start];
+        let after = &text[end..];
+        if after.is_empty() {
+            for blank in ["\r\n", "\n"] {
+                if let Some(kept) = before.strip_suffix(blank)
+                    && kept.ends_with('\n')
+                {
+                    before = kept;
+                    break;
+                }
+            }
+        }
+        Ok(Some(format!("{before}{after}")))
+    }
+
+    /// Where this block is in `text`: the offsets of its start marker's
+    /// line and of the end of its end marker's, and the start marker's
+    /// indentation; `None` when there are no markers.
+    fn span<'t>(&self, text: &'t str) -> Result<Option<(usize, usize, &'t str)>, Damage> {
         let mut starts = Vec::new();
         let mut ends = Vec::new();
         let mut indent = "";
@@ -131,23 +177,8 @@ impl Markers<'_> {
             offset += line.len();
         }
         match (starts.as_slice(), ends.as_slice()) {
-            ([], []) => {
-                let mut out = text.to_owned();
-                if !out.is_empty() {
-                    if !out.ends_with('\n') {
-                        out.push_str(newline);
-                    }
-                    out.push_str(newline);
-                }
-                out.push_str(&self.block(body, "", newline));
-                Ok(out)
-            }
-            ([start], [end]) if start < end => Ok(format!(
-                "{}{}{}",
-                &text[..*start],
-                self.block(body, indent, newline),
-                &text[*end..]
-            )),
+            ([], []) => Ok(None),
+            ([start], [end]) if start < end => Ok(Some((*start, *end, indent))),
             ([_], [_]) | ([], [_]) => Err(Damage::NoStart),
             ([_], []) => Err(Damage::NoEnd),
             _ => Err(Damage::Twice),
@@ -233,6 +264,25 @@ mod tests {
             placed.ends_with("Mine.\n<!-- ascribe:agents end -->\n"),
             "{placed}"
         );
+    }
+
+    #[test]
+    fn removing_a_block_undoes_placing_it() {
+        for text in ["# Rules\n", "# Rules\r\n", "# Rules", ""] {
+            let placed = MARKERS.place(Some(text), "Hello.\n").unwrap_or_default();
+            let expected = if text.is_empty() || text.ends_with('\n') {
+                text.to_owned()
+            } else {
+                format!("{text}\n")
+            };
+            assert_eq!(MARKERS.remove(&placed), Ok(Some(expected)), "{text:?}");
+        }
+        let text = "# Rules\n\n<!-- ascribe:agents start (x) -->\nOld.\n<!-- ascribe:agents end -->\n\nMore.\n";
+        assert_eq!(
+            MARKERS.remove(text),
+            Ok(Some("# Rules\n\n\nMore.\n".to_owned()))
+        );
+        assert_eq!(MARKERS.remove("# Rules\n"), Ok(None));
     }
 
     #[test]
