@@ -1,8 +1,9 @@
 //! Renaming without an editor, for `ascribe rename`: what the editor's
 //! rename (`F2`) and its edits when a file moves do, asked by name instead of
 //! at a position, and returned as each file's text after. The project is
-//! loaded as the server loads it, and the edits are the server's own
-//! (`refactor.rs`), so the command and the editor change the same places.
+//! loaded as the server loads it (`project.rs`), and the edits are the
+//! server's own (`refactor.rs`), so the command and the editor change the
+//! same places.
 //!
 //! Nothing is written here: the caller writes the files, and moves the one
 //! that moves.
@@ -17,9 +18,9 @@ use lsp_types::{
     TextDocumentPositionParams, WorkspaceEdit,
 };
 
-use crate::core::Core;
 use crate::nav::Ctx;
 use crate::position::Encoding;
+use crate::project::{Load, Loaded, load};
 use crate::refactor;
 use crate::uri::{path_to_uri, uri_to_path};
 
@@ -112,18 +113,22 @@ impl Coded for RenameError {
 /// name can't be its name, or the files can't be changed in place
 /// ([`RenameError::Refused`]).
 pub fn rename(config: &Path, renaming: &Renaming) -> Result<Renamed, RenameError> {
-    let core = load(config);
-    if core.model_problem.is_some() {
-        return Err(model_problem());
-    }
-    let ctx = core
-        .project_nav_target()
+    let project = match load(config) {
+        Load::Loaded(project) => Some(*project),
+        Load::Problem(_) => return Err(model_problem()),
+        Load::Unread => None,
+    };
+    let ctx = project
+        .as_ref()
+        .and_then(Loaded::project_ctx)
         .ok_or_else(|| refused("The project has no pages to rename in."))?;
     let mut outside = BTreeMap::new();
     let (edit, moved) = match renaming {
         Renaming::Phrase { key, new } => (phrase(&ctx, key, new, &mut outside)?, None),
         Renaming::Value { value, new } => (value_edit(&ctx, value, new, &mut outside)?, None),
-        Renaming::Id { file, id, new } => (heading_id(&core, &ctx, file, id, new)?, None),
+        Renaming::Id { file, id, new } => {
+            (heading_id(project.as_ref(), &ctx, file, id, new)?, None)
+        }
         Renaming::File { from, to } => {
             let (edit, moved) = file_move(&ctx, from, to)?;
             (edit, Some(moved))
@@ -142,23 +147,6 @@ pub fn rename(config: &Path, renaming: &Renaming) -> Result<Renamed, RenameError
         .filter_map(Result::transpose)
         .collect::<Result<_, _>>()?;
     Ok(Renamed { files, moved })
-}
-
-/// The project of `config`, an `ascribe.toml`, loaded as the server loads
-/// it.
-fn load(config: &Path) -> Core {
-    let (out, sent) = crossbeam_channel::unbounded();
-    let mut core = Core::new(out);
-    let config = normalize(config);
-    core.folders = config.parent().map(Path::to_owned).into_iter().collect();
-    // A command runs it, and a command reads a source wherever the model
-    // says.
-    core.bound_sources = false;
-    core.encoding = Encoding::Utf8;
-    core.config = Some(config);
-    core.start();
-    sent.try_iter().for_each(drop);
-    core
 }
 
 fn model_problem() -> RenameError {
@@ -182,7 +170,7 @@ thread_local! {
 /// The other project can't take the rename: [`RenameError::Refused`],
 /// naming the file.
 #[allow(clippy::mutable_key_type)]
-pub(crate) fn in_holders(
+pub fn in_holders(
     ctx: &Ctx,
     renaming: &Renaming,
     mut edit: WorkspaceEdit,
@@ -251,21 +239,23 @@ pub(crate) fn in_holders(
 /// What renaming `renaming` changes in the project of `config`, as each
 /// file's text before and its edits; nothing when it has no pages.
 fn holder_changes(config: &Path, renaming: &Renaming) -> Result<Changes, RenameError> {
-    let core = load(config);
-    if let Some(problem) = &core.model_problem {
-        // A file that only holds what other projects take has no content
-        // root, and so no pages.
-        let no_pages = problem
-            .diagnostics
-            .iter()
-            .all(|d| d.slug == ascribe_core::diagnostics::MODEL_CONTENT_ROOT_MISSING);
-        return if no_pages {
-            Ok(Changes::new())
-        } else {
-            Err(model_problem())
-        };
-    }
-    let Some(ctx) = core.project_nav_target() else {
+    let project = match load(config) {
+        Load::Loaded(project) => *project,
+        Load::Unread => return Ok(Changes::new()),
+        Load::Problem(diagnostics) => {
+            // A file that only holds what other projects take has no
+            // content root, and so no pages.
+            let no_pages = diagnostics
+                .iter()
+                .all(|d| d.slug == ascribe_core::diagnostics::MODEL_CONTENT_ROOT_MISSING);
+            return if no_pages {
+                Ok(Changes::new())
+            } else {
+                Err(model_problem())
+            };
+        }
+    };
+    let Some(ctx) = project.project_ctx() else {
         return Ok(Changes::new());
     };
     let mut outside = BTreeMap::new();
@@ -362,7 +352,7 @@ fn value_edit(
 }
 
 fn heading_id(
-    core: &Core,
+    loaded: Option<&Loaded>,
     project: &Ctx,
     file: &RelPath,
     id: &str,
@@ -370,8 +360,8 @@ fn heading_id(
 ) -> Result<WorkspaceEdit, RenameError> {
     let missing = || RenameError::Missing(format!("`{file}#{id}` doesn't exist."));
     let path = normalize(&project.content_dir.join(file.as_str()));
-    let ctx = path_to_uri(&path)
-        .and_then(|uri| core.nav_target(&uri))
+    let ctx = loaded
+        .and_then(|loaded| loaded.ctx(&path))
         .ok_or_else(|| RenameError::Missing(format!("`{file}` isn't a page or fragment.")))?;
     let index = ctx.file().ok_or_else(missing)?;
     let at = index

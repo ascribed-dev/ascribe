@@ -52,7 +52,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] Quick fixes and other code actions (`CodeActionRequest`; `crates/ascribe-lsp/src/code_action.rs`).
 - [ ] Formatting (`Formatting`; `crates/ascribe-lsp/src/formatting.rs`), which calls `ascribe-fmt`.
 - [ ] Folding ranges (`FoldingRangeRequest`; `crates/ascribe-lsp/src/folding.rs`): a new container that should fold to its first line, as a container `@memo` does.
-- [ ] Rename (`Rename`), what can be renamed at a position (`PrepareRenameRequest`), and the edits when a file is moved (`WillRenameFiles`), all in `crates/ascribe-lsp/src/refactor.rs`.
+- [ ] Rename (`Rename`), what can be renamed at a position (`PrepareRenameRequest`), and the edits when a file is moved (`WillRenameFiles`), all in `crates/ascribe-edit/src/refactor.rs`, which `ascribe rename` makes too.
 - [ ] The command a CodeLens runs (`ExecuteCommand`, `ascribe.openFile`).
 - [ ] The page preview (`ascribe/preview`; `crates/ascribe-lsp/src/preview.rs`).
 - [ ] Review's changes (`ascribe/review/setBase`, `ascribe/review/changes`, and `ascribe/review/baseFile`; `crates/ascribe-lsp/src/review.rs`).
