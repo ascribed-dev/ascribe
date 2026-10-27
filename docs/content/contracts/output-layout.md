@@ -43,6 +43,8 @@ Only pages the build publishes are written (SPEC §9.3); fragments never are.
 |---|---|
 | `plain` | `guides/my-setup.md`: the page's Astro entry id with `.md` (the root `index.md` stays `index.md`) |
 
+A link in these pages to a page the build publishes, a glossary link included, is the absolute URL of that page's Markdown version (`https://docs.example.com/docs/guides/my-setup.md`), and its fragment, when it names a heading, is the anchor a Markdown reader gives that heading there: the `github` slug of the heading's text as the page's Markdown writes it, numbered across the page as the slugger numbers. That's the heading's page id (SPEC §5.5), unless the heading has an `@id`, or is in a variant arm, whose label its heading ends with in the Markdown (SPEC §9.4); either way it's the heading the page id names on the page. A link out of a line of a versioned build, a link to an operation, and the sections in `_ascribe/help.json` (§1.7) keep the HTML address, as the `plain` output without agents does (decision #1023).
+
 Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §15); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
