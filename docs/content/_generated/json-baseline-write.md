@@ -38,7 +38,7 @@
       "type": "string"
     },
     "changed": {
-      "description": "Whether the file changed: it's new, or its text differs.",
+      "description": "Whether the file changed: it's new, or its text differs. With\n`--dry-run`, whether it would.",
       "type": "boolean"
     },
     "created": {
@@ -67,6 +67,10 @@
     "skipped": {
       "$ref": "#/$defs/Skipped",
       "description": "How many errors and warnings it left out, which a baseline never\nholds."
+    },
+    "written": {
+      "description": "Whether the file was written: it changed, without `--dry-run`.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -75,6 +79,7 @@
     "file",
     "created",
     "changed",
+    "written",
     "entries",
     "files",
     "added",

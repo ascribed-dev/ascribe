@@ -7,7 +7,7 @@
       "type": "string"
     },
     "changed": {
-      "description": "Whether the file changed: some entry was removed.",
+      "description": "Whether the file changed: some entry was removed. With `--dry-run`,\nwhether it would.",
       "type": "boolean"
     },
     "entries": {
@@ -37,6 +37,10 @@
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
       "type": "integer"
+    },
+    "written": {
+      "description": "Whether the file was written: it changed, without `--dry-run`.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -45,6 +49,7 @@
     "file",
     "found",
     "changed",
+    "written",
     "entries",
     "files",
     "removed"

@@ -35,6 +35,8 @@ mod diff;
 mod drift;
 #[path = "all/fmt.rs"]
 mod fmt;
+#[path = "all/guard.rs"]
+mod guard;
 #[path = "all/hook.rs"]
 mod hook;
 #[path = "all/init.rs"]

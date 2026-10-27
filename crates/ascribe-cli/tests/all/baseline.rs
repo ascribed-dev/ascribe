@@ -116,7 +116,7 @@ fn write_run_twice_gives_the_same_file_byte_for_byte() {
     let dir = project(MODEL);
     assert_eq!(code_of(&ascribe(dir.path(), &["baseline", "write"])), 0);
     let first = fs::read(dir.path().join("ascribe.baseline")).unwrap();
-    let out = ascribe(dir.path(), &["baseline", "write"]);
+    let out = ascribe(dir.path(), &["baseline", "write", "--force"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
@@ -143,7 +143,10 @@ fn write_keeps_what_it_had_adds_only_advice_and_says_what_it_skipped() {
         "docs/new.md",
         &page("New", "A label that's long"),
     );
-    let out = ascribe(dir.path(), &["baseline", "write", "--format", "json"]);
+    let out = ascribe(
+        dir.path(),
+        &["baseline", "write", "--force", "--format", "json"],
+    );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let written = json(&out);
     assert_eq!(written["schema_version"], 1);
@@ -160,7 +163,7 @@ fn write_keeps_what_it_had_adds_only_advice_and_says_what_it_skipped() {
     let text = read(dir.path(), "ascribe.baseline");
     assert!(!text.contains("page-orphan"), "{text}");
 
-    let out = ascribe(dir.path(), &["baseline", "write"]);
+    let out = ascribe(dir.path(), &["baseline", "write", "--force"]);
     assert!(
         stdout(&out).contains(
             "skipped 1 warning, since a baseline holds advice only; to put one off, lower its check to \"advice\" in [checks] in ascribe.toml, then run `ascribe baseline write` again"
@@ -189,7 +192,7 @@ fn prune_removes_the_entries_that_match_nothing() {
         stdout(&out)
     );
 
-    let out = ascribe(dir.path(), &["baseline", "prune"]);
+    let out = ascribe(dir.path(), &["baseline", "prune", "--force"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
@@ -197,7 +200,10 @@ fn prune_removes_the_entries_that_match_nothing() {
     );
     assert!(!read(dir.path(), "ascribe.baseline").contains("docs/sync.md"));
 
-    let out = ascribe(dir.path(), &["baseline", "prune", "--format", "json"]);
+    let out = ascribe(
+        dir.path(),
+        &["baseline", "prune", "--force", "--format", "json"],
+    );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let pruned = json(&out);
     assert_eq!(pruned["schema_version"], 1);
@@ -216,7 +222,10 @@ fn prune_removes_the_entries_that_match_nothing() {
 #[test]
 fn prune_without_a_baseline_writes_nothing() {
     let dir = project(MODEL);
-    let out = ascribe(dir.path(), &["baseline", "prune", "--format", "json"]);
+    let out = ascribe(
+        dir.path(),
+        &["baseline", "prune", "--force", "--format", "json"],
+    );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(json(&out)["found"], false);
     assert!(!dir.path().join("ascribe.baseline").exists());
