@@ -8433,8 +8433,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1187"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "CLI conventions: bring the commands in line, one group at a time"
     },
     {
@@ -8579,7 +8582,7 @@
         "agents"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "`agents sync`: keep the page types in AGENTS.md, and give the skill's commands the project's `--config`"
     },
     {
@@ -8601,6 +8604,40 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "`agents sync --target claude` adds a second `@AGENTS.md` to a CLAUDE.md that already imports it"
+    },
+    {
+      "content": {
+        "body": "Found reviewing #1185, which has the skill tell agents to run `ascribe addresses move --config <folder> <old> <page>` and `addresses retire --config <folder> <old>` from the repository's root.\n\n`ascribe addresses move --help` says `OLD` and `NEW` are \"a page's path, from the current folder or from the content root\". With `--config`, a path from the current folder isn't accepted. In a repository with `examples/quill` copied to `docs/` (so its content root is `docs/docs/`), run from the repository's root:\n\n- `ascribe addresses move --config docs docs/docs/webhooks.md docs/docs/hooks.md` exits 2: \"`docs/docs/hooks.md` isn't a page of the project\". `… webhooks.md hooks.md` works.\n- `ascribe addresses retire --config docs docs/docs/quickstart.md --reason x` exits 0 and records `docs/docs/quickstart.md` as retired. That's no page's address, so `quickstart.md` is still lost and nothing says so at the time.\n\n## Done looks like\n\n- With `--config`, a page's path from the current folder works for `addresses move` and `addresses retire`, as the help says. Otherwise the help says what's true, and `retire` refuses an old path that resolves outside the content root.\n- A test in `crates/ascribe-cli/tests/all/` runs both from a folder above the project with `--config`.",
+        "number": 1186,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`addresses move`/`retire` with `--config` read a page's path from the content root, not the current folder",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1186"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDy_yg",
+      "labels": [
+        "agents"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`addresses move`/`retire` with `--config` read a page's path from the content root, not the current folder"
+    },
+    {
+      "content": {
+        "body": "This is the rest of #1134, as #1134 was the rest of #965. PR #1187 brought the `--format json` group into line, so `Rule::Json` has no exceptions left. This issue covers the groups still listed in `EXCEPTIONS` in `crates/ascribe-cli/src/conventions.rs`. Each pull request takes one group, brings its commands into line with CONTRIBUTING.md's \"Command-line conventions\" (decision #965), and removes their entries. The test fails on an entry that's no longer needed, so the list can only shrink.\n\nThe exceptions left, by rule:\n\n- **`--dry-run` and `--force` (the git guard):** `init`, `check` (`--fix`), `fmt`, `rename`, `baseline write`, `baseline prune`, `permalinks sync`, `permalinks retire`, `addresses init`, `addresses move`, `addresses retire`, `sources fetch`, `sources update`, `observe`, `templates eject`, `vale eject`, `agents sync`, `agents index`.\n- **`--exit-code`:** `check`. Its `--deny-warnings` becomes an alias of `--exit-code=warning`. This waits for #1022 (PR #1135), which changes `check`'s output options.\n- **`concise` beside `text`:** every command with `--format` apart from `check`, `sources fetch`, `templates list`, `vale eject`, `agents sync`, and `agents prompt`: 35 commands. `concise` is an alias of `text` where a command has no one-line form. `answer::TextFormat` (added in #1187) already has the alias, and most of these commands use `answer::Format` or an enum of their own.\n\nThe test can't read two of the conventions from `clap`, so the pull requests that change these commands need output tests for them:\n\n- `--check` prints each change as a unified diff (`fmt`, `permalinks sync`, `agents sync`, `observe`).\n- A revision given where a path goes is answered with `--base`. `drift` does this already. `diff` doesn't yet.\n\nA renamed option keeps its old spelling as a hidden alias for a release. `observe --check` keeps working in CI throughout. #979 also changes `observe`, so whichever of the two lands second follows the other.\n\n## Done looks like\n\n- `EXCEPTIONS` in `crates/ascribe-cli/src/conventions.rs` is empty.\n- `fmt --check` prints a unified diff, and `diff HEAD` says `--base HEAD`, each with a test.",
+        "number": 1188,
+        "repository": "ascribed-dev/ascribe",
+        "title": "CLI conventions: the groups after --format json",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1188"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhDzIgE",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "CLI conventions: the groups after --format json"
     }
   ]
 }
