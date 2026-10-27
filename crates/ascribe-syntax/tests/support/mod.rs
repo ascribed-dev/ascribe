@@ -106,6 +106,18 @@ impl Checker<'_> {
         }
     }
 
+    /// A span that begins a line's worth of content but may end with its
+    /// last block's whitespace: it isn't empty and doesn't begin with
+    /// whitespace.
+    fn tight_start(&mut self, span: Span, what: &str) {
+        let text = self.text(span);
+        if text.is_empty() {
+            self.problem(what, span, "empty");
+        } else if text.starts_with([' ', '\t', '\n', '\r']) {
+            self.problem(what, span, "starts with whitespace");
+        }
+    }
+
     /// Every part of every link reference definition is where the source
     /// says: `[label]:` then a destination, then perhaps a title, and the
     /// definition ends with the last of them.
@@ -284,7 +296,10 @@ impl Checker<'_> {
                 }
             }
             BlockKind::Container(c) => {
-                self.tight(span, "container");
+                // Unclosed, it ends where its last block does, which may end
+                // with whitespace, as a list item or code block can; the
+                // check of its end below holds that.
+                self.tight_start(span, "container");
                 self.opener(&c.opener, span, span.start(), "container opener");
                 self.blocks(&c.children, span, "container child");
                 self.closer(c.end.as_ref(), span);
@@ -311,7 +326,9 @@ impl Checker<'_> {
                 }
             }
             BlockKind::Group(g) => {
-                self.tight(span, "group");
+                // Unclosed, it ends where its last arm does, as a container
+                // does.
+                self.tight_start(span, "group");
                 if g.arms.is_empty() {
                     self.problem("group", span, "has no arms");
                 }
