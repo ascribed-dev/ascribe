@@ -67,6 +67,7 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | | | `Parser` | Two fields: the definitions found so far, and the last one `parse_reference_inline` read |
 | | | `resolve_reference_link_definitions` | Takes the content's first line and column offsets, and records each definition with its positions (`ascribe::locate`); the setext and paragraph call sites pass them |
 | | | `parse_reference_inline` | `&mut self` (was `&self`); records the label, destination, and title ranges, and the cleaned values, in the field above. The parsing itself is unchanged |
+| `src/parser/table.rs` | 1 | `try_inserting_table_header_paragraph` | The paragraph left before a table's header line ends after its last line's whole line ending (upstream skips one byte, so after `\r\n` the last line counts as empty and the paragraph's span ends where it starts, [#1139](https://github.com/ascribed-dev/ascribe/issues/1139)). **Candidate to upstream** (comrak bug; tested by `crates/ascribe-syntax/tests/all/spans.rs`) |
 | `src/parser/inlines.rs` | 1 | `close_bracket_match` | After an image, skips the attribute block that follows it directly (`![alt](src){width=600}`), so its contents are never parsed as emphasis, links, or code. The scan is `ascribe::image_attributes_len`, in Ascribe's own file |
 | `src/html.rs` | 1 | `format_node_default` | Renders an Ascribe line with `ascribe::render_html` |
 | `src/cm.rs` | 2 | `CommonMarkFormatter::format_node` | Formats an Ascribe line |
@@ -75,7 +76,7 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | `src/tests/sourcepos.rs` | 3 | `ASCRIBE_LINE`, `node_values`, `sourcepos` | Upstream's test requires a case for every node type |
 | `src/tests/pathological.rs` | 1 | `pathological_emphases` | A 10 second timeout, was 4: the debug build passed 4 seconds on CI's Linux runner ([#157](https://github.com/ascribed-dev/ascribe/issues/157)) |
 
-In total: 76 lines added and 3 changed in 8 upstream source files (48 of the added lines are code; the rest are comments), in 20 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
+In total: 78 lines added and 4 changed in 9 upstream source files (48 of the added lines are code; the rest are comments), in 21 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
 
 Raw containers added 10 lines and changed 6 in `parser/mod.rs`, in 3 hunks (the `AscribeLine` arm of `check_open_blocks_inner` split by `raw_container`, a condition in `open_new_blocks`, and an arm in `add_text_to_container`), with the scanner and the hooks in Ascribe's own two files. They add no node and no `NodeValue` variant: the opener's `NodeAscribeLine` carries `raw_container`.
 
