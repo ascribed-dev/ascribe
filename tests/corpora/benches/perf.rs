@@ -109,7 +109,7 @@ fn phases(name: &str, dir: &Path) {
     let config = dir.join("ascribe.toml");
     let start = Instant::now();
     let project = ascribe_check::load(&config)
-        .map(|w| Project::new(w.snapshot()))
+        .map(|w| Project::new(w.snapshot()).with_plain_markdown(ascribe_emit::plain_markdown))
         .expect("loads");
     let load = start.elapsed();
     let start = Instant::now();
