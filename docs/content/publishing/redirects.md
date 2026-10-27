@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Keep the addresses you've published
-description: "Record where a page went when it moves or goes, so a link to its old address still leads somewhere: ascribe.addresses, the check that compares with the base, and the redirects the build writes."
+description: "Record where a page went when it moves or goes, so a link to its old address still leads somewhere: `ascribe.addresses`, the check that compares with the base, and the redirects the build writes."
 available: ascribe 0.4.4
 ---
 

@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Link to operations in the editor
-description: "Complete an OpenAPI operation after a link's #, see its method, path, and summary on hover, open it in the spec, and fix a link whose operation was renamed, in VS Code or any editor with the language server."
+description: "Complete an OpenAPI operation after a link's `#`, see its method, path, and summary on hover, open it in the spec, and fix a link whose operation was renamed, in VS Code or any editor with the language server."
 available: ascribe 0.4.4
 ---
 

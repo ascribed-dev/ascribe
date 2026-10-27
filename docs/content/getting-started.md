@@ -117,11 +117,13 @@ Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.
 
 ## Format it
 
+`ascribe fmt` rewrites directives and attribute blocks into their canonical spelling, and changes nothing else:
+
 ```sh
 npx ascribe fmt
 ```
 
-rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
+`ascribe fmt --check` reports what would change, for CI.
 
 ## Build it
 

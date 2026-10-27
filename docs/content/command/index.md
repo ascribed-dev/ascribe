@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Command reference
-description: "The ascribe commands: their options, outputs, and exit codes."
+description: "The `ascribe` commands: their options, outputs, and exit codes."
 permalink: cli-reference
 ---
 

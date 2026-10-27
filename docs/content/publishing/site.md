@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "The head, sitemap, `robots.txt`, and headers"
-description: "What @ascribed/astro writes from the page records for search engines and crawlers: each page's head, the sitemap, robots.txt, and the Markdown versions' response headers."
+description: "What `@ascribed/astro` writes from the page records for search engines and crawlers: each page's head, the sitemap, `robots.txt`, and the Markdown versions' response headers."
 permalink: search-engines
 ---
 
