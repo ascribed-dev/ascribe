@@ -266,3 +266,17 @@
 **Fix:** Write the callout as a `@note` of the same type: GitHub's `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` are `@note`'s types `note`, `tip`, `important`, `warning`, and `caution`. The fix does it, keeping the quote's content: `@note {type=tip}: …` for one paragraph, or `@note {type=tip}:` and `@end` around several blocks. Every output then shows it as a callout: the site as a note, and the Markdown output as a block quote that starts with its type, which reads the same on GitHub and anywhere else.
 
 **Read more:** [`@note`](../writing/directives.md#note) in the directive reference.
+
+### ASC288 `phrase-text-written`
+@id {permalink=true}: ASC288
+@summary: A page or a fragment writes out a declared phrase's value in its text, where it could write the phrase.
+
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [review](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [acknowledged](../glossary.md#acknowledgement) with `@intended` above the block, or under the heading for a heading · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+
+**When:** A page or a fragment writes out a declared phrase's value in its text, where it could write the phrase. A value matches only as a whole word, or a whole version, with its case as written, and a value of one character or of digits alone isn't looked for; when one value is inside another, only the longer is reported. Code, frontmatter, link destinations, the label of a reference link, and a heading marked `@term` aren't looked in.
+
+**Message:** `{text}` is the value of the phrase `{key}`; write `{key}`, so the page changes with the value
+
+**Fix:** Write the phrase in braces, as `{product}`, where the page means its value, so the page changes when `ascribe.toml` does: a version, a URL, or a name written out goes stale at the next release. The fix does it, and is safe for a value that can't be an ordinary word: one with a space or a symbol in it, such as a version or a URL. A heading that takes the phrase needs an `@id` too, so its link stays the same when the value changes. Where the text means what it says whatever the value becomes, as a changelog's version does, acknowledge it with `@intended {check=phrase-text-written}` above its block.
+
+**Read more:** [Phrases](../writing/inline.md#phrases) in the phrases and links reference.

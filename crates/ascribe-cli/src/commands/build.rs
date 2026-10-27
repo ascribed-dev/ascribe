@@ -14,9 +14,10 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{Checked, LoadError, Project, Reported, Request, Severity, diagnose_with};
+use ascribe_check::{Checked, Project, Reported, Request, Severity, diagnose_with};
 use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions, Written};
 use ascribe_model::Build;
+use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
@@ -319,13 +320,16 @@ fn report_failure(
             FileTable::of_model(String::new()),
             Vec::new(),
         ),
-        Failure::Load(LoadError::Model { text, diagnostics }) => (
+        Failure::Load(LoadError::Model { text, issues }) => (
             format!(
                 "{} has errors, so nothing can be built",
                 ascribe_check::MODEL_FILE
             ),
             FileTable::of_model(text),
-            diagnostics,
+            issues
+                .iter()
+                .map(ascribe_check::Diagnostic::from_issue)
+                .collect(),
         ),
         Failure::Load(e @ LoadError::Read { .. }) => (
             e.to_string(),

@@ -19,7 +19,6 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
-use ascribe_check::Project;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_diff::Repository;
 use clap::ValueEnum;
@@ -439,7 +438,7 @@ fn patched_files(command: &Value) -> Vec<String> {
 fn by_project(files: &[PathBuf]) -> Vec<(PathBuf, Vec<PathBuf>)> {
     let mut groups: Vec<(PathBuf, Vec<PathBuf>)> = Vec::new();
     for file in files {
-        let Some(config) = file.parent().and_then(Project::find_config) else {
+        let Some(config) = file.parent().and_then(ascribe_workspace::find_config) else {
             continue;
         };
         let config = normalize(&config);
@@ -458,7 +457,7 @@ fn changed_projects(cwd: &Path) -> Vec<PathBuf> {
     let repository = match Repository::discover(cwd) {
         Ok(repository) => repository,
         Err(_) => {
-            return Project::find_config(cwd)
+            return ascribe_workspace::find_config(cwd)
                 .map(|c| normalize(&c))
                 .into_iter()
                 .collect();
@@ -477,7 +476,7 @@ fn changed_projects(cwd: &Path) -> Vec<PathBuf> {
         if !model && path.extension() != Some("md") {
             continue;
         }
-        let Some(config) = file.parent().and_then(Project::find_config) else {
+        let Some(config) = file.parent().and_then(ascribe_workspace::find_config) else {
             continue;
         };
         let config = normalize(&config);

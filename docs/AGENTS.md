@@ -40,6 +40,7 @@ Each one's syntax is in the `ascribe` skill's `references/directives.md`, and in
 - `@steps`
 - `@details`
 - `@snippet`: sources `code`
+- `@intended`
 - `@memo`
 - `@term`
 - `@summary`

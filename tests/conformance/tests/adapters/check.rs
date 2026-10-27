@@ -11,12 +11,13 @@
 
 use std::sync::Arc;
 
-use ascribe_check::{Acknowledgements, ModelFile, Project, apply_levels, check_files};
+use ascribe_check::{Acknowledgements, Project, apply_levels, check_files};
 use ascribe_conformance::{
     AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic, RelatedPlace,
 };
 use ascribe_core::{RelPath, WideEncoding};
 use ascribe_resolve::{DiskFs, Layout};
+use ascribe_workspace::ModelFile;
 
 /// Handles the cases that expect file-level diagnostics.
 pub struct CheckAdapter;
@@ -72,7 +73,10 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
         ),
         None => None,
     };
-    Ok(Project::load_from(model, content_root, fs).with_today(today))
+    Ok(
+        Project::from_loaded(ascribe_check::LOADER.load_from(model, content_root, fs))
+            .with_today(today),
+    )
 }
 
 /// `check_files` on the case's project, without what an acknowledgement

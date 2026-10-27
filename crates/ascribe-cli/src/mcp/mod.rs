@@ -14,7 +14,6 @@ mod tools;
 
 use std::path::{Path, PathBuf};
 
-use ascribe_check::Project;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_mcp::{
     Handler, Prompt, PromptArgument, PromptText, Resource, ResourceTemplate, ResourceText,
@@ -105,12 +104,12 @@ impl Server {
     /// folder from the working directory.
     fn projects(&self) -> Vec<String> {
         let mut dirs = Vec::new();
-        if let Some(config) = Project::find_config(&self.cwd)
+        if let Some(config) = ascribe_workspace::find_config(&self.cwd)
             && let Some(dir) = config.parent()
         {
             dirs.push(dir.to_owned());
         }
-        dirs.extend(Project::find_below(&self.cwd, MAX_PROJECTS));
+        dirs.extend(ascribe_workspace::find_below(&self.cwd, MAX_PROJECTS));
         dirs.sort();
         dirs.dedup();
         dirs.into_iter()
@@ -138,7 +137,8 @@ impl Server {
     fn model_summary(&self, project: &str) -> Result<String, String> {
         let config =
             answer::locate(&self.global(), Some(Path::new(project))).map_err(|e| e.to_string())?;
-        let file = Project::load_model_bounded(&config, self.cache.bound())
+        let file = ascribe_check::LOADER
+            .load_model_bounded(&config, self.cache.bound())
             .map_err(|e| answer::Stop::Load(crate::context::Failure::Load(e)).message())?;
         let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
         let loaded = answer::load(&self.cache, &self.global(), Some(Path::new(project)))

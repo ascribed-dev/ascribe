@@ -11,9 +11,10 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use ascribe_check::{Project, SourceFile, check_files};
+use ascribe_check::{Project, check_files};
 use ascribe_core::{FileId, RelPath};
 use ascribe_resolve::{Change, IncrementalProject, Layout, MemoryFs, Snapshot};
+use ascribe_workspace::SourceFile;
 
 const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n";
 

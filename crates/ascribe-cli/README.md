@@ -6,7 +6,7 @@ The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`
 |---|---|
 | `src/cli.rs` | The command line: options every subcommand shares, and the subcommands. Its header says what a new subcommand needs. |
 | `src/commands/` | One module per subcommand, each with an `Args` type and a `run`: the arguments, one call into a library (the [command entries](../../ARCHITECTURE.md#each-commands-entry)), and the report |
-| `src/context.rs` | Finding and loading the project: `--config`, or the nearest `ascribe.toml` (`ascribe_check::Project::locate`), then `Project::load` |
+| `src/context.rs` | Finding and loading the project: `--config`, or the nearest `ascribe.toml` (`ascribe_workspace::locate`), then `Project::load` |
 | `src/commands/diff.rs` | `ascribe diff`: calls `ascribe_diff::diff_project`, and writes the report as text, JSON, or HTML |
 | `src/commands/drift.rs` | `ascribe drift`: calls `ascribe_diff::drift_project`, and writes its groups as text, JSON, or Markdown for a CI job's summary |
 | `src/commands/sources.rs` | `ascribe sources fetch`, `status`, and `update`: calls `ascribe_sources`, and `update` then `ascribe_diff::drift_project` for the pages whose examples changed |

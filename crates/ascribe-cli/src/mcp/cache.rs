@@ -17,9 +17,10 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::SystemTime;
 
-use ascribe_check::{LoadError, MODEL_FILE, Project};
+use ascribe_check::{MODEL_FILE, Project};
 use ascribe_core::path::normalize;
 use ascribe_model::{LOCK_FILE, PERMALINKS_FILE, SourceBound};
+use ascribe_workspace::LoadError;
 
 use crate::answer::{Loaded, Projects};
 

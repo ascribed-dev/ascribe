@@ -804,7 +804,7 @@ fn commands_of(given: Option<&str>, here: &Path, root: &Path) -> (String, String
         return (runs.clone(), runs);
     }
     // Outside FileSystem: the repository's other projects.
-    let mut projects = Project::find_below(root, usize::MAX);
+    let mut projects = ascribe_workspace::find_below(root, usize::MAX);
     if root.join(ascribe_check::MODEL_FILE).is_file() {
         projects.push(root.to_owned());
     }
@@ -829,7 +829,7 @@ fn config_of(prefix: &RelPath, here: &Path, root: &Path) -> Option<String> {
         return None;
     }
     // Outside FileSystem: the repository's other projects.
-    let projects = Project::find_below(root, 2);
+    let projects = ascribe_workspace::find_below(root, 2);
     let only = projects == [here] && !root.join(ascribe_check::MODEL_FILE).is_file();
     only.then(|| prefix.as_str().to_owned())
 }

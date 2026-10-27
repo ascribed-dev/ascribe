@@ -9,7 +9,8 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{LocateError, MODEL_FILE, Project};
+use ascribe_check::{MODEL_FILE, Project};
+use ascribe_workspace::LocateError;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 
@@ -417,7 +418,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         Ok(config) => vec![config],
         // Above several projects and in none: each project's files.
         Err(LocateError::NotFound { dir, below }) if !below.is_empty() => {
-            let below = Project::find_below(&dir, usize::MAX);
+            let below = ascribe_workspace::find_below(&dir, usize::MAX);
             let names: Vec<String> = below.iter().map(|d| shown(d)).collect();
             let _ = writeln!(
                 err,

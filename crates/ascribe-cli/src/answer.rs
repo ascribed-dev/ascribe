@@ -10,10 +10,11 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 
-use ascribe_check::{Found, LoadError, LocateError, MODEL_FILE, Project};
+use ascribe_check::{Found, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, RelPath, diagnostics};
 use ascribe_query::QueryError;
+use ascribe_workspace::{LoadError, LocateError};
 use clap::ValueEnum;
 use serde::Serialize;
 
@@ -46,7 +47,7 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
     };
     let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
     let start = normalize(&cwd.join(path));
-    Project::find_config(&start).ok_or_else(|| LocateError::not_found(start))
+    ascribe_workspace::find_config(&start).ok_or_else(|| LocateError::not_found(start))
 }
 
 /// A loaded project, and what's kept with it between questions.
@@ -215,19 +216,17 @@ impl Stop {
 /// What a project that couldn't be loaded is reported as.
 fn failure_message(failure: &Failure) -> String {
     match failure {
-        Failure::Load(LoadError::Model {
-            diagnostics: found, ..
-        }) => {
+        Failure::Load(LoadError::Model { issues, .. }) => {
             let mut text = format!("{MODEL_FILE} has errors; `ascribe check` lists them");
             // An unknown key's message names this Ascribe's version, which
             // says when the project is written for a newer one: so the
             // first is quoted, where `ascribe check` isn't run.
-            if let Some(unknown) = found
+            if let Some(unknown) = issues
                 .iter()
-                .find(|d| d.slug == diagnostics::MODEL_UNKNOWN_KEY)
+                .find(|i| i.slug == diagnostics::MODEL_UNKNOWN_KEY)
             {
                 text.push_str(", among them: ");
-                text.push_str(&unknown.message);
+                text.push_str(&ascribe_check::Diagnostic::from_issue(unknown).message);
             }
             text
         }

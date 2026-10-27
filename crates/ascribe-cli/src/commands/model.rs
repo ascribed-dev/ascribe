@@ -140,7 +140,9 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// errors still has one to show.
 fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
     let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
-    let file = Project::load_model(&config).map_err(Failure::Load)?;
+    let file = ascribe_check::LOADER
+        .load_model(&config)
+        .map_err(Failure::Load)?;
     let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
     let project = Project::load(&config).map_err(Failure::Load)?;
     let index = project.index().clone();

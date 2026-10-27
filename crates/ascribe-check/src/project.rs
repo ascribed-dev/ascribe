@@ -1,12 +1,9 @@
 //! The project the checks run on: the content model and the source files.
 
 use std::collections::{BTreeMap, HashMap};
-use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{AttributeValue, Date, FileId, Issue, LineIndex, RelPath, Span};
 use ascribe_model::{
     AddressFile, ContentModel, Lock, LockedSource, NavFile, PermalinkList, SourceBound,
@@ -18,6 +15,7 @@ use ascribe_resolve::{
     SourceSet, Sources,
 };
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, ParseOptions, parse};
+use ascribe_workspace::{LoadError, Loaded, Loader, SourceFile, read_side_files};
 
 use crate::Diagnostic;
 use crate::baseline::{BASELINE_FILE_ID, Baseline, BaselineError};
@@ -47,29 +45,6 @@ pub const IMAGE_FILE_IDS: u32 = 0x4000_0000;
 /// [`Project::checked_memos`] lists them, and numbers them from here.
 pub const MEMO_FILE_IDS: u32 = 0x2000_0000;
 
-/// One source file: a Markdown file under the content root.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SourceFile {
-    /// The file's id, used in every location that points into it.
-    pub id: FileId,
-    /// The path relative to the content root, `/`-separated.
-    pub path: RelPath,
-    /// The text; empty when the file couldn't be read.
-    pub text: String,
-    /// Why the file couldn't be read, if it couldn't. It's reported as
-    /// `source-unreadable`, and nothing else is checked in it (SPEC §8.2).
-    pub unreadable: Option<ReadFailure>,
-}
-
-/// Why a source file couldn't be read.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ReadFailure {
-    /// The operating system's reason.
-    pub reason: String,
-    /// Whether the file was read but isn't valid UTF-8.
-    pub not_utf8: bool,
-}
-
 /// What a file id names, for reporting.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FileEntry<'a> {
@@ -85,131 +60,15 @@ pub struct FileEntry<'a> {
     pub content_path: Option<&'a RelPath>,
 }
 
-/// Why a project couldn't be loaded.
-#[derive(Debug, thiserror::Error)]
-pub enum LoadError {
-    /// A file or directory couldn't be read.
-    #[error("can't read {path}: {message}")]
-    Read {
-        /// The path.
-        path: String,
-        /// What went wrong.
-        message: String,
-    },
-    /// The content model has errors.
-    #[error("{} has errors", MODEL_FILE)]
-    Model {
-        /// The content model's text, for showing snippets.
-        text: String,
-        /// The problems found, with the warnings found before them, in
-        /// source order. Every location is in file [`FileId::new(0)`](FileId).
-        diagnostics: Vec<Diagnostic>,
-    },
-}
-
-impl ascribe_core::Coded for LoadError {
-    fn code(&self) -> &'static str {
-        match self {
-            LoadError::Read { .. } => "project_unreadable",
-            LoadError::Model { .. } => "model_invalid",
-        }
-    }
-}
-
-/// Why [`Project::locate`] found no content model.
-#[derive(Debug, thiserror::Error)]
-pub enum LocateError {
-    /// The current directory, where the search starts, can't be read.
-    #[error("can't read the current directory: {0}")]
-    CurrentDir(io::Error),
-    /// No `ascribe.toml` is in the current directory or a parent.
-    #[error("{}", not_found(dir, below))]
-    NotFound {
-        /// The directory the search started in.
-        dir: PathBuf,
-        /// The folders below it that hold an `ascribe.toml`, as
-        /// [`Project::find_below`] finds them: the first eleven, of which
-        /// the message names ten.
-        below: Vec<PathBuf>,
-    },
-    /// The content model named isn't a file.
-    #[error("{} doesn't exist or isn't a file", path.display())]
-    NotAFile {
-        /// The path named.
-        path: PathBuf,
-    },
-}
-
-/// The most projects below the directory searched that
-/// [`LocateError::NotFound`] names.
-const NOT_FOUND_NAMED: usize = 10;
-
-impl LocateError {
-    /// No `ascribe.toml` in `dir` or a parent; the error names the projects
-    /// below `dir`, if there are any.
-    pub fn not_found(dir: PathBuf) -> LocateError {
-        let below = Project::find_below(&dir, NOT_FOUND_NAMED + 1);
-        LocateError::NotFound { dir, below }
-    }
-}
-
-/// What [`LocateError::NotFound`] says: with the projects below, where to
-/// run ascribe instead, each folder from the current directory.
-fn not_found(dir: &Path, below: &[PathBuf]) -> String {
-    let none = format!(
-        "no {MODEL_FILE} found in {} or any parent directory",
-        dir.display()
-    );
-    // Each folder as it's typed where ascribe was run.
-    let base = normalize(&std::env::current_dir().unwrap_or_else(|_| dir.to_owned()));
-    let named: Vec<String> = below
-        .iter()
-        .take(NOT_FOUND_NAMED)
-        .map(|child| match relative_path(&base, &normalize(child)) {
-            Some(rel) => rel.as_str().to_owned(),
-            None => child.display().to_string(),
-        })
-        .collect();
-    match named.as_slice() {
-        [] => format!("{none}; run ascribe from a project, or pass --config"),
-        [one] => format!(
-            "{none}; the project below it is in {one}: run ascribe there, or pass --config {one}"
-        ),
-        several => {
-            let more = if below.len() > NOT_FOUND_NAMED {
-                ", and more"
-            } else {
-                ""
-            };
-            format!(
-                "{none}; the projects below it are in {}{more}: run ascribe in one of them, \
-                 or pass --config with its folder",
-                several.join(", ")
-            )
-        }
-    }
-}
-
-impl ascribe_core::Coded for LocateError {
-    fn code(&self) -> &'static str {
-        match self {
-            LocateError::CurrentDir(_) => "current_dir_unreadable",
-            LocateError::NotFound { .. } => "model_not_found",
-            LocateError::NotAFile { .. } => "model_not_a_file",
-        }
-    }
-}
-
-/// A content model as [`Project::load_model`] loads it.
-#[derive(Clone, Debug)]
-pub struct ModelFile {
-    /// The project root: the directory containing `ascribe.toml`.
-    pub root: PathBuf,
-    /// The content model's text.
-    pub text: String,
-    /// The content model.
-    pub model: ContentModel,
-}
+/// What loading a project for the checks takes of this crate: the content
+/// model's loader, which checks the files its types name
+/// ([`type_files::load_model`](crate::type_files::load_model)), and the side
+/// files ([`SIDE_FILES`]). Every surface loads a project with it, so each
+/// has the same side files.
+pub const LOADER: Loader = Loader {
+    model: crate::type_files::load_model,
+    side_files: SIDE_FILES,
+};
 
 /// A documentation set: its content model and source files.
 ///
@@ -291,87 +150,20 @@ impl std::fmt::Debug for Files {
 }
 
 impl Project {
-    /// The nearest `ascribe.toml` in `start` or one of its parents.
-    pub fn find_config(start: &Path) -> Option<PathBuf> {
-        // Outside FileSystem: looking for a project, before there is one.
-        start
-            .ancestors()
-            .map(|dir| dir.join(MODEL_FILE))
-            .find(|p| p.is_file())
-    }
-
-    /// The folders below `dir` that hold an `ascribe.toml`, in path order,
-    /// at most `limit`: a project's folder, and those below it too. Folders
-    /// whose names start with `.`, `node_modules`, and `target` aren't
-    /// looked in.
-    pub fn find_below(dir: &Path, limit: usize) -> Vec<PathBuf> {
-        fn walk(dir: &Path, limit: usize, found: &mut Vec<PathBuf>) {
-            // Outside FileSystem: looking for projects, before there is one.
-            let Ok(entries) = fs::read_dir(dir) else {
-                return;
-            };
-            let mut dirs: Vec<PathBuf> = entries
-                .flatten()
-                .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
-                .filter(|e| {
-                    let name = e.file_name();
-                    let name = name.to_string_lossy();
-                    !name.starts_with('.') && name != "node_modules" && name != "target"
-                })
-                .map(|e| e.path())
-                .collect();
-            dirs.sort();
-            for child in dirs {
-                if found.len() >= limit {
-                    return;
-                }
-                // Outside FileSystem: as above.
-                if child.join(MODEL_FILE).is_file() {
-                    found.push(child.clone());
-                }
-                walk(&child, limit, found);
-            }
-        }
-        let mut found = Vec::new();
-        walk(dir, limit, &mut found);
-        found
-    }
-
-    /// The content model a command works on: `config` when given (a file, or
-    /// a directory that holds `ascribe.toml`), or else the nearest
-    /// `ascribe.toml` in the current directory or a parent.
+    /// Loads the project whose content model is at `config` with
+    /// [`LOADER`]: the model, then every source file under its content root,
+    /// as [`ascribe_resolve::FileSystem::sources`] finds them.
+    ///
+    /// A source file or directory that can't be read, or a source file that
+    /// isn't valid UTF-8, is still a source file, with its
+    /// [`ReadFailure`](ascribe_workspace::ReadFailure); `check_files` reports
+    /// it and checks the rest.
     ///
     /// # Errors
     ///
-    /// The current directory can't be read, no `ascribe.toml` is found, or
-    /// `config` names none.
-    pub fn locate(config: Option<&Path>) -> Result<PathBuf, LocateError> {
-        // Outside FileSystem: the path given with `--config`, or the one found,
-        // before there's a project.
-        let config = match config {
-            Some(path) if path.is_dir() => path.join(MODEL_FILE),
-            Some(path) => path.to_owned(),
-            None => {
-                let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
-                Project::find_config(&cwd).ok_or_else(|| LocateError::not_found(cwd))?
-            }
-        };
-        if config.is_file() {
-            Ok(config)
-        } else {
-            Err(LocateError::NotAFile { path: config })
-        }
-    }
-
-    /// Loads the project whose content model is at `config`: the model, then
-    /// every source file under its content root, as
-    /// [`ascribe_resolve::FileSystem::sources`] finds them.
-    ///
-    /// A source file or directory that can't be read, or a source file that
-    /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
-    /// `check_files` reports it and checks the rest.
+    /// As [`Loader::load`].
     pub fn load(config: &Path) -> Result<Project, LoadError> {
-        Project::load_bounded(config, SourceBound::Anywhere)
+        LOADER.load(config).map(Project::from_loaded)
     }
 
     /// [`Project::load`], with a local source bounded by `bound` when no git
@@ -381,86 +173,27 @@ impl Project {
     ///
     /// As [`Project::load`].
     pub fn load_bounded(config: &Path, bound: SourceBound<'_>) -> Result<Project, LoadError> {
-        let loaded = Project::load_model_bounded(config, bound)?;
-        let content_root =
-            RelPath::parse(&loaded.model.project.content_root).map_err(|e| LoadError::Read {
-                path: config.display().to_string(),
-                message: e.to_string(),
-            })?;
-        let layout = Layout {
-            content_root,
-            output_dir: RelPath::parse(&loaded.model.project.output_dir).unwrap_or_default(),
-        };
-        // A one-shot command reads a disk that doesn't change while it runs,
-        // so listings are kept.
-        let fs = Arc::new(DiskFs::with_listing_cache(&loaded.root, &layout));
-        Ok(Project::load_from(loaded, layout.content_root, fs))
+        LOADER.load_bounded(config, bound).map(Project::from_loaded)
     }
 
-    /// The project of a content model [`Project::load_model`] loaded, with
-    /// every source file under `content_root` read through `fs`, as
-    /// [`FileSystem::sources`] lists them, and `fs` as the file system the
-    /// checks probe. Each source is read once and listed once: the source
-    /// index ([`Project::index`]) is built from what was read.
-    ///
-    /// A source file or directory that can't be read, or a source file that
-    /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
-    /// `check_files` reports it and checks the rest.
-    pub fn load_from(
-        model: ModelFile,
-        content_root: RelPath,
-        fs: Arc<dyn FileSystem + Send + Sync>,
-    ) -> Project {
-        let ModelFile { root, text, model } = model;
-        let (sources, listing) = read_sources(&*fs);
+    /// The project a [`Loader`] read, with the file system it read through
+    /// as the one the checks probe. Each source was read once and listed
+    /// once: the source index ([`Project::index`]) is built from what was
+    /// read.
+    pub fn from_loaded(loaded: Loaded) -> Project {
+        let Loaded {
+            root,
+            content_root,
+            model,
+            model_text,
+            sources,
+            listing,
+            side,
+            fs,
+        } = loaded;
         Project {
             listing: Some(Arc::new(listing)),
-            ..Project::assemble(root, content_root, model, text, sources, Some(fs))
-        }
-    }
-
-    /// Loads only the content model at `config`, the first step of
-    /// [`Project::load`], for a command that doesn't need the pages read:
-    /// `ascribe fmt`, which reads the files it formats itself.
-    ///
-    /// # Errors
-    ///
-    /// The file can't be read or isn't valid UTF-8 ([`LoadError::Read`]), or
-    /// the content model has errors ([`LoadError::Model`]).
-    pub fn load_model(config: &Path) -> Result<ModelFile, LoadError> {
-        Project::load_model_bounded(config, SourceBound::Anywhere)
-    }
-
-    /// [`Project::load_model`], with a local source bounded by `bound` when
-    /// no git repository is around the project ([`SourceBound`]).
-    ///
-    /// # Errors
-    ///
-    /// As [`Project::load_model`].
-    pub fn load_model_bounded(
-        config: &Path,
-        bound: SourceBound<'_>,
-    ) -> Result<ModelFile, LoadError> {
-        // Outside FileSystem: the content model says where the content root is,
-        // so it's read before there's a FileSystem to read through.
-        let text = fs::read(config)
-            .map_err(|e| read_error(config, e))
-            .and_then(|bytes| {
-                String::from_utf8(bytes).map_err(|_| LoadError::Read {
-                    path: config.display().to_string(),
-                    message: "the file isn't valid UTF-8".into(),
-                })
-            })?;
-        let root = match config.parent() {
-            Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
-            _ => PathBuf::from("."),
-        };
-        match crate::type_files::load_model(&text, &root, bound) {
-            Ok(model) => Ok(ModelFile { root, text, model }),
-            Err(issues) => Err(LoadError::Model {
-                text,
-                diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
-            }),
+            ..Project::assemble(root, content_root, model, model_text, sources, fs, side)
         }
     }
 
@@ -479,7 +212,7 @@ impl Project {
         model_text: String,
         sources: Vec<SourceFile>,
     ) -> Project {
-        Project::assemble(root, content_root, model, model_text, sources, None)
+        Project::with_fs(root, content_root, model, model_text, sources, None)
     }
 
     /// [`Project::from_parts`], with the file system the checks probe for what
@@ -499,7 +232,31 @@ impl Project {
         sources: Vec<SourceFile>,
         fs: Arc<dyn FileSystem + Send + Sync>,
     ) -> Project {
-        Project::assemble(root, content_root, model, model_text, sources, Some(fs))
+        Project::with_fs(root, content_root, model, model_text, sources, Some(fs))
+    }
+
+    /// A project from parts, with the side files read through `fs`, or the
+    /// disk when there's none.
+    fn with_fs(
+        root: PathBuf,
+        content_root: RelPath,
+        model: ContentModel,
+        model_text: String,
+        sources: Vec<SourceFile>,
+        fs: Option<Arc<dyn FileSystem + Send + Sync>>,
+    ) -> Project {
+        let output_dir = RelPath::parse(&model.project.output_dir).unwrap_or_default();
+        // A caller that doesn't bring a file system is a one-shot command (or a
+        // test): the disk doesn't change while it runs, so listings are kept.
+        let fs: Arc<dyn FileSystem + Send + Sync> = fs.unwrap_or_else(|| {
+            let layout = Layout {
+                content_root: content_root.clone(),
+                output_dir,
+            };
+            Arc::new(DiskFs::with_listing_cache(&root, &layout))
+        });
+        let side = read_side_files(SIDE_FILES, &*fs);
+        Project::assemble(root, content_root, model, model_text, sources, fs, side)
     }
 
     fn assemble(
@@ -508,7 +265,8 @@ impl Project {
         model: ContentModel,
         model_text: String,
         sources: Vec<SourceFile>,
-        fs: Option<Arc<dyn FileSystem + Send + Sync>>,
+        fs: Arc<dyn FileSystem + Send + Sync>,
+        side: Vec<Held>,
     ) -> Project {
         let model_warnings = model.warnings.iter().map(Diagnostic::from_issue).collect();
         // A file that couldn't be read isn't a source another file can name,
@@ -522,16 +280,6 @@ impl Project {
             content_root,
             output_dir: RelPath::parse(&model.project.output_dir).unwrap_or_default(),
         };
-        // A caller that doesn't bring a file system is a one-shot command (or a
-        // test): the disk doesn't change while it runs, so listings are kept.
-        let fs: Arc<dyn FileSystem + Send + Sync> =
-            fs.unwrap_or_else(|| Arc::new(DiskFs::with_listing_cache(&root, &layout)));
-        // The side files are read like any other file beside the content
-        // model, so a project in memory can have them.
-        let side = SIDE_FILES
-            .iter()
-            .filter_map(|entry| entry.read(&*fs))
-            .collect();
         Project {
             root,
             layout,
@@ -608,7 +356,7 @@ impl Project {
     }
 
     /// The listing the sources were read from, when the project was loaded
-    /// ([`Project::load_from`]).
+    /// ([`Project::from_loaded`]).
     pub(crate) fn listing(&self) -> Option<&Sources> {
         self.listing.as_deref()
     }
@@ -828,7 +576,7 @@ impl Project {
             id: FileId::new(first + i as u32),
             ..s.clone()
         }));
-        Project::assemble(
+        Project::with_fs(
             self.root.clone(),
             self.layout.content_root.clone(),
             self.model.clone(),
@@ -1086,57 +834,4 @@ pub(crate) fn image_id(i: usize) -> FileId {
     // navigation file's.
     #[allow(clippy::cast_possible_truncation)]
     FileId::new(IMAGE_FILE_IDS + i as u32)
-}
-
-/// Reads every source file `fs` lists, and the listing. The files that could
-/// be read have ids from 1, in path order, as in `ascribe_resolve::Project`;
-/// those that couldn't come after them, with their [`ReadFailure`].
-fn read_sources(fs: &dyn FileSystem) -> (Vec<SourceFile>, Sources) {
-    let listing = fs.sources();
-    let mut paths = listing.paths.clone();
-    paths.sort();
-    paths.dedup();
-    let mut sources = Vec::with_capacity(paths.len());
-    let mut failed = Vec::new();
-    for path in paths {
-        match fs.read(&path) {
-            Ok(text) => sources.push((path, text)),
-            Err(e) => failed.push((
-                path,
-                ReadFailure {
-                    not_utf8: e.kind() == io::ErrorKind::InvalidData,
-                    reason: e.to_string(),
-                },
-            )),
-        }
-    }
-    failed.extend(listing.unreadable.iter().map(|u| {
-        (
-            u.path.clone(),
-            ReadFailure {
-                reason: u.reason.clone(),
-                not_utf8: false,
-            },
-        )
-    }));
-    let out = sources
-        .into_iter()
-        .map(|(path, text)| (path, text, None))
-        .chain(failed.into_iter().map(|(p, f)| (p, String::new(), Some(f))))
-        .enumerate()
-        .map(|(i, (path, text, unreadable))| SourceFile {
-            id: FileId::new(i as u32 + 1),
-            path,
-            text,
-            unreadable,
-        })
-        .collect();
-    (out, listing)
-}
-
-fn read_error(path: &Path, e: std::io::Error) -> LoadError {
-    LoadError::Read {
-        path: path.display().to_string(),
-        message: e.to_string(),
-    }
 }

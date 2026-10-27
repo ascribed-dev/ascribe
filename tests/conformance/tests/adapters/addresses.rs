@@ -18,12 +18,13 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+use ascribe_check::Project;
 use ascribe_check::addresses::{Base, Here};
-use ascribe_check::{ModelFile, Project};
 use ascribe_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic};
 use ascribe_core::RelPath;
 use ascribe_resolve::addresses::every_build;
 use ascribe_resolve::{DiskFs, Layout};
+use ascribe_workspace::ModelFile;
 
 use super::check::{project, to_conformance};
 
@@ -121,5 +122,9 @@ fn base(case: &Case) -> Result<Project, AdapterError> {
         text,
         model,
     };
-    Ok(Project::load_from(model, content_root, fs))
+    Ok(Project::from_loaded(ascribe_check::LOADER.load_from(
+        model,
+        content_root,
+        fs,
+    )))
 }
