@@ -101,6 +101,13 @@ fn directives_in_every_container() {
         "@note:\ntext\n\n  \n",
         "> @note:\n> text\n>\n",
         "@details: x\n@memo:\n",
+        // A table takes its header line back out of a paragraph after any line ending (#1139).
+        "cc8\r\n8\n:-",
+        "cc8\r\n8\r\n:-",
+        "cc8\r8\r:-",
+        "a\r\nb\r\nc | d\r\n- | -\r\n",
+        "a\rb\rc | d\r- | -\r",
+        "> a\r\n> c | d\r\n> - | -\r\n",
     ] {
         assert_exact("container case", source);
     }

@@ -268,3 +268,104 @@ fn a_site_page_opens_with_the_pointer_for_agents() {
     let off = memory_project(FULL_MODEL, &[("Guides/My Setup.md", source)]);
     assert!(!site(&off, "site", "Guides/My Setup.md").contains("ascribe-for-agents"));
 }
+
+/// A page whose headings' anchors in its Markdown differ from their page ids
+/// in each way they can: an `@id`, the label a heading in a variant arm ends
+/// with, and the numbering those labels change.
+const SYNC: &str = "---\ntype: guide\ntitle: Sync\n---\n\n\
+    ## Set up\n\nFirst.\n\n\
+    ## Connect\n@id: link-up\n\nThen.\n\n\
+    @variant {pm=npm}:\n## Install\nnpm i\n@variant {pm=yarn}:\n## Install\nyarn add\n@end\n\n\
+    ## Set up\n\nAgain.\n";
+
+/// Each heading of a Markdown document, in order, as the anchor a reader
+/// gives it (comrak's, which is GitHub's) and its text.
+fn anchored_headings(markdown: &str) -> Vec<(String, String)> {
+    use comrak_ascribe::nodes::NodeValue;
+    let arena = comrak_ascribe::Arena::new();
+    let root =
+        comrak_ascribe::parse_document(&arena, markdown, &comrak_ascribe::Options::default());
+    let mut anchorizer = comrak_ascribe::Anchorizer::new();
+    root.descendants()
+        .filter(|n| matches!(n.data.borrow().value, NodeValue::Heading(_)))
+        .map(|heading| {
+            let mut text = String::new();
+            for node in heading.descendants() {
+                match &node.data.borrow().value {
+                    NodeValue::Text(t) => text.push_str(t),
+                    NodeValue::Code(c) => text.push_str(&c.literal),
+                    _ => {}
+                }
+            }
+            (anchorizer.anchorize(&text), text)
+        })
+        .collect()
+}
+
+#[test]
+fn a_link_to_a_page_leads_to_its_markdown_and_its_fragment_to_the_same_heading_there() {
+    let project = memory_project(
+        &agents_model(),
+        &[
+            (
+                "index.md",
+                "---\ntype: guide\ntitle: Home\n---\n\n\
+                 [Sync](guides/sync.md), [first](guides/sync.md#set-up), \
+                 [connect](guides/sync.md#link-up), [npm](guides/sync.md#install), \
+                 [Yarn](guides/sync.md#install-1), [again](guides/sync.md#set-up-1). \
+                 Rotate your API key.\n",
+            ),
+            ("guides/sync.md", SYNC),
+            (
+                "reference/glossary.md",
+                "---\ntype: guide\ntitle: Glossary\n---\n\n## API key\n@term\n\nA secret token.\n",
+            ),
+        ],
+    );
+    let files = plain_files(&project, "site");
+    let sync = "https://docs.quill.dev/docs/guides/sync.md";
+    assert_eq!(
+        files["index.md"],
+        format!(
+            "> For the complete documentation index, see [llms.txt](https://docs.quill.dev/docs/llms.txt).\n\n\
+             # Home\n\n\
+             [Sync]({sync}), [first]({sync}#set-up), [connect]({sync}#connect), \
+             [npm]({sync}#install-npm), [Yarn]({sync}#install-yarn), [again]({sync}#set-up-1). \
+             Rotate your [API key](https://docs.quill.dev/docs/reference/glossary.md#api-key).\n"
+        )
+    );
+    // Each fragment is the anchor a Markdown reader gives the heading the
+    // link names: the one its page id names on the page.
+    let headings = anchored_headings(&files["guides/sync.md"]);
+    let text_at = |anchor: &str| {
+        let at = headings.iter().position(|(a, _)| a == anchor);
+        at.map(|at| (at, headings[at].1.as_str()))
+    };
+    assert_eq!(text_at("set-up"), Some((1, "Set up")));
+    assert_eq!(text_at("connect"), Some((2, "Connect")));
+    assert_eq!(text_at("install-npm"), Some((4, "Install (npm)")));
+    assert_eq!(text_at("install-yarn"), Some((6, "Install (Yarn)")));
+    assert_eq!(text_at("set-up-1"), Some((7, "Set up")));
+    let glossary = anchored_headings(&files["reference/glossary.md"]);
+    assert_eq!(glossary[1], ("api-key".to_owned(), "API key".to_owned()));
+}
+
+#[test]
+fn without_agents_a_link_keeps_the_pages_address() {
+    let project = memory_project(
+        FULL_MODEL,
+        &[
+            (
+                "index.md",
+                "---\ntype: guide\ntitle: Home\n---\n\n[connect](guides/sync.md#link-up)\n",
+            ),
+            ("guides/sync.md", SYNC),
+        ],
+    );
+    let files = plain_files(&project, "site");
+    assert!(
+        files["index.md"].contains("(https://docs.quill.dev/docs/guides/sync#link-up)"),
+        "{}",
+        files["index.md"]
+    );
+}

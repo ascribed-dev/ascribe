@@ -2,7 +2,9 @@
 # written only where its order isn't the default (its own page, then by type
 # in ascribe.toml's order, then by title), and a `label` where its own page's
 # title, or its folder's name, isn't the sidebar's. site/test/e2e.test.ts holds
-# the published sidebar to site/test/fixtures/sidebar.json.
+# the published sidebar to site/test/fixtures/sidebar.json, and
+# crates/ascribe-emit/tests/all/site_sidebar.rs this navigation to it, which
+# `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar` rewrites.
 version = 1
 
 [[sections]]
@@ -100,10 +102,11 @@ folder = "command/"
 label = "The command"
 pages = ["questions.md", "site-output.md", "project-files.md"]
 
-# Contracts keep an order of their own.
+# Contracts keep an order of their own, in a section at the end apart from the
+# guides.
 [[sections]]
 folder = "contracts/"
-label = "Contracts"
+label = "For implementers"
 pages = [
   "content-model.md",
   "site-render.md",

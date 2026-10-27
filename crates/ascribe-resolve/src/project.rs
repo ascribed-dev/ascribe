@@ -371,11 +371,16 @@ impl Project {
             nested,
             own: found.own_folder,
         };
-        Project::assemble(model, layout, files, by_id, unreadable, folders, fs)
+        let code = CodeFiles::with_ids(std::mem::take(&mut ids.code));
+        let project =
+            Project::assemble(model, layout, files, by_id, unreadable, folders, fs, &code);
+        ids.code = code.into_ids();
+        project
     }
 
     /// A project from indexed files: resolves every reference and builds the
     /// edges.
+    #[allow(clippy::too_many_arguments)] // A project's parts, each needed.
     pub(crate) fn assemble(
         model: Arc<ContentModel>,
         layout: Layout,
@@ -384,6 +389,7 @@ impl Project {
         unreadable: Vec<Unreadable>,
         folders: Folders,
         fs: &dyn FileSystem,
+        code: &CodeFiles,
     ) -> Project {
         let apis = Arc::new(ApiSpecs::read(&model, fs));
         let mut project = Project {
@@ -412,7 +418,6 @@ impl Project {
             })
             .collect();
         // Each code file is read once, however many snippets use it.
-        let code = CodeFiles::new();
         project.snippets = project
             .files
             .values()
@@ -420,7 +425,7 @@ impl Project {
             .map(|index| {
                 (
                     index.path.clone(),
-                    Arc::new(project.resolve_snippets(index, fs, &code)),
+                    Arc::new(project.resolve_snippets(index, fs, code)),
                 )
             })
             .collect();

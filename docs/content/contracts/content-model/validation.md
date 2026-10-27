@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` format contract: validation rules"
+nav-label: "Validation rules"
 description: "Every rule a content model loader enforces, and the map of SPEC §7.2 to the contract."
 ---
 

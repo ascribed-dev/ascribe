@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "JSON reports: `ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks`"
+nav-label: "`ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks`"
 description: "The JSON Schemas of what ascribe init, ascribe sources, ascribe observe, and ascribe permalinks write with --format json."
 ---
 

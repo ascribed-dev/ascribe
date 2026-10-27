@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "JSON reports: `ascribe versions`"
+nav-label: "`ascribe versions`"
 description: "The JSON Schemas of what ascribe versions list, changes, release, export, and retire write with --format json."
 ---
 

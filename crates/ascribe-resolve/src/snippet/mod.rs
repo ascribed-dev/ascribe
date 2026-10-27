@@ -33,6 +33,7 @@ use ascribe_model::{ContentModel, Source, suggest};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
 
 use crate::fs::{FileSystem, Probe};
+use crate::incremental::CodeFileIds;
 use tags::{CommentStyle, Extracted, TagProblem, Tags, file_comment_style, is_region_name};
 
 /// The file ids code files get, from this one up: past any source file's, so
@@ -254,11 +255,13 @@ pub enum ReadError {
 }
 
 /// The code files read so far, by path from the project root, so each is
-/// read and scanned once however many snippets use it. Each new file gets
-/// the next id from [`CODE_FILE_IDS`].
+/// read and scanned once however many snippets use it. Each file gets its
+/// path's id from a table, and a path the table doesn't know gets the next
+/// one, from [`CODE_FILE_IDS`] up.
 #[derive(Debug, Default)]
 pub struct CodeFiles {
     files: Mutex<HashMap<RelPath, Result<Arc<CodeFile>, ReadError>>>,
+    ids: Mutex<CodeFileIds>,
     /// Each source folder's `ascribe.examples.toml` and observation, read
     /// once ([`CodeFiles::examples`]).
     examples: Mutex<HashMap<RelPath, Arc<examples::FolderExamples>>>,
@@ -270,6 +273,21 @@ impl CodeFiles {
         CodeFiles::default()
     }
 
+    /// No files read yet, with ids from `ids`.
+    pub(crate) fn with_ids(ids: CodeFileIds) -> CodeFiles {
+        CodeFiles {
+            ids: Mutex::new(ids),
+            ..CodeFiles::default()
+        }
+    }
+
+    /// The table of ids, with the paths read since given ids.
+    pub(crate) fn into_ids(self) -> CodeFileIds {
+        self.ids
+            .into_inner()
+            .unwrap_or_else(PoisonError::into_inner)
+    }
+
     /// The code file at `path`, from the project root, read through `fs` the
     /// first time it's asked for.
     pub fn read(&self, fs: &dyn FileSystem, path: &RelPath) -> Result<Arc<CodeFile>, ReadError> {
@@ -277,8 +295,12 @@ impl CodeFiles {
         if let Some(found) = files.get(path) {
             return found.clone();
         }
-        let next = files.values().filter(|f| f.is_ok()).count() as u32;
-        let read = read_code(fs, path, FileId::new(CODE_FILE_IDS + next));
+        let mut ids = self.ids.lock().unwrap_or_else(PoisonError::into_inner);
+        let read = read_code(fs, path, ids.peek(path));
+        // Only a file that reads takes an id.
+        if read.is_ok() {
+            ids.assign(path);
+        }
         files.insert(path.clone(), read.clone());
         read
     }

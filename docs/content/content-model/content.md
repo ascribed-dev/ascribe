@@ -40,7 +40,9 @@ No other scheme is defined. The table exists so a later spec version can add one
 
 @include: ../_generated/content-model-releases.md
 
-**Rules.** `<target>` is a declared dimension value that isn't versionless, or a name (`name-word`) no dimension has, which makes it a value of the implicit dimension `release`. While a target is left to the implicit dimension, `release` is reserved: a declared `[dimensions.release]` is an error at each such target, naming both. A target a declared dimension has takes no `label`, since that dimension's `labels` labels it (`model-releases-target`). The implicit dimension's name and values take part in the one-role rule, as a declared dimension's do (`model-name-multiple-roles`). Each line is a version, quoted, listed once, and every line of one target, in every list, has the same number of parts (`model-releases-line`). A line is in one list, planned lines are newer than every live line, and archived lines older (`model-releases-order`). A line in `ends` is a live line (`model-releases-ends`), and a date is a TOML date (`model-wrong-type`). Any other key is an error (`model-unknown-key`).
+**Rules.** `<target>` is a declared dimension value that isn't versionless, or a name (`name-word`) no dimension has, which makes it a value of the implicit dimension `release`. While a target is left to the implicit dimension, `release` is reserved: a declared `[dimensions.release]` is an error at each such target, naming both. A target a declared dimension has takes no `label`, since that dimension's `labels` labels it (`model-releases-target`). The implicit dimension's name and values take part in the one-role rule, as a declared dimension's do (`model-name-multiple-roles`).
+
+Each line is a version, quoted, listed once, and every line of one target, in every list, has the same number of parts (`model-releases-line`). A line is in one list, planned lines are newer than every live line, and archived lines older (`model-releases-order`). A line in `ends` is a live line (`model-releases-ends`), and a date is a TOML date (`model-wrong-type`). Any other key is an error (`model-unknown-key`).
 
 **What the list checks.** For a target with a list, each version a mark, a feature, or a build's filter names is placed among the declared lines:
 
@@ -53,7 +55,30 @@ No other scheme is defined. The table exists so a later spec version can add one
 
 A mark's [`planned`](../writing/directives.md#the-planned-line) is the target's one planned line, so it's placed as that line's version; a target with no planned line, or more than one, makes it an error at the word, `available-planned-line`. [`ascribe versions release`](../versions/release.md#cli-versions-release) rewrites it to the version when the line ships.
 
-A mark does nothing only where no output shows it: when every build that publishes its content is versioned by the mark's target or filtered for it, since a line's output leaves out a version at or before the oldest live line. Then two content checks report a mark: `available-same-in-every-line` (advice), a version every live line has, so the mark can drop it and keep its state; and `available-in-no-line` (a warning), content removed before the oldest live line with nothing after, which no output has. A build that badges availability and isn't versioned, such as one site, shows every version, so there `ascribe 0.1.1` still reads "since 0.1.1", and content in no line is still published, so `available-in-no-line` stays quiet. When every version a mark names is before the oldest live line and every live line has the content, though, that badge says only that the content is older than any reader's line, so `available-same-in-every-line` reports it too, saying the badge is shown, with an unsafe fix, since removing the versions removes the badge. When the mark would then be its target alone, generally available, and the target is the only value of its dimension, the mark says nothing even as a badge ("Available: Ascribe (GA)" in a project with one product), so the fix removes the mark instead of rewriting it: the `@available` line, the page's `available` key, or the row's `{available=…}`. It does so only when the mark names nothing else and no build filters for another target, since content with no mark applies everywhere, and there that's the one target. Content with no mark reads as the scope around it, though, so a mark inside one that says something, such as a section marked `ascribe preview`, keeps its content generally available and is rewritten, as is a mark in a fragment, which reads as wherever it's included. A version in the oldest live line still says what came with it, so `ascribe 0.4.0` with 0.4.0 the only live line isn't reported there. A project that keeps such badges, as "new in 0.2", sets `available-same-in-every-line = "off"` in `[checks]`. A build filtered for the target at a version before the oldest live line still decides by the mark's versions, so neither check reports a mark while one publishes it. [`availability-left-behind`](../checks/diagnostics/content-checks.md) compares a feature's versions with each target's current line, and a live line whose `ends` date has passed is advice, `release-line-ended`, as of [the day the checks run as](../checks/check.md#checking-as-of-another-day).
+**A mark that does nothing.** A mark does nothing only where no output shows it: when every build that publishes its content is versioned by the mark's target or filtered for it, since a line's output leaves out a version at or before the oldest live line. Then two content checks report a mark:
+
+| Check | Reports |
+|---|---|
+| `available-same-in-every-line` (advice) | A version every live line has, so the mark can drop it and keep its state |
+| `available-in-no-line` (a warning) | Content removed before the oldest live line with nothing after, which no output has |
+
+**A badge.** A build that badges availability and isn't versioned, such as one site, shows every version. So there:
+
+- `ascribe 0.1.1` still reads "since 0.1.1", and content in no line is still published, so `available-in-no-line` stays quiet.
+- When every version a mark names is before the oldest live line and every live line has the content, though, that badge says only that the content is older than any reader's line, so `available-same-in-every-line` reports it too, saying the badge is shown, with an unsafe fix, since removing the versions removes the badge.
+- A project that keeps such badges, as "new in 0.2", sets `available-same-in-every-line = "off"` in `[checks]`.
+
+**When the fix removes the mark.** When the mark would then be its target alone, generally available, and the target is the only value of its dimension, the mark says nothing even as a badge ("Available: Ascribe (GA)" in a project with one product), so the fix removes the mark instead of rewriting it: the `@available` line, the page's `available` key, or the row's `{available=…}`. It does so only when the mark names nothing else and no build filters for another target, since content with no mark applies everywhere, and there that's the one target. Content with no mark reads as the scope around it, though, so the fix rewrites the mark instead of removing it when it's:
+
+- Inside a mark that says something, such as a section marked `ascribe preview`: the mark keeps its content generally available.
+- In a fragment, which reads as wherever it's included.
+
+**What neither check reports.**
+
+- A version in the oldest live line still says what came with it, so `ascribe 0.4.0` with 0.4.0 the only live line isn't reported there.
+- A build filtered for the target at a version before the oldest live line still decides by the mark's versions, so neither check reports a mark while one publishes it.
+
+[`availability-left-behind`](../checks/diagnostics/content-checks.md) compares a feature's versions with each target's current line, and a live line whose `ends` date has passed is advice, `release-line-ended`, as of [the day the checks run as](../checks/check.md#checking-as-of-another-day).
 
 ---
 

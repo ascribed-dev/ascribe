@@ -1,6 +1,7 @@
 ---
 type: reference
 title: "JSON reports: `ascribe addresses`"
+nav-label: "`ascribe addresses`"
 description: "The JSON Schemas of what ascribe addresses init, move, retire, and list write with --format json."
 ---
 

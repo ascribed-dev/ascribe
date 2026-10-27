@@ -475,7 +475,7 @@
     ]
   },
   {
-    "label": "Contracts",
+    "label": "For implementers",
     "pages": [
       {
         "href": "/docs/contracts/content-model/",
@@ -483,22 +483,22 @@
       },
       {
         "href": "/docs/contracts/content-model/content/",
-        "label": "ascribe.toml format contract: dimensions, phrases, and widgets",
+        "label": "Dimensions, phrases, and widgets",
         "nested": true
       },
       {
         "href": "/docs/contracts/content-model/output/",
-        "label": "ascribe.toml format contract: consumer, builds, and sources",
+        "label": "Consumer, builds, and sources",
         "nested": true
       },
       {
         "href": "/docs/contracts/content-model/checks/",
-        "label": "ascribe.toml format contract: checks, permalinks, and listing",
+        "label": "Checks, permalinks, and listing",
         "nested": true
       },
       {
         "href": "/docs/contracts/content-model/validation/",
-        "label": "ascribe.toml format contract: validation rules",
+        "label": "Validation rules",
         "nested": true
       },
       {
@@ -527,42 +527,42 @@
       },
       {
         "href": "/docs/contracts/json-reports/diff/",
-        "label": "JSON reports: ascribe diff and ascribe drift",
+        "label": "ascribe diff and ascribe drift",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/report/",
-        "label": "JSON reports: ascribe report",
+        "label": "ascribe report",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/sources/",
-        "label": "JSON reports: ascribe init, ascribe sources, ascribe observe, and ascribe permalinks",
+        "label": "ascribe init, ascribe sources, ascribe observe, and ascribe permalinks",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/addresses/",
-        "label": "JSON reports: ascribe addresses",
+        "label": "ascribe addresses",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/templates/",
-        "label": "JSON reports: ascribe templates",
+        "label": "ascribe templates",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/model/",
-        "label": "JSON reports: ascribe model",
+        "label": "ascribe model",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/questions/",
-        "label": "JSON reports: the commands that answer questions",
+        "label": "The commands that answer questions",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/versions/",
-        "label": "JSON reports: ascribe versions",
+        "label": "ascribe versions",
         "nested": true
       },
       {

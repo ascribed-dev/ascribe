@@ -317,7 +317,9 @@ fn try_inserting_table_header_paragraph<'a>(
             .as_bytes()
             .iter()
             .rev()
-            .skip(1)
+            // ASCRIBE: skips the whole line ending, not one byte, so a `\r\n` doesn't leave the
+            // paragraph's last line empty (#1139).
+            .skip(newlines_of(preface))
             .take_while(|&&c| !is_line_end_char(c))
             .count();
 
