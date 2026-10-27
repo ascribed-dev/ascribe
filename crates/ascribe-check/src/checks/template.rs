@@ -1,5 +1,7 @@
-//! `template-placeholder-left`: what a page of a type with a template still
-//! has of the template's placeholders, never filled in; and
+//! `template-placeholder-left`: what a draft of a type with a template still
+//! has of the template's placeholders, never filled in, which is
+//! `template-placeholder-published`, an error, in a page that publishes
+//! (#1005); and
 //! `template-section-empty`: a section the template gives only memos that
 //! the page still leaves empty.
 //!
@@ -37,6 +39,7 @@
 
 use ascribe_core::{DiagnosticSlug, Issue, Location, Span, diagnostics};
 use ascribe_model::{ContentModel, TYPE_KEY};
+use ascribe_resolve::DRAFT;
 use ascribe_syntax::{Block, BlockKind, Bound, Heading, Inline, InlineKind, ParseOptions, parse};
 use serde_yaml_ng::Value;
 
@@ -53,7 +56,8 @@ const MEMO: &str = "memo";
 #[derive(Debug, Default)]
 pub(crate) struct Template {
     /// Each field of its frontmatter with a value, in order, apart from
-    /// `type`, which a page of the type keeps as the template has it.
+    /// `type`, which a page of the type keeps as the template has it, and
+    /// `draft`, which says whether the page publishes, not what it says.
     fields: Vec<(String, Value)>,
     /// Each distinct placeholder, as its pieces, in the order they're first
     /// found.
@@ -82,6 +86,7 @@ impl Template {
                 };
                 if let (Value::String(key), true) = (key, filled)
                     && key != TYPE_KEY
+                    && key != DRAFT
                 {
                     template.fields.push((key, value));
                 }
@@ -358,6 +363,18 @@ fn value_text(value: &Value) -> Option<String> {
 }
 
 impl Ctx<'_> {
+    /// The diagnostic for what the page still has of its template's
+    /// placeholders: advice in a draft, which no build publishes, so a page
+    /// being written isn't covered in errors, and an error in a page that
+    /// publishes, whose readers would read the template's words.
+    fn placeholder_slug(&self) -> DiagnosticSlug {
+        if self.draft {
+            diagnostics::TEMPLATE_PLACEHOLDER_LEFT
+        } else {
+            diagnostics::TEMPLATE_PLACEHOLDER_PUBLISHED
+        }
+    }
+
     /// The template of the page's type, when it has one and `check` is on.
     fn page_template(&self, check: DiagnosticSlug) -> Option<std::sync::Arc<Template>> {
         if self.model.checks.is_off(check) || self.model.is_fragment(self.file.path.as_str()) {
@@ -371,7 +388,8 @@ impl Ctx<'_> {
 
     /// The frontmatter fields whose values are still the template's.
     pub(super) fn check_template_fields(&mut self, value: &Value, index: &YamlIndex) {
-        let Some(template) = self.page_template(diagnostics::TEMPLATE_PLACEHOLDER_LEFT) else {
+        let slug = self.placeholder_slug();
+        let Some(template) = self.page_template(slug) else {
             return;
         };
         for (field, expected) in &template.fields {
@@ -386,13 +404,10 @@ impl Ctx<'_> {
                 continue;
             };
             let shown = value_text(found).map_or_else(String::new, |t| opening(&t));
-            let issue = Issue::new(
-                diagnostics::TEMPLATE_PLACEHOLDER_LEFT,
-                Location::new(self.id, node.value),
-            )
-            .with_variant("field")
-            .with_arg("field", field.clone())
-            .with_arg("value", shown);
+            let issue = Issue::new(slug, Location::new(self.id, node.value))
+                .with_variant("field")
+                .with_arg("field", field.clone())
+                .with_arg("value", shown);
             self.report(issue);
         }
     }
@@ -400,7 +415,8 @@ impl Ctx<'_> {
     /// The template's placeholders the page's body still has.
     pub(super) fn check_template_body(&mut self, blocks: &[Block]) {
         self.check_template_sections(blocks);
-        let Some(template) = self.page_template(diagnostics::TEMPLATE_PLACEHOLDER_LEFT) else {
+        let slug = self.placeholder_slug();
+        let Some(template) = self.page_template(slug) else {
             return;
         };
         let source = self.file.text.clone();
@@ -412,11 +428,8 @@ impl Ctx<'_> {
                 let unit = &units[unit];
                 let end = start + pieces[0].len();
                 let text = unit.slice(start, end);
-                let issue = Issue::new(
-                    diagnostics::TEMPLATE_PLACEHOLDER_LEFT,
-                    self.location(unit.span(start, end, &source)),
-                )
-                .with_arg("placeholder", opening(&text));
+                let issue = Issue::new(slug, self.location(unit.span(start, end, &source)))
+                    .with_arg("placeholder", opening(&text));
                 self.report(issue);
             }
         }

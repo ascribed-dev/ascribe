@@ -86,19 +86,15 @@ fn eject_says_what_it_wrote_and_the_project_checks_with_the_type() {
          added [types.how-to] to ascribe.toml\n\
          1 page names no type. In a project whose ascribe.toml declares types, each page says what type it is, with `type:` in its frontmatter; `ascribe check` offers a fix for each type:\n  \
          docs/index.md\n\
-         To start a page, copy templates/how-to.md to where the page goes, and read templates/how-to.guide.md and templates/how-to.ascribe.md first. The page names its type in its frontmatter, as the template does.\n"
+         To start a page, run `ascribe new how-to <PATH>`, which writes the template there as a draft, and read templates/how-to.guide.md and templates/how-to.ascribe.md first.\n"
     );
     fs::write(
         dir.path().join("docs/index.md"),
         "---\ntype: page\ntitle: Home\n---\n\nText.\n",
     )
     .unwrap();
-    fs::create_dir(dir.path().join("docs/how-to")).unwrap();
-    fs::copy(
-        dir.path().join("templates/how-to.md"),
-        dir.path().join("docs/how-to/rotate-keys.md"),
-    )
-    .unwrap();
+    let new = ascribe(dir.path(), &["new", "how-to", "docs/how-to/rotate-keys.md"]);
+    assert_eq!(code_of(&new), 0, "{}", stderr(&new));
     let check = ascribe(dir.path(), &["check", "--format", "json"]);
     let report: Value = serde_json::from_slice(&check.stdout).unwrap();
     let errors: Vec<&Value> = report["diagnostics"]
@@ -174,7 +170,7 @@ fn eject_lists_the_pages_that_name_no_type() {
              added [types.concept] to ascribe.toml, with `title` declared as the project's other types declare it\n\
              12 pages name no type. In a project whose ascribe.toml declares types, each page says what type it is, with `type:` in its frontmatter; `ascribe check` offers a fix for each type:\n\
              {listed}  and 2 more, which `--format json` lists\n\
-             To start a page, copy its type's template to where the page goes, and read its guide and Ascribe's notes on it first. The page names its type in its frontmatter, as the template does.\n"
+             To start a page, run `ascribe new <TYPE> <PATH>`, which writes its type's template there as a draft, and read its guide and Ascribe's notes on it first.\n"
         )
     );
 }
@@ -190,13 +186,9 @@ fn eject_with_no_name_gives_six_types_whose_templates_check_and_are_formatted() 
     )
     .unwrap();
     for template in ascribe_templates::set().templates {
-        let folder = dir.path().join("docs").join(&template.name);
-        fs::create_dir(&folder).unwrap();
-        fs::copy(
-            dir.path().join("templates").join(&template.template),
-            folder.join("page.md"),
-        )
-        .unwrap();
+        let page = format!("docs/{}/page.md", template.name);
+        let new = ascribe(dir.path(), &["new", &template.name, &page]);
+        assert_eq!(code_of(&new), 0, "{}", stderr(&new));
     }
     let check = ascribe(dir.path(), &["check", "--format", "json"]);
     let report: Value = serde_json::from_slice(&check.stdout).unwrap();
@@ -292,7 +284,7 @@ fn eject_keep_type_leaves_ascribe_toml_untouched_and_the_lock_gives_the_template
          wrote templates/reference.ascribe.md\n\
          wrote templates/templates.lock\n\
          [types.reference] in ascribe.toml takes its template and guide from templates/templates.lock, and is left as it was\n\
-         To start a page, copy templates/reference.md to where the page goes, and read templates/reference.guide.md and templates/reference.ascribe.md first. The page names its type in its frontmatter, as the template does.\n"
+         To start a page, run `ascribe new reference <PATH>`, which writes the template there as a draft, and read templates/reference.guide.md and templates/reference.ascribe.md first.\n"
     );
     assert_eq!(
         fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
@@ -452,12 +444,12 @@ Before you rotate the keys, ensure:
 ";
 
 /// The phase's goal, in a copy of `examples/getting-started`: eject the
-/// how-to, copy its template to a page, and `ascribe check` gives one advice
+/// how-to, copy its template to a page, and `ascribe check` gives one error
 /// for each placeholder the page still has, its two frontmatter fields among
-/// them, and the placeholder that runs across blocks once. Filled in, the
-/// page has nothing to report.
+/// them, and the placeholder that runs across blocks once: the page isn't a
+/// draft, so it publishes (#1005). Filled in, the page has nothing to report.
 #[test]
-fn a_page_copied_from_the_template_has_an_advice_for_each_placeholder() {
+fn a_page_copied_from_the_template_has_an_error_for_each_placeholder() {
     let dir = tempfile::tempdir().unwrap();
     let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started");
     copy_dir(&example, dir.path());
@@ -476,7 +468,7 @@ fn a_page_copied_from_the_template_has_an_advice_for_each_placeholder() {
     assert!(
         found
             .iter()
-            .all(|d| d["slug"] == "template-placeholder-left"),
+            .all(|d| d["slug"] == "template-placeholder-published"),
         "{found:#?}"
     );
     // Each placeholder opens with the one brace the template escapes, and

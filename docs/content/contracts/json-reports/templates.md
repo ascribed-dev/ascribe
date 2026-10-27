@@ -14,3 +14,7 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 ## `ascribe templates status`
 
 @include: ../../_generated/json-templates-status.md
+
+## `ascribe new`
+
+@include: ../../_generated/json-new.md

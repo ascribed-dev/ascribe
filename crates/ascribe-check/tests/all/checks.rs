@@ -1106,6 +1106,14 @@ fn a_github_alert_s_fix_writes_a_note() {
         alert_rewritten("> [!CAUTION]\n>\n> ```sh\n> rm -rf data\n> ```").as_deref(),
         Some(page("@note {type=caution}:\n```sh\nrm -rf data\n```\n@end").as_str())
     );
+    // A line that continued the marker's paragraph would start a list or
+    // a code block at the start of the container.
+    assert_eq!(alert_rewritten("> [!NOTE]\n> 2. first\n>\n> More."), None);
+    assert_eq!(alert_rewritten("> [!NOTE]\n>     code\n>\n> More."), None);
+    assert_eq!(
+        alert_rewritten("> [!NOTE]\n> Back up first.\n>\n> More.").as_deref(),
+        Some(page("@note {type=note}:\nBack up first.\n\nMore.\n@end").as_str())
+    );
     assert_eq!(alert_rewritten("- > [!IMPORTANT]\n  > Read this."), None);
     assert_eq!(alert_rewritten("> [!NOTE]"), None);
 }

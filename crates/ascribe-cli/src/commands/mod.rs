@@ -14,6 +14,7 @@ pub mod link;
 pub mod lsp;
 pub mod mcp;
 pub mod model;
+pub mod new;
 pub mod observe;
 pub mod outline;
 pub mod permalinks;

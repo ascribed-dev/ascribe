@@ -66,5 +66,5 @@ This repository runs this workflow on a pair of made-up repositories, built by [
 
 ## See also
 
-- [A source in another repository](../content-model/output.md#a-source-in-another-repository): its keys.
+- [A source in another repository](../content-model/sources.md#a-source-in-another-repository): its keys.
 - [`ascribe sources`](sources.md#cli-sources): fetching, updating, and showing a source in another repository.

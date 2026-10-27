@@ -115,6 +115,17 @@ impl FileIndex {
             .and_then(Listing::from_name)
     }
 
+    /// Whether the page's frontmatter has `draft: true` (SPEC §2.1), which
+    /// every build drops. Any other value, a string included, isn't a
+    /// draft; `check` reports it.
+    pub fn is_draft(&self) -> bool {
+        self.frontmatter
+            .as_ref()
+            .and_then(|f| f.get(crate::DRAFT))
+            .and_then(serde_yaml_ng::Value::as_bool)
+            .unwrap_or(false)
+    }
+
     /// The page's listing before a build (SPEC §2.1), in a versioned
     /// project's current line: the strictest of its own and the content
     /// model's rules that apply to it.

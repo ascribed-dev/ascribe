@@ -1,0 +1,7 @@
+description: >-
+  A draft in a section whose `pages` leaves it out isn't reported: no build
+  publishes it, so no sidebar has a place for it yet.
+spec: ["2.1", "7.8"]
+tags: [check]
+
+diagnostics: []

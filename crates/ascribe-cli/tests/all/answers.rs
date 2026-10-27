@@ -171,7 +171,7 @@ fn explain_text_writes_links_for_a_terminal() {
         value["fix"]
             .as_str()
             .unwrap()
-            .contains("[`[checks]`](content-model/checks.md#19-checks)"),
+            .contains("[`[checks]`](content-model/checks.md#22-checks)"),
         "{value}"
     );
     let text = stdout(&run(dir.path(), &["explain", "page-orphan"], 0));

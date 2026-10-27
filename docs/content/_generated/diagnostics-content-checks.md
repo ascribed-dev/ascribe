@@ -13,7 +13,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The problem names the page's largest parts, up to five, largest first, each with its size: its sections, at their headings, and its includes, at their `@include` lines. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`. It's the spec's `page-size-markdown` check, made from the build before a deploy; `ascribe report delivery` names this check for it, and for the spec's other checks of a page's size.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC150 `page-description-missing`
 @id {permalink=true}: ASC150
@@ -41,7 +41,7 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 
 **Fix:** Make each heading one level below the heading it belongs under. A page's title is its level-1 heading, so its own headings start at level 2. The quick fix changes the one heading; the headings under it may need to move up too.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC152 `code-language-missing`
 @id {permalink=true}: ASC152
@@ -55,7 +55,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · Ascri
 
 **Fix:** Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC153 `recheck-overdue`
 @id {permalink=true}: ASC153
@@ -83,15 +83,15 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 
 **Fix:** Make the two agree: change the title or the heading so one says what the other does, or remove the heading and let the layout draw the title, as it does on most pages. When they differ on purpose, as a landing page's title is often the site's name and its heading a tagline, acknowledge it in the page's `intended` frontmatter, saying why.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC195 `template-placeholder-left`
 @id {permalink=true}: ASC195
-@summary: A page of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
+@summary: A draft of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
 
 Advice · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A page of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
+**When:** A draft (a page with `draft: true`) of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. In a page that publishes it's `template-placeholder-published`, an error. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
 
 **Message:** this page still has its template's placeholder `{placeholder}`; write what it asks for in its place
 
@@ -209,7 +209,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** End the first paragraph after the definition, in a sentence or two, and put the rest in a second paragraph. The first paragraph is what a link to the term shows as its title and the editor shows on hover; the rest of the section is still on the glossary page. The length is counted on the definition as each build derives it, with phrases substituted and formatting dropped.
 
-**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+**Read more:** [`[glossary]`](../content-model/content.md#8-glossary) in the `ascribe.toml` reference.
 
 ### ASC252 `summary-missing`
 @id {permalink=true}: ASC252
@@ -239,6 +239,20 @@ Advice, off by default · page level · next step: write · configurable in `[ch
 
 **Read more:** [`@summary`](../writing/directives.md#summary) in the directive reference.
 
+### ASC286 `template-placeholder-published`
+@id {permalink=true}: ASC286
+@summary: A page that publishes, of a content type that names a template, still has one of the template's placeholders, or a frontmatter field with the template's value.
+
+Error · file level · next step: write · configurable in `[checks]` · Ascribe's own, not in SPEC
+
+**When:** A page that publishes, one without `draft: true`, of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value, found as `template-placeholder-left` finds them. In a draft, it's that advice instead, so a page being written isn't covered in errors.
+
+**Message:** this page publishes with its template's placeholder `{placeholder}`; write what it asks for in its place, or mark the page `draft: true` until it's ready
+
+**Fix:** Write the page's own text where the template's placeholder is, the text in braces, and the page's own value in each field the template fills in, such as `title`. A placeholder in a page that publishes is never meant: readers see the template's words. While the page isn't ready, mark it `draft: true` in its frontmatter: no build publishes it, and what's left to fill in is advice. `ascribe new` starts a page that way.
+
+**Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
+
 ### ASC287 `github-alert`
 @id {permalink=true}: ASC287
 @summary: A block quote's first line is one of GitHub's alert markers, `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]`, in any case. A quote that mentions a marker later isn't looked at.
@@ -265,7 +279,7 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 
 **Message:** no other page links to this page or includes it, so readers reach it only through the sidebar
 
-**Fix:** Link to the page from a page about its topic, or include it in one, so a reader of that page finds it. A page in the navigation is still in the sidebar, so this is a hint: acknowledge one that needs no link in its `intended` frontmatter, or turn the check off in [`[checks]`](../content-model/checks.md#19-checks) (`page-orphan = "off"`). A page that's `listing: unlisted` is in no sidebar, so only someone given its address reaches it: link to it, or take `listing: unlisted` away to put it in the sidebar.
+**Fix:** Link to the page from a page about its topic, or include it in one, so a reader of that page finds it. A page in the navigation is still in the sidebar, so this is a hint: acknowledge one that needs no link in its `intended` frontmatter, or turn the check off in [`[checks]`](../content-model/checks.md#22-checks) (`page-orphan = "off"`). A page that's `listing: unlisted` is in no sidebar, so only someone given its address reaches it: link to it, or take `listing: unlisted` away to put it in the sidebar.
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
@@ -309,7 +323,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Fix:** Mark the content the feature covers with its key (`@available: <key>`, or `available: <key>` in a page's frontmatter), or remove the feature from `[features]` once nothing needs it.
 
-**Read more:** [`[features.<key>]`](../content-model/content.md#9-featureskey) in the `ascribe.toml` reference.
+**Read more:** [`[features.<key>]`](../content-model/variation.md#14-featureskey) in the `ascribe.toml` reference.
 
 ### ASC158 `glossary-term-unused`
 @id {permalink=true}: ASC158
@@ -323,7 +337,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` is used only where a link names its heading: link the occurrences that mean it, as `[build](glossary.md#build)`. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it with [`@intended`](../writing/directives.md#intended) at the top of the term's section, under its heading.
 
-**Read more:** [Terms](../content-model/content.md#122-terms) in the `ascribe.toml` reference.
+**Read more:** [Terms](../content-model/content.md#82-terms) in the `ascribe.toml` reference.
 
 ### ASC159 `image-unused`
 @id {permalink=true}: ASC159
@@ -335,7 +349,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Message:** no file shows or links to `{path}`
 
-**Fix:** Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](../content-model/checks.md#19-checks) when your site uses images that way.
+**Fix:** Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](../content-model/checks.md#22-checks) when your site uses images that way.
 
 **Read more:** [Images](../writing/inline.md#images) in the phrases and links reference.
 
@@ -351,7 +365,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Fix:** Make the image smaller: save it at the size it's shown, or compress it (a screenshot as an optimized PNG, a photo as JPEG or WebP). The limit is 500 KB; set another in `ascribe.toml`, such as `[checks.image-large] limit = "1 MB"`.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC161 `title-duplicate`
 @id {permalink=true}: ASC161
@@ -365,7 +379,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Give each page a title that says what sets it apart. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC172 `availability-left-behind`
 @id {permalink=true}: ASC172
@@ -377,9 +391,9 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Message:** feature `{key}` names releases up to \{version}, and the current line of `{target}` is \{current}, so what it marks has shipped
 
-**Fix:** When the feature stood for what a release would add, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and mark what the next release adds `<target> planned` instead of keeping a feature for it. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](../content-model/content.md#71-releasestarget).
+**Fix:** When the feature stood for what a release would add, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and mark what the next release adds `<target> planned` instead of keeping a feature for it. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](../content-model/checks.md#intended-acknowledgements). After each release, move its line from `planned` to `live` in [`[releases.<target>]`](../content-model/variation.md#121-releasestarget).
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC191 `description-duplicate`
 @id {permalink=true}: ASC191
@@ -407,7 +421,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 **Fix:** Declare the line in `[releases.<target>]`, in the list where it falls: `live` for a line readers are on, `planned` for one newer than every live line that hasn't shipped, or, for one older than every live line that shipped and that nothing publishes now, `archived` with no address, as `"3.3" = {}`. Or correct the number to a declared line, such as the one either side of it.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC212 `available-same-in-every-line`
 @id {permalink=true}: ASC212
@@ -423,7 +437,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 Content with no mark reads as the scope around it, so a mark is removed only when no mark around it says something, as a page that's deprecated or a section in preview does, and never in a fragment, which reads as where it's included; there, as everywhere else, the fix rewrites it. In a build that badges availability, which is reported only for versions before the oldest live line, the badge's version goes, or the whole badge with the mark, which changes the page, so the fix isn't safe; a project that keeps such badges, as "new in 0.2", turns the check off in `[checks]`.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC213 `available-in-no-line`
 @id {permalink=true}: ASC213
@@ -437,7 +451,7 @@ Warning · file level · next step: write · configurable in `[checks]` · [SPEC
 
 **Fix:** Remove the content, which no line's output publishes, or, if a line still has it, correct the mark. A mark that makes content unavailable from a version before the oldest live line, such as `self-managed (ga 3.0, removed 3.2)` with 3.4 the oldest, leaves it in no line.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC214 `release-line-ended`
 @id {permalink=true}: ASC214
@@ -451,7 +465,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Move the line from `live` to `archived` in `[releases.<target>]`, with its date as `ended` and, when it's still readable somewhere, its `url`; or, if its support goes on, change its date in `ends`.
 
-**Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
 
 ### ASC227 `memo-outdated`
 @id {permalink=true}: ASC227
@@ -483,11 +497,11 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 ### ASC235 `nav-page-unplaced`
 @id {permalink=true}: ASC235
-@summary: `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page, which no sidebar shows.
+@summary: `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page or a draft, which no sidebar shows.
 
 Advice · file level · next step: fix · configurable in `[checks]` · [SPEC §7.8]({repo}/blob/main/SPEC.md#78-navigation)
 
-**When:** `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page, which no sidebar shows.
+**When:** `ascribe.nav` lists `pages` for a page's section and doesn't name the page. A section with no `pages` has the default order, and its pages aren't reported, nor is a section's own page, nor an `unlisted` page or a draft, which no sidebar shows.
 
 **Message:** `{folder}`'s `pages` in ascribe.nav doesn't name this page, so it comes after the pages it does, by title
 
@@ -521,7 +535,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · Ascr
 
 **Fix:** Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](../checks/baseline.md).
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC244 `frontmatter-field-repeated`
 @id {permalink=true}: ASC244
@@ -561,9 +575,9 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Message:** no page links to `{operation}` (\{method} \{route}) in \{path}
 
-**Fix:** Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#19-checks).
+**Fix:** Link to the operation from the guide that covers it, by its `operationId`, `openapi.yaml#getUser`, or by its method and path when it has none, `openapi.yaml#delete/users/{id}`. An operation a guide doesn't need to cover can be marked `deprecated` in the spec when it's on its way out, which leaves it out; for an API whose reference is enough on its own, turn the check off in [`[checks]`](../content-model/checks.md#22-checks).
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ### ASC283 `build-filter-line-undeclared`
 @id {permalink=true}: ASC283

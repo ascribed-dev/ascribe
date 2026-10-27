@@ -159,6 +159,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_templates::StatusAnswer>(),
     },
     Shape {
+        file: "new",
+        title: "NewReport",
+        written_by: "`ascribe new --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::new::NewJson>(),
+    },
+    Shape {
         file: "init",
         title: "InitReport",
         written_by: "`ascribe init --format json`",

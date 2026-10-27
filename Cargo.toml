@@ -11,6 +11,7 @@ members = [
     "crates/ascribe-diff",
     "crates/ascribe-sources",
     "crates/ascribe-fmt",
+    "crates/ascribe-edit",
     "crates/ascribe-lsp",
     "crates/ascribe-query",
     "crates/ascribe-mcp",
@@ -41,6 +42,7 @@ ascribe-emit = { path = "crates/ascribe-emit" }
 ascribe-diff = { path = "crates/ascribe-diff" }
 ascribe-sources = { path = "crates/ascribe-sources" }
 ascribe-fmt = { path = "crates/ascribe-fmt" }
+ascribe-edit = { path = "crates/ascribe-edit" }
 ascribe-lsp = { path = "crates/ascribe-lsp" }
 ascribe-query = { path = "crates/ascribe-query" }
 ascribe-mcp = { path = "crates/ascribe-mcp" }

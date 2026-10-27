@@ -10,7 +10,7 @@
 //! nothing after its marker get none.
 
 use ascribe_core::{Applicability, Fix, Issue, Span, TextEdit, diagnostics};
-use ascribe_syntax::{Block, BlockKind, BlockQuote};
+use ascribe_syntax::{Block, BlockKind, BlockQuote, ParseOptions, parse};
 
 use super::Ctx;
 use super::comment::{line_start, next_line_start};
@@ -79,6 +79,12 @@ impl Ctx<'_> {
         let blocks = quote.children.len() - 1 + usize::from(more_of_first);
         let single = blocks == 1
             && (more_of_first || matches!(quote.children[1].kind, BlockKind::Paragraph(_)));
+        // What's left of the marker's paragraph starts a block in the
+        // container, where a line such as `2. first` or an indented line,
+        // which couldn't interrupt the paragraph, would start another kind.
+        if !single && more_of_first && !self.is_one_paragraph(&source[rest..first.span.end()]) {
+            return None;
+        }
         let text = if single {
             format!("{note} {content}")
         } else {
@@ -96,6 +102,16 @@ impl Ctx<'_> {
             // The note says what the quote meant to, in the type it named.
             applicability: Applicability::Safe,
         })
+    }
+
+    /// Whether the quoted lines `quoted`, with their markers taken off, are
+    /// one paragraph read on their own.
+    fn is_one_paragraph(&self, quoted: &str) -> bool {
+        let Some(text) = unquote(quoted) else {
+            return false;
+        };
+        let doc = parse(&text, &ParseOptions::new(self.schemas.clone()));
+        matches!(doc.blocks.as_slice(), [b] if matches!(b.kind, BlockKind::Paragraph(_)))
     }
 }
 

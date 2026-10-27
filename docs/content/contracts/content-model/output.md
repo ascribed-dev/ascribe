@@ -1,11 +1,11 @@
 ---
 type: reference
-title: "`ascribe.toml` format contract: consumer, builds, and sources"
-nav-label: "Consumer, builds, and sources"
-description: "The normative contract for the content model's consumer, builds, editor, and sources."
+title: "`ascribe.toml` format contract: where pages are published"
+nav-label: "Where pages are published"
+description: "The normative contract for the content model's consumer, builds, listing, crawlers, and permalinks."
 ---
 
-Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [consumer, builds, and sources](../../content-model/output.md).
+Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [where pages are published](../../content-model/output.md).
 
 ## 15. `[consumer]`
 
@@ -39,45 +39,26 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 ---
 
-## 17. `[editor]`
+## 17. `[listing]`
 
-@include: ../../_fragments/content-model/editor.md
+@include: ../../_fragments/content-model/listing.md
+
+**Rules** (§25.12): each value MUST be one of `listed`, `unquoted`, and `unlisted` (`model-invalid-value`). A key of `[listing.folders]` MUST be a path from the content root ending in `/`, without `.` or `..` parts or a pattern's characters, of a folder that exists by its exact name (`model-listing-folder`, a filesystem rule), and a key of `[listing.types]` a content type the model declares, or `page` when it declares none (`model-listing-type`). A rule MUST NOT be looser than a folder's it's under, or than `default` (`model-listing-looser`), and the table MUST have no other key (`model-unknown-key`). A page looser than a rule it's under is checked with the project, not by the loader: SPEC §8.2's `listing-loosened`.
+
+`older-lines` is held to `default` by `model-listing-looser`, as a folder's and a type's rules are. A page looser than `older-lines`, which only an older line's pages are under, is SPEC §8.2's `listing-loosened-in-line`.
 
 ---
 
-## 18. `[sources.<name>]`
+## 18. `[crawlers]`
 
-A source is a folder outside the content root, or another repository, that a page's snippets MAY read (SPEC §4.8, §7.3, §7.4); a page MUST NOT read a file outside the project's folder any other way. `<name>` is the source's name (§1.2), and a snippet's address starts with it.
+@include: ../../_fragments/content-model/crawlers.md
 
-@include: ../../_generated/content-model-sources.md
+**Rules** (§25.11): each of `lines` MUST be a string (`model-wrong-type`) of one line (`model-crawlers-line`), not empty (`model-empty-text`). `training`, `search`, and `on-request` MUST each be `"allow"` or `"disallow"` (`model-invalid-value`). A crawler a `User-agent` line of `lines` names, compared without case, MUST NOT be one a disallowed purpose names, nor one an earlier group of `lines` names (`model-crawlers-named-twice`), where consecutive `User-agent` lines open one group and `*` is never counted. The table MUST have no other key (`model-unknown-key`). A line is otherwise not validated: one that isn't a `User-agent`, `Allow`, or `Disallow` line MUST be written as it is, and `ascribe check` reads only the lines it can.
 
-**Rules** (§25.8): a source MUST have exactly one of `path` and `git`, `branch` only with `git`, a URL `git` can be given, and a branch name `git` accepts (`model-source-remote`). `path` MUST be relative (`model-path-absolute`) and name a directory that exists (`model-source-path-missing`), inside the git repository the project is in, when it's in one (`model-source-outside-repository`). With no repository, the language server and `ascribe mcp` MUST read a source only inside what the user opened, a folder of the workspace or the folder `ascribe mcp` was started in, and report one outside it as `model-source-outside-repository` with the variant `opened`; a command reads a source wherever `path` leads. With `git`, `sources/` MUST be outside the content root (`model-source-remote`).
+The crawlers of each purpose are data Ascribe ships, each with its operator, the operator's page about it, and the day it was read; a release MAY add to them. A disallowed purpose's group MUST name every one Ascribe knows of it.
 
-### 18.1 `ascribe.lock` and the copies
+---
 
-A source with `git` is pinned to a commit in `ascribe.lock`, beside `ascribe.toml`, and the files its snippets use are copied into `sources/<name>/` at the paths they have in their repository. So are the repository's `ascribe.examples.toml` and every file in its `examples.observations/`, when it has them, whatever the source's `include` says ([tested examples](../tested-examples.md#1-where-they-are)). Both are written by `ascribe sources fetch` and `ascribe sources update`, and committed. `check` and `build` read only the copies.
+## 19. `[permalinks]`
 
-```toml
-# Written by `ascribe sources fetch` and `ascribe sources update`. Don't edit it by hand.
-version = 1
-
-[[source]]
-name = "api"
-git = "https://github.com/acme/api.git"
-commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"
-missing = ["examples/quickstart.ts"]
-
-[source.files]
-"src/auth.rs" = "sha256:5d41402abc4b2a76b9719d911017c592ae2fd2b1f6b3b0f0d5ce64b4c7d0e1a2"
-```
-
-| Key | Type | Description |
-|---|---|---|
-| `version` | integer | The lock's format: `1`. |
-| `source[].name` | string | The source's name. Each source is pinned once. |
-| `source[].git` | string | The source's `git` when it was pinned. |
-| `source[].commit` | string | The commit, in full: 40 or 64 hexadecimal digits. |
-| `source[].files` | table | Each copy's path, relative to the source's folder, and the SHA-256 of its bytes: `sha256:` and 64 lowercase hexadecimal digits. |
-| `source[].missing` | array of strings | Optional. The paths, relative to the source's folder, that snippets named and that weren't in the repository at the commit, so weren't copied. No path is in both `files` and `missing`. |
-
-`check` reads the lock and the copies with the source files, and reports what doesn't match: a lock it can't read (`lock-invalid`); a pin of a source `ascribe.toml` doesn't declare with `git`, or declares with another `git` (`lock-source-unknown`); a copy that's missing or doesn't have its hash (`source-copy-changed`); a file in `sources/<name>/` the lock doesn't list (`source-copy-unlocked`); and a copy no snippet uses (`source-copy-unused`, a warning), which a tested examples' config or observation never is. A snippet that names a file with no copy is `snippet-file-missing`: its message says to run `ascribe sources fetch`, or, for a file the lock lists in `missing`, that the file isn't in the repository at the pinned commit, which `fetch` can't change. These are source-file diagnostics; see [the diagnostics reference](../../checks/diagnostics.md).
+None. A permalink's record, retired or moved, is an entry of `ascribe.addresses` keyed `go:<name>` (SPEC §7.10), and `[permalinks]` is a replaced key: a loader MUST report it as an error at the key (`model-unknown-key`), whose fix says that `ascribe addresses init` moves its entries.
