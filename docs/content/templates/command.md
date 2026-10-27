@@ -79,7 +79,7 @@ ascribe templates eject reference --keep-type
 
 It writes the same files and `templates.lock`, and leaves `ascribe.toml` as it is: the type takes its template and guide from the lock. With `--to` another folder, it adds only `template` and `guide` to the type's table, after its last entry, leaving its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already, or takes them from the lock; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
 
-It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
+It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. So is an `ascribe.toml` or a `templates.lock` git couldn't put back, as every [command that writes](../command/index.md#commands-that-write) does, unless you pass `--force`. With `--dry-run`, it says what it would write, and writes nothing. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
 
 It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the fields it declared as the project's other types do; the pages that name no type, up to ten, which `ascribe check` reports until each has its `type:`; each type it kept, with the keys it left as they were; and how to start a page. In a project `ascribe init` started:
 
@@ -95,7 +95,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 | Code | Meaning |
 |---|---|
 | `0` | Every template named was written, and its type added, or kept, taking its template and guide from the lock |
-| `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, or the types can't be added to `ascribe.toml`. Or a file couldn't be written; the files it wrote before that stay. |
+| `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, the types can't be added to `ascribe.toml`, or, without `--force`, a file git couldn't put back. Or a file couldn't be written; the files it wrote before that stay. |
 
 ### `ascribe templates status`
 @id {permalink=true}: cli-templates-status

@@ -52,6 +52,25 @@ fn init_says_what_it_wrote_and_where_to_go_next() {
 /// The phase's goal: in an empty folder, `ascribe init --templates`, then
 /// `ascribe check`, which is clean; and a page is of the type it names.
 #[test]
+fn dry_run_says_what_init_would_write_and_writes_nothing() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["init", "--templates", "--dry-run"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let said = stdout(&output);
+    assert!(said.contains("would write ascribe.toml\n"), "{said}");
+    assert!(said.contains("would write ascribe.addresses\n"), "{said}");
+    assert!(
+        said.ends_with("would make docs/, the folder the pages go in\n"),
+        "{said}"
+    );
+    assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 0, "{said}");
+    let output = ascribe(dir.path(), &["init", "--dry-run", "--format", "json"]);
+    let answer: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(answer["dry_run"], true, "{answer}");
+    assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 0);
+}
+
+#[test]
 fn init_with_the_templates_checks_clean_and_a_page_is_of_the_type_it_names() {
     let dir = tempfile::tempdir().unwrap();
     let output = ascribe(dir.path(), &["init", "--templates"]);

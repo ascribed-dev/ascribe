@@ -23,7 +23,7 @@ use serde::Serialize;
 use crate::answer::{self, Format, from_here};
 use crate::cli::Global;
 use crate::context::{Failure, locate};
-use crate::exit;
+use crate::{exit, guard};
 
 /// Arguments of `ascribe templates`.
 #[derive(Debug, ClapArgs)]
@@ -120,6 +120,10 @@ pub struct EjectArgs {
     /// or that names a template or guide already.
     #[arg(long)]
     pub keep_type: bool,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what was written.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -278,14 +282,30 @@ fn run_eject(global: &Global, args: &EjectArgs, out: &mut dyn Write, err: &mut d
         to: &to,
         ascribe_version: env!("ASCRIBE_VERSION"),
         keep_type: args.keep_type,
+        dry_run: true,
     };
-    let ejected = match ascribe_templates::eject(&request, &fs) {
+    // A dry run first: what it would write, which the guard is asked about.
+    let mut ejected = match ascribe_templates::eject(&request, &fs) {
         Ok(ejected) => ejected,
         Err(e) => return answer::fail(err, &e),
     };
+    let paths: Vec<_> = ejected.written.iter().map(|p| file.root.join(p)).collect();
+    if let Err(e) = args.guard.allow(&paths) {
+        return answer::fail(err, &e);
+    }
+    if !args.guard.dry_run && ejected.refused.is_empty() {
+        let request = ascribe_templates::Eject {
+            dry_run: false,
+            ..request
+        };
+        ejected = match ascribe_templates::eject(&request, &fs) {
+            Ok(ejected) => ejected,
+            Err(e) => return answer::fail(err, &e),
+        };
+    }
     let result = match args.format {
         Format::Json => answer::write_json(out, &ejected),
-        Format::Text => write_eject(out, err, &file.root, &ejected),
+        Format::Text => write_eject(out, err, &file.root, &ejected, args.guard.dry_run),
     };
     if let Some(code) = answer::written(result, err) {
         return code;
@@ -310,12 +330,17 @@ fn write_eject(
     err: &mut dyn Write,
     root: &Path,
     ejected: &EjectAnswer,
+    dry_run: bool,
 ) -> io::Result<()> {
     if !ejected.refused.is_empty() {
         return write_refused(err, ejected);
     }
+    let wrote = if dry_run { "would write" } else { "wrote" };
     for path in &ejected.written {
-        writeln!(out, "wrote {}", from_here(root, path))?;
+        writeln!(out, "{wrote} {}", from_here(root, path))?;
+    }
+    if dry_run {
+        return Ok(());
     }
     write_added(out, root, ejected, true)
 }

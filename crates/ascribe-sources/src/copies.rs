@@ -1,6 +1,7 @@
 //! The copies in `sources/<name>/`: what's there, and writing and removing
 //! them without leaving the folder.
 
+use std::cell::RefCell;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -23,21 +24,29 @@ pub(crate) fn not_text(bytes: &[u8]) -> Option<&'static str> {
 }
 
 /// A source's copies folder.
-pub(crate) struct Folder {
+pub(crate) struct Folder<'a> {
     /// The project root.
     root: PathBuf,
     /// The project's files.
     files: DiskFs,
     /// The folder, relative to the root: `sources/<name>`.
     rel: RelPath,
+    /// On a dry run, where writing and removing a copy record it instead.
+    planned: Option<&'a RefCell<Vec<PathBuf>>>,
 }
 
-impl Folder {
-    pub(crate) fn new(root: &Path, files: &DiskFs, rel: RelPath) -> Folder {
+impl<'a> Folder<'a> {
+    pub(crate) fn new(
+        root: &Path,
+        files: &DiskFs,
+        rel: RelPath,
+        planned: Option<&'a RefCell<Vec<PathBuf>>>,
+    ) -> Folder<'a> {
         Folder {
             root: root.to_path_buf(),
             files: files.clone(),
             rel,
+            planned,
         }
     }
 
@@ -94,6 +103,10 @@ impl Folder {
         if self.read(path).as_deref() == Some(bytes) {
             return Ok(false);
         }
+        if let Some(planned) = self.planned {
+            planned.borrow_mut().push(full);
+            return Ok(true);
+        }
         // Outside FileSystem: writing a copy, which the FileSystem doesn't do.
         // From the project root down, every folder that exists is a real
         // one.
@@ -129,6 +142,13 @@ impl Folder {
         let Some(full) = self.path(path) else {
             return Ok(());
         };
+        if let Some(planned) = self.planned {
+            // Outside FileSystem: whether a copy is there to remove.
+            if fs::symlink_metadata(&full).is_ok() {
+                planned.borrow_mut().push(full);
+            }
+            return Ok(());
+        }
         match fs::remove_file(&full) {
             Ok(()) => {}
             Err(e) if e.kind() == io::ErrorKind::NotFound => {}

@@ -62,6 +62,7 @@ fn run_with(
             to: &to,
             ascribe_version: "9.9.9",
             keep_type,
+            dry_run: false,
         },
         &fs,
     )

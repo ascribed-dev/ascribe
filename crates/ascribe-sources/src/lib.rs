@@ -20,6 +20,7 @@
 mod copies;
 mod remote;
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
@@ -143,6 +144,11 @@ pub struct SourcesView {
     lock_text: Option<String>,
     /// For each source, the paths snippets name in it.
     used: BTreeMap<String, BTreeSet<String>>,
+    /// Whether `fetch` and `update` write nothing, and only say what they
+    /// would write.
+    dry_run: bool,
+    /// On a dry run, the files `fetch` or `update` would write or remove.
+    planned: RefCell<Vec<PathBuf>>,
 }
 
 impl SourcesView {
@@ -189,7 +195,29 @@ impl SourcesView {
             lock,
             lock_text,
             used,
+            dry_run: false,
+            planned: RefCell::new(Vec::new()),
         })
+    }
+
+    /// The same view, where `fetch` and `update` write nothing when
+    /// `dry_run`, and say what they would write: the copies they'd copy and
+    /// remove, and whether the lock would change.
+    #[must_use]
+    pub fn dry_run(mut self, dry_run: bool) -> SourcesView {
+        self.dry_run = dry_run;
+        self.planned = RefCell::new(Vec::new());
+        self
+    }
+
+    /// The files the dry runs so far would write or remove, absolute, in
+    /// the order they'd be changed: the copies, then `ascribe.lock`.
+    pub fn planned(&self) -> Vec<PathBuf> {
+        self.planned.borrow().clone()
+    }
+
+    fn planned_list(&self) -> Option<&RefCell<Vec<PathBuf>>> {
+        self.dry_run.then_some(&self.planned)
     }
 
     /// The sources in other repositories that `names` names, in declaration
@@ -225,11 +253,12 @@ impl SourcesView {
             .unwrap_or_default()
     }
 
-    fn folder(&self, source: &Source) -> Folder {
+    fn folder(&self, source: &Source) -> Folder<'_> {
         Folder::new(
             &self.root,
             &self.files,
             RelPath::parse(&source.path).unwrap_or_default(),
+            self.planned_list(),
         )
     }
 
@@ -379,6 +408,10 @@ impl SourcesView {
                 path: LOCK_FILE.into(),
                 message: "it's a link; replace it with a file, or remove it".into(),
             });
+        }
+        if let Some(planned) = self.planned_list() {
+            planned.borrow_mut().push(path);
+            return Ok(true);
         }
         // Library write: the lock file, after a fetch that changed it.
         std::fs::write(&path, text).map_err(|e| SourcesError::Write {
@@ -555,6 +588,7 @@ pub fn fetch(
                     &view.root,
                     &view.files,
                     RelPath::parse(&folder).unwrap_or_default(),
+                    view.planned_list(),
                 );
                 for path in locked.files.keys() {
                     folder.remove(path).map_err(|e| SourcesError::Write {
@@ -871,7 +905,7 @@ fn update_one(
 /// copies in `folder`: its config, every observation, and the file, as the
 /// pages have it. A path that isn't an example, or has no copy, isn't
 /// listed. Read only: nothing in the config is run.
-fn example_states(folder: &Folder, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
+fn example_states(folder: &Folder<'_>, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
     let examples = folder.examples();
     let Some(Ok(config)) = &examples.config else {
         return BTreeMap::new();

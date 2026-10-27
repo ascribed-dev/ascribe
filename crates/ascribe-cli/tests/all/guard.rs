@@ -239,6 +239,34 @@ const CASES: &[Case] = &[
         json: true,
     },
     Case {
+        args: &["vale", "eject"],
+        file: "ascribe.toml",
+        before: |root| {
+            write(
+                root,
+                "ascribe.toml",
+                &format!("{MODEL}\n[checks.vale]\npreset = \"quiet\"\n"),
+            );
+        },
+        dry_run: 0,
+        says: "would write ascribe.toml",
+        json: false,
+    },
+    Case {
+        args: &["templates", "eject", "how-to"],
+        file: "ascribe.toml",
+        before: |root| {
+            write(
+                root,
+                "ascribe.toml",
+                &format!("{MODEL}\n# Not committed.\n"),
+            )
+        },
+        dry_run: 0,
+        says: "would write ascribe.toml",
+        json: false,
+    },
+    Case {
         args: &["observe", "--yes"],
         file: "examples.observations/default.toml",
         before: observed,
