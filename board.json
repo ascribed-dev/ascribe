@@ -7440,7 +7440,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1196"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Agent rules: keep the page types, and cut what the skill already says, when the rules run over 4,000 characters"
     },
     {
@@ -7645,7 +7645,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1197"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Diagnostics registry: keep it beside the code that ships it, and generate the slug constants"
     },
     {
@@ -8312,7 +8312,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Load a project once, phase 3: every command loads one Workspace, and the checks see a view of it"
     },
     {
@@ -8591,7 +8591,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1196"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "`agents sync`: keep the page types in AGENTS.md, and give the skill's commands the project's `--config`"
     },
     {
@@ -8667,8 +8667,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1198"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In review",
       "title": "Fuzz: parse crashes (c1c7dcdaf4bd)"
     },
     {
@@ -8684,8 +8687,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1199"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In review",
       "title": "Fuzz: format crashes (a9ae2c31f844)"
     }
   ]
