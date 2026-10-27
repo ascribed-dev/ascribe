@@ -1039,6 +1039,7 @@ READMEs published with a package, a crate, or the repository:
 | `crates/ascribe-mcp/README.md` |
 | `crates/ascribe-model/README.md` |
 | `crates/ascribe-query/README.md` |
+| `crates/ascribe-report/README.md` |
 | `crates/ascribe-resolve/README.md` |
 | `crates/ascribe-sources/README.md` |
 | `crates/ascribe-syntax/README.md` |
