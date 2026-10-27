@@ -471,6 +471,23 @@ fn claude_md_is_updated_only_when_there_is_one() {
     );
     run(repo.path(), &["agents", "sync", "--check"], 0);
 
+    // One that only mentions the import, in a code span, still gets it.
+    let repo = repository("quill");
+    write(
+        &repo.path().join("CLAUDE.md"),
+        "# Ours\n\nSync adds `@AGENTS.md` here.\n",
+    );
+    let out = sync(repo.path(), ".", &["--target", "claude"]);
+    assert!(
+        !stderr(&out).contains("already loads AGENTS.md"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(
+        read(&repo.path().join("CLAUDE.md"))
+            .ends_with("\n@AGENTS.md\n<!-- ascribe:agents end -->\n")
+    );
+
     // One that imports it twice, the block's and its own, loses the block.
     let repo = repository("quill");
     write(

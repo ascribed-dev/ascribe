@@ -850,28 +850,32 @@ fn claude_md(
     };
     // A file with damaged markers is said nothing of: placing the block
     // reports them.
-    let note = markers
-        .remove(&text)
-        .is_ok_and(|outside| outside.unwrap_or(text).contains(import.trim_end()))
-        .then(|| {
-            format!(
-                "{} already loads AGENTS.md, so it gets no import",
-                path.display()
-            )
-        });
+    let note = matches!(own_import(markers, &text, import), Ok(Some(_))).then(|| {
+        format!(
+            "{} already loads AGENTS.md, so it gets no import",
+            path.display()
+        )
+    });
     Ok((Some((path, import)), note))
 }
 
 /// A `CLAUDE.md`'s text with `import` once: in the block, or only outside
 /// it when it's there already, so the block is left out.
 fn import_once(markers: &Markers<'_>, old: Option<&str>, import: &str) -> Result<String, Damage> {
-    if let Some(text) = old {
-        let outside = markers.remove(text)?.unwrap_or_else(|| text.to_owned());
-        if outside.contains(import.trim_end()) {
-            return Ok(outside);
-        }
+    if let Some(text) = old
+        && let Some(outside) = own_import(markers, text, import)?
+    {
+        return Ok(outside);
     }
     markers.place(old, import)
+}
+
+/// `text` without the block when a line outside it, trimmed, is `import`:
+/// one in a code span or in other words isn't an import.
+fn own_import(markers: &Markers<'_>, text: &str, import: &str) -> Result<Option<String>, Damage> {
+    let outside = markers.remove(text)?.unwrap_or_else(|| text.to_owned());
+    let imports = outside.lines().any(|line| line.trim() == import.trim_end());
+    Ok(imports.then_some(outside))
 }
 
 /// A path in the project's folder, as written from the repository's root.
