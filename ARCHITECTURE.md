@@ -49,7 +49,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | `tests/commonmark` | The CommonMark spec's examples, run against the fork and the parser. |
 | `tests/corpora` | Real documentation sets, the 3,000-page synthetic project (`tests/corpora/synthetic`), and the performance benchmarks with their baselines. |
 | `tests/render` | The site-render fixtures both HTML renderers must pass. |
-| `fuzz` | The fuzz targets (`cargo-fuzz`): the parser, the content model's loader, and the formatter on arbitrary text. A crate of its own, outside the workspace, on a dated nightly ([CONTRIBUTING.md](CONTRIBUTING.md#fuzzing)). |
+| `fuzz` | The fuzz targets (`cargo-fuzz`): the parser, the content model's loader, the formatter, the frontmatter reader, the OpenAPI reader, and the JSON example validator on arbitrary text. A crate of its own, outside the workspace, on a dated nightly ([CONTRIBUTING.md](CONTRIBUTING.md#fuzzing)). |
 | [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
@@ -211,7 +211,7 @@ What Ascribe says it is has one home too, `design/words.toml`: the headline, the
 | Conformance cases, written from the spec | `tests/conformance/cases/`, run by `cargo test -p ascribe-conformance` |
 | Snapshots (`insta`) | A `snapshots/` folder beside the test file: `crates/ascribe-emit/tests/all/snapshots/`, `crates/ascribe-cli/tests/all/snapshots/`, and the others. Review a change with `cargo insta review` |
 | Property tests (`proptest`) | `ascribe-core`, `ascribe-syntax`, `ascribe-resolve`, `ascribe-fmt`, `ascribe-check`, `ascribe-diff` |
-| Fuzzing (`cargo-fuzz`) | `fuzz/fuzz_targets/`: `parse`, `model`, and `format`, run a few minutes each by the nightly Fuzz workflow, which opens an issue for each crash |
+| Fuzzing (`cargo-fuzz`) | `fuzz/fuzz_targets/`: `parse`, `model`, `format`, `frontmatter`, `openapi`, and `example`, run a few minutes each by the nightly Fuzz workflow, which opens an issue for each crash |
 | Two implementations compared | `crates/ascribe-syntax/tests/all/agreement.rs` (two parsers), `crates/ascribe-resolve/tests/all/incremental_differential.rs` and `crates/ascribe-lsp/tests/all/differential.rs` (incremental against from scratch), `crates/ascribe-diff/tests/all/reach.rs` (`diff`'s short path against comparing every page), `crates/ascribe-check/tests/all/parity.rs` (checks against the index), `crates/ascribe-cli/tests/all/lsp_parity.rs` (the command against the server), and the renderers above |
 | The command's output, as files the docs show | `crates/ascribe-cli/tests/all/output.rs`, writing `crates/ascribe-cli/tests/output/` |
 | Browser tests | `packages/elements/test/`, in Chromium, Firefox, and WebKit |

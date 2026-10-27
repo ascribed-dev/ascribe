@@ -58,13 +58,16 @@ A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary wr
 
 ### Fuzzing
 
-`fuzz/` holds three [cargo-fuzz](https://rust-fuzz.github.io/book/cargo-fuzz.html) targets that feed arbitrary text to the entry points every keystroke and every agent's edit goes through:
+`fuzz/` holds six [cargo-fuzz](https://rust-fuzz.github.io/book/cargo-fuzz.html) targets that feed arbitrary text to the entry points every keystroke, every agent's edit, and every file a project names goes through:
 
 | Target | Calls | Fails when |
 |---|---|---|
 | `parse` | `ascribe_syntax::parse`, with the built-in directives | it panics, or a span in the tree is outside the input or off a character boundary |
 | `model` | `ascribe_model::load_str_in`, on TOML | it panics |
 | `format` | `ascribe_fmt::format`, under the conformance suite's shared model | it panics, its edits don't apply, or formatting its output changes it again |
+| `frontmatter` | `ascribe_resolve::index_file`, under the shared model, and `ascribe_syntax::frontmatter_lines` | it panics, or a line's range is outside the text |
+| `openapi` | `ascribe_resolve::openapi::read_spec`, as YAML and as JSON, then the schema translation in both directions | it panics, or a `$ref` cycle doesn't terminate |
+| `example` | `ascribe_resolve::json_schema::check`, on an arbitrary schema and example, in both dialects | it panics, or a recursive schema doesn't terminate |
 
 `fuzz/` is a crate of its own, outside the workspace, with its own `Cargo.lock`, so `libfuzzer-sys` never reaches the workspace's, and its own `rust-toolchain.toml`, which pins the dated nightly cargo-fuzz needs (decision [#1020](project-docs/decisions/1020-fuzzing-outside-the-workspace.md)). From `fuzz/`, which picks that nightly:
 
