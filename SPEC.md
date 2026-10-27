@@ -238,7 +238,8 @@ A fenced code block's info string holds its language, then words, some of them `
 - **The info string** is the one CommonMark gives: the text after the opening fence, trimmed, with its backslash escapes and entity references taken off. The grammar applies to that text, not to the line as written.
 - **Words** are parted by spaces and tabs. The first word is the block's **language**, unless it's a pair; then the block has no language.
 - **A pair** is a key, `=`, and a value, with nothing between them, then a space, a tab, or the end of the info string. Keys follow §3.3's rule. A value is a **token**, any characters but whitespace and `"`, or a **quoted string** in double quotes, inside which `\"` and `\\` escape, as in §3.3, and any other backslash is itself. A quoted value may hold spaces, and a word inside it isn't a pair: `title="use phrases=true"` doesn't opt in to phrases.
-- **Every other word is left to the consumer,** such as a highlighter's `{1,3}` or `showLineNumbers`, and processors don't report it. So are words that only look like pairs: `phrases = true` is three words, `Title=x` has no key, and `title="say "hi""` isn't a pair, because its value closes after `say ` and something other than a space follows.
+- **Every other word is left to the consumer,** such as a highlighter's `{1,3}` or `showLineNumbers`, and processors don't report it, unless it starts like a pair.
+- **A word that starts like a pair a processor reads, and isn't one, is reported** (§8.2): a word after the language that starts with a key in the table below, in any case, then optional spaces or tabs and `=`. It's left to the consumer as any other word is, but its author almost certainly meant the pair, and without it the block quietly loses its title, its phrases, or its example marker. `phrases = true` is three words, `Title=x` has no key, `title="connect.ts` has no closing quote, and `title="say "hi""` isn't a pair, because its value closes after `say ` and something other than a space follows; each is reported.
 - **Order doesn't matter,** and when a key is given more than once, its first pair counts. A `title` or `tested` whose value is empty means none.
 - **Escapes in a page's source.** CommonMark takes its own escapes off first, and a backslash escapes `"` and `\` in both, so a quote inside a quoted value is written `\\\"` in the page and a backslash `\\\\`. A processor that writes an info string into Markdown escapes each backslash in it, so a reader gets the same info string back.
 
@@ -666,11 +667,11 @@ Takes a code example from a file outside the content, by name, and puts it in th
 
   | Key | Type | Default | Meaning |
   |---|---|---|---|
-  | `lang` | string | the file's extension | The code block's language |
+  | `lang` | string | from the file's name or extension | The code block's language |
   | `title` | string | none | A title for the code block, written into its info string as `title="…"` |
   | `phrases` | boolean | `false` | Whether phrases in the code are substituted (§5.1) |
 
-  The language defaults to the file's extension, lowercased, without the dot (`toml` for `ascribe.toml`). A file with no extension has no language unless `lang` gives one.
+  The language defaults to the language the table of file names below gives a file it names (`dockerfile` for `Dockerfile`), and otherwise to the file's extension, lowercased, without the dot (`toml` for `ascribe.toml`). Any other file with no extension has no language unless `lang` gives one.
 
 #### Regions
 
@@ -684,25 +685,37 @@ labels = { macos = "macOS" }  # :remove:
 # :snippet-end:
 ```
 
-- **Tag lines.** A tag counts only in a line comment, in the comment syntax of the file's extension (the table below). A component file, with a script and markup, takes either marker on any line. A **tag line** is a line holding only optional whitespace, the comment marker, optional whitespace, the tag, and optional whitespace (then the closing `-->` for `<!--`).
+- **Tag lines.** A tag counts only in a comment on a line of its own, in the comment syntax of the file's name or extension (the tables below). A file with two markers, such as a component file with a script and markup, takes either on any line. A **tag line** is a line holding only optional whitespace, the comment marker, optional whitespace, the tag, and optional whitespace (then the closing `-->` for `<!--`, or `*/` for `/*`).
 - **`:snippet-start: <name>`** opens a region and **`:snippet-end:`** closes the innermost open one; `:snippet-end: <name>` closes the open region with that name, so regions may overlap as well as nest. A region holds the lines between its start and end tag lines. A region name is letters, digits, `-`, `_`, and `.` (ABNF rule `region-name`), and MUST be unique in its file.
-- **`:remove-start:`** and **`:remove-end:`** leave out the lines between them, and a line that ends with the comment marker, optional whitespace, and **`:remove:`** (then `-->` for `<!--`) is left out itself. Removal blocks may nest, and apply to every snippet of the file.
+- **`:remove-start:`** and **`:remove-end:`** leave out the lines between them, and a line that ends with the comment marker, optional whitespace, and **`:remove:`** (then `-->` for `<!--`, or `*/` for `/*`) is left out itself. Removal blocks may nest, and apply to every snippet of the file.
 - **Tag lines never appear in a snippet**, nor do removed lines. Of the lines that remain, those holding only whitespace at the start and the end are dropped, so where a formatter puts a tag line doesn't change the snippet. The rest are dedented by their common leading whitespace; lines holding only whitespace are emptied and don't count toward it.
 - Every start tag MUST have an end tag, and every end tag a start. An unclosed tag or an end with nothing to close makes every snippet of the file an error.
 - **Reserved tags.** Bluehawk's other tags are reserved for later revisions: `state`, `state-remove`, `state-uncomment`, `replace`, `uncomment`, and `emphasize`, each as `-start` and `-end` tag lines, and `:emphasize:` and `:uncomment:` at the end of a line, as `:remove:` is written. A file that uses one can't be used by a snippet, so its code is never shown with a tag left in.
 
-The comment syntax of each extension:
+A file is matched by its whole name first. The comment syntax and language of each file name:
+
+| Marker | Language | File names |
+|---|---|---|
+| `#` | `dockerfile` | `Containerfile`, `Dockerfile` |
+| `#` | `makefile` | `GNUmakefile`, `Makefile` |
+| `#` | `just` | `Justfile` |
+| `#` | `dotenv` | `.env`, `.env.*` |
+| `#` | `gitignore` | `.gitignore` |
+
+Any other file is matched by its extension. The comment syntax of each extension:
 
 | Marker | Extensions |
 |---|---|
 | `//` | `c`, `cc`, `cjs`, `cpp`, `cs`, `cts`, `cxx`, `dart`, `go`, `gradle`, `groovy`, `h`, `hpp`, `java`, `js`, `jsonc`, `jsx`, `kt`, `kts`, `mjs`, `mts`, `php`, `proto`, `rs`, `scala`, `swift`, `ts`, `tsx`, `zig` |
-| `#` | `bash`, `cfg`, `conf`, `ex`, `exs`, `fish`, `hcl`, `nix`, `pl`, `pm`, `ps1`, `py`, `r`, `rb`, `sh`, `tf`, `toml`, `yaml`, `yml`, `zsh` |
+| `#` | `bash`, `cfg`, `conf`, `dockerfile`, `ex`, `exs`, `fish`, `gql`, `graphql`, `hcl`, `mk`, `nix`, `pl`, `pm`, `properties`, `ps1`, `py`, `r`, `rb`, `sh`, `tf`, `toml`, `yaml`, `yml`, `zsh` |
 | `--` | `elm`, `hs`, `lua`, `sql` |
 | `;` | `asm`, `clj`, `cljs`, `el`, `ini`, `lisp`, `scm` |
 | `<!--` … `-->` | `htm`, `html`, `md`, `mdx`, `svg`, `xml` |
+| `/*` … `*/` | `css` |
 | `//` or `<!--` … `-->` | `astro`, `svelte`, `vue` |
+| `//` or `/*` … `*/` | `less`, `scss` |
 
-Extensions are compared without regard to case. A file whose extension isn't in the table has no tags: it can be used whole, but not by region. The table grows with revisions of this specification.
+A name ending in `.*` stands for any name that starts with what comes before the `*` and goes on past it, such as `.env.local`. File names and extensions are compared without regard to case. A file that neither table has, by its name or its extension, has no tags: it can be used whole, but not by region. The tables grow with revisions of this specification.
 
 **No history, no network.** A snippet reads the file as it is in the working tree, through its source, so checking and building need neither version-control history nor a network. A source in another repository is read through the copies in the project (§7.4).
 
@@ -1275,6 +1288,7 @@ These are the specification's diagnostics, and their severities are fixed: a pro
 | Attributes | Unquoted value containing a reserved character | Error |
 | Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value) | Error |
 | Attributes | The same key given more than once | Error |
+| Attributes | A word after a fenced code block's language that starts like a pair a processor reads (its key in any case, then optional spaces and `=`) but isn't one | Warning |
 | Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name | Warning |
 | Directives | Primary given to a directive that takes none, or a required primary missing | Error |
 | Directives | Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary | Error |
@@ -1523,7 +1537,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 - A `@variant` group with more than one arm left, which the site output makes a switcher, opens with a line saying a reader sees one of its arms at a time, and by which dimension's label when the arms are dimensional: `A reader sees one of the next 3 sections at a time, chosen by package manager.` Each arm is then a section under a heading one level below the section the group is in (at most level 6), naming each of its dimensions and values, as `### Package manager: pnpm`, or with a labeled arm's title.
 - A heading inside a `@variant` arm that stays a labeled section ends with the arm's label in parentheses, as `## Install (pnpm)`, and with each enclosing arm's, outermost first, when groups nest: so every section's headings stay distinct.
 
-**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by its title, in the sections of the build's navigation (§7.8): the content root's pages first, under its label, then each top section, its nested sections' pages in reading order, each linked to its Markdown version with its description. An index too long for one fetch is split into one per top section. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so they need the site's origin: a content model that gives it (`[consumer] site`) publishes them unless it says `agents = false`, and one that doesn't publishes them only by asking, which without the origin makes the content model invalid. In a versioned build with more than one live line (§9.3), each line has its own, under its base path: its `llms.txt` lists the line's pages, its heading names the line, and an older line's opens with a paragraph that links to the current line's `llms.txt`.
+**Outputs for agents.** A content model MAY ask for the outputs AI agents read (`[consumer] agents = true`), following the Web Documentation Delivery Spec 0.6.0. A compiler that supports it lays the plain-markdown output out by URL, so that it's published beside the site: each page at its route with `.md`, opening with a blockquote that links to the index; and the index, `llms.txt`, listing every page the build publishes and offers (§2.1), by its title, in the sections of the build's navigation (§7.8): the content root's pages first, under its label, then each top section, its nested sections' pages in reading order, each linked to its Markdown version with its description. An index too long for one fetch is split into one per top section. In the laid-out output, a link to a page the build publishes, a glossary link included, leads to that page's Markdown version, and a link to a heading leads to the anchor a Markdown reader gives that heading there, by the slugging algorithm of §5.5 applied to the headings as the Markdown writes them. In the site output, each page opens with a visually hidden pointer to the index and to the page's Markdown (§9.7). Every link in these outputs is absolute, so they need the site's origin: a content model that gives it (`[consumer] site`) publishes them unless it says `agents = false`, and one that doesn't publishes them only by asking, which without the origin makes the content model invalid. In a versioned build with more than one live line (§9.3), each line has its own, under its base path: its `llms.txt` lists the line's pages, its heading names the line, and an older line's opens with a paragraph that links to the current line's `llms.txt`.
 
 **Page records.** The site output holds a record of each page the build publishes: its route, its source path, its title and description as plain text, its canonical address when the content model gives the site's origin, its `listing` (§2.1) and where it comes from (the page, a rule of the content model, or neither), and its Markdown version's address when the build publishes one; and the content model's `robots.txt` lines, each path in an `Allow` or `Disallow` line from the host's root, with a group for each kind of crawler the content model disallows, naming every crawler of that kind the processor knows. A page's canonical address is its own, except in an older line of a versioned build (§9.3), where it's the address in the current line of the same page, or of the page the current line publishes in its place, following `replaces` (§2.1) as a link does (§5.2); a page the current line has neither of keeps its own. Every output that says something about a page to a reader that isn't a person, `llms.txt` among them, is written from the records, so no two of them disagree.
 

@@ -2,6 +2,7 @@ ASC036 link-target-missing: error, found in each file
 
 Message: `{path}` doesn't exist
   or: `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive
+  or: `{path}` doesn't exist; did you mean `{closest}`?
   or: `{path}` is outside the project, so it can't be copied into the output
 
 Fix: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.

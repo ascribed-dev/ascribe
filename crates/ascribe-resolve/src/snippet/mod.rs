@@ -33,7 +33,8 @@ use ascribe_model::{ContentModel, Source, suggest};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
 
 use crate::fs::{FileSystem, Probe};
-use tags::{CommentStyle, Extracted, TagProblem, Tags, comment_style, is_region_name};
+use crate::incremental::CodeFileIds;
+use tags::{CommentStyle, Extracted, TagProblem, Tags, file_comment_style, is_region_name};
 
 /// The file ids code files get, from this one up: past any source file's, so
 /// a diagnostic's related location can point into a code file.
@@ -190,10 +191,7 @@ impl SnippetUse {
     /// observation, then `phrases=true`. With no language but other words,
     /// it starts with `text`, so no word is read as the language.
     pub fn info(&self, file: &CodeFile, tested: Option<&str>) -> String {
-        let lang = self
-            .lang
-            .clone()
-            .or_else(|| file.path.extension().map(str::to_ascii_lowercase));
+        let lang = self.lang.clone().or_else(|| tags::default_lang(&file.path));
         let mut words: Vec<String> = Vec::new();
         if let Some(title) = &self.title {
             words.push(format!("title={}", quote(title)));
@@ -222,7 +220,7 @@ pub struct CodeFile {
     pub path: RelPath,
     /// Its text.
     pub text: Arc<str>,
-    /// Its comment syntax, by extension; `None` when it has no tags.
+    /// Its comment syntax, by name or extension; `None` when it has no tags.
     pub style: Option<CommentStyle>,
     /// Its tags.
     pub tags: Tags,
@@ -257,11 +255,13 @@ pub enum ReadError {
 }
 
 /// The code files read so far, by path from the project root, so each is
-/// read and scanned once however many snippets use it. Each new file gets
-/// the next id from [`CODE_FILE_IDS`].
+/// read and scanned once however many snippets use it. Each file gets its
+/// path's id from a table, and a path the table doesn't know gets the next
+/// one, from [`CODE_FILE_IDS`] up.
 #[derive(Debug, Default)]
 pub struct CodeFiles {
     files: Mutex<HashMap<RelPath, Result<Arc<CodeFile>, ReadError>>>,
+    ids: Mutex<CodeFileIds>,
     /// Each source folder's `ascribe.examples.toml` and observation, read
     /// once ([`CodeFiles::examples`]).
     examples: Mutex<HashMap<RelPath, Arc<examples::FolderExamples>>>,
@@ -273,6 +273,21 @@ impl CodeFiles {
         CodeFiles::default()
     }
 
+    /// No files read yet, with ids from `ids`.
+    pub(crate) fn with_ids(ids: CodeFileIds) -> CodeFiles {
+        CodeFiles {
+            ids: Mutex::new(ids),
+            ..CodeFiles::default()
+        }
+    }
+
+    /// The table of ids, with the paths read since given ids.
+    pub(crate) fn into_ids(self) -> CodeFileIds {
+        self.ids
+            .into_inner()
+            .unwrap_or_else(PoisonError::into_inner)
+    }
+
     /// The code file at `path`, from the project root, read through `fs` the
     /// first time it's asked for.
     pub fn read(&self, fs: &dyn FileSystem, path: &RelPath) -> Result<Arc<CodeFile>, ReadError> {
@@ -280,8 +295,12 @@ impl CodeFiles {
         if let Some(found) = files.get(path) {
             return found.clone();
         }
-        let next = files.values().filter(|f| f.is_ok()).count() as u32;
-        let read = read_code(fs, path, FileId::new(CODE_FILE_IDS + next));
+        let mut ids = self.ids.lock().unwrap_or_else(PoisonError::into_inner);
+        let read = read_code(fs, path, ids.peek(path));
+        // Only a file that reads takes an id.
+        if read.is_ok() {
+            ids.assign(path);
+        }
         files.insert(path.clone(), read.clone());
         read
     }
@@ -319,7 +338,7 @@ fn read_code(fs: &dyn FileSystem, path: &RelPath, id: FileId) -> Result<Arc<Code
     }
     let text =
         String::from_utf8(bytes).map_err(|_| ReadError::NotText("it isn't UTF-8".to_owned()))?;
-    let style = path.extension().and_then(comment_style);
+    let style = file_comment_style(path);
     let tags = style.map(|s| tags::scan(&text, s)).unwrap_or_default();
     Ok(Arc::new(CodeFile {
         id,

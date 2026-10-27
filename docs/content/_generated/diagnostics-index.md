@@ -272,3 +272,5 @@
 | [ASC281](../checks/diagnostics/pages.md#ASC281) | `operation-link-not-operation` | Error | File | write |
 | [ASC282](../checks/diagnostics/content-checks.md#ASC282) | `api-operation-unreferenced` | Advice | File | write |
 | [ASC283](../checks/diagnostics/content-checks.md#ASC283) | `build-filter-line-undeclared` | Advice | File | write |
+| [ASC284](../checks/diagnostics/directives.md#ASC284) | `info-pair-malformed` | Warning | File | write |
+| [ASC285](../checks/diagnostics/output-checks.md#ASC285) | `examples-config-unread` | Warning | File | write |

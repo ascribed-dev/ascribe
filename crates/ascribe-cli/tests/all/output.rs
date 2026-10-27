@@ -689,6 +689,48 @@ fn getting_started() {
     );
 }
 
+/// The guide to bringing existing docs over, step by step, on a copy of
+/// `examples/existing-docs`: `ascribe init`, which adopts its pages, and the
+/// `ascribe.toml` it writes; `ascribe check --fix`; then, once the guide's
+/// two edits are made, `ascribe baseline write` and a clean `ascribe check`.
+#[test]
+fn existing_docs() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/existing-docs"),
+        root,
+    );
+    expect("init-existing.txt", &stdout(&run(root, &["init"], 0)));
+    expect(
+        "init-existing-ascribe.toml",
+        &fs::read_to_string(root.join("ascribe.toml")).unwrap(),
+    );
+    expect(
+        "init-existing-fix.txt",
+        &stdout(&run(root, &["check", "--fix", "--format", "concise"], 1)),
+    );
+    let page = root.join("docs/guides/troubleshooting.md");
+    let text = fs::read_to_string(&page).unwrap();
+    fs::write(
+        &page,
+        format!("---\ntitle: When a page doesn't load\n---\n\n{text}"),
+    )
+    .unwrap();
+    let page = root.join("docs/guides/alerts.md");
+    let text = fs::read_to_string(&page).unwrap();
+    assert!(text.contains("(../install.html)"), "{text}");
+    fs::write(&page, text.replace("(../install.html)", "(../install.md)")).unwrap();
+    expect(
+        "init-existing-baseline.txt",
+        &stdout(&run(root, &["baseline", "write"], 0)),
+    );
+    expect(
+        "init-existing-check.txt",
+        &stdout(&run(root, &["check"], 0)),
+    );
+}
+
 /// `ascribe resolve` on `examples/platforms`, the guide to content that
 /// varies: its one page, for each of the project's two builds.
 #[test]
@@ -1355,10 +1397,10 @@ fn versions() {
     );
 }
 
-/// `ascribe versions archive` on a copy of `examples/quill`, into a folder
+/// `ascribe versions export` on a copy of `examples/quill`, into a folder
 /// in it: the command reference's example.
 #[test]
-fn versions_archive() {
+fn versions_export() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     copy_tree(
@@ -1366,12 +1408,12 @@ fn versions_archive() {
         root,
     );
     expect(
-        "versions-archive.txt",
+        "versions-export.txt",
         &stdout(&run(
             root,
             &[
                 "versions",
-                "archive",
+                "export",
                 "self-managed 3.4",
                 "--to",
                 "archive/3.4",
@@ -1382,12 +1424,12 @@ fn versions_archive() {
         )),
     );
     expect(
-        "versions-archive.json",
+        "versions-export.json",
         &json(&run(
             root,
             &[
                 "versions",
-                "archive",
+                "export",
                 "self-managed 3.4",
                 "--to",
                 "archive/3.4",

@@ -1,6 +1,6 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 ```text
-ascribe init              [DIR] [--templates] [--format text|json]
+ascribe init              [DIR] [--templates] [--content-root <DIR>] [--format text|json]
 ascribe check             [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--format text|concise|json|prompt] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]
 ascribe fmt               [--check] [--diff] [PATHS]... [--format text|json]
 ascribe build             [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors] [--no-baseline]
@@ -23,7 +23,7 @@ ascribe baseline prune    [--format text|json]
 ascribe versions list     [--format text|json]
 ascribe versions changes  FROM TO [--format text|json|markdown]
 ascribe versions release  LINE [--next <LINE>] [--dry-run] [--force] [--format text|json]
-ascribe versions archive  LINE --to <DIR> [--build <NAME>] [--current <URL>] [--format text|json]
+ascribe versions export   LINE --to <DIR> [--build <NAME>] [--current <URL>] [--format text|json]
 ascribe versions retire   LINE [--url <URL>] [--dry-run] [--force] [--show-unused] [--remove-unused] [--format text|json]
 ascribe permalinks sync   [--check] [--format text|json]
 ascribe permalinks list   [--format text|json]

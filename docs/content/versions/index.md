@@ -5,7 +5,7 @@ description: Build the docs of every version a reader can be on from one source,
 permalink: versions
 ---
 
-A reader on 3.4 should read the docs for 3.4, and find the same page for 3.5. This page builds an output for each version a reader can be on, from one source and the `@available` marks the pages already have, and moves them on when a version ships. [Release lines](lines.md) says what a line is and what its output holds, and [Archive and retire a line](archive.md) is for a line that leaves.
+A reader on 3.4 should read the docs for 3.4, and find the same page for 3.5. This page builds an output for each version a reader can be on, from one source and the `@available` marks the pages already have, and moves them on when a version ships. [Release lines](lines.md) says what a line is and what its output holds, and [Export and retire a line](archive.md) is for a line that leaves.
 
 ## Before you start
 
@@ -124,5 +124,5 @@ ascribe versions changes "self-managed 3.5" 3.6 --format markdown
 ## See also
 
 - [Release lines](lines.md): what each line's output holds, how links between lines go, and what an older line says about itself.
-- [Archive and retire a line](archive.md): keep a copy of a line, then take it out of the source.
+- [Export and retire a line](archive.md): export a copy of a line, then take it out of the source.
 - [`ascribe versions`](release.md): the commands' options and output.

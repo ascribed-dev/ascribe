@@ -9,7 +9,7 @@ A product a team supports in more than one version needs docs for each. Ascribe 
 1. **No versions.** The default. Nothing to configure, and nothing changes.
 2. **One site that knows its versions.** [`[releases]`](../content-model/content.md#71-releasestarget) lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
 3. **A window of live versions.** `versions = "<target>"` on a build gives one output for each live line, with links from one line to another, and an older line that says what it is and where the current one is. [Publish a site for each version](index.md) sets it up.
-4. **An archive.** A line rendered once more into a folder of HTML that needs nothing else, kept after it leaves the window. [Archive and retire a line](archive.md) makes one.
+4. **An archive.** A line rendered once more into a folder of HTML that needs nothing else, kept after it leaves the window. [Export and retire a line](archive.md) makes one.
 
 ## Lines
 

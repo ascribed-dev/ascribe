@@ -1,0 +1,8 @@
+description: >-
+  A title whose quote doesn't close isn't a pair, and is reported; the pair
+  after it is still read.
+spec: ["3.3.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: info-pair-malformed, line: 5, column: 7, severity: warning}

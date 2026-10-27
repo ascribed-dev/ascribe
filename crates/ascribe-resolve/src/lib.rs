@@ -110,7 +110,7 @@ pub use build::{
     ResolvedLink, ResolvedPage, ResolvedRow, Scope, SectionSummary, Substitution, SummaryForm,
     find_summaries, glossary_targets, in_release_line, permalinks, select,
 };
-pub use closest::{Closest, closest_fixes, closest_targets, link_href};
+pub use closest::{Closest, closest_fixes, closest_targets, link_href, offer_closest};
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite,
     MAX_EXPANDED_BLOCKS, MAX_EXPANDED_BYTES, PageProblem,
@@ -147,7 +147,8 @@ pub use references::{
 };
 pub use replaces::{REPLACES, replaces_span, replaces_target};
 pub use snippet::examples::{
-    CurrentObservation, Example, ExampleStatus, FolderExamples, ReadObservation, example,
+    CurrentObservation, Example, ExampleStatus, FolderExamples, ReadObservation, UnreadConfig,
+    example, unread_config, unread_configs,
 };
 pub use snippet::{
     Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,

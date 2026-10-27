@@ -877,6 +877,14 @@ pub const API_OPERATION_UNREFERENCED: DiagnosticSlug = DiagnosticSlug("api-opera
 pub const BUILD_FILTER_LINE_UNDECLARED: DiagnosticSlug =
     DiagnosticSlug("build-filter-line-undeclared");
 
+/// `ASC284`, warning, file level: SPEC §8.2, "Attributes | A word after a
+/// fenced code block's language that starts like a pair a processor reads
+/// (its key in any case, then optional spaces and `=`) but isn't one".
+pub const INFO_PAIR_MALFORMED: DiagnosticSlug = DiagnosticSlug("info-pair-malformed");
+
+/// `ASC285`, warning, file level: a content check (area `examples`).
+pub const EXAMPLES_CONFIG_UNREAD: DiagnosticSlug = DiagnosticSlug("examples-config-unread");
+
 /// The checks renamed, each by the name it had before, which still names
 /// it in `[checks]`, in an acknowledgement, and to `ascribe explain`, for a
 /// release (decision #953).
@@ -1155,6 +1163,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     OPERATION_LINK_NOT_OPERATION,
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
+    INFO_PAIR_MALFORMED,
+    EXAMPLES_CONFIG_UNREAD,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -1215,6 +1225,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     ADDRESSES_BASE_UNREADABLE,
     API_OPERATION_UNREFERENCED,
     BUILD_FILTER_LINE_UNDECLARED,
+    EXAMPLES_CONFIG_UNREAD,
 ];
 
 /// The configurable checks that are off unless a project names them in

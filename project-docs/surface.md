@@ -6,11 +6,11 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/install.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
-| `ascribe init` | Starts a project: writes its first `ascribe.toml` and `ascribe.addresses`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates]` | `text`, `json` |
+| `ascribe init` | Starts a project: writes its first `ascribe.toml` and `ascribe.addresses`, and makes the folder its pages go in, `docs/`. | `[DIR] [--templates] [--content-root <DIR>]` | `text`, `json` |
 | `ascribe check` | Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. | `[PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--code <CODE>]... [--summary] [--limit <N>] [--deny-warnings] [--base <REV>] [--base-exact] [--fix] [--vale] [--no-baseline]` | `text`, `concise`, `json`, `prompt` |
 | `ascribe fmt` | Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. | `[--check] [--diff] [PATHS]...` | `text`, `json` |
 | `ascribe build` | Checks the project, then writes each build's outputs. | `[--build <NAME>]... [--emit site,plain,json] [--anchors] [--no-baseline]` | `text`, `json` |
@@ -31,7 +31,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
 | `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
 | `ascribe versions release` | Releases a line: rewrites each mark's `planned` for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
-| `ascribe versions archive` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
+| `ascribe versions export` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
 | `ascribe versions retire` | Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. | `LINE [--url <URL>] [--dry-run] [--force] [--show-unused] [--remove-unused]` | `text`, `json` |
 | `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each name `ascribe.addresses` moves or retires as the file has it. | `[--check]` | `text`, `json` |
 | `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each name `ascribe.addresses` moves or retires, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
@@ -117,7 +117,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `tests/conformance/diagnostics.toml`.
 
-271 in all. By severity: 62 advice, 182 error, 27 warning. By level: 241 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 168 write.
+273 in all. By severity: 62 advice, 182 error, 29 warning. By level: 243 file, 30 page. By kind of next step: 57 choose, 22 fix, 12 outside, 12 review, 170 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -392,6 +392,8 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC281` | `operation-link-not-operation` | error | write | `{link}` isn't a link to an operation; `@operation` takes a declared API's spec, `#`, and an operation's `operationId` |
 | `ASC282` | `api-operation-unreferenced` | advice | write | no page links to `{operation}` ({method} {route}) in {path} |
 | `ASC283` | `build-filter-line-undeclared` | advice | write | build `{build}` filters for `{target} {version}`, which is older than every line `[releases.{target}]` declares, so `ascribe versions` doesn't list it; declare its line in `archived`, or make the build one output for each live line with `versions = "{target}"` |
+| `ASC284` | `info-pair-malformed` | warning | write | `{written}` starts like the pair `{key}` but isn't one, so it isn't read; write `{key}=` with nothing around `=`, then the value, in double quotes if it has a space or a quote |
+| `ASC285` | `examples-config-unread` | warning | write | `{file}` is below the root of source `{source}`, `{root}`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = "{folder}"`, or move the file to `{root}` |
 
 ## The VS Code extension
 
@@ -869,8 +871,8 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/sources-update.schema.json` | SourcesUpdateReport | What `ascribe sources update --format json` writes: how each source's pin moved, and the pages whose examples the new copies change. |
 | `schemas/templates-eject.schema.json` | TemplatesEjectReport | What `ascribe templates eject` did: the files it wrote and the types it added, or, when it refused anything, what it refused, and then it wrote nothing. |
 | `schemas/templates-status.schema.json` | TemplatesStatusReport | What `ascribe templates status` found: for each template the project took, whether the set and the project have changed it since the copy, and each template of the set it doesn't have. |
-| `schemas/versions-archive.schema.json` | VersionsArchiveReport | What `ascribe versions archive --format json` writes: the line, the folder, and what's in it. |
 | `schemas/versions-changes.schema.json` | VersionsChangesReport | What differs between two lines of one target. |
+| `schemas/versions-export.schema.json` | VersionsExportReport | What `ascribe versions export --format json` writes: the line, the folder, and what's in it. |
 | `schemas/versions-list.schema.json` | VersionsListReport | Every target's release lines. |
 | `schemas/versions-release.schema.json` | VersionsReleaseReport | What `ascribe versions release --format json` writes: the line released, the files and marks rewritten, the features moved, and what the release changes in the outputs. |
 | `schemas/versions-retire.schema.json` | VersionsRetireReport | What `ascribe versions retire --format json` writes: the line, its address, the marks rewritten, what no line has any more, and where each of the line's addresses should go. |
@@ -962,9 +964,12 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `examples/snippets.md` | Show an example from the code | how-to |
 | `examples/sources.md` | `ascribe sources` and `observe` | reference |
 | `examples/tested.md` | Show what an example was tested with | how-to |
+| `existing-docs.md` | Bring existing docs to Ascribe | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |
+| `install.md` | Install | how-to |
+| `install.md` | Install | how-to |
 | `install.md` | Install | how-to |
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
@@ -989,7 +994,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/command.md` | `ascribe templates` | reference |
 | `templates/index.md` | Page templates | how-to |
-| `versions/archive.md` | Archive and retire a line | how-to |
+| `versions/archive.md` | Export and retire a line | how-to |
 | `versions/index.md` | Publish a site for each version | how-to |
 | `versions/lines.md` | Release lines | reference |
 | `versions/release.md` | `ascribe versions` | reference |

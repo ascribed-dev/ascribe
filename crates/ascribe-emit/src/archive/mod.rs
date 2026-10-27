@@ -1,6 +1,6 @@
 //! The archive: one line of a versioned build rendered once more, by
 //! Ascribe alone, into a folder of HTML that needs nothing else
-//! (`ascribe versions archive`, the archive contract in
+//! (`ascribe versions export`, the archive contract in
 //! `docs/content/contracts/archive.md`).
 //!
 //! The archive is a fourth emitter, `archive`, that `ascribe build` never
@@ -56,6 +56,10 @@ const CONTENTS: &str = "contents.html";
 /// What keeps crawlers out of a host that serves the folder at its own
 /// origin.
 const ROBOTS: &str = "robots.txt";
+
+/// The id of each page's `<main>`, which the skip link leads to: prefixed,
+/// as no heading's id of a page is in practice.
+const MAIN_ID: &str = "archive-main";
 
 /// The element library's stylesheet, as `@ascribed/elements` ships it.
 const ELEMENTS_CSS: &str = include_str!("../../../../packages/elements/css/style.css");
@@ -612,7 +616,9 @@ impl ArchiveEmitter {
     ) -> String {
         let stylesheet = RelPath::parse(ARCHIVE_STYLESHEET).unwrap_or_else(|_| RelPath::root());
         let mut out = String::new();
-        out.push_str("<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n");
+        // The content model has no project language yet, so every page is
+        // English until it has one (decision #1017).
+        out.push_str("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
         out.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
         out.push_str("<meta name=\"robots\" content=\"noindex\">\n");
         // The archive's own scripts, from the folder: `'self'` where it's
@@ -626,15 +632,24 @@ impl ArchiveEmitter {
             "<link rel=\"stylesheet\" href=\"{}\">\n</head>\n<body>\n",
             encode(&relative(dir, &stylesheet))
         ));
+        // Past the statement and the sidebar, which at a phone's width come
+        // before the page, every page of the line listed in it.
+        out.push_str(&format!(
+            "<a class=\"archive-skip\" href=\"#{MAIN_ID}\">Skip to content</a>\n"
+        ));
         out.push_str(&self.statement.html);
         match current {
             Some(current) => {
                 out.push_str("<div class=\"archive-layout\">\n");
                 out.push_str(&self.sidebar(dir, current));
-                out.push_str(&format!("<main class=\"archive-page\">\n{main}</main>\n"));
+                out.push_str(&format!(
+                    "<main id=\"{MAIN_ID}\" class=\"archive-page\">\n{main}</main>\n"
+                ));
                 out.push_str("</div>\n");
             }
-            None => out.push_str(&format!("<main class=\"archive-all\">\n{main}</main>\n")),
+            None => out.push_str(&format!(
+                "<main id=\"{MAIN_ID}\" class=\"archive-all\">\n{main}</main>\n"
+            )),
         }
         out.push_str("</body>\n</html>\n");
         out

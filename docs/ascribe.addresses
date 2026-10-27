@@ -14,5 +14,7 @@ version = 1
 "go:ASC180" = "go:ASC266"
 "go:ASC181" = "go:ASC265"
 "go:cli-render" = "command/questions.md#cli-resolve"
+"go:cli-versions-archive" = "go:cli-versions-export"
+"versions/release.md#cli-versions-archive" = "versions/release.md#cli-versions-export"
 
 [retired]

@@ -285,11 +285,11 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::versions::ReleaseJson>(),
     },
     Shape {
-        file: "versions-archive",
-        title: "VersionsArchiveReport",
-        written_by: "`ascribe versions archive --format json`",
+        file: "versions-export",
+        title: "VersionsExportReport",
+        written_by: "`ascribe versions export --format json`",
         command: true,
-        schema: |g| g.root_schema_for::<crate::commands::versions::ArchiveJson>(),
+        schema: |g| g.root_schema_for::<crate::commands::versions::ExportJson>(),
     },
     Shape {
         file: "versions-retire",

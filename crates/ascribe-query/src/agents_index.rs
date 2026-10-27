@@ -96,6 +96,7 @@ pub fn agents_index(
     if folder.is_some() {
         let cx = EmitContext::new(project, project_root, build);
         let emitter = PlainEmitter::new(model);
+        emitter.learn_pages(&cx, &resolved);
         for (page, record) in resolved.pages.iter().zip(&records.pages) {
             if !record.offered() {
                 continue;

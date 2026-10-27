@@ -507,9 +507,10 @@ pub struct Container {
     /// A raw container's lines (SPEC §3.5), which are text and no block:
     /// from the start of the line after the opener through the end of the
     /// line before the end line, without its line ending, or through the
-    /// last line that isn't empty when the container is unclosed. Empty, at
-    /// the start of the line after the opener, when there are none. `None`
-    /// for a container that isn't raw. [`raw_container_text`] reads them.
+    /// last line that isn't empty, without the spaces and tabs it ends with,
+    /// when the container is unclosed. Empty, at the start of the line after
+    /// the opener, when there are none. `None` for a container that isn't
+    /// raw. [`raw_container_text`] reads them.
     pub raw: Option<Span>,
 }
 
@@ -731,7 +732,7 @@ pub fn raw_container_text(source: &str, container: &Container) -> Option<String>
 /// `line` without what matches `prefix`, character by character: each `>`
 /// in the prefix takes the line's next `>` and the spaces before it, and each
 /// space or tab the line's next one, if it has one there.
-fn strip_matching_prefix<'s>(line: &'s str, prefix: &str) -> &'s str {
+pub(crate) fn strip_matching_prefix<'s>(line: &'s str, prefix: &str) -> &'s str {
     let mut rest = line;
     for c in prefix.chars() {
         rest = match c {

@@ -286,8 +286,9 @@ impl GitFs {
 /// reads: its own, its content root's, and, for each source, the part of its
 /// folder its `include` patterns can reach (the patterns' segments before
 /// the first wildcard), with its tested examples' `ascribe.examples.toml` and
-/// observations, which are read whatever `include` says. One outside the
-/// repository is left out: nothing there can be read.
+/// observations, which are read whatever `include` says; and each declared
+/// API's spec. One outside the repository is left out: nothing there can be
+/// read.
 fn listed(project_dir: &RelPath, layout: &Layout, model: &ContentModel) -> Vec<RelPath> {
     let mut out = vec![project_dir.clone()];
     out.extend(project_dir.join(layout.content_root.as_str()).ok());
@@ -309,6 +310,10 @@ fn listed(project_dir: &RelPath, layout: &Layout, model: &ContentModel) -> Vec<R
                 .collect();
             out.extend(folder.join(&fixed.join("/")).ok());
         }
+    }
+    // A spec can be outside the project's folder.
+    for api in &model.apis {
+        out.extend(project_dir.join(&api.spec).ok());
     }
     out.retain(RelPath::is_inside);
     out.sort();

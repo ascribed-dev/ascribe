@@ -56,6 +56,43 @@ It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `d
 
 A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 
+### Fuzzing
+
+`fuzz/` holds three [cargo-fuzz](https://rust-fuzz.github.io/book/cargo-fuzz.html) targets that feed arbitrary text to the entry points every keystroke and every agent's edit goes through:
+
+| Target | Calls | Fails when |
+|---|---|---|
+| `parse` | `ascribe_syntax::parse`, with the built-in directives | it panics, or a span in the tree is outside the input or off a character boundary |
+| `model` | `ascribe_model::load_str_in`, on TOML | it panics |
+| `format` | `ascribe_fmt::format`, under the conformance suite's shared model | it panics, its edits don't apply, or formatting its output changes it again |
+
+`fuzz/` is a crate of its own, outside the workspace, with its own `Cargo.lock`, so `libfuzzer-sys` never reaches the workspace's, and its own `rust-toolchain.toml`, which pins the dated nightly cargo-fuzz needs (decision [#1020](project-docs/decisions/1020-fuzzing-outside-the-workspace.md)). From `fuzz/`, which picks that nightly:
+
+```sh
+cargo install cargo-fuzz --locked
+./seed.sh                               # the conformance cases, as each target's first corpus
+cargo fuzz run parse -- -max_total_time=300 -max_len=4096
+cargo fuzz run parse artifacts/parse/crash-<hash>   # run one input again
+cargo fuzz tmin parse artifacts/parse/crash-<hash>  # make it smaller
+```
+
+A crash is written to `fuzz/artifacts/<target>/`, and the corpus grows in `fuzz/corpus/<target>/`; neither is committed. The Fuzz workflow (`.github/workflows/fuzz.yml`) runs each target for five minutes every night, keeps the corpus in its cache, and opens an issue for each distinct crash, named by its signature (`fuzz/signature.sh`), or comments on the one that's open. Pull requests don't run it. A fix comes with a test of the input in the crate's own tests, so it stays fixed without the nightly toolchain.
+
+## Command-line conventions
+
+The commands share their flags, so what one teaches holds for the rest (decision [#965](project-docs/decisions/965-cli-conventions.md)). A command *writes* when it changes a file you commit: a page, `ascribe.toml`, or a file [Files Ascribe writes](docs/content/command/project-files.md) says to commit. Writing a build's outputs, or a cache or history under `.ascribe/`, isn't writing.
+
+- **Every command that writes takes `--dry-run`**, which says what it would change and changes nothing, **and the git guard**: it refuses to change a file git can't put back as it was (one with changes not committed, or outside a repository), and says so, unless `--force`.
+- **`--check` is a dry run that exits `1` when something would change**, and prints each change as a unified diff, as `rustfmt --check` does. Only a command that writes takes it.
+- **`--exit-code` makes a command exit `1` on findings**, and `--exit-code=<level>` on findings at that level or above. `--deny-warnings` stays, as an alias of `--exit-code=warning`.
+- **Every command takes `--format json`**, unless it only prints a file (`agents rules`, `agents skill`) or speaks another program's protocol (`mcp`, `lsp`, `preview`, `agents hook`).
+- **`--format` takes the same words everywhere**, from those [the checklist](project-docs/checklists.md#a-new-command-or-option) lists, and a command that takes `text` takes `concise` too: its own one-line-a-problem form, or an alias of `text` where it has none.
+- **A revision to compare with is `--base <REV>`.** A revision given where a path goes is answered with the `--base` that compares with it, as `ascribe drift main` is.
+- **A renamed option keeps its old spelling** as a hidden alias for a release.
+- **A new project file is named for who writes it.** One you write, which Ascribe reads, is TOML named `ascribe.<name>.toml`, as `ascribe.examples.toml` is (the content model is `ascribe.toml` itself). A record Ascribe writes and you commit is `ascribe.<name>`, with no extension, as `ascribe.baseline` is: you change it through a command. What Ascribe can write again goes under `.ascribe/`, and a file another tool reads keeps that tool's name (`AGENTS.md`, `.vale.ini`). Existing files keep their names, since renaming one costs every project a migration: `ascribe.nav` is yours without `.toml`, and `templates.lock` is a record without the prefix.
+
+`crates/ascribe-cli/src/conventions.rs` holds these over the `clap` definitions, and the file rule over the rows of [Files Ascribe writes](docs/content/command/project-files.md). Every command is in its list of those that write or those that only read, so a new one says which. A command that broke a convention before #965 is in its `EXCEPTIONS`, and the test fails when an exception is no longer needed, so a pull request that brings a command into line removes its entry. A new command or option takes no new exception.
+
 ## Documenting a change
 
 The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. An entry is one line: a bold headline and one or two sentences, 40 words at most, ending with a link to the page with the detail; a fix is **Fixed:** and a sentence or two. The detail goes on the page, not in the entry. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: ascribe planned` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):

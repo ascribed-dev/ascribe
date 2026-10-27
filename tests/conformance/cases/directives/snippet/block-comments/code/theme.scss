@@ -1,0 +1,8 @@
+// :snippet-start: colors
+$accent: teal;
+// :snippet-end:
+.card {
+  /* :snippet-start: card */
+  color: $accent;
+  /* :snippet-end: */
+}

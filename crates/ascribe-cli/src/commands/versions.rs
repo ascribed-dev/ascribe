@@ -1,9 +1,9 @@
 //! `ascribe versions`: a project's release lines. `list` shows them,
 //! `changes` says what differs between two from the marks alone,
 //! `release` makes a line live, rewriting the marks that named it through
-//! a feature, `archive` renders a line into a folder of HTML that needs
-//! nothing else, and `retire` takes the oldest live line out of the window,
-//! rewriting the marks it made dead.
+//! a feature, `export` renders a line into a folder of HTML that needs
+//! nothing else, its archive, and `retire` takes the oldest live line out
+//! of the window, rewriting the marks it made dead.
 
 use std::collections::BTreeMap;
 use std::io::{self, Write};
@@ -63,8 +63,11 @@ pub enum Command {
     ///
     /// Writes nothing into the project: the text says what to add to
     /// [releases] once the folder is hosted.
-    #[command(after_help = docs_link!("cli-versions-archive"))]
-    Archive(ArchiveArgs),
+    #[command(after_help = docs_link!("cli-versions-export"))]
+    Export(ExportArgs),
+    /// The old name of `export`, kept for a release (decision #950).
+    #[command(hide = true)]
+    Archive(ExportArgs),
     /// Retire the oldest live line, once its archive is hosted: move it to
     /// archived with its address, rewrite every mark for its target to the
     /// simplest spec that means the same in every line still live, list
@@ -139,10 +142,10 @@ pub struct ReleaseArgs {
     pub format: Format,
 }
 
-/// Arguments of `ascribe versions archive`.
+/// Arguments of `ascribe versions export`.
 #[derive(Debug, ClapArgs)]
-pub struct ArchiveArgs {
-    /// The line to archive, named as a mark names it: "self-managed 3.4".
+pub struct ExportArgs {
+    /// The line to export, named as a mark names it: "self-managed 3.4".
     /// It's live or planned.
     #[arg(value_name = "LINE")]
     pub line: String,
@@ -153,7 +156,7 @@ pub struct ArchiveArgs {
     #[arg(long, value_name = "DIR")]
     pub to: PathBuf,
 
-    /// The versioned build to archive the line of, when two builds are
+    /// The versioned build to export the line of, when two builds are
     /// versioned by the line's target.
     #[arg(long, value_name = "NAME")]
     pub build: Option<String>,
@@ -239,7 +242,7 @@ pub enum VersionsError {
     },
     /// No build is versioned by the line's target.
     #[error(
-        "no build is versioned by {target}, so it has no line to archive: set `versions = \"{target}\"` on a build"
+        "no build is versioned by {target}, so it has no line to export: set `versions = \"{target}\"` on a build"
     )]
     ArchiveNoBuild {
         /// The target.
@@ -265,7 +268,7 @@ pub enum VersionsError {
         builds: Vec<String>,
     },
     /// The line is archived already, so it has no output to render.
-    #[error("{target} {line} is archived; only a live or planned line can be archived")]
+    #[error("{target} {line} is archived; only a live or planned line can be exported")]
     ArchiveLineArchived {
         /// The target.
         target: String,
@@ -322,7 +325,14 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         Command::List(args) => run_list(global, &args, &mut out, &mut err),
         Command::Changes(args) => run_changes(global, &args, &mut out, &mut err),
         Command::Release(args) => run_release(global, &args, &mut out, &mut err),
-        Command::Archive(args) => run_archive(global, &args, &mut out, &mut err),
+        Command::Export(args) => run_export(global, &args, &mut out, &mut err),
+        Command::Archive(args) => {
+            let _ = writeln!(
+                err,
+                "warning: `ascribe versions archive` is now `ascribe versions export`, and the old name goes in the next release"
+            );
+            run_export(global, &args, &mut out, &mut err)
+        }
         Command::Retire(args) => run_retire(global, &args, &mut out, &mut err),
     };
     let _ = out.flush();
@@ -1043,11 +1053,11 @@ fn write_cleared(
     Ok(())
 }
 
-/// What `ascribe versions archive --format json` writes: the line, the
+/// What `ascribe versions export --format json` writes: the line, the
 /// folder, and what's in it.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-pub(crate) struct ArchiveJson {
+pub(crate) struct ExportJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
@@ -1055,7 +1065,7 @@ pub(crate) struct ArchiveJson {
     ascribe_version: &'static str,
     /// The target.
     target: String,
-    /// The line archived, as `[releases.<target>]` writes it.
+    /// The line exported, as `[releases.<target>]` writes it.
     line: String,
     /// The line's status: `current`, `live`, or `planned`.
     status: &'static str,
@@ -1097,19 +1107,14 @@ struct UnlinkedJson {
     line: Option<String>,
 }
 
-/// The version of the archive's JSON.
-const ARCHIVE_SCHEMA_VERSION: u32 = 1;
+/// The version of the export's JSON.
+const EXPORT_SCHEMA_VERSION: u32 = 1;
 
 /// Exit codes: 0 when the archive is written; 2 when it can't be: the line
 /// isn't declared, live, or planned, no build or more than one is
 /// versioned by its target, the checks find errors, or the folder isn't
 /// empty and isn't an archive Ascribe wrote.
-fn run_archive(
-    global: &Global,
-    args: &ArchiveArgs,
-    out: &mut dyn Write,
-    err: &mut dyn Write,
-) -> u8 {
+fn run_export(global: &Global, args: &ExportArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
@@ -1200,8 +1205,8 @@ fn run_archive(
         _ => "live",
     };
     let content = project.content_root();
-    let json = ArchiveJson {
-        schema_version: ARCHIVE_SCHEMA_VERSION,
+    let json = ExportJson {
+        schema_version: EXPORT_SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
         target,
         line: line.text,
@@ -1233,7 +1238,7 @@ fn run_archive(
     };
     let result = match args.format {
         Format::Json => answer::write_json(out, &json),
-        Format::Text => write_archive(out, &json, project.root()),
+        Format::Text => write_export(out, &json, project.root()),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
@@ -1250,7 +1255,7 @@ fn size(bytes: usize) -> String {
     }
 }
 
-fn write_archive(out: &mut dyn Write, a: &ArchiveJson, root: &Path) -> io::Result<()> {
+fn write_export(out: &mut dyn Write, a: &ExportJson, root: &Path) -> io::Result<()> {
     let (target, line) = (&a.target, &a.line);
     match a.status {
         "current" => writeln!(

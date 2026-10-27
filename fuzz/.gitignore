@@ -1,0 +1,6 @@
+# What cargo-fuzz writes: the build, the corpus it grows, and what crashed.
+# The nightly workflow keeps the corpus in its cache instead.
+/target/
+/corpus/
+/artifacts/
+/coverage/

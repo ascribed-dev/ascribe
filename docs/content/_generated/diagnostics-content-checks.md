@@ -45,11 +45,11 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 
 ### ASC152 `code-language-missing`
 @id {permalink=true}: ASC152
-@summary: A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
+@summary: A fenced code block has no language after its opening fence: nothing, or a pair of SPEC §3.3.1 first, such as `phrases=true` or `title="x.ts"`, which a renderer such as comrak or Astro takes as the language. An indented code block isn't looked at.
 
 Advice · file level · next step: choose · configurable in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A fenced code block has no language after its opening fence: nothing, or only attributes, such as `phrases=true`. An indented code block isn't looked at.
+**When:** A fenced code block has no language after its opening fence: nothing, or a pair of SPEC §3.3.1 first, such as `phrases=true` or `title="x.ts"`, which a renderer such as comrak or Astro takes as the language. An indented code block isn't looked at.
 
 **Message:** this code block has no language; write it after the opening fence, or `text` for output
 
@@ -405,7 +405,9 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Message:** `{entry}` names versions every live line of `{target}` has, the oldest being `{oldest}`, so no output shows them; write `{simpler}`
 
-**Fix:** Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so where no output shows the versions nothing a reader sees changes. When the mark would be its target alone, generally available, the target is the only value of its dimension, no build filters for another target, and the mark names nothing else, the fix removes the mark instead: the `@available` line, the page's `available` key, or the row's `{available=…}`. Content with no mark reads as the scope around it, so a mark is removed only when no mark around it says something, as a page that's deprecated or a section in preview does, and never in a fragment, which reads as where it's included; there, as everywhere else, the fix rewrites it. In a build that badges availability, which is reported only for versions before the oldest live line, the badge's version goes, or the whole badge with the mark, which changes the page, so the fix isn't safe; a project that keeps such badges, as "new in 0.2", turns the check off in `[checks]`.
+**Fix:** Write the mark without its versions, keeping its state: `self-managed 3.1` becomes `self-managed`, and `self-managed deprecated 3.2` becomes `self-managed deprecated`. Every live line has the content, and a line's output leaves out a version at or before the oldest live line, so where no output shows the versions nothing a reader sees changes. When the mark would be its target alone, generally available, the target is the only value of its dimension, no build filters for another target, and the mark names nothing else, the fix removes the mark instead: the `@available` line, the page's `available` key, or the row's `{available=…}`.
+
+Content with no mark reads as the scope around it, so a mark is removed only when no mark around it says something, as a page that's deprecated or a section in preview does, and never in a fragment, which reads as where it's included; there, as everywhere else, the fix rewrites it. In a build that badges availability, which is reported only for versions before the oldest live line, the badge's version goes, or the whole badge with the mark, which changes the page, so the fix isn't safe; a project that keeps such badges, as "new in 0.2", turns the check off in `[checks]`.
 
 **Read more:** [`[releases.<target>]`](../content-model/content.md#71-releasestarget) in the `ascribe.toml` reference.
 

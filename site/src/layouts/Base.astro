@@ -15,7 +15,8 @@
 // llms.txt do: its title, description, canonical link, robots rule, link to
 // its Markdown version, link preview, and breadcrumbs, with the site's name
 // and its social card given here. A page with no record, the changelog and the
-// 404 page, writes those itself. The rest of the head, the character set, the
+// 404 page, writes those itself, and the changelog links to its Markdown
+// version, /changelog.md. The rest of the head, the character set, the
 // icons, the theme color, and the styles, is the site's own either way.
 import Elements from "@ascribed/astro/Elements.astro";
 import Head from "@ascribed/astro/Head.astro";
@@ -45,6 +46,8 @@ interface Props {
   card?: { name: string; alt: string } | undefined;
   /** Whether a page with no record has a canonical link: the 404 page has no address of its own. */
   canonical?: boolean;
+  /** The address of a page with no record's Markdown version, when it has one. */
+  markdown?: string | undefined;
 }
 
 const {
@@ -55,6 +58,7 @@ const {
   docs = false,
   card: own,
   canonical: linked = true,
+  markdown,
 } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const docsHome = `${base}${docsPath}`;
@@ -88,6 +92,7 @@ const canonical = new URL(Astro.url.pathname, site).href;
           <title>{pageTitle}</title>
           {description && <meta name="description" content={description} />}
           {linked && <link rel="canonical" href={canonical} />}
+          {markdown && <link rel="alternate" type="text/markdown" href={markdown} />}
           <meta property="og:type" content="website" />
           <meta property="og:site_name" content={name} />
           <meta property="og:title" content={pageTitle} />

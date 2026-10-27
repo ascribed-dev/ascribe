@@ -1,0 +1,1 @@
+- **The docs' home page opens with a path for engineers, writers, and agent builders.** Each is a few pages in order after Getting started, and the contracts are under For implementers, at the sidebar's end. See [the docs](docs/content/index.md).
