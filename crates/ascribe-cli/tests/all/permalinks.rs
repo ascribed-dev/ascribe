@@ -147,7 +147,17 @@ fn sync_check_writes_nothing_and_fails_while_the_list_is_behind() {
     );
     let behind = ascribe(dir.path(), &["permalinks", "sync", "--check"]);
     assert_eq!(code_of(&behind), 1);
-    assert_eq!(stdout(&behind), "would add deploy\n");
+    // A unified diff of the list, as `sync` would write it.
+    let diff = stdout(&behind);
+    assert!(
+        diff.starts_with("--- a/ascribe.permalinks\n+++ b/ascribe.permalinks\n@@ "),
+        "{diff}"
+    );
+    assert!(
+        diff.lines()
+            .any(|line| line.starts_with('+') && !line.starts_with("+++") && line.contains("deploy")),
+        "{diff}"
+    );
     assert_eq!(
         stderr(&behind),
         "error: ascribe.permalinks is out of date; run `ascribe permalinks sync` to update it\n"

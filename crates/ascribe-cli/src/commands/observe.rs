@@ -42,7 +42,7 @@ use clap::{Args as ClapArgs, ValueEnum};
 use serde::Serialize;
 
 use crate::cli::Global;
-use crate::exit;
+use crate::{answer, exit, guard};
 
 /// The version of `ascribe observe --format json`'s schema.
 const SCHEMA_VERSION: u32 = 1;
@@ -63,9 +63,15 @@ pub struct Args {
     /// folder as it stands: for a pre-commit hook.
     ///
     /// It reads the config and the examples, and starts no program, the
-    /// config's commands included.
+    /// config's commands included. A stale observation's hashes are printed
+    /// as a unified diff of the file.
     #[arg(long)]
     pub check: bool,
+
+    /// `--dry-run`, which runs the test and writes no observation, and
+    /// `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// Run the commands without asking first.
     ///
@@ -115,8 +121,12 @@ pub(crate) struct ObserveReport {
     /// The test command, and how it ended. Absent with `--check`.
     test: Option<TestRun>,
     /// The observation it wrote, from the current folder: none when the test
-    /// failed. With `--check`, the one it compared.
+    /// failed. With `--check`, the one it compared; with `--dry-run`, the
+    /// one it would write.
     observation: Option<String>,
+    /// Whether it wrote the observation: false with `--check` or
+    /// `--dry-run`, or when the test failed.
+    written: bool,
     /// With `--check`, whether the observation is current: it lists every
     /// example in the folder, with the hash it has now, and nothing else.
     /// Absent without `--check`.
@@ -342,6 +352,10 @@ fn observe(
     // read: what changed is said against it.
     let previous = read_observation(folder, &path).and_then(Result::ok);
 
+    // Before anything runs, so a refusal costs no test run.
+    if let Err(e) = args.guard.allow(&[folder.join(&path)]) {
+        return answer::fail(err, &e);
+    }
     let json = args.format == Format::Json;
     if !consented(&config, &test, args, ask, out, err) {
         return exit::FAILURE;
@@ -374,6 +388,7 @@ fn observe(
             exit_code: status.code(),
         }),
         observation: None,
+        written: false,
         current: None,
         changes: None,
         recorded: BTreeMap::new(),
@@ -416,7 +431,8 @@ fn observe(
         environment: recorded,
         files,
     };
-    if let Err(e) = write_observation(folder, &args.name, &observation.to_toml()) {
+    let dry_run = args.guard.dry_run;
+    if !dry_run && let Err(e) = write_observation(folder, &args.name, &observation.to_toml()) {
         let _ = writeln!(err, "error: can't write {path}: {e}");
         return exit::FAILURE;
     }
@@ -424,6 +440,7 @@ fn observe(
     let changes = previous.map(|was| Changes::between(&was, &observation));
     if json {
         report.observation = Some(path);
+        report.written = !dry_run;
         report.changes = changes;
         report.recorded = observation.environment.into_iter().collect();
         report.files = observation.files;
@@ -434,7 +451,8 @@ fn observe(
         let _ = writeln!(out, "{} passed.", terminal(&test));
         let _ = writeln!(
             out,
-            "Wrote {path}: {count} {}, {}.",
+            "{} {path}: {count} {}, {}.",
+            if dry_run { "Would write" } else { "Wrote" },
             if count == 1 { "file" } else { "files" },
             terminal(&tested),
         );
@@ -608,6 +626,7 @@ fn check(folder: &Path, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -
             environment: Vec::new(),
             test: None,
             observation: Some(path),
+            written: false,
             current: Some(current),
             changes: previous.is_some().then_some(changes),
             recorded: BTreeMap::new(),
@@ -628,6 +647,13 @@ fn check(folder: &Path, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -
             if count == 1 { "file" } else { "files" },
         );
     } else {
+        if let Some(was) = &previous {
+            let now = Observation {
+                files: files.clone(),
+                ..was.clone()
+            };
+            let _ = answer::write_unified_diff(out, &path, &was.to_toml(), &now.to_toml());
+        }
         let _ = writeln!(
             out,
             "{path} is stale: {}. Run {again} here to test the examples again.",
@@ -930,6 +956,11 @@ mod tests {
         Args {
             name: DEFAULT_OBSERVATION.to_owned(),
             check: false,
+            // The folder isn't a repository.
+            guard: guard::Options {
+                force: true,
+                ..guard::Options::default()
+            },
             yes,
             format,
         }

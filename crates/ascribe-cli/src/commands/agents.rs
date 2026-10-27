@@ -17,6 +17,7 @@ use serde::Serialize;
 use crate::agents::sync::{self, Agent, Plan};
 use crate::agents::{checker, command, copilot, hook, index as index_file, prompts, skill};
 use crate::answer::{self, Format, FromDisk};
+use crate::guard;
 use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
@@ -130,6 +131,10 @@ pub struct IndexArgs {
     #[arg(long, value_name = "DIR")]
     pub pages: Option<PathBuf>,
 
+    /// `--dry-run` and `--force`, for what `--into` and `--pages` write.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// How to show the answer.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -176,9 +181,14 @@ fn key_value(given: &str) -> Result<(String, String), String> {
 /// Arguments of `ascribe agents sync`.
 #[derive(Debug, ClapArgs)]
 pub struct SyncArgs {
-    /// Write nothing, and exit with 1 when a file is out of date: for CI.
+    /// Write nothing, print how each file out of date would change as a
+    /// unified diff, and exit with 1 when one is: for CI.
     #[arg(long)]
     pub check: bool,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// Also write this target's files.
     ///
@@ -242,6 +252,8 @@ pub(crate) struct SyncJson<'a> {
     ascribe_version: &'static str,
     /// Whether it ran with `--check`, which writes nothing.
     check: bool,
+    /// Whether it wrote the files: false with `--check` or `--dry-run`.
+    written: bool,
     /// Each file, in the order it was first planned.
     files: Vec<SyncFile<'a>>,
     /// The notes for the person running it, which it also writes to
@@ -462,6 +474,16 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     if args.check {
         return check(&plans, &notes, args.format, out, err);
     }
+    let changed: Vec<&Path> = plans
+        .iter()
+        .flat_map(|plan| &plan.files)
+        .filter(|file| file.changes())
+        .map(|file| file.path.as_path())
+        .collect();
+    if let Err(e) = args.guard.allow(&changed) {
+        return exit::fail(err, &e);
+    }
+    let dry_run = args.guard.dry_run;
     // Several projects share files at the root, so each is planned again
     // once the one before it is written.
     let mut written: Vec<Recorded> = Vec::new();
@@ -470,7 +492,10 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     // setup steps is written, so its settings carry every server.
     let mut mcp_settings: Option<String> = None;
     for (i, project) in projects.iter().enumerate() {
-        let plan = if i == 0 {
+        // A dry run writes nothing, so the plans made first are the ones.
+        let plan = if dry_run {
+            plans.remove(0)
+        } else if i == 0 {
             plans.swap_remove(0)
         } else {
             match sync::plan(project, &targets, &options) {
@@ -478,7 +503,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
                 Err(e) => return exit::fail(err, &e),
             }
         };
-        if let Err(e) = plan.write() {
+        if !dry_run && let Err(e) = plan.write() {
             return exit::fail(err, &e);
         }
         record(&mut written, &plan);
@@ -492,7 +517,13 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         }
     }
     if args.format == Format::Json {
-        let json = sync_json(false, &written, &notes, &unread, mcp_settings.as_deref());
+        let json = sync_json(
+            (false, !dry_run),
+            &written,
+            &notes,
+            &unread,
+            mcp_settings.as_deref(),
+        );
         let result = answer::write_json(out, &json);
         return answer::written(result, err).unwrap_or(exit::OK);
     }
@@ -502,8 +533,13 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         .iter()
         .zip(&paths)
         .try_for_each(|((_, changed, readers), path)| {
-            let done = if *changed { "wrote" } else { "unchanged" };
-            writeln!(out, "{done:<9} {path:<width$}  read by {}", list(readers))
+            let done = match (*changed, dry_run) {
+                (false, _) => "unchanged",
+                (true, false) => "wrote",
+                (true, true) => "would write",
+            };
+            let pad = if dry_run { 11 } else { 9 };
+            writeln!(out, "{done:<pad$} {path:<width$}  read by {}", list(readers))
         });
     let result = result.and_then(|()| {
         unread
@@ -526,9 +562,10 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-/// What `sync --format json` writes about `files`.
+/// What `sync --format json` writes about `files`: with `--check` or not,
+/// and written or not.
 fn sync_json<'a>(
-    check: bool,
+    (check, written): (bool, bool),
     files: &'a [Recorded],
     notes: &'a [String],
     unread: &[&'a str],
@@ -538,6 +575,7 @@ fn sync_json<'a>(
         schema_version: SYNC_SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
         check,
+        written,
         files: files
             .iter()
             .map(|(path, changed, readers)| SyncFile {
@@ -623,10 +661,17 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
     let mut written = index_file::Written::default();
     if file.is_some() || folder.is_some() {
         let content = absolute(&project.root().join(project.content_root().as_str()));
-        written = match index_file::write(&answer, file.as_deref(), folder.as_deref(), &content) {
+        written = match index_file::write(
+            &answer,
+            file.as_deref(),
+            folder.as_deref(),
+            &content,
+            args.guard,
+        ) {
             Ok(written) => written,
             Err(e) => return exit::fail(err, &e),
         };
+        answer.written = !args.guard.dry_run;
     }
     answer.file = file.as_deref().map(shown);
     answer.changed = written.changed;
@@ -637,16 +682,22 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
     }
     // The index goes to standard output unless it's written into a file;
     // then what was written does.
+    let wrote = if args.guard.dry_run {
+        "would write"
+    } else {
+        "wrote"
+    };
+    let pad = wrote.len().max(9);
     let pages = answer.folder.as_deref().map(|folder| {
         let done = if written.pages_changed > 0 {
-            "wrote"
+            wrote
         } else {
             "unchanged"
         };
         let count = answer.pages.len();
         let noun = if count == 1 { "page" } else { "pages" };
         format!(
-            "{done:<9} {folder}  {count} {noun}, {} changed",
+            "{done:<pad$} {folder}  {count} {noun}, {} changed",
             written.pages_changed
         )
     });
@@ -657,12 +708,8 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
             }
         }),
         Some(file) => {
-            let done = if written.changed {
-                "wrote"
-            } else {
-                "unchanged"
-            };
-            writeln!(out, "{done:<9} {file}")
+            let done = if written.changed { wrote } else { "unchanged" };
+            writeln!(out, "{done:<pad$} {file}")
                 .and_then(|()| pages.map_or(Ok(()), |pages| writeln!(out, "{pages}")))
         }
     };
@@ -779,10 +826,21 @@ fn check(
         record(&mut files, plan);
     }
     let result = match format {
-        Format::Text => files.iter().try_for_each(|(path, changed, _)| {
-            let state = if *changed { "stale" } else { "up to date" };
-            writeln!(out, "{state:<10} {}", shown(path))
-        }),
+        Format::Text => {
+            let mut shown_once: Vec<&Path> = Vec::new();
+            plans
+                .iter()
+                .flat_map(|plan| &plan.files)
+                .filter(|file| file.changes())
+                .try_for_each(|file| {
+                    if shown_once.contains(&file.path.as_path()) {
+                        return Ok(());
+                    }
+                    shown_once.push(&file.path);
+                    let old = file.old.as_deref().unwrap_or_default();
+                    answer::write_unified_diff(out, &shown(&file.path), old, &file.new)
+                })
+        }
         Format::Json => {
             let mut unread: Vec<&str> = Vec::new();
             for line in plans.iter().flat_map(|plan| &plan.unread) {
@@ -791,7 +849,10 @@ fn check(
                 }
             }
             let mcp_settings = plans.iter().rev().find_map(|p| p.mcp_settings.as_deref());
-            answer::write_json(out, &sync_json(true, &files, notes, &unread, mcp_settings))
+            answer::write_json(
+                out,
+                &sync_json((true, false), &files, notes, &unread, mcp_settings),
+            )
         }
     };
     if let Some(code) = answer::written(result, err) {

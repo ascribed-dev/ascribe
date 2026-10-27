@@ -1,1 +1,9 @@
+--- a/examples.observations/default.toml
++++ b/examples.observations/default.toml
+@@ -10,4 +10,4 @@
+
+ [files]
+ "examples/greet.out.txt" = "sha256-lf:231462024105beaa2d3fcc21f4f29a2a2768328bb8bdb514e37ce65914552cec"
+-"examples/greet.ts" = "sha256-lf:224cb5bb3ee428652127268d6b08c6e9dde5e3ab3ac3731633ef34898cf55f0d"
++"examples/greet.ts" = "sha256-lf:398ebfc857666088b8cb814036af12e39781c33d21ce53d5b2c3dc590a3beed2"
 examples.observations/default.toml is stale: changed examples/greet.ts. Run `ascribe observe` here to test the examples again.

@@ -2,6 +2,7 @@
   "schema_version": 1,
   "ascribe_version": "{version}",
   "check": true,
+  "written": false,
   "files": [
     {
       "path": "AGENTS.md",

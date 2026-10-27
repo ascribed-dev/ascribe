@@ -57,7 +57,8 @@ pub enum Command {
 /// Arguments of `ascribe permalinks sync`.
 #[derive(Debug, ClapArgs)]
 pub struct SyncArgs {
-    /// Write nothing, and exit with 1 when the list would change: for CI.
+    /// Write nothing, print how the list would change as a unified diff,
+    /// and exit with 1 when it would: for CI.
     #[arg(long)]
     pub check: bool,
 
@@ -232,7 +233,12 @@ fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn
     }
     let result = match args.format {
         Format::Json => answer::write_json(out, &synced),
-        Format::Text if args.check => write_sync_check(out, err, &synced),
+        Format::Text if args.check => write_sync_check(
+            out,
+            err,
+            &synced,
+            project.permalinks_text().unwrap_or_default(),
+        ),
         Format::Text => write_sync(out, err, &synced, args.guard.dry_run),
     };
     if let Some(code) = answer::written(result, err) {
@@ -308,30 +314,21 @@ fn write_sync(
     Ok(())
 }
 
-/// What `sync --check` says: what `sync` would write, without writing it.
-fn write_sync_check(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::Result<()> {
+/// What `sync --check` says: how `sync` would change the list, as a
+/// unified diff of `old`, its text now, without writing it.
+fn write_sync_check(
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+    s: &SyncAnswer,
+    old: &str,
+) -> io::Result<()> {
     if s.created {
         return writeln!(
             err,
             "error: there's no {PERMALINKS_FILE}; run `ascribe permalinks sync` to make one"
         );
     }
-    for name in &s.added {
-        writeln!(out, "would add {name}")?;
-    }
-    for moved in &s.moved {
-        writeln!(
-            out,
-            "would move {}: {} to {}",
-            moved.name, moved.from, moved.to
-        )?;
-    }
-    for name in &s.aliased {
-        writeln!(out, "would record the alias {name}")?;
-    }
-    for name in &s.retired {
-        writeln!(out, "would record {name} as retired")?;
-    }
+    answer::write_unified_diff(out, PERMALINKS_FILE, old, &s.text)?;
     for name in &s.removed {
         writeln!(
             err,

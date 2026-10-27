@@ -73,7 +73,7 @@ It lists the pages the build offers, the ones in `llms.txt`: a page that's `unli
 
 Of a [versioned build](../versions/lines.md#for-agents), `--build site@3.4` names an older line, and without `--build` it's the current line's. When the build has more than one live line, the index's heading names the line, as that line's `llms.txt` does: `## Loom (Self-managed 3.4)`.
 
-`--into` writes between markers as `sync` writes its block, so a second run replaces the first, and says whether the file changed. `--pages` writes each page's Markdown version as the build's `plain` output writes it. A file in the `--pages` folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
+`--into` writes between markers as `sync` writes its block, so a second run replaces the first, and says whether the file changed. With `--dry-run`, it says what it would write and writes nothing; and like [every command that writes](../command/index.md#commands-that-write), it won't change a file git couldn't put back unless given `--force`. `--pages` writes each page's Markdown version as the build's `plain` output writes it. A file in the `--pages` folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
 
 @include: ../_generated/cli-agents-index-options.md
 

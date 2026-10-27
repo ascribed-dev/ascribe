@@ -1,3 +1,13 @@
 warning: ascribe.permalinks has rotate-keys, which the project no longer has; `ascribe check` reports it until it's back or retired
 error: ascribe.permalinks is out of date; run `ascribe permalinks sync` to update it
-would move weave-config: guides/weave.md#weave-config to reference/loom.md#weave-config
+--- a/ascribe.permalinks
++++ b/ascribe.permalinks
+@@ -3,7 +3,7 @@
+
+ [permalinks]
+ rotate-keys = "guides/weave.md#rotate-keys"
+-weave-config = "guides/weave.md#weave-config"
++weave-config = "reference/loom.md#weave-config"
+ weaving = "guides/weave.md"
+
+ [aliases]

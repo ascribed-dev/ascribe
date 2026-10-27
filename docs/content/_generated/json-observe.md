@@ -171,7 +171,7 @@
       "type": "object"
     },
     "observation": {
-      "description": "The observation it wrote, from the current folder: none when the test\nfailed. With `--check`, the one it compared.",
+      "description": "The observation it wrote, from the current folder: none when the test\nfailed. With `--check`, the one it compared; with `--dry-run`, the\none it would write.",
       "type": [
         "string",
         "null"
@@ -206,6 +206,10 @@
         "string",
         "null"
       ]
+    },
+    "written": {
+      "description": "Whether it wrote the observation: false with `--check` or\n`--dry-run`, or when the test failed.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -216,6 +220,7 @@
     "environment",
     "test",
     "observation",
+    "written",
     "current",
     "changes",
     "recorded",

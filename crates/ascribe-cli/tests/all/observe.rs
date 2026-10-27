@@ -15,9 +15,13 @@ use ascribe_model::examples::Observation;
 use serde_json::Value;
 
 fn ascribe(dir: &Path, args: &[&str]) -> Output {
+    // The folder isn't a repository, so a run that writes passes the git
+    // guard with `--force`; `guard.rs` tests the guard.
+    let writes = !args.iter().any(|a| matches!(*a, "--check" | "--dry-run"));
     Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
+        .args(writes.then_some("--force"))
         .env("NO_COLOR", "1")
         .output()
         .expect("run ascribe")
@@ -408,9 +412,21 @@ fn check_runs_nothing_and_says_whether_the_observation_is_stale() {
     fs::write(dir.path().join("examples/a.ts"), "changed();\n").unwrap();
     let output = ascribe(dir.path(), &["observe", "--check"]);
     assert_eq!(code_of(&output), 1);
-    assert_eq!(
-        stdout(&output),
-        "examples.observations/default.toml is stale: changed examples/a.ts. Run `ascribe observe` here to test the examples again.\n"
+    // The observation's hashes as a unified diff, then what's stale.
+    let said = stdout(&output);
+    assert!(
+        said.starts_with(
+            "--- a/examples.observations/default.toml\n+++ b/examples.observations/default.toml\n@@ "
+        ),
+        "{said}"
+    );
+    assert!(said.contains("\n-\"examples/a.ts\" = "), "{said}");
+    assert!(said.contains("\n+\"examples/a.ts\" = "), "{said}");
+    assert!(
+        said.ends_with(
+            "examples.observations/default.toml is stale: changed examples/a.ts. Run `ascribe observe` here to test the examples again.\n"
+        ),
+        "{said}"
     );
     let output = ascribe(dir.path(), &["observe", "--check", "--format", "json"]);
     assert_eq!(code_of(&output), 1);

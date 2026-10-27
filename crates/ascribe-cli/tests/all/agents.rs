@@ -90,9 +90,14 @@ fn read(path: &Path) -> String {
 }
 
 fn ascribe(dir: &Path, args: &[&str]) -> Output {
+    // The files here aren't committed, so a command that writes passes the
+    // git guard with `--force`; `guard.rs` tests the guard.
+    let writes = args.iter().any(|a| matches!(*a, "sync" | "index"))
+        && !args.iter().any(|a| matches!(*a, "--check" | "--dry-run"));
     Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
+        .args(writes.then_some("--force"))
         .env("NO_COLOR", "1")
         .output()
         .expect("run ascribe")
@@ -277,7 +282,7 @@ fn at_a_root_with_several_projects_each_is_synced() {
     // once.
     let out = run(repo.path(), &["agents", "sync", "--check"], 1);
     assert!(
-        stdout(&out).contains("stale      AGENTS.md\n"),
+        stdout(&out).contains("+++ b/AGENTS.md\n"),
         "{}",
         stdout(&out)
     );
@@ -458,7 +463,7 @@ fn check_fails_when_the_content_model_changes() {
     );
     let out = run(repo.path(), &["agents", "sync", "--check"], 1);
     assert!(
-        stdout(&out).contains("stale      AGENTS.md"),
+        stdout(&out).contains("+++ b/AGENTS.md\n"),
         "{}",
         stdout(&out)
     );
@@ -826,7 +831,7 @@ fn with_hook_writes_each_agents_hooks() {
     write(&root.join(".github/hooks/ascribe.json"), "{}\n");
     let out = run(root, &["agents", "sync", "--check"], 1);
     assert!(
-        stdout(&out).contains("stale      .github/hooks/ascribe.json"),
+        stdout(&out).contains("+++ b/.github/hooks/ascribe.json\n"),
         "{}",
         stdout(&out)
     );
@@ -979,7 +984,7 @@ fn command_overrides_the_one_worked_out() {
     // Without it, the files name another command, so they're out of date.
     let out = run(root, &["agents", "sync", "--check"], 1);
     assert!(
-        stdout(&out).contains("stale      AGENTS.md"),
+        stdout(&out).contains("+++ b/AGENTS.md\n"),
         "{}",
         stdout(&out)
     );
@@ -1134,7 +1139,7 @@ fn cloud_prints_the_mcp_settings_unless_it_writes_the_agent() {
         );
         let out = run(root, &["agents", "sync", "--check"], 1);
         assert!(
-            stdout(&out).contains(&format!("stale      {file}")),
+            stdout(&out).contains(&format!("+++ b/{file}\n")),
             "{}",
             stdout(&out)
         );

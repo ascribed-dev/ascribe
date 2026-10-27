@@ -540,7 +540,8 @@ mod tests {
                 | SyncError::Git(_)
                 | SyncError::Read { .. }
                 | SyncError::Settings { .. }
-                | SyncError::Write { .. } => {}
+                | SyncError::Write { .. }
+                | SyncError::Guard(_) => {}
             }
         }
         fn baseline(e: &BaselineCommandError) {
@@ -893,6 +894,9 @@ mod tests {
                 files: vec![text()],
             }),
             Box::new(CheckError::Guard(GuardError::NotRestorable {
+                files: vec![text()],
+            })),
+            Box::new(SyncError::Guard(GuardError::NotRestorable {
                 files: vec![text()],
             })),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),
