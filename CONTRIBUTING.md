@@ -56,6 +56,15 @@ It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `d
 
 A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 
+### What CI checks a pull request records
+
+Some rules are about what a pull request records besides its code. On every pull request, CI's `change record` job ([scripts/ci/change-record.ts](scripts/ci/change-record.ts)) checks the two it can tell from the files the pull request changes, and writes what it finds to the run's summary:
+
+- **A contract changed with no decision fails.** When `SPEC.md`, a file in `docs/content/contracts/`, or `packages/elements/CONTRACT.md` changes, the pull request also adds or changes a decision in [project-docs/decisions/](project-docs/decisions/README.md) (the folder's README doesn't count). A contract changes only by a decision recorded with the change; undo the change, or record the decision.
+- **A change to the source with no changelog entry warns.** When a file in `crates/*/src/` or `packages/*/src/` changes and no entry is added in [changes/](changes/README.md), the summary says so. It's a warning, since plenty of changes to the source are nothing a user would notice. A change a user would notice adds the entry and updates its page under `docs/content/` ([Documenting a change](#documenting-a-change)). One they wouldn't says so in the description, in a line of its own that starts with `Not user-visible:` and says why, such as `Not user-visible: a rename inside ascribe-check.` The reviewer judges whether that's true.
+
+The job reads the description when it runs, so after editing the description, re-run the job to clear its warning. Two rules stay with the reviewer, because no script can tell them from the files: a behavior change comes with a conformance case, and a clean-up is labeled `optimization`, so CI compares its outputs.
+
 ### Fuzzing
 
 `fuzz/` holds three [cargo-fuzz](https://rust-fuzz.github.io/book/cargo-fuzz.html) targets that feed arbitrary text to the entry points every keystroke and every agent's edit goes through:
