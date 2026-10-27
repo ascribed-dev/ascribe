@@ -1068,7 +1068,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/ascribe-docs.md` | `ascribe agents sync --cloud`, at the repository's root: steps between markers in the workflow, and with `--agent`, the custom agent. | Yes |
 | `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Docs.astro`, and `src/styles/docs.css` | `npx @ascribed/astro init`, once, in the Astro root. From then on they're yours. | Yes |
 | `.astro/integrations/_ascribed_astro/` | `@ascribed/astro`, in the Astro root: a copy of the collection's schema, inside Astro's own folder, which Astro's starters leave out of git. | No |
-| `_redirects`, `_headers`, and `_ascribe/gone/` in Astro's output, `dist/` | `@ascribed/astro`, when it builds, in the built site: with `host` in `[consumer]`, the host's files, whose `_redirects` has a line for each address `ascribe.addresses` records a move or a retirement of, and in `_ascribe/gone/` under the base path, a page for each retired address, saying what was removed and why. Astro's starters leave `dist/` out of git. | No |
+| `dist/_redirects`, `dist/_headers`, and `dist/_ascribe/gone/` | `@ascribed/astro`, when it builds, in the Astro root's output folder: with `host` in `[consumer]`, the host's files, whose `_redirects` has a line for each address `ascribe.addresses` records a move or a retirement of, and in `_ascribe/gone/` under the base path, a page for each retired address, saying what was removed and why. Astro's starters leave `dist/` out of git. | No |
 
 ## What nothing declares
 
