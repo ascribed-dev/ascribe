@@ -371,7 +371,7 @@ Error · file level · next step: fix · [SPEC §2.1]({repo}/blob/main/SPEC.md#2
 
 **Fix:** Remove the page's `listing`, which the rule already sets, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list the page more openly, change the rule in `[listing]`: a page can only restrict what it's under. The editor's quick fix removes `listing`.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ### ASC196 `content-type-missing`
 @id {permalink=true}: ASC196
@@ -469,7 +469,7 @@ Error · page level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the page's `listing`, which the rule already sets in an older line, or make it the rule's value or a stricter one: `listed`, then `unquoted`, then `unlisted`. To list an older line's pages more openly, change `older-lines` in `[listing]`.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ## Lists
 
@@ -631,7 +631,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** ascribe.lock is written by `ascribe sources fetch` and `ascribe sources update`. Undo the change made to it by hand, or delete it and run `ascribe sources fetch`.
 
-**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/sources.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC137 `lock-source-unknown`
 @id {permalink=true}: ASC137
@@ -645,7 +645,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Run `ascribe sources fetch` to make the lock match ascribe.toml, or `ascribe sources update <name>` for a source whose `git` changed.
 
-**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/sources.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC138 `source-copy-changed`
 @id {permalink=true}: ASC138
@@ -659,7 +659,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** A copy is the file as it is in its repository at the pinned commit. Change the code where it lives, then run `ascribe sources update <name>`; `ascribe sources fetch` puts back a copy that was changed or deleted here.
 
-**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/sources.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC139 `source-copy-unlocked`
 @id {permalink=true}: ASC139
@@ -673,7 +673,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Run `ascribe sources fetch`: it copies the files snippets use at the pinned commit and records them, and removes the rest.
 
-**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/sources.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ### ASC140 `source-copy-unused`
 @id {permalink=true}: ASC140
@@ -687,7 +687,7 @@ Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.
 
 **Fix:** Run `ascribe sources fetch`, which removes the copies no snippet uses.
 
-**Read more:** [A source in another repository](../content-model/output.md#a-source-in-another-repository) in the `ascribe.toml` reference.
+**Read more:** [A source in another repository](../content-model/sources.md#a-source-in-another-repository) in the `ascribe.toml` reference.
 
 ## `@intended`
 
@@ -901,7 +901,7 @@ Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the text from one of the terms' headings or `aliases`, or make the terms distinct. Give one of two terms with the same id another with `@id`. Text is compared ignoring case unless both terms are case-sensitive.
 
-**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+**Read more:** [`[glossary]`](../content-model/content.md#8-glossary) in the `ascribe.toml` reference.
 
 ### ASC240 `glossary-definition-missing`
 @id {permalink=true}: ASC240
@@ -915,7 +915,7 @@ Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the definition as the first paragraph under the term's heading, after its `@term` and any other directives that bind the heading. A link's title and the editor's hover show that paragraph, so a section that opens with a note, a list, a code block, or a subheading leaves them nothing to show.
 
-**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+**Read more:** [`[glossary]`](../content-model/content.md#8-glossary) in the `ascribe.toml` reference.
 
 ### ASC242 `term-off-glossary-page`
 @id {permalink=true}: ASC242
@@ -929,7 +929,7 @@ Error · file level · next step: choose · [SPEC §4.11]({repo}/blob/main/SPEC.
 
 **Fix:** List the page in `[glossary] pages` in ascribe.toml, or move the term to a glossary page, or remove `@term`. Listing the page links its terms on every other page, so the fix that adds it is offered in the editor and never applied by `ascribe check --fix`. A fragment is listed through a page that includes it.
 
-**Read more:** [`[glossary]`](../content-model/content.md#12-glossary) in the `ascribe.toml` reference.
+**Read more:** [`[glossary]`](../content-model/content.md#8-glossary) in the `ascribe.toml` reference.
 
 ## `@summary`
 

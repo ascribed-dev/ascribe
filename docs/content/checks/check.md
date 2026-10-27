@@ -96,7 +96,7 @@ A project with no pages yet, and nothing to report, says so in place of the summ
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
-Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#19-checks).
+Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#22-checks).
 
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
 
@@ -109,7 +109,7 @@ There are four ways to quiet a problem, each with its own rules:
 | Way | What it quiets | For how long | Reason | Read by |
 |---|---|---|---|---|
 | [`@intended`](../writing/directives.md#intended), the `intended` frontmatter key, or [`[[intended]]`](../content-model/checks.md#intended-acknowledgements) | One problem of a review check, at its place | For good | Required | Everything |
-| [`[checks]`](../content-model/checks.md#19-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
+| [`[checks]`](../content-model/checks.md#22-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
 | `[checks]` `<check> = "advice"` or `"warning"` | Lowers a content check, in the whole project | Until it's set again | None | Everything |
 | [`ascribe.baseline`](baseline.md) | Many advice, each by its problem | Until it's fixed and pruned | None | `ascribe check`, the editor, the hooks, and the MCP server; not `ascribe build` or `ascribe report`, for now |
 

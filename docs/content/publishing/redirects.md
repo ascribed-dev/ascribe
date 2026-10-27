@@ -209,7 +209,7 @@ With `host = "netlify"`, the `_redirects` the build writes forwards each permali
 /docs/go/legacy-sync/ /docs/go/legacy-sync/ 410!
 ```
 
-- **An address with a [dimension](../content-model/content.md#dimensions)'s parameter,** such as `?pm=pnpm`, gets the forwarding page instead, whose script sets the reader's choice before it forwards: a line for each dimension, ahead of the `301`, since Netlify uses the first rule that matches.
+- **An address with a [dimension](../content-model/variation.md#dimensions)'s parameter,** such as `?pm=pnpm`, gets the forwarding page instead, whose script sets the reader's choice before it forwards: a line for each dimension, ahead of the `301`, since Netlify uses the first rule that matches.
 - **A retired permalink's address** serves its page, which says why it was removed, with a `410`, which tells a fetcher it's gone on purpose.
 - **`!`** forces each rule past the forwarding page at the address, which Netlify would serve otherwise.
 

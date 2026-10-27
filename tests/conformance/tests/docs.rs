@@ -600,21 +600,21 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
     },
     SettingsTable {
         name: "content-model-versions.md",
-        page: "content-model/content.md",
+        page: "content-model/variation.md",
         table: "versions",
         keys: &[],
         releases: false,
     },
     SettingsTable {
         name: "content-model-releases-target.md",
-        page: "content-model/content.md",
+        page: "content-model/variation.md",
         table: "releases.<target>",
         keys: &[],
         releases: true,
     },
     SettingsTable {
         name: "content-model-releases.md",
-        page: "content-model/content.md",
+        page: "content-model/variation.md",
         table: "releases",
         keys: &[],
         releases: true,
@@ -684,7 +684,7 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
     },
     SettingsTable {
         name: "content-model-sources.md",
-        page: "content-model/output.md",
+        page: "content-model/sources.md",
         table: "sources.<name>",
         keys: &[],
         releases: false,

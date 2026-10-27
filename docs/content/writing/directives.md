@@ -148,7 +148,7 @@ Each build decides what happens to availability: `badge` keeps everything and ma
 
 ### The planned line
 
-Where a version goes, `planned` means the target's planned line in [`[releases]`](../content-model/content.md#71-releasestarget), so content for a release that hasn't shipped is marked without its number:
+Where a version goes, `planned` means the target's planned line in [`[releases]`](../content-model/variation.md#121-releasestarget), so content for a release that hasn't shipped is marked without its number:
 
 ```markdown
 @available: self-managed planned
@@ -244,7 +244,7 @@ Takes a code example from a file outside the content, and puts it in the page as
 @snippet {lang=shell, title="Install"}: code:scripts/install.sh
 ```
 
-- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a [source](../glossary.md#source) declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/output.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/output.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
+- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a [source](../glossary.md#source) declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/sources.md#20-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/sources.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
 - The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text. A symbolic link is followed, but only to a file in the source's folder that `include` and `ignore` take in.
 - **When the file isn't found,** the message says why, and when `ascribe check` can tell which file was meant, it offers that address:
   - The path is relative to the source's folder, so it doesn't repeat it: with `path = "src"`, `src/config.js` is `code:config.js`.
@@ -272,7 +272,7 @@ Says that a problem a check reports is intended: you've looked at it and are kee
 Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
-- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#19-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
+- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#22-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
 - **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/pages.md#ASC143)).
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
@@ -412,5 +412,5 @@ A project widget is a directive a project declares in `ascribe.toml`, for needs 
 @quill-labspace {lab=first-sync}
 ```
 
-A declared widget works like a built-in directive, with the forms, primary, attributes, binding, title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#14-widgetsname).
+A declared widget works like a built-in directive, with the forms, primary, attributes, binding, title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#10-widgetsname).
 
