@@ -142,7 +142,7 @@ pub(crate) fn check_files_with(
     // The specs are read with the source index, so they're asked of it only
     // when the content model declares one.
     if !project.model().apis.is_empty() {
-        let apis = project.link_index().apis();
+        let apis = project.index().apis();
         sources.extend(
             apis.problems(project.model(), FileId::new(0))
                 .iter()

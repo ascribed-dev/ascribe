@@ -699,7 +699,7 @@ pub fn page_memos(project: &Project, context: &Context, files: &[FileId]) -> Vec
     if pages.is_empty() {
         return Vec::new();
     }
-    let places = MemoPlace::all(&project.held_index(), memos);
+    let places = MemoPlace::all(project.index(), memos);
     let found = pages
         .iter()
         .flat_map(|(_, p)| about_file(&places, p))

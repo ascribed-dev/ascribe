@@ -8,6 +8,8 @@
 //! This file is a crate root, so it looks for its modules beside itself;
 //! each one names its file.
 
+#[path = "support/counting.rs"]
+mod counting;
 // `links.rs` panics on a link it can't make, as a test helper may.
 #[allow(clippy::expect_used, clippy::panic)]
 #[path = "../../../tests/support/links.rs"]
@@ -63,6 +65,8 @@ mod planted;
 mod preview;
 #[path = "all/program_starts.rs"]
 mod program_starts;
+#[path = "all/read_once.rs"]
+mod read_once;
 #[path = "all/rename.rs"]
 mod rename;
 #[path = "all/report.rs"]

@@ -140,7 +140,7 @@ fn the_places_are_the_commands() {
             let builds: Vec<String> = build.into_iter().map(str::to_owned).collect();
             let command = ascribe_query::search(
                 &project,
-                &project.index(),
+                project.index(),
                 &Readings::default(),
                 &Search {
                     query,

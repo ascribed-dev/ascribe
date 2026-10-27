@@ -345,7 +345,7 @@ fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let listed = ascribe_query::versions::list(&project.index());
+    let listed = ascribe_query::versions::list(project.index());
     let result = match args.format {
         Format::Json => answer::write_json(out, &listed),
         Format::Text => write_list(out, &listed),
@@ -423,7 +423,7 @@ fn run_changes(
         Ok(project) => project,
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let changes = match ascribe_query::versions::changes(&project.index(), &args.from, &args.to) {
+    let changes = match ascribe_query::versions::changes(project.index(), &args.from, &args.to) {
         Ok(changes) => changes,
         Err(e) => return answer::fail(err, &e),
     };
@@ -1189,7 +1189,7 @@ fn run_export(global: &Global, args: &ExportArgs, out: &mut dyn Write, err: &mut
     let options = ArchiveOptions {
         current: args.current.clone(),
     };
-    let archive = match ascribe_emit::archive(&index, project.root(), &build, &options) {
+    let archive = match ascribe_emit::archive(index, project.root(), &build, &options) {
         Ok(archive) => archive,
         Err(e) => return answer::fail(err, &e),
     };
