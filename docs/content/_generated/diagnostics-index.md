@@ -1,4 +1,4 @@
-@memo: Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
+@memo: Generated from crates/ascribe-core/data/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
 | Code | Name | Severity | Level | Next step |
 |---|---|---|---|---|
 | [ASC001](../checks/diagnostics/directives.md#ASC001) | `attribute-unknown-key` | Error | File | choose |

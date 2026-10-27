@@ -1109,7 +1109,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
 /// What each fragment starts with: a memo saying what generates it, and
 /// how. It touches the fragment's first block, or, where that's a heading,
 /// which a memo can't be about, it's at the top of the first section.
-const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml by \
+const HEADER: &str = "@memo: Generated from crates/ascribe-core/data/diagnostics.toml by \
      tests/conformance/tests/docs.rs; edit the registry, then run \
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.\n";
 

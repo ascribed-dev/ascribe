@@ -10,7 +10,7 @@ use crate::outline::Outline;
 /// A diagnostic an implementation reported.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic {
-    /// The slug from `tests/conformance/diagnostics.toml`.
+    /// The slug from `crates/ascribe-core/data/diagnostics.toml`.
     pub slug: String,
     /// The file, relative to the case's content root, with `/` separators.
     /// `input.md` in single-file cases.

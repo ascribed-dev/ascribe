@@ -1,4 +1,4 @@
-//! Checks the diagnostics registry, `tests/conformance/diagnostics.toml`,
+//! Checks the diagnostics registry, `crates/ascribe-core/data/diagnostics.toml`,
 //! against SPEC.md: every §8.2 row and the sections it cites, and the checks
 //! that the acknowledgement examples in SPEC.md and the docs name.
 

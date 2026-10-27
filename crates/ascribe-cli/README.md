@@ -16,7 +16,7 @@ The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`
 | `src/docs.rs`, `src/shapes.rs` | Tests that write generated files: the command reference's fragments in `docs/content/_generated/`, and the JSON Schemas in `schemas/` with the TypeScript generated from them |
 | `src/exit.rs` | The exit codes: 0 (no errors), 1 (errors, or warnings under `--deny-warnings`; for an answer, something that isn't there), 2 (the command couldn't run) |
 
-`check` and `build` call `ascribe_check::diagnose`, and it and the language server call the same checking functions (`ascribe_check::check_all_builds`, and `check_project` for one build), so they report identical diagnostics. Codes, slugs, severities, and message templates come from the diagnostics registry, `tests/conformance/diagnostics.toml`.
+`check` and `build` call `ascribe_check::diagnose`, and it and the language server call the same checking functions (`ascribe_check::check_all_builds`, and `check_project` for one build), so they report identical diagnostics. Codes, slugs, severities, and message templates come from the diagnostics registry, `crates/ascribe-core/data/diagnostics.toml`.
 
 The JSON report's `schema_version` changes only when a field is removed or changes meaning; new fields can appear without it, so consumers ignore fields they don't know.
 

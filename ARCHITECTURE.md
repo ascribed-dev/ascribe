@@ -46,7 +46,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 
 | Directory | What it holds |
 |---|---|
-| `tests/conformance` | The conformance suite (`ascribe-conformance`): cases written from the spec, and `diagnostics.toml`, the diagnostics registry. |
+| `tests/conformance` | The conformance suite (`ascribe-conformance`): cases written from the spec, checked against the diagnostics registry, `crates/ascribe-core/data/diagnostics.toml`. |
 | `tests/commonmark` | The CommonMark spec's examples, run against the fork and the parser. |
 | `tests/corpora` | Real documentation sets, the 3,000-page synthetic project (`tests/corpora/synthetic`), and the performance benchmarks with their baselines. |
 | `tests/render` | The site-render fixtures both HTML renderers must pass. |
@@ -200,7 +200,7 @@ They're meant to agree, and these tests hold them to it:
 | Images and linked files | `crates/ascribe-emit/src/assets.rs` | [Assets](docs/content/contracts/assets.md) |
 | The Zod schema, `_ascribe/schema.ts` | `crates/ascribe-emit/src/zod/` | [crates/ascribe-emit/README.md](crates/ascribe-emit/README.md#zod), with each field type's schema in the [content model contract](docs/content/contracts/content-model.md); `tests/zod` type-checks it |
 | The commands' JSON reports | `crates/ascribe-cli/src/report/`, `ascribe-diff`, `ascribe-sources` | The [JSON report contract](docs/content/contracts/json-reports.md), with each one's schema, and the [command reference](docs/content/command/index.md) |
-| Diagnostics: codes, severities, messages | `tests/conformance/diagnostics.toml`, through `ascribe_check::Registry` | The [diagnostics reference](docs/content/checks/diagnostics.md), generated from the registry |
+| Diagnostics: codes, severities, messages | `crates/ascribe-core/data/diagnostics.toml`, through `ascribe_check::Registry` | The [diagnostics reference](docs/content/checks/diagnostics.md), generated from the registry |
 
 The names the site output, the HTML preview, and review put on a page (elements, attributes, classes, and ids) have one home, `ascribe_core::names` (`crates/ascribe-core/src/names.rs`). The TypeScript imports them from a module generated from it in each package (`packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`), and `crates/ascribe-core/tests/names.rs` fails on a literal of one anywhere else in source, and on a stylesheet, Astro template, or the docs site's code using a name that isn't declared.
 

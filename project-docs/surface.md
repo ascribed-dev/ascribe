@@ -116,7 +116,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 ## Diagnostics
 
-For people and agents. Read from `tests/conformance/diagnostics.toml`.
+For people and agents. Read from `crates/ascribe-core/data/diagnostics.toml`.
 
 276 in all. By severity: 62 advice, 183 error, 31 warning. By level: 246 file, 30 page. By kind of next step: 57 choose, 23 fix, 12 outside, 13 review, 171 write.
 

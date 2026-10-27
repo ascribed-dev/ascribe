@@ -1,8 +1,8 @@
 //! The diagnostics registry: codes, severities, and message templates.
 //!
-//! `tests/conformance/diagnostics.toml` is the one source. It's embedded at
-//! build time and parsed on first use, so every tool words and ranks a
-//! problem the same way. [`Registry::global`] is the parsed registry.
+//! `crates/ascribe-core/data/diagnostics.toml` is the one source. It's
+//! embedded at build time, as [`ascribe_core::diagnostics::REGISTRY`], and
+//! parsed on first use, so every tool words and ranks a problem the same way. [`Registry::global`] is the parsed registry.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -12,7 +12,7 @@ use ascribe_core::{DiagnosticSlug, Issue, Place};
 use crate::Severity;
 
 /// The registry file, embedded.
-const SOURCE: &str = include_str!("../../../tests/conformance/diagnostics.toml");
+const SOURCE: &str = ascribe_core::diagnostics::REGISTRY;
 
 /// Which level a diagnostic is checked at (SPEC §8.1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

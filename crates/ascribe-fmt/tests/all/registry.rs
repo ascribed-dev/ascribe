@@ -7,7 +7,7 @@ use crate::support;
 
 #[test]
 fn the_non_blocking_diagnostics_are_warnings() {
-    let path = support::repo_root().join("tests/conformance/diagnostics.toml");
+    let path = support::repo_root().join("crates/ascribe-core/data/diagnostics.toml");
     let text = std::fs::read_to_string(path).expect("the registry is readable");
     let registry: toml::Table = text.parse().expect("the registry is TOML");
     let entries = registry["diagnostic"]

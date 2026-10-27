@@ -5,7 +5,7 @@
 //! one the registry says.
 //!
 //! A check's own settings aren't here: a check is described by its `when` in
-//! `tests/conformance/diagnostics.toml`.
+//! `crates/ascribe-core/data/diagnostics.toml`.
 
 use std::sync::OnceLock;
 

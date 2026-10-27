@@ -24,7 +24,7 @@ Start a workflow with the GitHub MCP tool `actions_run_trigger`, never `gh workf
 
    First, **reserve the diagnostic codes** of each ready card that adds a diagnostic, so two pull requests cut from the same `main` never take the same code (decision [#982](../../../project-docs/decisions/982-reserved-diagnostic-codes.md)). Count the diagnostics the card needs from the issue and a look at the checks it changes, and add one or two when unsure. Take the codes after the highest of these, in order:
 
-   - the last `code` in `tests/conformance/diagnostics.toml` on `main`;
+   - the last `code` in `crates/ascribe-core/data/diagnostics.toml` on `main`;
    - the highest code in any issue's reservation, open or closed: search the repository's issues for `"Reserved codes"` and read the matching comments;
    - the highest code an open pull request adds to `diagnostics.toml`, for one opened before codes were reserved.
 
