@@ -36,6 +36,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         if !seen.insert(e.slug.as_str()) {
             return Err(format!("`{}` is in the registry twice", e.slug).into());
         }
+        if e.off_by_default && !e.configurable {
+            return Err(format!(
+                "`{}` is off by default, so it must be configurable to be turned on",
+                e.slug
+            )
+            .into());
+        }
     }
 
     let mut out = String::new();

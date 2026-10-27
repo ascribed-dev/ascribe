@@ -2,7 +2,8 @@
 //!
 //! `crates/ascribe-core/data/diagnostics.toml` is the one source. It's
 //! embedded at build time, as [`ascribe_core::diagnostics::REGISTRY`], and
-//! parsed on first use, so every tool words and ranks a problem the same way. [`Registry::global`] is the parsed registry.
+//! parsed on first use, so every tool words and ranks a problem the same way.
+//! [`Registry::global`] is the parsed registry.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

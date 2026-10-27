@@ -27,7 +27,7 @@ Every crate builds on it, so a change here is a change to all of them.
 
 - **It depends on no other crate of ours,** and outside the workspace only on `serde` and `thiserror`, and `toml` in `build.rs`. A type that needs more belongs in the crate that needs it.
 - **It never touches the file system.** `RelPath` is a path's spelling, not a file, and `normalize` and `relative_path` work on spellings too.
-- **A diagnostic is added in one place,** `data/diagnostics.toml`. `build.rs` generates its constant, and fails the build on a slug that isn't kebab-case, a slug listed twice, or a `review` entry without a `place`.
+- **A diagnostic is added in one place,** `data/diagnostics.toml`. `build.rs` generates its constant, and fails the build on a slug that isn't kebab-case, a slug listed twice, an `off-by-default` entry that isn't `configurable`, or a `review` entry without a `place`.
 
 ## Tests
 
