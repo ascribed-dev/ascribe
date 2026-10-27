@@ -1,7 +1,7 @@
 description: >-
-  With a template for the reference, a link by method and path to an
-  operation with no id is an error, at the destination: a template has no
-  address for it. A link by id is fine.
+  With an address pattern for the reference, a link by method and path to
+  an operation with no id is an error, at the destination: an address
+  pattern has no address for it. A link by id is fine.
 spec: ["5.2", "7.11", "8.2"]
 tags: [check]
 

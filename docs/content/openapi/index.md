@@ -73,7 +73,7 @@ import spec from "../../api/openapi.yaml?url&no-inline";
 
 Redoc 3 sends usage data to Redocly unless `disable-telemetry` is `"true"`.
 
-**Another renderer.** Write `reference` as a template of an operation's address, with `{operationId}` where the id goes and `{tag}` for its first tag. Each is filled in percent-encoded.
+**Another renderer.** Write `reference` as an address pattern: an operation's address, with `{operationId}` where the id goes and `{tag}` for its first tag. Each is filled in percent-encoded.
 
 | Renderer | `reference` |
 |---|---|

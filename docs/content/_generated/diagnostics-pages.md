@@ -115,13 +115,13 @@ Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md
 
 ### ASC274 `link-operation-form-unsupported`
 @id {permalink=true}: ASC274
-@summary: Target is an operation with no id, by its method and path, and the API's reference is a template.
+@summary: Target is an operation with no id, by its method and path, and the API's reference is an address pattern.
 
 Error · file level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
-**When:** Target is an operation with no id, by its method and path, and the API's reference is a template.
+**When:** Target is an operation with no id, by its method and path, and the API's reference is an address pattern.
 
-**Message:** `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"`
+**Message:** `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is an address pattern, which has no address for it; a link by method and path needs `renderer = "redoc"`
 
 **Fix:** Give the operation an `operationId` in the spec, or in the code it's generated from, and link to it by its id: every renderer addresses an operation by its id. Or publish the reference with Redoc 3, `{ renderer = "redoc", at = "/api/" }`, which has an address for an operation with no id.
 

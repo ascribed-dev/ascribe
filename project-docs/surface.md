@@ -382,7 +382,7 @@ For people and agents. Read from `tests/conformance/diagnostics.toml`.
 | `ASC271` | `addresses-anchor-collision` | error | write | `{key}` is forwarded to `{value}`, and a link to `#{id}` follows its page's redirect to {page}, which has its own heading with the id `{id}`, so the link lands there |
 | `ASC272` | `addresses-file-deleted` | error | write | ascribe.addresses was deleted, and the base has it, with {count}: the build no longer writes their redirects, and the check no longer compares the addresses |
 | `ASC273` | `addresses-soft-404` | advice | write | {count} addresses are forwarded to {value}, {what}, so a reader who followed a link to one of them lands on a page without what they were looking for |
-| `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = "redoc"` |
+| `ASC274` | `link-operation-form-unsupported` | error | write | `#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is an address pattern, which has no address for it; a link by method and path needs `renderer = "redoc"` |
 | `ASC275` | `link-operation-by-path` | advice | fix | `#{operation}` names the operation `{id}` of `{path}` by its method and path; link to it by its id, `#{id}` |
 | `ASC276` | `link-operation-deprecated` | advice | write | `#{operation}` names an operation `{path}` marks deprecated |
 | `ASC277` | `api-example-schema-mismatch` | error | write | {found}; {body} says {expected} |

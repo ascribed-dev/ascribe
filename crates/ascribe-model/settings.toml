@@ -1039,7 +1039,7 @@ key = "reference"
 kind = "table"
 type = "table or string"
 required = true
-description = '''Where the published reference is: `{ renderer = "redoc", at = "/api/" }` for Redoc's page, or a template of an operation's address, with `{operationId}` and `{tag}`, for another renderer.'''
+description = '''Where the published reference is: `{ renderer = "redoc", at = "/api/" }` for Redoc's page, or an address pattern, an operation's address with `{operationId}` and `{tag}`, for another renderer.'''
 
 [[setting]]
 table = "apis.<name>.reference"

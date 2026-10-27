@@ -4830,10 +4830,10 @@ evidence = []
 spec = "7.11"
 reference = "content-model/checks.md#23-apisname"
 group = "apis"
-when = "An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`"
+when = "An API's `reference` is an address pattern with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`"
 message = "the reference of API `{api}` has no `{{operationId}}`, so every operation's address would be the same"
-messages.placeholder = "`{placeholder}` isn't a placeholder of the reference of API `{api}`; a template's are `{{operationId}}` and `{{tag}}`"
-fix = "Write the template as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `\"/api/#/operations/{operationId}\"` for Stoplight Elements. For Redoc, write `{ renderer = \"redoc\", at = \"/api/\" }` instead."
+messages.placeholder = "`{placeholder}` isn't a placeholder of the reference of API `{api}`; an address pattern's are `{{operationId}}` and `{{tag}}`"
+fix = "Write the address pattern as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `\"/api/#/operations/{operationId}\"` for Stoplight Elements. For Redoc, write `{ renderer = \"redoc\", at = \"/api/\" }` instead."
 
 [[diagnostic]]
 code = "ASC261"
@@ -5023,8 +5023,8 @@ next = "write"
 evidence = []
 spec = "5.2"
 reference = "writing/inline.md#links"
-row = "Links | Target is an operation with no id, by its method and path, and the API's reference is a template"
-message = "`#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is a template, which has no address for it; a link by method and path needs `renderer = \"redoc\"`"
+row = "Links | Target is an operation with no id, by its method and path, and the API's reference is an address pattern"
+message = "`#{operation}` names an operation with no id by its method and path, and the reference of API `{api}` is an address pattern, which has no address for it; a link by method and path needs `renderer = \"redoc\"`"
 fix = "Give the operation an `operationId` in the spec, or in the code it's generated from, and link to it by its id: every renderer addresses an operation by its id. Or publish the reference with Redoc 3, `{ renderer = \"redoc\", at = \"/api/\" }`, which has an address for an operation with no id."
 
 [[diagnostic]]

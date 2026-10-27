@@ -166,7 +166,7 @@ None: `[permalinks]` is a replaced key (§20, §25.1).
 | Slug | Rule | Message |
 |---|---|---|
 | `model-api-outside-repository` | An API's `spec` is inside the git repository the project is in, or, with no repository, inside the folder that was opened. | `` the spec of API `{api}`, `{path}`, is outside the git repository the project is in ``<br>`` the spec of API `{api}`, `{path}`, is outside the folder that was opened, and with no git repository around the project, a spec isn't read from outside it; open the folder that contains it `` |
-| `model-api-reference` | A template has `{operationId}`, and no placeholder but `{operationId}` and `{tag}`. | `` the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same ``<br>`` `{placeholder}` isn't a placeholder of the reference of API `{api}`; a template's are `{operationId}` and `{tag}` `` |
+| `model-api-reference` | An address pattern has `{operationId}`, and no placeholder but `{operationId}` and `{tag}`. | `` the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same ``<br>`` `{placeholder}` isn't a placeholder of the reference of API `{api}`; an address pattern's are `{operationId}` and `{tag}` `` |
 
 ---
 
