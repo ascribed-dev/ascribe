@@ -83,9 +83,9 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves eight keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, `listing`, `replaces`, and `nav-label` (below).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves nine keys: `type`, `available` (§4.4), `variant` (§4.3), `intended` (§4.9), `permalink`, `listing`, `replaces`, `nav-label`, and `draft` (below).
 
-- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, one of `listing`'s values, a link destination, or a string on one line) is a frontmatter value of the wrong type (§8.2).
+- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, a name, one of `listing`'s values, a link destination, a string on one line, or a boolean) is a frontmatter value of the wrong type (§8.2).
 - `type` says which content type a page is (§7.2). Its value is the name of a type the content model declares. In a project that declares types, every page MUST name one, and a page that names none, or names one that isn't declared, is an error (§8.2). In a project that declares none, its pages have the implicit type `page` and name no type. Tools that write frontmatter put `type` first.
 
   ```yaml
@@ -127,6 +127,14 @@ An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY
   nav-label: Keys
   ---
   ```
+- `draft` says whether a page is a **draft**: a page that isn't finished, which no build publishes (§9.3). Its value is `true` or `false`; a page that doesn't set it isn't a draft. A draft is still a page, and processors check it as they check content no build publishes (§8.1). A link to a draft from a page a build publishes is a link to a page the build doesn't publish (§5.2). Taking `draft: true` out publishes the page in every build that would otherwise publish it.
+
+  ```yaml
+  ---
+  title: Rotate keys automatically
+  draft: true
+  ---
+  ```
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be a source file itself (under the content root, named as above, and not in another project's folder), so a link can't put any other file on disk in a page; one that leads elsewhere is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
 
 ### 2.2 Pages and fragments
@@ -138,7 +146,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, and `nav-label`; a fragment has no content type, and availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `type`, `available`, `variant`, `permalink`, `listing`, `replaces`, `nav-label`, and `draft`; a fragment has no content type, and availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
 
 ### 2.3 Escapes
 
@@ -1271,7 +1279,7 @@ A fenced code block whose language is `json` is an **example** of an operation's
 Validation happens at two levels.
 
 - **File level.** Each source file on its own: syntax, attributes, directive schemas, frontmatter, and whether referenced files exist.
-- **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes. A build reports page-level problems only in content it publishes: content a build removes isn't checked for that build, which is what lets a link to a page the build drops sit in an arm the build removes. Content that no build publishes is still checked, as if one build kept everything, and its problems are reported as belonging to no build. A problem that appears in several builds is reported once, naming them. A fragment that no page includes has no page-level problems; its file-level ones are still reported.
+- **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes. A build reports page-level problems only in content it publishes: content a build removes isn't checked for that build, which is what lets a link to a page the build drops sit in an arm the build removes. Content that no build publishes is still checked, as if one build kept everything, drafts (§2.1) included, and its problems are reported as belonging to no build. A problem that appears in several builds is reported once, naming them. A fragment that no page includes has no page-level problems; its file-level ones are still reported.
 
 A page-level diagnostic is reported at the source location that causes it. A diagnostic about what a link or image names is reported at its destination as written, for an inline link or image, and at the link or image itself for a reference form. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic. A problem with a snippet (§4.8) is a file-level problem of the file the `@snippet` is written in, reported at the directive; when its cause is in the code file, such as a tag, processors SHOULD also report that place, as related information.
 
@@ -1478,7 +1486,7 @@ Titles and bindings are attached during parsing. Page-level validation (§8.1) r
 
 ### 9.3 Build modes
 
-A content model declares named builds. Each build sets a variant mode and an availability mode. The source is the same for every build.
+A content model declares named builds. Each build sets a variant mode and an availability mode. The source is the same for every build. Whatever its modes, a build drops every draft (§2.1).
 
 ```toml
 [builds.site]

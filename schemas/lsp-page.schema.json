@@ -65,6 +65,11 @@
           "const": "availability",
           "description": "The page's `available` makes it unavailable for the build.",
           "type": "string"
+        },
+        {
+          "const": "draft",
+          "description": "The page is a draft, which no build publishes.",
+          "type": "string"
         }
       ]
     },

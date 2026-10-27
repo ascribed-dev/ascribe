@@ -459,6 +459,41 @@ fn a_page_every_build_drops_is_checked_as_unpublished() {
 }
 
 #[test]
+fn a_draft_is_checked_as_unpublished_even_beside_a_build_that_keeps_everything() {
+    // `site` keeps every arm, but no build publishes a draft.
+    let p = project(&[
+        ("index.md", &page("Text.")),
+        (
+            "upcoming.md",
+            "---\ntitle: T\ndraft: true\n---\n\n## A\n@id: same\n\n## B\n@id: same\n",
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("id-duplicate", "upcoming.md", 10)]);
+    assert!(found[0].unpublished);
+    assert!(found[0].builds.is_empty());
+}
+
+#[test]
+fn a_link_to_a_draft_says_it_is_one_once_for_every_build() {
+    let p = project(&[
+        ("index.md", &page("See [what's next](upcoming.md).")),
+        (
+            "upcoming.md",
+            "---\ntitle: T\ndraft: true\n---\n\nNot yet.\n",
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("link-page-dropped", "index.md", 5)]);
+    assert_eq!(found[0].builds, ["site", "cloud", "self-managed"]);
+    assert_eq!(
+        found[0].message,
+        "`upcoming.md` is a draft, which no build publishes, so this link would be broken; \
+         take the link out until the page is published, or publish it by removing its `draft: true`"
+    );
+}
+
+#[test]
 fn a_build_that_keeps_everything_needs_no_extra_pass() {
     // `site` is a switch with badges: nothing is unpublished, so nothing is
     // marked so, even in an arm no selecting build keeps.

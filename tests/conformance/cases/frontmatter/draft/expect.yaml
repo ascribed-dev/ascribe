@@ -1,0 +1,9 @@
+description: >-
+  `draft` is reserved frontmatter on a page, `true` or `false`. Any other
+  value is a value of the wrong type, and a fragment can't use it.
+spec: ["2.1", "2.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-reserved-in-fragment, file: _frag.md, line: 2}
+  - {slug: frontmatter-type-mismatch, file: maybe.md, line: 3}

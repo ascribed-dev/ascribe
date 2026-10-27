@@ -250,6 +250,26 @@ fn a_page_the_build_drops_is_left_out_whole() {
 }
 
 #[test]
+fn a_draft_is_left_out_whole_by_every_build() {
+    let page = "---\ntitle: Upcoming\ndraft: true\n---\n\nText.\n";
+    let f = Fixture::new(MODEL, &[("docs/upcoming.md", page)]);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    for build in ["site", "npm", "sm"] {
+        let result = view(&mut client, &f.path("docs/upcoming.md"), Some(build));
+        assert_eq!(result["pageIncluded"], false, "{build}");
+        assert_eq!(
+            result["pageDetail"],
+            format!(
+                "The build {build} doesn't publish this page: it's a draft, and no build \
+                 publishes a draft until its draft: true is removed."
+            ),
+        );
+    }
+    client.shutdown();
+}
+
+#[test]
 fn a_switch_build_leaves_out_nothing_and_an_unknown_build_answers_empty() {
     let page = "@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\nServer.\n@end\n";
     let f = Fixture::new(MODEL, &[("docs/index.md", page)]);

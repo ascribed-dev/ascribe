@@ -2427,7 +2427,8 @@ reference = "writing/inline.md#links"
 row = "Links | Target page isn't published by a build (page level, per build)"
 message = "build `{build}` doesn't publish `{path}`, so this link would be broken in that build; move the link into a `@variant` arm the build removes"
 messages.builds = "builds {builds} don't publish `{path}`, so this link would be broken in those builds; move the link into a `@variant` arm those builds remove"
-fix = "Put the link in a `@variant` arm that the same build removes, or publish the page in that build."
+messages.draft = "`{path}` is a draft, which no build publishes, so this link would be broken; take the link out until the page is published, or publish it by removing its `draft: true`"
+fix = "Put the link in a `@variant` arm that the same build removes, or publish the page in that build. A link to a draft waits until the draft is published: take it out, or remove the page's `draft: true`."
 
 ###############################################################################
 # More SPEC §8.2 rows, appended with the next codes.

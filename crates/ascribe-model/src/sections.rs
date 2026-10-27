@@ -91,6 +91,7 @@ impl Loader<'_> {
                         | "intended"
                         | "type"
                         | "nav-label"
+                        | "draft"
                 )
             };
             for (name, span, _) in entries(ft) {
@@ -224,6 +225,7 @@ impl Loader<'_> {
                     | "intended"
                     | "type"
                     | "nav-label"
+                    | "draft"
                     | "slug"
                     | "formatted"
                     | "source"
@@ -806,6 +808,7 @@ impl Loader<'_> {
                         availability,
                         versions,
                         line: None,
+                        drafts: false,
                     };
                     out.extend(lines_of(build, releases));
                 }
@@ -820,6 +823,7 @@ impl Loader<'_> {
                 availability: AvailabilityMode::Badge,
                 versions: None,
                 line: None,
+                drafts: false,
             });
         }
         out
