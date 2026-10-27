@@ -170,7 +170,8 @@ fn codes_go_up_and_slugs_are_unique() {
     let mut slugs = BTreeSet::new();
     let mut last = 0u32;
     for e in &reg.entries {
-        // A removed diagnostic leaves a gap; nothing is renumbered.
+        // A removed diagnostic, or a reserved code no pull request used,
+        // leaves a gap; nothing is renumbered (decision #982).
         let number = e
             .code
             .strip_prefix("ASC")
@@ -178,7 +179,8 @@ fn codes_go_up_and_slugs_are_unique() {
             .and_then(|digits| digits.parse::<u32>().ok());
         assert!(
             number.is_some_and(|n| n > last),
-            "{}: codes are `ASC` and three digits, going up in file order",
+            "{}: codes are `ASC` and three digits, going up in file order; \
+             after merging `main`, sort both sides' entries by code",
             e.code
         );
         last = number.unwrap_or(last);
