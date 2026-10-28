@@ -59,7 +59,7 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | | | `detect_setext_heading` | A text primary never becomes a setext heading (changed condition) |
 | | | `detect_table` | A text primary never becomes a table header (changed condition) |
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |
-| | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (upstream leaves its start position, and so every inline position in it, on the definitions). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
+| | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (upstream leaves its start position, and so every inline position in it, on the definitions), and its line offsets drop the definitions' lines, since the inline parser indexes them from the paragraph's first line (kept, an indented line of a definition gave its indent to the paragraph's line at the same index, [#1209](https://github.com/ascribed-dev/ascribe/issues/1209)). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
 | | | `handle_setext_heading` | The same, for a setext heading's text. **Candidate to upstream**, with the row above |
 | | | `parse_document` | Delegates to the new `parse_document_with_definitions`, which returns the link reference definitions the parser consumed along with the document (the body is upstream's, with the parser kept so its list can be taken) |
 | | | `Parser::parse` | Borrows the parser (`&mut self`, was `mut self`) so the caller can take the definitions |
@@ -80,7 +80,7 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | `src/tests/sourcepos.rs` | 3 | `ASCRIBE_LINE`, `node_values`, `sourcepos` | Upstream's test requires a case for every node type |
 | `src/tests/pathological.rs` | 1 | `pathological_emphases` | A 10 second timeout, was 4: the debug build passed 4 seconds on CI's Linux runner ([#157](https://github.com/ascribed-dev/ascribe/issues/157)) |
 
-In total: 88 lines added and 6 changed in 9 upstream source files (50 of the added lines are code; the rest are comments), in 25 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
+In total: 96 lines added and 6 changed in 9 upstream source files (54 of the added lines are code; the rest are comments), in 25 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
 
 Raw containers added 10 lines and changed 6 in `parser/mod.rs`, in 3 hunks (the `AscribeLine` arm of `check_open_blocks_inner` split by `raw_container`, a condition in `open_new_blocks`, and an arm in `add_text_to_container`), with the scanner and the hooks in Ascribe's own two files. They add no node and no `NodeValue` variant: the opener's `NodeAscribeLine` carries `raw_container`.
 
