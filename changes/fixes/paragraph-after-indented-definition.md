@@ -1,0 +1,1 @@
+- **Fixed:** text after a link definition with an indented line is placed where it is. It was off by the indent.

@@ -129,6 +129,12 @@ fn directives_in_every_container() {
         "\0\r `\n`D",
         "x\n  ``a\n   b``c\n",
         "> x\n>  `a\n>   b` c\n",
+        // A paragraph after a definition with an indented line takes none of
+        // its indent (#1209).
+        "[\n d]:g\ng\ns\n.",
+        "[a]:\n   /x\nb\nc\nd\n",
+        "[\n d]:g\ng\ns\n===\n",
+        "> [\n>  d]:g\n> g\n> s\n> .\n",
     ] {
         assert_exact("container case", source);
     }
