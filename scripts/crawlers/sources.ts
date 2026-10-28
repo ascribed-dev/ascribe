@@ -57,9 +57,12 @@ export function stale(entries: readonly Crawler[], today: Date): string[] {
 /** How long to wait before asking a source again, in milliseconds. */
 const RETRY_MS = 10_000;
 
-/** Whether an answer may be the network's or the server's passing failure: a request that failed, or a 5xx. */
+/**
+ * Whether an answer may be the network's or the server's passing failure: a request that failed,
+ * a 429 (the server is limiting how often it's asked, not saying the page moved), or a 5xx.
+ */
 function passing(status: number | string): boolean {
-  return typeof status !== "number" || status >= 500;
+  return typeof status !== "number" || status === 429 || status >= 500;
 }
 
 /**

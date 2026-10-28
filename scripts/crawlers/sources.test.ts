@@ -77,4 +77,24 @@ describe("the crawlers' sources", () => {
     expect(pauses).toBe(2);
     expect(problems.map((p) => p.slice(0, 4))).toEqual(["`B`:", "`C`:"]);
   });
+
+  it("asks again after a 429, and names the source only when the second ask is refused too", async () => {
+    const answers = new Map<string, number[]>([
+      ["https://a.example/", [429, 200]],
+      ["https://b.example/", [429, 429]],
+    ]);
+    const entries = [...answers.keys()].map((source, i) => ({
+      token: "AB"[i] ?? "",
+      source,
+      read: "2026-10-12",
+    }));
+    const problems = await gone(
+      entries,
+      (url) => Promise.resolve(answers.get(url)?.shift() ?? 0),
+      () => Promise.resolve(),
+    );
+    expect(problems).toEqual([
+      "`B`: https://b.example/ answered 429. Find where its operator documents it now, or remove the token.",
+    ]);
+  });
 });
