@@ -14,12 +14,12 @@
   "dependencies": {
     "@ascribed/astro": "workspace:*",
     "@ascribed/cli": "workspace:*",
-    "astro": "7.4.0",
+    "astro": "7.4.2",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
-    "@astrojs/markdown-remark": "7.3.3",
-    "@stoplight/elements": "9.0.28",
+    "@astrojs/markdown-remark": "7.3.4",
+    "@stoplight/elements": "9.0.29",
     "@types/node": "^24.19.2",
     "@types/turndown": "5.0.6",
     "afdocs": "0.22.2",
