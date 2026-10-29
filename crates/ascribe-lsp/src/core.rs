@@ -1477,6 +1477,14 @@ impl Core {
             return self.collect_deleted(path, changes, mirror);
         };
         if meta.is_dir() {
+            // A linked folder isn't walked again on an event: the index
+            // followed the link when the project loaded (decision 79), and
+            // walking it on every event, with a link to a large tree outside
+            // the project, held the server for minutes each time. A file
+            // under it the editor reports on its own is still read.
+            if ascribe_resolve::is_link(path) {
+                return;
+            }
             if !matches!(visited.enter(path), Ok(Some(_))) {
                 return;
             }

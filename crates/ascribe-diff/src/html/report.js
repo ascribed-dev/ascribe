@@ -922,10 +922,17 @@
     };
   }
   function disarm(fragment) {
-    for (const el of Array.from(fragment.querySelectorAll("script, meta, base"))) el.remove();
+    for (const el of Array.from(
+      fragment.querySelectorAll("script, meta, base, iframe, frame, object, embed")
+    )) {
+      el.remove();
+    }
     for (const el of Array.from(fragment.querySelectorAll("*"))) {
       for (const attr of Array.from(el.attributes)) {
-        if (/^on/i.test(attr.name) || runsScript(attr.value)) el.removeAttribute(attr.name);
+        if (/^on/i.test(attr.name) || runsScript(attr.value) || // A form that submits leaves the page it's shown in.
+        /^(action|formaction)$/i.test(attr.name)) {
+          el.removeAttribute(attr.name);
+        }
       }
     }
   }

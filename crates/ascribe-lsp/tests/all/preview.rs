@@ -501,3 +501,77 @@ fn with_no_repository_a_source_above_the_opened_folder_isnt_read() {
     );
     client.shutdown();
 }
+
+/// A symbolic link in the content root to a file outside the project is
+/// reported as outside and isn't listed for the webview to load.
+#[cfg(unix)]
+#[test]
+fn a_linked_asset_outside_the_project_is_not_served() {
+    let outside = tempfile::tempdir().expect("a folder outside the project");
+    std::fs::write(outside.path().join("secret.png"), b"x").expect("a file outside");
+    let f = Fixture::new(
+        MODEL,
+        &[
+            (
+                "docs/page.md",
+                "# Page\n\n![Leak](leak.png)\n\n![Inside](inside.png)\n",
+            ),
+            ("docs/inside.png", "x"),
+        ],
+    );
+    std::os::unix::fs::symlink(outside.path().join("secret.png"), f.path("docs/leak.png"))
+        .expect("a link out");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let result = preview(&mut client, &f.path("docs/page.md"), None);
+    let assets = result["page"]["assets"].as_array().unwrap();
+    assert_eq!(assets.len(), 1, "{assets:?}");
+    assert!(path_ends_with(&assets[0]["path"], "docs/inside.png"));
+    client.shutdown();
+}
+
+/// A page that nests inlines thousands of levels deep is parsed on the
+/// server's worker thread, whose stack is small: past the parser's nesting
+/// limit the rest is text, so the server answers instead of aborting.
+#[test]
+fn a_page_nested_thousands_of_levels_deep_does_not_stop_the_server() {
+    let f = Fixture::new(MODEL, &[("docs/page.md", "# Page\n")]);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let n = 5_000;
+    let deep = format!(
+        "# Page\n\n{}x{}\n\n{} quoted\n",
+        "![".repeat(n),
+        "]()".repeat(n),
+        ">".repeat(n)
+    );
+    client.open(&f.path("docs/page.md"), 1, &deep);
+    client.settle();
+    let result = preview(&mut client, &f.path("docs/page.md"), None);
+    assert!(!result["page"].is_null(), "{result}");
+    client.shutdown();
+}
+
+/// A folder of the content root that's a link isn't walked again on a file
+/// event for it: the index followed the link when the project loaded, and a
+/// link to a large tree outside the project held the server for minutes on
+/// every event.
+#[cfg(unix)]
+#[test]
+fn a_linked_folder_is_not_walked_again_on_an_event() {
+    let outside = tempfile::tempdir().expect("a folder outside the project");
+    std::fs::write(outside.path().join("a.md"), "# A\n").expect("a page outside");
+    let f = Fixture::new(MODEL, &[("docs/page.md", "# Page\n")]);
+    std::os::unix::fs::symlink(outside.path(), f.path("docs/linked")).expect("a link out");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    // A page that appears under the link after the load.
+    std::fs::write(outside.path().join("b.md"), "# B\n").expect("a page outside");
+    client.watched(&[(&f.path("docs/linked"), lsp_types::FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(client.publications(&f.path("docs/linked/b.md")).is_empty());
+    // The page itself is still served.
+    let result = preview(&mut client, &f.path("docs/page.md"), None);
+    assert!(!result["page"].is_null(), "{result}");
+    client.shutdown();
+}

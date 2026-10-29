@@ -324,10 +324,25 @@ pub fn resolve_reference(
     } else {
         match fs.probe(&layout.project_path(path)) {
             Probe::File => {
-                return Resolution::Asset {
-                    path: path.clone(),
-                    fragment: local.fragment.clone(),
-                };
+                // The path as written is inside the boundary; the file it
+                // names once every link on the way is followed must be too
+                // (the assets contract, §2 step 5), or a committed link would
+                // carry a file from outside the project into every output.
+                // A link to a file inside the project is still copied as the
+                // file it points to.
+                match fs
+                    .real_path(&layout.project_path(path))
+                    .and_then(|real| content_path_of(layout, &real))
+                {
+                    Some(real) if layout.is_allowed(&real) => {
+                        return Resolution::Asset {
+                            path: path.clone(),
+                            fragment: local.fragment.clone(),
+                        };
+                    }
+                    Some(_) => Missing::Outside,
+                    None => Missing::Absent,
+                }
             }
             Probe::Missing => Missing::Absent,
             Probe::CaseMismatch(actual) => match content_path_of(layout, &actual) {

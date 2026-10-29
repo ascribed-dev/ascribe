@@ -30,7 +30,7 @@ fn check(converted: &Converted) -> Vec<ascribe_check::Diagnostic> {
     let dir = tempfile::tempdir().expect("temp dir");
     converted.write_to(dir.path()).expect("writes");
     let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
-        .map(|w| Project::new(w.snapshot()))
+        .map(|w| Project::new(w.snapshot()).with_plain_markdown(ascribe_emit::plain_markdown))
         .expect("the model loads");
     check_all_builds(&project)
 }

@@ -18,7 +18,7 @@ fn check(project: Synthetic, advice: bool) -> usize {
     let dir = tempfile::tempdir().expect("temp dir");
     project.write_to(dir.path()).expect("writes");
     let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
-        .map(|w| Project::new(w.snapshot()))
+        .map(|w| Project::new(w.snapshot()).with_plain_markdown(ascribe_emit::plain_markdown))
         .expect("loads");
     let diagnostics: Vec<_> = check_all_builds(&project)
         .into_iter()
