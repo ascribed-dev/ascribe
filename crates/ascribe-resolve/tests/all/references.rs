@@ -641,3 +641,34 @@ fn an_asset_that_is_a_link_out_of_the_project_does_not_exist() {
     assert!(problems.iter().all(|i| i.variant == Some("outside")));
     assert_eq!(asset_paths(&p, "index.md"), ["inside.png"]);
 }
+
+/// A file under a `.git` folder is never an asset, however it's inside the
+/// project (decision #1222).
+#[test]
+fn a_file_under_git_is_not_an_asset() {
+    let p = project(&[
+        (
+            "docs/index.md",
+            &format!(
+                "{PAGE}[config](../.git/config)\n\n![hook](../.git/hooks/x.png)\n\n[nested](vendor/.git/HEAD)\n"
+            ),
+        ),
+        (".git/config", "[core]"),
+        (".git/hooks/x.png", ""),
+        ("docs/vendor/.git/HEAD", "ref"),
+    ]);
+    let problems = p.problems(&path("index.md"));
+    assert_eq!(
+        slugs(&p, "index.md", &problems),
+        [
+            ("image-source-missing".to_owned(), 7),
+            ("link-target-missing".to_owned(), 5),
+            ("link-target-missing".to_owned(), 9),
+        ]
+    );
+    assert!(
+        problems.iter().all(|i| i.variant == Some("git")),
+        "{problems:?}"
+    );
+    assert!(asset_paths(&p, "index.md").is_empty());
+}

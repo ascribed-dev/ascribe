@@ -321,6 +321,8 @@ pub fn resolve_reference(
     // A file the build would copy.
     let missing = if !layout.is_allowed(path) {
         Missing::Outside
+    } else if layout.is_in_git(path) {
+        Missing::Git
     } else {
         match fs.probe(&layout.project_path(path)) {
             Probe::File => {
@@ -351,7 +353,8 @@ pub fn resolve_reference(
             },
         }
     };
-    if local.route_like && !matches!(missing, Missing::Case(_)) {
+    // A file under `.git` is reported as such, not guessed to be a route.
+    if local.route_like && !matches!(missing, Missing::Case(_) | Missing::Git) {
         return route(model, local, path, written_in, sources);
     }
     Resolution::AssetMissing(missing)
@@ -552,6 +555,7 @@ pub fn reference_issue(
                     .with_variant("case")
                     .with_arg("actual", actual.to_string()),
                 Missing::Outside => issue.with_variant("outside"),
+                Missing::Git => issue.with_variant("git"),
             })
         }
         Resolution::Route {
