@@ -514,7 +514,8 @@ async function markedPage(): Promise<{ address: string; whole: boolean } | undef
     const frontmatter = text.startsWith("---\n") ? text.slice(0, text.indexOf("\n---", 4)) : "";
     const address = `/docs/${file.replace(/(^|\/)index\.md$/, "$1").replace(/\.md$/, "/")}`;
     if (/^available:/m.test(frontmatter)) return { address, whole: true };
-    if (section === undefined && text.includes("<ascribe-availability")) section = address;
+    // The element opens a line; a page that names it in a code span isn't marked.
+    if (section === undefined && /^<ascribe-availability[\s>]/m.test(text)) section = address;
   }
   return section === undefined ? undefined : { address: section, whole: false };
 }
