@@ -1,5 +1,6 @@
 //! The readable report: each diagnostic with a snippet of its source.
 
+use std::collections::HashSet;
 use std::io::{self, Write};
 use std::ops::Range;
 
@@ -8,33 +9,84 @@ use ascribe_check::{Diagnostic, Registry, Reported, Severity};
 
 use super::{ByCode, ByFile, Counts, FileTable};
 
-/// Writes every diagnostic, then `ascribe check`'s summary line, as
-/// `ascribe build` reports its checks.
+/// Writes what `ascribe build` reports of its checks: each error with its
+/// snippet, since errors stop the build, then one summary line.
 ///
-/// `files_checked` is how many source files were checked, all reported on,
-/// `covered` the builds, and `acknowledged` how many problems were
-/// acknowledged as intended.
-pub fn write(
+/// The line is [`build_summary`]'s. `check` is the `ascribe check` command
+/// that lists each diagnostic, which the line points to when there are
+/// warnings or advice it doesn't show.
+#[allow(clippy::too_many_arguments)] // The line's parts, each needed.
+pub fn write_build(
     out: &mut dyn Write,
     files: &FileTable,
     diagnostics: &[Diagnostic],
     files_checked: usize,
     covered: &Covered<'_>,
     acknowledged: usize,
+    baselined: usize,
+    check: &str,
     color: bool,
 ) -> io::Result<()> {
-    write_diagnostics(out, files, diagnostics, color)?;
+    let errors: Vec<Diagnostic> = diagnostics
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .cloned()
+        .collect();
+    write_diagnostics(out, files, &errors, color)?;
     writeln!(
         out,
-        "{}{}",
-        check_summary(
+        "{}",
+        build_summary(
             Counts::of(diagnostics),
             files_checked,
             covered,
-            files_checked,
-            &[]
-        ),
-        self::acknowledged(acknowledged)
+            acknowledged,
+            baselined,
+            check
+        )
+    )
+}
+
+/// The summary line of `ascribe build`'s checks: `checked 8 files in every
+/// build: no problems` when they found none, and otherwise the counts, with
+/// the command that lists each warning and advice when there are any, as
+/// `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe
+/// check for each`. The problems acknowledged and those the baseline holds
+/// back are counted after, as `ascribe check` counts them.
+pub fn build_summary(
+    counts: Counts,
+    files_checked: usize,
+    covered: &Covered<'_>,
+    acknowledged: usize,
+    baselined: usize,
+    check: &str,
+) -> String {
+    let builds = match covered {
+        Covered::Every => "in every build".to_owned(),
+        Covered::Named([one]) => format!("in build `{one}`"),
+        Covered::Named(names) => format!("in builds {}", listed(names)),
+        Covered::Editor(build) => format!("with the page-level checks of build `{build}` only"),
+    };
+    let checked = format!("checked {} {builds}", plural(files_checked, "file"));
+    if counts.total() == 0 {
+        return format!(
+            "{checked}: no problems{}{}",
+            self::acknowledged(acknowledged),
+            self::baselined(baselined)
+        );
+    }
+    let pointer = if counts.warnings + counts.advice > 0 {
+        format!(": {check} for each")
+    } else {
+        String::new()
+    };
+    format!(
+        "{checked}: {}, {}, {} advice{}{}{pointer}",
+        plural(counts.errors, "error"),
+        plural(counts.warnings, "warning"),
+        counts.advice,
+        self::acknowledged(acknowledged),
+        self::baselined(baselined)
     )
 }
 
@@ -54,8 +106,9 @@ pub fn write_diagnostics(
             .text_at(path)
             .ok_or_else(|| format!("no file {path} in the report"))
     });
+    let mut shown = ShownHelp::default();
     for d in diagnostics {
-        write_diagnostic(out, files, &mut cache, d, 0, color)?;
+        write_diagnostic(out, files, &mut cache, &mut shown, d, 0, color)?;
     }
     Ok(())
 }
@@ -73,8 +126,17 @@ pub fn write_reported(
             .text_at(path)
             .ok_or_else(|| format!("no file {path} in the report"))
     });
+    let mut shown = ShownHelp::default();
     for r in reported {
-        write_diagnostic(out, files, &mut cache, &r.diagnostic, r.repeats, color)?;
+        write_diagnostic(
+            out,
+            files,
+            &mut cache,
+            &mut shown,
+            &r.diagnostic,
+            r.repeats,
+            color,
+        )?;
     }
     writeln!(out, "{summary}")
 }
@@ -106,16 +168,7 @@ pub fn write_tally(
         .to_string()
         .len();
     writeln!(out, "By code:")?;
-    for c in codes {
-        writeln!(
-            out,
-            "  {:>width$}  {} {} ({})",
-            c.count,
-            c.code,
-            c.slug,
-            c.severity.as_str()
-        )?;
-    }
+    write_code_lines(out, codes, width)?;
     writeln!(out, "By file:")?;
     for f in by_file.iter().take(TALLY_FILES) {
         writeln!(
@@ -139,8 +192,35 @@ pub fn write_tally(
     Ok(())
 }
 
+/// Writes a line for each code, as `--summary` does, with its count right
+/// aligned to the widest.
+pub fn write_codes(out: &mut dyn Write, codes: &[ByCode]) -> io::Result<()> {
+    let width = codes
+        .iter()
+        .map(|c| c.count)
+        .max()
+        .unwrap_or_default()
+        .to_string()
+        .len();
+    write_code_lines(out, codes, width)
+}
+
+fn write_code_lines(out: &mut dyn Write, codes: &[ByCode], width: usize) -> io::Result<()> {
+    for c in codes {
+        writeln!(
+            out,
+            "  {:>width$}  {} {} ({})",
+            c.count,
+            c.code,
+            c.slug,
+            c.severity.as_str()
+        )?;
+    }
+    Ok(())
+}
+
 /// `1 error, 2 warnings`, and `, 3 advice` when there's any.
-fn counted(counts: Counts) -> String {
+pub fn counted(counts: Counts) -> String {
     let mut text = format!(
         "{}, {}",
         plural(counts.errors, "error"),
@@ -180,15 +260,17 @@ pub enum Covered<'a> {
 }
 
 /// The summary line of `ascribe check`, in one form whatever was asked: the
-/// files checked, the builds covered, the files reported on, the codes
-/// `--code` narrowed it to (`for code `ASC036``), and all three counts, as
-/// `checked 12 files for every build, reported on 1: 1 error, 0 warnings,
-/// 0 advice`.
+/// files checked, the builds covered, the files the paths named when there
+/// were paths (`reported on 2 files in the paths`), how many files have a
+/// problem reported, the codes `--code` narrowed it to (`for code
+/// `ASC036``), and all three counts, as `checked 12 files for every build,
+/// 1 with problems: 1 error, 0 warnings, 0 advice`.
 pub fn check_summary(
     counts: Counts,
     files_checked: usize,
     covered: &Covered<'_>,
-    files_reported: usize,
+    files_named: Option<usize>,
+    with_problems: usize,
     codes: &[String],
 ) -> String {
     let builds = match covered {
@@ -197,13 +279,16 @@ pub fn check_summary(
         Covered::Named(names) => format!("for builds {}", listed(names)),
         Covered::Editor(build) => format!("with the page-level checks of build `{build}` only"),
     };
+    let named = files_named.map_or_else(String::new, |n| {
+        format!(", reported on {} in the paths", plural(n, "file"))
+    });
     let only = match codes {
         [] => String::new(),
         [one] => format!(" for code `{one}`"),
         codes => format!(" for codes {}", listed(codes)),
     };
     format!(
-        "checked {} {builds}, reported on {files_reported}{only}: {}, {}, {} advice",
+        "checked {} {builds}{named}, {with_problems} with problems{only}: {}, {}, {} advice",
         plural(files_checked, "file"),
         plural(counts.errors, "error"),
         plural(counts.warnings, "warning"),
@@ -241,11 +326,32 @@ pub fn baselined(count: usize) -> String {
     }
 }
 
-/// Writes one diagnostic with its snippet, from the report's source cache.
+/// The help a report has printed in full, by code, so a later diagnostic
+/// with the same code and the same help points back to it instead of
+/// repeating it. Help that names this occurrence differs, so it's printed
+/// every time.
+#[derive(Default)]
+struct ShownHelp(HashSet<(&'static str, String)>);
+
+impl ShownHelp {
+    /// The help to print for a diagnostic: in full the first time the code
+    /// shows it, else a pointer to that first one.
+    fn help(&mut self, code: &'static str, help: &str) -> String {
+        if self.0.insert((code, help.to_owned())) {
+            help.to_owned()
+        } else {
+            format!("as for {code} above (ascribe explain {code})")
+        }
+    }
+}
+
+/// Writes one diagnostic with its snippet, from the report's source cache,
+/// and its help, shortened when `shown` has printed it.
 fn write_diagnostic(
     out: &mut dyn Write,
     files: &FileTable,
     cache: &mut impl Cache<String>,
+    shown: &mut ShownHelp,
     d: &Diagnostic,
     repeats: usize,
     color: bool,
@@ -275,7 +381,8 @@ fn write_diagnostic(
         );
     }
     // The first fix's title, which says what applying it does; else the
-    // registry's help, the next step `check`'s JSON gives as `help`.
+    // registry's help, the next step `check`'s JSON gives as `help`, with
+    // its Markdown links written for a terminal.
     let help = d.fixes.first().map(|fix| fix.title.as_str()).or_else(|| {
         Registry::global()
             .get(d.slug)
@@ -283,7 +390,7 @@ fn write_diagnostic(
             .filter(|help| !help.is_empty())
     });
     if let Some(help) = help {
-        report = report.with_help(help);
+        report = report.with_help(shown.help(d.code, &super::links::plain(help)));
     }
     report.finish().write(cache, out)
 }

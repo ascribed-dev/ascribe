@@ -1,0 +1,1 @@
+- **Agents' Markdown says what a page is for and which release it describes.** After the title, each `.md` gives the page's type and description, and with `[releases]`, its first line and `llms.txt` name the release ([Publish for AI agents](docs/content/astro/agents.md#publish-for-ai-agents)).

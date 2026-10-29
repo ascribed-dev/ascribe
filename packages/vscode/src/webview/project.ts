@@ -17,7 +17,12 @@
 // from: the group's head says it once, with the action that brings its
 // counts current while they aren't, and each count is a line of a
 // description list, its label then its value, the value a button when
-// choosing it does something. Problems are icons with counts, named in words
+// choosing it does something. Only the counts that need doing are shown at
+// first: those above zero, and those that aren't current. A group's counts of
+// none are behind one line, "Nothing else to do", that shows them; a group
+// with nothing to do and nothing out of date is its head alone, with
+// "Nothing to do" at its end showing its counts. Each stays as the reader
+// leaves it (the view's state). Problems are icons with counts, named in words
 // (`severities.ts`). A count that isn't current says so in words,
 // never by color alone: a dash is named by its group's note.
 //
@@ -267,7 +272,54 @@ function count(item: ProjectCount, group: ProjectHealthGroup, channel: Channel):
   return made;
 }
 
-/** Health: each group under its head, which says when its counts are from, with its action while they aren't current. */
+/** The view's state: whether each Health group's counts of none are shown, by its key, once the reader has chosen. */
+function shownNone(channel: Channel): Record<string, boolean> {
+  const shown = channel.state()["none"];
+  if (typeof shown !== "object" || shown === null) return {};
+  return Object.fromEntries(
+    Object.entries(shown).filter((entry): entry is [string, boolean] => {
+      return typeof entry[1] === "boolean";
+    }),
+  );
+}
+
+/**
+ * The line that shows a group's counts of none, `list`, and hides them again,
+ * hidden at first: its twistie, then `label`. The reader's choice is kept.
+ */
+function noneToggle(
+  group: ProjectHealthGroup,
+  label: string,
+  list: HTMLElement,
+  channel: Channel,
+): HTMLButtonElement {
+  const button = element("button", "none-toggle");
+  button.type = "button";
+  list.id = `none-${group.key}`;
+  button.setAttribute("aria-controls", list.id);
+  button.append(
+    icon("chevron-right", "twistie closed"),
+    icon("chevron-down", "twistie open"),
+    element("span", "label", label),
+  );
+  const show = (shown: boolean) => {
+    list.hidden = !shown;
+    button.setAttribute("aria-expanded", String(shown));
+  };
+  show(shownNone(channel)[group.key] ?? false);
+  button.addEventListener("click", () => {
+    const shown = button.getAttribute("aria-expanded") !== "true";
+    show(shown);
+    channel.setState({ ...channel.state(), none: { ...shownNone(channel), [group.key]: shown } });
+  });
+  return button;
+}
+
+/**
+ * Health: each group under its head, which says when its counts are from,
+ * with its action while they aren't current. The counts that need doing are
+ * shown; those of none are behind a line that shows them.
+ */
 function healthList(groups: readonly ProjectHealthGroup[], channel: Channel): HTMLElement {
   const body = element("div", "section-body");
   for (const group of groups) {
@@ -283,9 +335,25 @@ function healthList(groups: readonly ProjectHealthGroup[], channel: Channel): HT
     }
     top.append(heading);
     if (group.action) top.append(check(group.action, channel));
-    const counts = element("dl");
-    for (const item of group.counts) counts.append(count(item, group, channel));
-    made.append(top, counts);
+    made.append(top);
+    const toDo = group.counts.filter((item) => item.state !== "none");
+    const none = group.counts.filter((item) => item.state === "none");
+    if (toDo.length > 0) {
+      const counts = element("dl");
+      for (const item of toDo) counts.append(count(item, group, channel));
+      made.append(counts);
+    }
+    if (none.length > 0) {
+      const counts = element("dl", "none-counts");
+      for (const item of none) counts.append(count(item, group, channel));
+      if (toDo.length === 0) {
+        // Nothing to do and nothing out of date: the group is its head, which ends with the line.
+        top.append(noneToggle(group, "Nothing to do", counts, channel));
+      } else {
+        made.append(noneToggle(group, "Nothing else to do", counts, channel));
+      }
+      made.append(counts);
+    }
     body.append(made);
   }
   return body;
@@ -380,6 +448,7 @@ function draw(answer: ProjectAnswer, channel: Channel): ProjectReport {
         key: group.key,
         head: made?.querySelector(".group-head")?.textContent ?? "",
         action: made?.querySelector(".group-top > .action")?.textContent ?? null,
+        none: made?.querySelector(".none-toggle")?.textContent ?? null,
       };
     }),
     health: answer.health
@@ -397,6 +466,7 @@ function draw(answer: ProjectAnswer, channel: Channel): ProjectReport {
               ?.textContent ??
             "",
           state: item.state,
+          shown: row?.closest("[hidden]") === null,
           severities: row ? drawnSeverities(row) : [],
           // Drawn in another color than its label's, as the stylesheet dims a zero.
           dimmed:

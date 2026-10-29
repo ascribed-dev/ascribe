@@ -1,0 +1,13 @@
+description: >-
+  An example's marker is a pair of the info string's grammar: it's read in
+  any order beside other pairs, and its value may be a token, but a marker
+  written inside another pair's quoted value, or with spaces around its `=`,
+  isn't a pair, so its block isn't checked; the spaced one is reported as a
+  word that looks like a pair.
+spec: ["3.3.1", "7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: api-example-schema-mismatch, file: index.md, line: 8, column: 11}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 14, column: 11}
+  - {slug: info-pair-malformed, file: index.md, line: 23, column: 9}

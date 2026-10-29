@@ -1,15 +1,23 @@
 // The built site in Chromium: the landing page, the changelog and its entries, the head, the
 // header and the footer, each page's social card, variants, availability, code
-// titles, links between pages, search, the edit link, the 404 page, the narrow
-// layout, the landing page's call to action, tools, mark, demonstration,
-// pillars and their links, audiences, marks, phone width, and reading without
-// a script, Why Ascribe, with its screenshots, and Credits; the notes' split
-// bar, and the hero's mark in motion, still for a reader who asks.
+// titles, wide tables, a docs page's lead, copy buttons, links between pages, search, the
+// edit link, the 404 page, the narrow layout, the landing page's call to action, tools,
+// mark, demonstration, pillars and their links, audiences, marks, phone width, and reading
+// without a script, Why Ascribe, with its screenshots, and Credits; the notes' split bar,
+// and the hero's mark in motion, still for a reader who asks.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { launchChromium, requireBuild, serve, siteAddress, siteDir } from "./built.ts";
+import {
+  launchChromium,
+  outputDir,
+  publishedPages,
+  requireBuild,
+  serve,
+  siteAddress,
+  siteDir,
+} from "./built.ts";
 
 let server: Awaited<ReturnType<typeof serve>>;
 let browser: Browser;
@@ -315,7 +323,7 @@ test("the audiences each say what leads for them and link to where they start", 
     starts.push((await entry.locator("p:last-child a").getAttribute("href")) ?? "");
   }
   expect(starts).toEqual(
-    ["getting-started", "directives", "agents-guide"].map((name) => `${site}/go/${name}/`),
+    ["for-engineers", "for-writers", "for-agent-builders"].map((name) => `${site}/go/${name}/`),
   );
   // Side by side on a wide screen.
   const tops = await entries.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));
@@ -371,8 +379,14 @@ test("the footer's Changelog opens the changelog, in the frame of the site's own
   for (const docsOnly of ["#sidebar", ".search-button", ".menu-button", ".toc"]) {
     expect(await page.locator(docsOnly).count(), docsOnly).toBe(0);
   }
-  // The unreleased section says so, and each release has its version's anchor.
-  expect(await page.locator("#unreleased + .unreleased-note").isVisible()).toBe(true);
+  // The unreleased section says so, when there is one: just after a release,
+  // with nothing unreleased, there's none, empty. Each release has its
+  // version's anchor.
+  const unreleased = page.locator(".release:has(#unreleased)");
+  if ((await unreleased.count()) > 0) {
+    expect(await page.locator("#unreleased + .unreleased-note").isVisible()).toBe(true);
+    expect(await unreleased.locator(".entry").count()).toBeGreaterThan(0);
+  }
   expect(await page.locator("h2[id^='v0.']").count()).toBeGreaterThan(1);
   // A link to a docs page's source opens the page, once its entry is open.
   await page.getByRole("button", { name: "Expand all" }).click();
@@ -437,7 +451,7 @@ test("at phone width, the changelog's contents are above it, behind a button", a
   const page = await open("/changelog/", 390);
   const contents = page.locator(".contents");
   const box = await contents.boundingBox();
-  const release = await page.locator("#unreleased").boundingBox();
+  const release = await page.locator(".release").first().boundingBox();
   expect(box && release && box.y < release.y).toBe(true);
   expect(await contents.getByRole("link").first().isVisible()).toBe(false);
   await contents.locator("summary").click();
@@ -464,11 +478,22 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
   await page.close();
 });
 
-test("a page marked with an availability shows its badge", async () => {
-  // A page new in the oldest live line keeps its mark until that line is
-  // archived; then this moves to a newer one.
-  const page = await open("/docs/permalinks/in-your-product/");
-  const badge = page.locator('ascribe-availability[scope="page"] ascribe-availability-target');
+test("a page or section marked with an availability shows its badge", async (ctx) => {
+  // Before 1.0 the docs mark only what no release has yet, and a release
+  // removes those marks (decision #973), so the page is whichever has one
+  // now: one marked as a whole if there is one, for the layout's badge.
+  // Just after a release, none is marked, and there's nothing to show.
+  const marked = await markedPage();
+  if (marked === undefined) {
+    ctx.skip();
+    return;
+  }
+  const page = await open(marked.address);
+  const badge = page
+    .locator(
+      `ascribe-availability[scope${marked.whole ? '="page"' : ""}] ascribe-availability-target`,
+    )
+    .first();
   expect(await badge.getAttribute("target")).toBe("ascribe");
   expect(await badge.isVisible()).toBe(true);
   // The element library's stylesheet draws it as a badge.
@@ -476,6 +501,23 @@ test("a page marked with an availability shows its badge", async () => {
   expect(radius).not.toBe("0px");
   await page.close();
 });
+
+/**
+ * A page of the site output marked with an availability, as its address:
+ * one marked as a whole, by its frontmatter's `available`, before one with a
+ * marked section or block. Undefined when none is.
+ */
+async function markedPage(): Promise<{ address: string; whole: boolean } | undefined> {
+  let section: string | undefined;
+  for (const file of await publishedPages()) {
+    const text = readFileSync(path.join(outputDir, file), "utf8");
+    const frontmatter = text.startsWith("---\n") ? text.slice(0, text.indexOf("\n---", 4)) : "";
+    const address = `/docs/${file.replace(/(^|\/)index\.md$/, "$1").replace(/\.md$/, "/")}`;
+    if (/^available:/m.test(frontmatter)) return { address, whole: true };
+    if (section === undefined && text.includes("<ascribe-availability")) section = address;
+  }
+  return section === undefined ? undefined : { address: section, whole: false };
+}
 
 test("notes and steps render as elements", async () => {
   const install = await open("/docs/install/");
@@ -581,6 +623,60 @@ test("a code example taken from a file shows its title", async () => {
   await page.close();
 });
 
+test("a table wider than the page takes focus and scrolls with the keyboard, and one that fits doesn't", async () => {
+  const page = await open("/docs/contracts/assets/");
+  const tables = page.locator(".page table");
+  await expect.poll(() => tables.count()).toBeGreaterThan(1);
+  const wide = tables.filter({ has: page.locator("xpath=self::*[@tabindex='0']") });
+  await expect.poll(() => wide.count()).toBeGreaterThan(0);
+  // Each table takes focus exactly when it scrolls.
+  const states = await tables.evaluateAll((all) =>
+    all.map((table) => [table.scrollWidth > table.clientWidth, table.getAttribute("tabindex")]),
+  );
+  for (const [scrolls, tabindex] of states) expect(tabindex).toBe(scrolls ? "0" : null);
+  const table = wide.first();
+  await table.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect.poll(() => table.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await page.close();
+});
+
+test("a docs page's lead shows its code and curls its quotes, as the body does", async () => {
+  const page = await open("/docs/openapi/");
+  const lead = page.locator(".page .description");
+  expect(await lead.locator("code").allTextContents()).toEqual(["ascribe.toml", "operationId"]);
+  expect(await lead.textContent()).toContain("the operation’s address");
+  await page.close();
+});
+
+test("a code block's copy button copies its code, and says so", async () => {
+  const page = await open("/docs/getting-started/");
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const clipboard = () => page.evaluate(() => navigator.clipboard.readText());
+  // In a tab: the shown tab's block.
+  const tabs = page.locator("ascribe-tabs").first();
+  await tabs.getByRole("tab", { name: "pnpm" }).click();
+  const tab = tabs.locator("ascribe-tab:not([hidden])");
+  await tab.getByRole("button", { name: "Copy" }).click();
+  await expect.poll(clipboard).toMatch(/^pnpm add --save-dev @ascribed\/cli\n/);
+  expect(await clipboard()).toBe((await tab.locator("pre code").textContent())?.trimEnd());
+  await expect.poll(() => page.getByRole("status").textContent()).toBe("Copied");
+  // The button is beside the code, not in it.
+  expect(await tab.locator("pre").textContent()).not.toContain("Copy");
+  await page.close();
+
+  // A block with a title copies its code, not its title.
+  const titled = await open("/docs/astro/");
+  await titled.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const figure = titled.locator("figure.code-title", { hasText: "export default defineConfig" });
+  await figure.getByRole("button", { name: "Copy" }).click();
+  const copied = await titled.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain("export default defineConfig");
+  expect(copied).not.toContain("astro.config.mjs");
+  expect(copied.endsWith("\n")).toBe(false);
+  await titled.close();
+});
+
 test("a link between pages lands on the page, and a glossary link on its heading", async () => {
   const page = await open("/docs/getting-started/");
   await page.locator('article a[href="/docs/astro/"]').first().click();
@@ -608,7 +704,9 @@ test("the sidebar lists the pages and marks the current one", async () => {
 
 // The sidebar is ../docs/ascribe.nav's order over the docs' pages, held to
 // test/fixtures/sidebar.json group by group and page by page. A page added,
-// moved, or relabeled changes the fixture with it.
+// moved, or relabeled changes the fixture with it, which
+// ../crates/ascribe-emit/tests/all/site_sidebar.rs rewrites:
+// `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar`.
 test("the sidebar is the docs' navigation, entry by entry", async () => {
   const fixture = path.join(siteDir, "test", "fixtures", "sidebar.json");
   const page = await open("/docs/");
@@ -708,6 +806,110 @@ test("at phone width, the sidebar opens from the menu and nothing scrolls sidewa
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
+  await page.close();
+});
+
+test("at phone width, the open menu dims the page, and the backdrop or Escape closes it", async () => {
+  const page = await open("/docs/content-model/", 390);
+  const menu = page.getByRole("button", { name: "Menu" });
+  const backdrop = page.locator(".menu-backdrop");
+  expect(await backdrop.isVisible()).toBe(false);
+  await menu.click();
+  expect(await backdrop.isVisible()).toBe(true);
+  // It covers the page beside the drawer, so nothing there takes a click.
+  const covering = await page.evaluate(
+    () => document.elementFromPoint(window.innerWidth - 10, window.innerHeight / 2)?.className,
+  );
+  expect(covering).toBe("menu-backdrop");
+  expect(await backdrop.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(
+    "rgba(0, 0, 0, 0)",
+  );
+
+  // A click on it closes the drawer, and focus returns to the menu.
+  await page.mouse.click(380, 450);
+  expect(await page.locator("#sidebar").isVisible()).toBe(false);
+  expect(await backdrop.isVisible()).toBe(false);
+  expect(await menu.getAttribute("aria-expanded")).toBe("false");
+  expect(await page.evaluate(() => document.activeElement?.className)).toBe("menu-button");
+
+  // So does Escape.
+  await menu.click();
+  expect(await backdrop.isVisible()).toBe(true);
+  await page.keyboard.press("Escape");
+  expect(await page.locator("#sidebar").isVisible()).toBe(false);
+  expect(await backdrop.isVisible()).toBe(false);
+  expect(await page.evaluate(() => document.activeElement?.className)).toBe("menu-button");
+
+  // It's the drawer's alone: wider, there's none.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.locator(".menu-button").evaluate((button: HTMLElement) => button.click());
+  expect(await backdrop.isVisible()).toBe(false);
+  await page.close();
+});
+
+test("each docs page ends with links to the pages before and after it in the sidebar", async () => {
+  const page = await open("/docs/getting-started/");
+  const order = await page
+    .locator("#sidebar a")
+    .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  const at = order.indexOf("/docs/getting-started/");
+  expect(at).toBeGreaterThan(0);
+  const neighbors = page.getByRole("navigation", { name: "Previous and next" });
+  const previous = neighbors.locator('a[rel="prev"]');
+  const next = neighbors.locator('a[rel="next"]');
+  expect(await previous.getAttribute("href")).toBe(order[at - 1]);
+  expect(await next.getAttribute("href")).toBe(order[at + 1]);
+  // Each is labeled as the sidebar labels its page.
+  const label = await page
+    .locator(`#sidebar a[href="${order[at + 1]}"]`)
+    .evaluate((link) => link.innerHTML.trim());
+  expect(await next.locator("span").nth(1).innerHTML()).toBe(label);
+  expect(await previous.textContent()).toMatch(/^Previous/);
+  expect(await next.textContent()).toMatch(/^Next/);
+  await next.click();
+  await page.waitForURL(`${server.url}${order[at + 1]}`);
+  expect(await page.locator("#sidebar a[aria-current='page']").getAttribute("href")).toBe(
+    order[at + 1],
+  );
+
+  // The first page has no previous, and the last no next.
+  await page.goto(`${server.url}${order[0]}`);
+  expect(await page.locator('.neighbors a[rel="prev"]').count()).toBe(0);
+  expect(await page.locator('.neighbors a[rel="next"]').getAttribute("href")).toBe(order[1]);
+  await page.goto(`${server.url}${order.at(-1)}`);
+  expect(await page.locator('.neighbors a[rel="next"]').count()).toBe(0);
+  await page.close();
+});
+
+test("On this page keeps its headings' code, and marks the section in view", async () => {
+  const page = await open("/docs/getting-started/");
+  const toc = page.getByRole("navigation", { name: "On this page" });
+  const create = toc.getByRole("link", { name: "Create ascribe.toml" });
+  expect(await create.locator("code").textContent()).toBe("ascribe.toml");
+  const current = () =>
+    toc
+      .locator('a[aria-current="location"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  // At the top, the first section.
+  expect(await current()).toEqual(["#before-you-start"]);
+  // A link to a section marks it.
+  await create.click();
+  await expect.poll(current).toEqual(["#create-ascribetoml"]);
+  // Scrolled past it, the next one.
+  await page.locator("#write-a-page").evaluate((heading) => heading.scrollIntoView());
+  await expect.poll(current).toEqual(["#write-a-page"]);
+  // At the foot of the page, the last.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect.poll(current).toEqual(["#next-steps"]);
+
+  // A numbered heading keeps its code too.
+  await page.goto(`${server.url}/docs/content-model/`);
+  expect(
+    await page
+      .getByRole("navigation", { name: "On this page" })
+      .getByRole("link", { name: "3. [project]" })
+      .innerHTML(),
+  ).toBe("3. <code>[project]</code>");
   await page.close();
 });
 

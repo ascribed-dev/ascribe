@@ -54,8 +54,11 @@ export async function servePreview(
 /**
  * Serves a built site's `dist/` as Netlify does as much as these tests need:
  * each rule of its `_redirects` matches its address exactly, with or without
- * a final `/`; a 301 or 302 answers with `Location`, and any other status
- * serves the rule's target there with that status. Otherwise a file, or a
+ * a final `/`, and, with a query parameter (`pm=:pm`), only a request that
+ * has it; the first rule that matches is used; a 301 or 302 answers with
+ * `Location`, and any other status serves the rule's target there with that
+ * status. A forced rule's `!` is read and dropped: every rule here is
+ * applied whether or not a file is at its address. Otherwise a file, or a
  * folder's `index.html`, or a 404. Returns its origin and a function that
  * stops it.
  */
@@ -68,8 +71,15 @@ export async function serveLikeNetlify(
     .map((line) => line.trim())
     .filter((line) => line !== "" && !line.startsWith("#"))
     .map((line) => {
-      const [from = "", to = "", status = "301"] = line.split(/\s+/);
-      return { from: from.replace(/\/$/, ""), to, status: Number.parseInt(status, 10) };
+      const [from = "", ...rest] = line.split(/\s+/);
+      const query = rest.filter((part) => !part.startsWith("/") && part.includes("="));
+      const [to = "", status = "301"] = rest.slice(query.length);
+      return {
+        from: from.replace(/\/$/, ""),
+        query: query.map((part) => part.split("=")[0] ?? ""),
+        to,
+        status: Number.parseInt(status, 10),
+      };
     });
   const file = async (address: string): Promise<Buffer | undefined> => {
     const at = path.join(dist, decodeURIComponent(address));
@@ -84,8 +94,13 @@ export async function serveLikeNetlify(
   };
   const server = createHttpServer((request, response) => {
     void (async () => {
-      const address = new URL(request.url ?? "/", "http://localhost").pathname;
-      const rule = rules.find((r) => r.from === address.replace(/\/$/, ""));
+      const url = new URL(request.url ?? "/", "http://localhost");
+      const address = url.pathname;
+      const rule = rules.find(
+        (r) =>
+          r.from === address.replace(/\/$/, "") &&
+          r.query.every((name) => url.searchParams.has(name)),
+      );
       if (rule !== undefined && (rule.status === 301 || rule.status === 302)) {
         response.writeHead(rule.status, { Location: rule.to }).end();
         return;
@@ -162,7 +177,7 @@ export async function copySite(name: string): Promise<string> {
   const target = path.join(siteDir, ".e2e-tmp", name);
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
-  for (const entry of ["astro.config.mjs", "ascribe.toml", "api", "content", "src"]) {
+  for (const entry of ["astro.config.mjs", "ascribe.toml", "ascribe.addresses", "api", "content", "src"]) {
     await cp(path.join(siteDir, entry), path.join(target, entry), { recursive: true });
   }
   return target;

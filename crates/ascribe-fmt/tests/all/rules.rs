@@ -403,6 +403,25 @@ fn a_list_in_a_block_quote() {
 }
 
 #[test]
+fn a_list_in_a_block_quote_without_a_space_after_the_marker() {
+    // The space after `>` is the quote's on every line, so with `>-` the
+    // item's content column is 4 on the next line, not 3 (#1195).
+    unchanged(">-\n>   @note: Text.\n");
+    check(
+        ">- item\n>    @note: Text.\n",
+        ">- item\n>   @note: Text.\n",
+    );
+    check(
+        "> - item\n>    @note: Text.\n",
+        "> - item\n>   @note: Text.\n",
+    );
+    check(
+        "- > - item\n  >    @note: Text.\n",
+        "- > - item\n  >   @note: Text.\n",
+    );
+}
+
+#[test]
 fn a_directive_on_a_list_markers_line_is_left_alone() {
     unchanged("-   @note: Text.\n");
     unchanged("1.  @note: Text.\n");
@@ -621,6 +640,17 @@ fn line_endings_are_preserved() {
         "@note {type=tip}:\r\nText.\r\n@end\r\n",
     );
     check("@steps\r\n\r\n1. One\r\n", "@steps\r\n1. One\r\n");
+}
+
+#[test]
+fn a_lone_carriage_return_in_frontmatter_ends_a_line() {
+    // It once left every span after it a byte early, so the space went
+    // before the colon (#1121).
+    check("---\n\r\"\n---\n\n@note:{", "---\n\r\"\n---\n\n@note: {");
+    check(
+        "---\ntitle: T\rkind: x\r\n---\n@note{type=tip}:x\r",
+        "---\ntitle: T\rkind: x\r\n---\n@note {type=tip}: x\r",
+    );
 }
 
 #[test]

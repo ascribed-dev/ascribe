@@ -250,7 +250,7 @@ interface Diagnostic {
 }
 
 function diagnostics(): Section {
-  const registry = parse(read("tests/conformance/diagnostics.toml")) as unknown as {
+  const registry = parse(read("crates/ascribe-core/data/diagnostics.toml")) as unknown as {
     diagnostic: Diagnostic[];
   };
   const entries = registry.diagnostic;
@@ -269,7 +269,7 @@ function diagnostics(): Section {
   return {
     title: "Diagnostics",
     for: "people and agents",
-    from: ["tests/conformance/diagnostics.toml"],
+    from: ["crates/ascribe-core/data/diagnostics.toml"],
     body: [
       `${live.length} in all. By severity: ${count("severity")}. By level: ${count("level")}. By kind of next step: ${count("next")}.`,
       table(
@@ -719,7 +719,7 @@ const UNDECLARED: { surface: string; what: string; where: string }[] = [
   },
   {
     surface: "The outputs",
-    what: "The HTML report `ascribe diff --format html` writes, and the layout of each output's folder",
+    what: "The HTML preview `ascribe diff --format html` writes, and the layout of each output's folder",
     where: "`packages/review/`, and `docs/content/contracts/output-layout.md`",
   },
 ];

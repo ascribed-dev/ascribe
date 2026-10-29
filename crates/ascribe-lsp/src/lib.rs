@@ -1,11 +1,12 @@
 //! The Ascribe language server, run as `ascribe lsp`.
 //!
-//! It keeps a project in memory ([`ascribe_resolve::IncrementalProject`]),
+//! It keeps a project in memory ([`ascribe_workspace::Workspace`]),
 //! follows every change to it (open documents, files changed on disk, the
 //! content model), and publishes the diagnostics `ascribe check` reports for
 //! the editor's build, as the author types. See the README for the design, the
 //! semantic token legend, and how stale results are kept from the editor.
 
+mod addresses;
 mod agent_prompt;
 mod baseline;
 mod build_view;
@@ -20,7 +21,6 @@ mod edit;
 mod examples;
 mod folding;
 mod formatting;
-mod fsx;
 mod headless;
 mod hover;
 mod intended;
@@ -28,21 +28,13 @@ mod inventory;
 mod links;
 mod log;
 mod memos;
-mod model_file;
 mod nav;
-mod nav_file;
 mod page;
 mod page_rows;
-mod position;
 mod preview;
 mod project_edit;
 mod prose;
-mod refactor;
 mod references;
-mod release;
-mod rename;
-mod retire;
-mod retire_line;
 mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
@@ -53,16 +45,21 @@ mod shown;
 mod summary;
 mod targets;
 mod tokens;
-mod uri;
 
 use std::sync::Arc;
+
+// The edits the server shares with the commands, under the names the
+// server's modules use for them.
+use ascribe_edit::{fsx, model_file, nav_file, position, refactor, uri};
 use std::sync::atomic::AtomicBool;
 
 use lsp_server::Connection;
 
+pub use addresses::{AddressesParams, NOTIFICATION as ADDRESSES_NOTIFICATION, PageOldAddress};
 pub use agent_prompt::{
     AgentPromptParams, AgentPromptResult, METHOD as AGENT_PROMPT_METHOD, PromptKind,
 };
+pub use ascribe_edit::Encoding;
 pub use build_view::{
     BuildViewParams, BuildViewResult, Excluded, ExclusionReason, METHOD as BUILD_VIEW_METHOD,
 };
@@ -76,30 +73,19 @@ pub use inventory::{
     InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
     InventoryValue, METHOD as INVENTORY_METHOD, ModelKind,
 };
-pub use model_file::{TakenFile, read_taken};
 pub use page::{
     METHOD as PAGE_METHOD, PageAbout, PageHeading, PageMemo, PageParams, PagePlace, PageResult,
 };
 pub use page_rows::{
     ExampleState, IncludeKind, LeftOut, PageBuild, PageDescription, PageExample, PageHealth,
-    PageInclude, PageListing, PagePermalink, PageReview, PageSize, PageTemplate,
+    PageInclude, PageListing, PagePermalink, PageRecheck, PageSize, PageTemplate,
 };
-pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,
     PreviewParams, PreviewProblem, PreviewResult, PreviewReview, PreviewSection, ProblemSeverity,
 };
 pub use project_edit::{
     METHOD as PROJECT_EDIT_METHOD, ProjectEditKind, ProjectEditParams, ProjectEditResult,
-};
-pub use release::{
-    ChangedOutput, ClearedFile, ClearedMark, MovedFeature, ReleaseError, Released, ReleasedFile,
-    Releasing, RewrittenMark, release,
-};
-pub use rename::{RenameError, Renamed, Renaming, Rewritten, rename};
-pub use retire::{Retired, Retirement, retire};
-pub use retire_line::{
-    Redirect, RedirectWhy, RetireError, RetiredLine, RetiringLine, Unused, retire_line, unused_in,
 };
 pub use review::{
     BASE_FILE_METHOD as REVIEW_BASE_FILE_METHOD, BaseFileParams, BaseFileResult,
@@ -139,6 +125,9 @@ pub type PublishHook = Arc<dyn Fn(&PublishInfo) + Send + Sync>;
 /// A hook called with a request's method.
 pub type RequestHook = Arc<dyn Fn(&str) + Send + Sync>;
 
+/// A hook called with the commit of a base whose addresses were listed.
+pub type BaseListedHook = Arc<dyn Fn(&str) + Send + Sync>;
+
 /// What gives the day the checks run on, asked at each round: the server
 /// doesn't read the clock itself.
 pub type Clock = Arc<dyn Fn() -> Option<ascribe_core::Date> + Send + Sync>;
@@ -157,12 +146,15 @@ pub struct Options {
     /// and to `false` as soon as a handler queues work: a test's way to wait
     /// until every result of the messages it sent has been published.
     pub idle: Option<Arc<AtomicBool>>,
-    /// The day the checks run on, which `review-overdue` compares a page's
-    /// review date with. Without one, no review is overdue.
+    /// The day the checks run on, which `recheck-overdue` compares a page's
+    /// recheck date with. Without one, no recheck is overdue.
     pub today: Option<Clock>,
     /// What checks the prose on open and on save, for a project with
     /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.
-    pub linter: Option<Arc<dyn ascribe_check::prose::Linter>>,
+    pub linter: Option<Arc<dyn ascribe_report::prose::Linter>>,
+    /// Called with the commit each time the server lists a base's
+    /// addresses (`addresses.rs`), so a test can count the listings.
+    pub base_listed: Option<BaseListedHook>,
     /// The version the server gives in its `serverInfo` and first log line:
     /// what `ascribe --version` prints, such as `0.4.1+dev (7ae1340440fc)`.
     /// The crate's version when `None`.

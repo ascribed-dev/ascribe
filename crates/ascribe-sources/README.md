@@ -8,16 +8,17 @@ A project reads a source in another repository through copies kept in `sources/<
 
 | Module | Main types and functions | What it does |
 |---|---|---|
-| `src/lib.rs` | `Workspace`, `fetch`, `update`, `status`, `Options`, `SourcesError` | The three operations. `fetch` makes the copies match the lock, pinning a source that has no pin yet; `update` moves a pin to the head of its branch, or to a given revision, and says what changed; `status` reads the pins and copies alone, without `git` or the network. Each returns a report (`FetchReport`, `UpdateReport`, `StatusReport`) that the CLI prints as text or JSON. |
+| `src/lib.rs` | `SourcesView`, `fetch`, `update`, `status`, `Options`, `SourcesError` | The three operations. `fetch` makes the copies match the lock, pinning a source that has no pin yet; `update` moves a pin to the head of its branch, or to a given revision, and says what changed; `status` reads the pins and copies alone, without `git` or the network. Each returns a report (`FetchReport`, `UpdateReport`, `StatusReport`) that the CLI prints as text or JSON. |
 | `src/remote.rs` | | Running `git` against another repository: one bare repository per URL in a cache outside the project (`ASCRIBE_CACHE_DIR`, or the user's cache folder), fetched without blobs, then only the files asked for. |
 | `src/copies.rs` | `SIZE_LIMIT` | The copies in `sources/<name>/`: listing, reading, writing, and removing them without leaving the folder. |
 
 ```rust,ignore
-let workspace = ascribe_sources::Workspace::new(root, &model, &index)?;
-let report = ascribe_sources::fetch(&workspace, &[], &ascribe_sources::Options::from_env()?)?;
+let workspace = ascribe_check::load(&config)?;
+let view = ascribe_sources::SourcesView::new(&workspace.snapshot())?;
+let report = ascribe_sources::fetch(&view, &[], &ascribe_sources::Options::from_env()?)?;
 ```
 
-`Workspace::new` takes the content model and the project's source index (`ascribe_resolve::Project`), for the files its snippets name.
+`SourcesView::new` takes a `WorkspaceSnapshot`: the project's folder, its content model, and its source index, for the files its snippets name.
 
 ## Rules
 

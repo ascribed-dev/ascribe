@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**`ascribe report builds` lists what a build leaves out once for each mark, not once for each block.** A page is one entry for its `available` or `variant` frontmatter, with that value (`not available (available: self-managed 3.5)`) in place of the sentence it repeated. Content is one entry for each `@available` (a section's, a block's, or a table row's) and each variant arm, at the mark's line, naming the page and the heading the mark is under; a mark in a fragment names the fragment and its line. A build's line counts the marks, by what each takes out (`2 pages and 1 section`). Text, Markdown, and JSON group the same way: in the JSON, at `schema_version` 3, a page has `kind` and `mark` in place of `why`, and content has `heading` and `scope`, with `file` and `range` where the mark is written. _Why:_ one mark is one decision a writer made, and listing it once for each source line it covers buried the builds section, which the report shows by default. _From:_ [#947](https://github.com/ascribed-dev/ascribe/issues/947), the clarity and noise review, the maintainer's product decision on the issue, 26 October 2026.

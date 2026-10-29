@@ -1,11 +1,213 @@
+## `[releases]`
+@memo: Generated from crates/ascribe-core/data/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
+
+### ASC204 `model-releases-target`
+@id {permalink=true}: ASC204
+@summary: A `[releases]` table names a target that's versionless, a dimension, or a name `[dimensions.release]` takes, or labels a target its dimension labels.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A `[releases]` table names a target that's versionless, a dimension, or a name `[dimensions.release]` takes, or labels a target its dimension labels.
+
+**Message:** `[releases.{target}]`: `{target}` is in no declared dimension, so it would be a value of the implicit dimension `release`, but `[dimensions.release]` takes that name; add `{target}` to a dimension's `values`, or rename `[dimensions.release]`
+
+**Fix:** Name the table after the target a mark gives a version to, such as `[releases.self-managed]`: a versioned value of a declared dimension, or a name no dimension has, which makes it a value of the implicit dimension `release`. A versionless value has no versions to list. While a target is left to the implicit dimension, no declared dimension can be named `release`.
+
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
+
+### ASC205 `model-releases-line`
+@id {permalink=true}: ASC205
+@summary: A target's lines in `[releases]` aren't valid versions, are listed twice, or have different numbers of parts.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A target's lines in `[releases]` aren't valid versions, are listed twice, or have different numbers of parts.
+
+**Message:** `[releases.{target}]` mixes lines of different lengths, `{a}` and `{b}`; write every line of a target with the same number of parts
+
+**Fix:** Write each line as a version, once, with as many parts as the target's other lines: `["3.4", "3.5"]` for a line for each minor release, or `["0.2.0"]` for one for each patch release. A line holds every version that starts with it.
+
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
+
+### ASC207 `model-releases-order`
+@id {permalink=true}: ASC207
+@summary: A target's planned line isn't newer than every live line, an archived line isn't older than every live one, or a line is in two lists.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A target's planned line isn't newer than every live line, an archived line isn't older than every live one, or a line is in two lists.
+
+**Message:** `[releases.{target}]`: the planned line `{line}` isn't newer than every live line, and the newest is `{live}`
+
+**Fix:** Keep each line in one list, in the order the lists mean: `planned` lines are newer than every `live` line, and `archived` lines older. A line that has shipped moves from `planned` to `live`, and one that has left the window from `live` to `archived`.
+
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
+
+### ASC208 `model-releases-ends`
+@id {permalink=true}: ASC208
+@summary: `[releases.<target>.ends]` gives an end date to a line that isn't live.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** `[releases.<target>.ends]` gives an end date to a line that isn't live.
+
+**Message:** `[releases.{target}.ends]`: `{line}` isn't a live line; the live lines are \{live}
+
+**Fix:** Give an end date to a line in `live` only. A line whose support has ended and that has left the window goes in `archived`, with its date as `ended`.
+
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
+
+### ASC209 `model-versions-current`
+@id {permalink=true}: ASC209
+@summary: `ascribe.toml` has `[versions] current`, which is no longer a key.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** `ascribe.toml` has `[versions] current`, which is no longer a key.
+
+**Message:** `[versions] current` is no longer a key; a target's current release is the newest line in `[releases.<target>] live`
+
+**Fix:** Remove `current` from `[versions]`, and list the release in `[releases.<target>]`, as `live = ["3.4"]`, for the target it's a release of. Each target has its own current line, and a check that compared with `current`, `availability-left-behind`, compares each target's versions with that target's current line.
+
+**Read more:** [`[releases.<target>]`](../content-model/variation.md#121-releasestarget) in the `ascribe.toml` reference.
+
+## Phrases and the glossary
+
+### ASC097 `model-phrase-value-type`
+@id {permalink=true}: ASC097
+@summary: A phrase's value isn't a string, or a table naming a target's line.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+
+**When:** A phrase's value isn't a string, or a table naming a target's line.
+
+**Message:** phrase `{key}` must be a quoted string, but it's \{found}; write \{key} = "\{value}"
+
+**Fix:** Quote the value. A phrase whose value is a target's current release line is a table with one key, `line`: `release = { line = "self-managed" }`.
+
+**Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
+
+### ASC215 `model-phrase-line`
+@id {permalink=true}: ASC215
+@summary: A phrase is the line of a target that has no live line.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+
+**When:** A phrase is the line of a target that has no live line.
+
+**Message:** phrase `{key}` is the line of `{target}`, which has no live line in `[releases]`
+
+**Fix:** Name a target whose lines `[releases.<target>]` lists, with at least one in `live`, or list the target's lines there. The phrase is the target's current line: the newest live one.
+
+**Read more:** [`[phrases]`](../content-model/content.md#phrases) in the `ascribe.toml` reference.
+
+### ASC238 `model-glossary-page`
+@id {permalink=true}: ASC238
+@summary: A path in `[glossary] pages` doesn't exist, or is a fragment.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**When:** A path in `[glossary] pages` doesn't exist, or is a fragment.
+
+**Message:** `{path}` in `[glossary] pages` doesn't exist
+
+**Fix:** Each path in `pages` is a page, from the content root, with its name's case as it is on disk: fix the path, or, for a fragment, list a page that includes it.
+
+**Read more:** [`[glossary]`](../content-model/content.md#8-glossary) in the `ascribe.toml` reference.
+
+## Widgets
+
+### ASC100 `model-widget-reserved-name`
+@id {permalink=true}: ASC100
+@summary: A widget's name is reserved by Ascribe's element library or by HTML.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+
+**When:** A widget's name is reserved by Ascribe's element library or by HTML.
+
+**Message:** widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library
+
+**Fix:** Rename the widget, for example with your project's name as its prefix: `quill-aside`.
+
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
+
+### ASC101 `model-widget-forms`
+@id {permalink=true}: ASC101
+@summary: A widget's `forms` isn't one of the lists it allows.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+
+**When:** A widget's `forms` isn't one of the lists it allows.
+
+**Message:** forms must be ["line"], ["container"], or ["line", "container"]
+
+**Fix:** Set `forms` to `["line"]`, `["container"]`, or `["line", "container"]`.
+
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
+
+### ASC102 `model-widget-binding`
+@id {permalink=true}: ASC102
+@summary: A widget with a line form has no `binding`, or a container-only widget has one.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+
+**When:** A widget with a line form has no `binding`, or a container-only widget has one.
+
+**Message:** widget `{name}` has a line form, so it needs a binding: "self", "heading", "block", or "heading-or-block"
+
+**Fix:** Give a widget with a line form a `binding`. Remove `binding` from a container-only widget.
+
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
+
+### ASC103 `model-widget-container-primary`
+@id {permalink=true}: ASC103
+@summary: A widget with a container form requires a primary, or a container-only widget takes one.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+
+**When:** A widget with a container form requires a primary, or a container-only widget takes one.
+
+**Message:** widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use "\{kind}?"
+
+**Fix:** Make the primary optional (`"text?"`), or remove the widget's container form. A container-only widget takes no primary.
+
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
+
+### ASC104 `model-widget-groupable-form`
+@id {permalink=true}: ASC104
+@summary: A groupable widget has a line form.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+
+**When:** A groupable widget has a line form.
+
+**Message:** widget `{name}` is groupable, so it must be container-only: forms = ["container"]
+
+**Fix:** Set `forms = ["container"]`, or remove `groupable`.
+
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
+
+### ASC105 `model-widget-plain-content`
+@id {permalink=true}: ASC105
+@summary: A widget that doesn't wrap content sets `plain-content`.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+
+**When:** A widget that doesn't wrap content sets `plain-content`.
+
+**Message:** widget `{name}` doesn't wrap content, so plain-content has no effect; remove it
+
+**Fix:** Remove `plain-content`.
+
+**Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
+
 ## The consumer, builds, and the editor
-@memo: Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
 
 ### ASC106 `model-consumer-unsupported`
 @id {permalink=true}: ASC106
 @summary: A `[consumer]` key has a value the consumer profile doesn't support.
 
-Error · file level · next step: choose · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **When:** A `[consumer]` key has a value the consumer profile doesn't support.
 
@@ -19,7 +221,7 @@ Error · file level · next step: choose · [SPEC §9.5]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC107
 @summary: `[consumer] site` isn't an origin alone, such as `https://docs.example.com`.
 
-Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **When:** `[consumer] site` isn't an origin alone, such as `https://docs.example.com`.
 
@@ -33,7 +235,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC108
 @summary: `[consumer] base-path` doesn't start with `/`.
 
-Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **When:** `[consumer] base-path` doesn't start with `/`.
 
@@ -47,7 +249,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC109
 @summary: Two builds' names differ only in case.
 
-Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** Two builds' names differ only in case.
 
@@ -61,7 +263,7 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC110
 @summary: A build's `variants` isn't `"switch"` or a selection that names a dimension.
 
-Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A build's `variants` isn't `"switch"` or a selection that names a dimension.
 
@@ -75,7 +277,7 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC111
 @summary: A build's selection names a dimension the content model doesn't declare.
 
-Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A build's selection names a dimension the content model doesn't declare.
 
@@ -89,7 +291,7 @@ Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC112
 @summary: A build's selection names a value its dimension doesn't have.
 
-Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A build's selection names a value its dimension doesn't have.
 
@@ -103,7 +305,7 @@ Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC113
 @summary: A build's `availability` isn't `"badge"` or a filter.
 
-Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A build's `availability` isn't `"badge"` or a filter.
 
@@ -117,7 +319,7 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC114
 @summary: A build's filter names something other than a declared dimension value.
 
-Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A build's filter names something other than a declared dimension value.
 
@@ -131,7 +333,7 @@ Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC115
 @summary: A build's filter gives a versioned target no version, a versionless one a version, or a version that isn't valid.
 
-Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A build's filter gives a versioned target no version, a versionless one a version, or a version that isn't valid.
 
@@ -145,7 +347,7 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC116
 @summary: A build filters for a target its own selection of variants leaves out.
 
-Warning · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A build filters for a target its own selection of variants leaves out.
 
@@ -159,7 +361,7 @@ Warning · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC117
 @summary: `[editor] build` names a build the content model doesn't declare.
 
-Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
 
 **When:** `[editor] build` names a build the content model doesn't declare.
 
@@ -167,13 +369,13 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to one of the builds the message lists.
 
-**Read more:** [`[editor]`](../content-model/output.md#17-editor) in the `ascribe.toml` reference.
+**Read more:** [`[editor]`](../content-model/checks.md#23-editor) in the `ascribe.toml` reference.
 
 ### ASC118 `model-editor-build-required`
 @id {permalink=true}: ASC118
 @summary: The content model declares several builds, none named `site`, and `[editor] build` doesn't name one.
 
-Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
 
 **When:** The content model declares several builds, none named `site`, and `[editor] build` doesn't name one.
 
@@ -181,13 +383,13 @@ Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `[editor] build` to the build the editor should check, or name one of the builds `site`.
 
-**Read more:** [`[editor]`](../content-model/output.md#17-editor) in the `ascribe.toml` reference.
+**Read more:** [`[editor]`](../content-model/checks.md#23-editor) in the `ascribe.toml` reference.
 
 ### ASC162 `model-consumer-agents-site`
 @id {permalink=true}: ASC162
 @summary: `[consumer] agents = true` without `[consumer] site`.
 
-Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **When:** `[consumer] agents = true` without `[consumer] site`.
 
@@ -201,7 +403,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC174
 @summary: `[consumer] permalink-path` doesn't start with `/`.
 
-Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **When:** `[consumer] permalink-path` doesn't start with `/`.
 
@@ -215,7 +417,7 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC206
 @summary: A versioned build's target has no live line, or the build is filtered too.
 
-Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** A versioned build's target has no live line, or the build is filtered too.
 
@@ -225,29 +427,13 @@ Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 
 **Read more:** [`[builds.<name>]`](../content-model/output.md#16-buildsname) in the `ascribe.toml` reference.
 
-## `[permalinks]`
-
-### ASC178 `model-permalinks`
-@id {permalink=true}: ASC178
-@summary: A name in `[permalinks]` is both retired and an alias, an alias leads back to itself, or a retired permalink's reason is still a placeholder.
-
-Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
-
-**When:** A name in `[permalinks]` is both retired and an alias, an alias leads back to itself, or a retired permalink's reason is still a placeholder.
-
-**Message:** `{name}` is both retired and an alias; a name is one thing
-
-**Fix:** Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it.
-
-**Read more:** [`[permalinks]`](../content-model/checks.md#20-permalinks) in the `ascribe.toml` reference.
-
 ## `[crawlers]`
 
 ### ASC183 `model-crawlers-line`
 @id {permalink=true}: ASC183
 @summary: A string in `[crawlers] lines` has a line break.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A string in `[crawlers] lines` has a line break.
 
@@ -255,13 +441,13 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Split the string into one string per line: `lines = ["User-agent: *", "Disallow: /drafts/"]`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ### ASC189 `model-crawlers-named-twice`
 @id {permalink=true}: ASC189
 @summary: `[crawlers]` names one crawler in two groups.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** `[crawlers]` names one crawler in two groups.
 
@@ -269,7 +455,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Name each crawler in one group. Move the lines for it into the first group that names it and remove the second `User-agent` line. For a crawler a disallowed purpose covers, the purpose's group already says `Disallow: /`: remove the group from `lines`, or allow the purpose and write the crawler's group whole in `lines`.
 
-**Read more:** [`[crawlers]`](../content-model/checks.md#21-crawlers) in the `ascribe.toml` reference.
+**Read more:** [`[crawlers]`](../content-model/output.md#18-crawlers) in the `ascribe.toml` reference.
 
 ## `[listing]`
 
@@ -277,7 +463,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC185
 @summary: A folder in `[listing.folders]` doesn't exist, isn't a folder, or isn't written as a folder's path.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A folder in `[listing.folders]` doesn't exist, isn't a folder, or isn't written as a folder's path.
 
@@ -285,13 +471,13 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Write the folder's path from the content root, ending in `/`, with its name's case as it is on disk: `"internal/" = "unlisted"`. A rule is for a folder and everything under it; patterns aren't read.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ### ASC186 `model-listing-type`
 @id {permalink=true}: ASC186
 @summary: `[listing.types]` names something that isn't a content type.
 
-Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** `[listing.types]` names something that isn't a content type.
 
@@ -299,13 +485,13 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 **Fix:** Name a content type the project declares in `[types]`, or `page` when it declares none.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ### ASC187 `model-listing-looser`
 @id {permalink=true}: ASC187
 @summary: A rule of `[listing]` is looser than a wider rule it's under.
 
-Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** A rule of `[listing]` is looser than a wider rule it's under.
 
@@ -313,7 +499,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the narrower rule, or make it as strict as the one it's under, or stricter: `listed`, then `unquoted`, then `unlisted`. To list some pages more openly than the rest, loosen the wider rule, and restrict the others with rules of their own.
 
-**Read more:** [`[listing]`](../content-model/checks.md#22-listing) in the `ascribe.toml` reference.
+**Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 
 ## `[apis]`
 
@@ -321,7 +507,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC259
 @summary: An API's spec is outside the project's repository, or, with no repository, outside the folder that was opened.
 
-Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** An API's spec is outside the project's repository, or, with no repository, outside the folder that was opened.
 
@@ -329,21 +515,21 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Fix:** Give the API a `spec` inside the project's repository: a spec in another repository isn't read, so commit a copy of it, or the file your pipeline bundles. With no repository, the editor and `ascribe mcp` read a spec only inside the folder they were opened on: open the folder that contains it.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ### ASC260 `model-api-reference`
 @id {permalink=true}: ASC260
-@summary: An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+@summary: An API's `reference` is an address pattern with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
 
-Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
-**When:** An API's `reference` is a template with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
+**When:** An API's `reference` is an address pattern with a placeholder other than `{operationId}` and `{tag}`, or with no `{operationId}`.
 
 **Message:** the reference of API `{api}` has no `{operationId}`, so every operation's address would be the same
 
-**Fix:** Write the template as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `"/api/#/operations/{operationId}"` for Stoplight Elements. For Redoc, write `{ renderer = "redoc", at = "/api/" }` instead.
+**Fix:** Write the address pattern as your renderer addresses an operation, with `{operationId}` where the operation's id goes and `{tag}` for its first tag, such as `"/api/#/operations/{operationId}"` for Stoplight Elements. For Redoc, write `{ renderer = "redoc", at = "/api/" }` instead.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ## `[checks]`
 
@@ -351,7 +537,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC142
 @summary: `[checks]` sets the level of a check about whether the project is valid.
 
-Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
 
 **When:** `[checks]` sets the level of a check about whether the project is valid.
 
@@ -359,13 +545,13 @@ Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](../checks/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity.
 
-**Read more:** [`[checks]`](../content-model/checks.md#19-checks) in the `ascribe.toml` reference.
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 
 ### ASC146 `model-intended-check`
 @id {permalink=true}: ASC146
 @summary: An acknowledgement in `[[intended]]` names something that isn't a check, a check that isn't a review check, or one whose problems are acknowledged in the pages.
 
-Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
 **When:** An acknowledgement in `[[intended]]` names something that isn't a check, a check that isn't a review check, or one whose problems are acknowledged in the pages.
 
@@ -379,7 +565,7 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC147
 @summary: An acknowledgement in `[[intended]]` doesn't name exactly one thing the content model declares, or its reason is still a placeholder.
 
-Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
 **When:** An acknowledgement in `[[intended]]` doesn't name exactly one thing the content model declares, or its reason is still a placeholder.
 
@@ -393,7 +579,7 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC167
 @summary: `[checks.vale]` has both `preset` and `config`, or neither, or turns off a rule with `config` or one its preset doesn't have.
 
-Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
 
 **When:** `[checks.vale]` has both `preset` and `config`, or neither, or turns off a rule with `config` or one its preset doesn't have.
 

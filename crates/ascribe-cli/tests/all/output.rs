@@ -216,6 +216,73 @@ fn check() {
             0,
         )),
     );
+    // Outside a repository, the paths are from the project's root.
+    let github = stdout(&run(
+        dir.path(),
+        &["check", "docs/keys.md", "--format", "github"],
+        0,
+    ));
+    assert!(
+        github.starts_with("::warning file=docs/keys.md,line=8,"),
+        "{github}"
+    );
+}
+
+/// `ascribe check` and `ascribe fmt --check` with `--format github`, on
+/// `examples/quill` in the `handbook/` folder of a repository: the paths are
+/// from the repository's root, as GitHub reads them.
+#[test]
+fn github_annotations() {
+    let repo = repository();
+    let project = repo.path().join("handbook");
+    fs::create_dir_all(&project).unwrap();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
+        &project,
+    );
+    let keys = project.join("docs").join("keys.md");
+    let text = fs::read_to_string(&keys).unwrap().replace("\r\n", "\n");
+    let mut lines: Vec<&str> = text.lines().collect();
+    assert_eq!(
+        lines[7], "@id: create-key",
+        "examples/quill/docs/keys.md changed"
+    );
+    lines[7] = "See [Install](/install-agent/).";
+    fs::write(&keys, lines.join("\n") + "\n").unwrap();
+    commit(repo.path(), "Add the handbook");
+
+    expect(
+        "check-github.txt",
+        &stdout(&run(&project, &["check", "--format", "github"], 0)),
+    );
+    // From the repository's root, as a workflow runs it, the paths are the
+    // same.
+    let from_root = stdout(&run(
+        repo.path(),
+        &["check", "--config", "handbook", "--format", "github"],
+        0,
+    ));
+    expect("check-github.txt", &from_root);
+
+    write(
+        &project,
+        "docs/keys.md",
+        &format!(
+            "{}\n@note{{ type = tip }}:Rotate keys yearly.\n",
+            lines.join("\n")
+        ),
+    );
+    expect(
+        "fmt-check-github.txt",
+        &stdout(&run(&project, &["fmt", "--check", "--format", "github"], 1)),
+    );
+    // `--format github` is only for `--check`.
+    let out = run(&project, &["fmt", "--format", "github"], 2);
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("--check"),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
 }
 
 /// The project `ascribe diff` is shown on: a product's docs in `docs/`, with a
@@ -689,6 +756,52 @@ fn getting_started() {
     );
 }
 
+/// The guide to bringing existing docs over, step by step, on a copy of
+/// `examples/existing-docs`: `ascribe init`, which adopts its pages, and the
+/// `ascribe.toml` it writes; `ascribe check --fix`; then, once the guide's
+/// two edits are made, `ascribe baseline write` and a clean `ascribe check`.
+#[test]
+fn existing_docs() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/existing-docs"),
+        root,
+    );
+    expect("init-existing.txt", &stdout(&run(root, &["init"], 0)));
+    expect(
+        "init-existing-ascribe.toml",
+        &fs::read_to_string(root.join("ascribe.toml")).unwrap(),
+    );
+    // Committed, as a reader's docs are, so the git guard lets `--fix`
+    // write.
+    git(root, &["init", "-q"]);
+    commit(root, "Start using Ascribe");
+    expect(
+        "init-existing-fix.txt",
+        &stdout(&run(root, &["check", "--fix", "--format", "concise"], 1)),
+    );
+    let page = root.join("docs/guides/troubleshooting.md");
+    let text = fs::read_to_string(&page).unwrap();
+    fs::write(
+        &page,
+        format!("---\ntitle: When a page doesn't load\n---\n\n{text}"),
+    )
+    .unwrap();
+    let page = root.join("docs/guides/alerts.md");
+    let text = fs::read_to_string(&page).unwrap();
+    assert!(text.contains("(../install.html)"), "{text}");
+    fs::write(&page, text.replace("(../install.html)", "(../install.md)")).unwrap();
+    expect(
+        "init-existing-baseline.txt",
+        &stdout(&run(root, &["baseline", "write"], 0)),
+    );
+    expect(
+        "init-existing-check.txt",
+        &stdout(&run(root, &["check"], 0)),
+    );
+}
+
 /// `ascribe resolve` on `examples/platforms`, the guide to content that
 /// varies: its one page, for each of the project's two builds.
 #[test]
@@ -818,6 +931,60 @@ fn sources_update() {
     expect("sources-update.json", &shown(json(&out)));
 }
 
+/// `ascribe link` on a link to an operation of `examples/astro-site`'s
+/// API, from its guide: the operation it names, and one it doesn't have.
+#[test]
+fn link_operation() {
+    let dir = tempfile::tempdir().unwrap();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
+    fs::copy(
+        example.join("ascribe.toml"),
+        dir.path().join("ascribe.toml"),
+    )
+    .unwrap();
+    for folder in ["api", "content"] {
+        fs::create_dir_all(dir.path().join(folder)).unwrap();
+        copy_tree(&example.join(folder), &dir.path().join(folder));
+    }
+    let guide = "content/Guides/Teams/Share a loom.md";
+    expect(
+        "link-operation.txt",
+        &stdout(&run(
+            dir.path(),
+            &["link", "../../../api/openapi.yaml#getLoom", "--from", guide],
+            0,
+        )),
+    );
+    expect(
+        "link-operation.json",
+        &json(&run(
+            dir.path(),
+            &[
+                "link",
+                "../../../api/openapi.yaml#getLoom",
+                "--from",
+                guide,
+                "--format",
+                "json",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "link-operation-missing.txt",
+        &stdout(&run(
+            dir.path(),
+            &[
+                "link",
+                "../../../api/openapi.yaml#getLooms",
+                "--from",
+                guide,
+            ],
+            1,
+        )),
+    );
+}
+
 /// `ascribe rename` on a copy of `examples/quill`, run from its root: the
 /// command reference's example.
 #[test]
@@ -827,6 +994,8 @@ fn rename() {
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill"),
         dir.path(),
     );
+    git(dir.path(), &["init", "-q"]);
+    commit(dir.path(), "Quill");
     expect(
         "rename.txt",
         &stdout(&run(dir.path(), &["rename", "phrase:cloud", "hosted"], 0)),
@@ -1163,6 +1332,16 @@ fn search() {
         "search-none.txt",
         &stdout(&run(&root, &["search", "zebra", "--config", quill], 1)),
     );
+    // No block has both words: the closest places, and the word each
+    // lacks.
+    expect(
+        "search-partial.txt",
+        &stdout(&run(
+            &root,
+            &["search", "webhook signature", "--config", quill],
+            1,
+        )),
+    );
     // Kept to one page, and to whole words.
     expect(
         "search-scope.txt",
@@ -1223,7 +1402,8 @@ fn search() {
 }
 
 /// `ascribe agents sync` on `examples/quill` in a repository of its own:
-/// the agents guide's list of what it writes, and who reads each file.
+/// the agents guide's list of what it writes, and who reads each file; then
+/// `--check`'s JSON.
 #[test]
 fn agents_sync() {
     let dir = repository();
@@ -1234,6 +1414,14 @@ fn agents_sync() {
     expect(
         "agents-sync.txt",
         &stdout(&run(dir.path(), &["agents", "sync"], 0)),
+    );
+    expect(
+        "agents-sync-check.json",
+        &json(&run(
+            dir.path(),
+            &["agents", "sync", "--check", "--format", "json"],
+            0,
+        )),
     );
 }
 
@@ -1291,10 +1479,10 @@ fn versions() {
     );
 }
 
-/// `ascribe versions archive` on a copy of `examples/quill`, into a folder
+/// `ascribe versions export` on a copy of `examples/quill`, into a folder
 /// in it: the command reference's example.
 #[test]
-fn versions_archive() {
+fn versions_export() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     copy_tree(
@@ -1302,12 +1490,12 @@ fn versions_archive() {
         root,
     );
     expect(
-        "versions-archive.txt",
+        "versions-export.txt",
         &stdout(&run(
             root,
             &[
                 "versions",
-                "archive",
+                "export",
                 "self-managed 3.4",
                 "--to",
                 "archive/3.4",
@@ -1318,12 +1506,12 @@ fn versions_archive() {
         )),
     );
     expect(
-        "versions-archive.json",
+        "versions-export.json",
         &json(&run(
             root,
             &[
                 "versions",
-                "archive",
+                "export",
                 "self-managed 3.4",
                 "--to",
                 "archive/3.4",
@@ -1480,10 +1668,11 @@ fn observe_check() {
 fn permalinks() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
+    write(root, "ascribe.toml", "spec = \"0.1\"\n");
     write(
         root,
-        "ascribe.toml",
-        "spec = \"0.1\"\n\n[permalinks.aliases]\nconfig = \"weave-config\"\n",
+        "ascribe.addresses",
+        "version = 1\n\n[moved]\n\"go:config\" = \"go:weave-config\"\n\n[retired]\n",
     );
     write(
         root,
@@ -1495,10 +1684,14 @@ fn permalinks() {
         "docs/guides/security.md",
         "---\ntitle: Security\n---\n\nKeep the keys safe.\n",
     );
+    // In a repository, with each step committed, so the git guard lets the
+    // commands write.
+    git(root, &["init", "-q"]);
     expect(
         "permalinks-sync-new.txt",
         &stdout(&run(root, &["permalinks", "sync"], 0)),
     );
+    commit(root, "List the permalinks");
 
     // The section moves to a page of its own, and the other goes.
     write(
@@ -1542,17 +1735,21 @@ fn permalinks() {
         "permalinks-sync.txt",
         &format!("{}{}", String::from_utf8_lossy(&sync.stderr), stdout(&sync)),
     );
+    commit(root, "Sync the permalinks");
 
+    // A clone, not a copy: git can still be tidying `.git` after a commit,
+    // and a file copied from there can be gone by the time it's read.
     let copy = tempfile::tempdir().unwrap();
-    copy_tree(root, copy.path());
+    git(
+        root,
+        &["clone", "-q", ".", &copy.path().display().to_string()],
+    );
     let retire = [
         "permalinks",
         "retire",
         "rotate-keys",
         "--reason",
         "Merged into the security guide",
-        "--to",
-        "guides/security.md",
     ];
     expect("permalinks-retire.txt", &stdout(&run(root, &retire, 0)));
     expect(
@@ -1596,12 +1793,25 @@ fn templates() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     run(root, &["init"], 0);
+    // In a repository, with the project committed, so the git guard lets
+    // eject change `ascribe.toml`.
+    git(root, &["init", "-q"]);
+    commit(root, "Start the docs");
     expect(
         "templates-list.txt",
         &stdout(&run(root, &["templates", "list"], 0)),
     );
+    expect(
+        "templates-list.json",
+        &json(&run(root, &["templates", "list", "--format", "json"], 0)),
+    );
     let copy = tempfile::tempdir().unwrap();
-    copy_tree(root, copy.path());
+    git(
+        root,
+        &["clone", "-q", ".", &copy.path().display().to_string()],
+    );
+    // git keeps no empty folder: the content root `init` made.
+    fs::create_dir_all(copy.path().join("docs")).unwrap();
     expect(
         "templates-eject.txt",
         &stdout(&run(root, &["templates", "eject", "how-to"], 0)),

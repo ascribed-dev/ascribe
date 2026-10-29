@@ -6,7 +6,7 @@
 //! fixes are never applied here.
 //!
 //! [`safe_fixes`] works out each file's new text from what the check read;
-//! [`write`] writes it. A fix whose edits overlap one already taken in the
+//! the CLI writes it. A fix whose edits overlap one already taken in the
 //! same file is left for a later run, which reports its problem again.
 
 use std::path::{Path, PathBuf};
@@ -167,21 +167,6 @@ impl Settled {
     }
 }
 
-/// Writes each fixed file's new text.
-///
-/// # Errors
-///
-/// A file couldn't be written. The files before it in the list were.
-pub fn write(files: &[FixedFile]) -> Result<(), FixError> {
-    for file in files {
-        std::fs::write(&file.path, &file.text).map_err(|source| FixError {
-            path: file.path.clone(),
-            source,
-        })?;
-    }
-    Ok(())
-}
-
 /// Whether an edit of `fix` touches the text an edit of `taken` does, or
 /// starts where one does: two fixes at one place are one too many, unless
 /// they're the same fix, offered by two diagnostics, which is taken once.
@@ -210,7 +195,7 @@ fn writable_text(project: &Project, file: FileId) -> Option<&str> {
         .sources()
         .iter()
         .find(|s| s.id == file && s.unreadable.is_none())
-        .map(|s| s.text.as_str())
+        .map(|s| &*s.text)
 }
 
 /// Where a file the fixes may change is on disk.
@@ -230,15 +215,18 @@ mod tests {
     use ascribe_core::{Fix, Issue, Location, diagnostics};
 
     fn project(page: &str) -> Project {
-        Project::from_parts(
-            PathBuf::from("/p"),
-            ascribe_core::RelPath::parse("docs").unwrap(),
-            ascribe_model::load_str("spec = \"0.1\"\n", FileId::new(0)).unwrap(),
-            "spec = \"0.1\"\n".to_owned(),
-            Project::from_sources([(
-                ascribe_core::RelPath::parse("a.md").unwrap(),
-                page.to_owned(),
-            )]),
+        crate::Project::new(
+            crate::in_memory(
+                PathBuf::from("/p"),
+                ascribe_core::RelPath::parse("docs").unwrap(),
+                ascribe_model::load_str("spec = \"0.1\"\n", FileId::new(0)).unwrap(),
+                "spec = \"0.1\"\n".to_owned(),
+                Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+                    ascribe_core::RelPath::parse("a.md").unwrap(),
+                    page.to_owned(),
+                )]),
+            )
+            .snapshot(),
         )
     }
 

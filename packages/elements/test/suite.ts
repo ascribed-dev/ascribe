@@ -40,7 +40,41 @@ const AVAILABILITY = `
 </ascribe-availability>
 `;
 
-const ALL = `<h1>Page</h1>${NOTE}${STEPS}${AVAILABILITY}${TABS}
+/** A plain code block, one with a title and a tested line, one in a tab, and a `<pre>` with no code. */
+const CODE = `
+<pre id="plain"><code>npm install -g @quill/agent
+</code></pre>
+
+<figure class="code-title"><figcaption>connect.ts<div class="ascribe-code-tested">Node 24.9.0 on Linux</div></figcaption><pre id="titled"><code class="language-ts"><span class="line">import { connect } from "quill";</span>
+<span class="line">connect();</span>
+</code></pre></figure>
+
+<ascribe-tabs id="code-tabs">
+
+<ascribe-tab label="npm">
+
+<p class="ascribe-tab-label">npm</p>
+
+<pre id="tabbed"><code>npm test
+</code></pre>
+
+</ascribe-tab>
+
+<ascribe-tab label="pnpm">
+
+<p class="ascribe-tab-label">pnpm</p>
+
+<pre id="tabbed-2"><code>pnpm test
+</code></pre>
+
+</ascribe-tab>
+
+</ascribe-tabs>
+
+<pre id="not-code">An ASCII drawing, not code.</pre>
+`;
+
+const ALL = `<h1>Page</h1>${NOTE}${STEPS}${AVAILABILITY}${TABS}${CODE}
 <ascribe-group widget="quill-thing"><p>Grouped.</p></ascribe-group>`;
 
 /**
@@ -99,10 +133,16 @@ export function suiteFor(engine: Engine): void {
       for (const text of ["Install with npm.", "Install with pnpm or yarn.", "Install with bun."]) {
         await expect(page.getByText(text).isVisible()).resolves.toBe(true);
       }
-      const labels = await page
+      // The label is the tab's first paragraph, in sight, and nothing is generated.
+      const labels = page.locator("#a > ascribe-tab > .ascribe-tab-label");
+      await expect(labels.allInnerTexts()).resolves.toEqual(["npm", "pnpm / yarn", "bun"]);
+      for (const label of await labels.all()) {
+        await expect(label.isVisible()).resolves.toBe(true);
+      }
+      const generated = await page
         .locator("#a > ascribe-tab")
         .evaluateAll((tabs) => tabs.map((tab) => getComputedStyle(tab, "::before").content));
-      expect(labels).toEqual(['"npm"', '"pnpm / yarn"', '"bun"']);
+      expect(generated).toEqual(["none", "none", "none"]);
       await expect(page.locator("[role=tablist]").count()).resolves.toBe(0);
       await context.close();
     });
@@ -368,6 +408,42 @@ export function suiteFor(engine: Engine): void {
       await context.close();
     });
 
+    it("keeps each tab's label paragraph in the page's text, out of sight and out of the accessibility tree", async () => {
+      const page = await fresh(TABS);
+      const labels = page.locator("#a > ascribe-tab > .ascribe-tab-label");
+      await expect(
+        labels.evaluateAll((all) => all.map((label) => label.getAttribute("aria-hidden"))),
+      ).resolves.toEqual(["true", "true", "true"]);
+      const label = labels.first();
+      const box = await label.boundingBox();
+      expect(box?.width).toBeLessThanOrEqual(1);
+      expect(box?.height).toBeLessThanOrEqual(1);
+      expect(await label.evaluate((e) => getComputedStyle(e).display)).not.toBe("none");
+      // The shown tab's rendered text still starts with its label.
+      await expect(page.locator("#a > ascribe-tab").first().innerText()).resolves.toMatch(/^npm\s/);
+      // A screen reader hears the label once, as the tab's name, and the panel's
+      // content after it.
+      const snapshot = await page.locator("#a").ariaSnapshot();
+      expect(snapshot).toContain('tab "npm" [selected]');
+      expect(snapshot).toContain('tabpanel "npm"');
+      expect(snapshot).toContain("Install with npm.");
+      expect(snapshot, snapshot).not.toMatch(/^\s*- (?:paragraph|text): npm$/m);
+      await context.close();
+    });
+
+    it("gives the label paragraphs back to screen readers when a group leaves the page", async () => {
+      const page = await fresh(TABS);
+      const hidden = await page.evaluate(() => {
+        const group = document.getElementById("a");
+        group?.remove();
+        return Array.from(group?.querySelectorAll(".ascribe-tab-label") ?? []).map((label) =>
+          label.getAttribute("aria-hidden"),
+        );
+      });
+      expect(hidden).toEqual([null, null, null]);
+      await context.close();
+    });
+
     it("moves with the arrow keys, wrapping, and with Home and End", async () => {
       const page = await fresh(TABS);
       const buttons = page.locator("#a [role=tab]");
@@ -514,6 +590,162 @@ export function suiteFor(engine: Engine): void {
     });
   });
 
+  describe("copy buttons", () => {
+    /** What the page's stand-in clipboard was given. */
+    const copied = (page: Page) =>
+      page.evaluate(() => (window as unknown as { copied: string[] }).copied);
+
+    /** The ids of the code blocks with a copy button directly after them. */
+    const withButtons = (page: Page) =>
+      page
+        .locator("pre")
+        .evaluateAll((all) =>
+          all
+            .filter((pre) => pre.nextElementSibling?.matches("button.ascribe-copy"))
+            .map((pre) => pre.id),
+        );
+
+    it("adds none without the script, and the page reads as before", async () => {
+      const page = await fresh(CODE, { script: false });
+      await expect(page.locator("button").count()).resolves.toBe(0);
+      await expect(page.locator("main").innerText()).resolves.not.toContain("Copy");
+      await expect(page.locator("#plain").innerText()).resolves.toMatch(
+        /^npm install -g @quill\/agent\n?$/,
+      );
+      await context.close();
+    });
+
+    it("adds one after each code block's pre, in a figure and in tabs, and none to other pres", async () => {
+      const page = await fresh(CODE);
+      expect(await withButtons(page)).toEqual(["plain", "titled", "tabbed", "tabbed-2"]);
+      // Outside the pre and its code, so their text is the code alone.
+      await expect(page.locator("pre button, code button").count()).resolves.toBe(0);
+      await expect(page.locator("#plain").textContent()).resolves.toBe(
+        "npm install -g @quill/agent\n",
+      );
+      // The button's words are generated content: none is in the page's text.
+      await expect(
+        page.locator("button.ascribe-copy").evaluateAll((all) => all.map((b) => b.textContent)),
+      ).resolves.toEqual(["", "", "", ""]);
+      await expect(page.locator("main").textContent()).resolves.not.toContain("Copy");
+      await context.close();
+    });
+
+    it("is a button named Copy, reached from the keyboard", async () => {
+      const page = await fresh(CODE);
+      const button = page.getByRole("button", { name: "Copy" });
+      await expect(button.count()).resolves.toBe(3);
+      await page.locator("#plain").evaluate((pre) => {
+        pre.tabIndex = -1;
+        pre.focus();
+      });
+      await page.keyboard.press("Tab");
+      await expect(
+        page.evaluate(() => document.activeElement === document.querySelector("#plain + button")),
+      ).resolves.toBe(true);
+      await page.keyboard.press("Enter");
+      await expect.poll(() => copied(page)).toEqual(["npm install -g @quill/agent"]);
+      await context.close();
+    });
+
+    it("copies the code alone, not its caption, and says Copied in a live region", async () => {
+      const page = await fresh(CODE);
+      const button = page.locator("#titled + button");
+      await button.click();
+      await expect
+        .poll(() => copied(page))
+        .toEqual(['import { connect } from "quill";\nconnect();']);
+      const status = page.getByRole("status");
+      await expect(status.textContent()).resolves.toBe("Copied");
+      await expect(button.getAttribute("data-ascribe-copy")).resolves.toBe("copied");
+      // Out of sight.
+      const box = await status.boundingBox();
+      expect(box?.width).toBeLessThanOrEqual(1);
+      // And back to Copy after a moment.
+      await expect
+        .poll(() => button.getAttribute("data-ascribe-copy"), { timeout: 4000 })
+        .toBeNull();
+      await expect(status.textContent()).resolves.toBe("");
+      await context.close();
+    });
+
+    it("copies the shown tab's code", async () => {
+      const page = await fresh(CODE);
+      await page.locator("#code-tabs").getByRole("tab", { name: "pnpm" }).click();
+      await page.locator("#tabbed-2 + button").click();
+      await expect.poll(() => copied(page)).toEqual(["pnpm test"]);
+      await context.close();
+    });
+
+    it("says so when the clipboard refuses", async () => {
+      const page = await fresh(CODE, { clipboard: "refuse" });
+      await page.locator("#plain + button").click();
+      await expect.poll(() => page.getByRole("status").textContent()).toBe("Couldn't copy");
+      await expect(page.locator("#plain + button").getAttribute("data-ascribe-copy")).resolves.toBe(
+        "failed",
+      );
+      await context.close();
+    });
+
+    it("says the stylesheet's words, as a site translates them", async () => {
+      const page = await fresh(
+        `<style>.ascribe-copy::before { content: "Copier"; } .ascribe-copy[data-ascribe-copy="copied"]::before { content: "Copié"; }</style>${CODE}`,
+      );
+      await expect(page.getByRole("button", { name: "Copier" }).count()).resolves.toBe(3);
+      await page.locator("#plain + button").click();
+      await expect.poll(() => page.getByRole("status").textContent()).toBe("Copié");
+      await context.close();
+    });
+
+    it("adds none where there's no clipboard", async () => {
+      const page = await fresh(CODE, { clipboard: "none" });
+      await expect(page.locator("button.ascribe-copy").count()).resolves.toBe(0);
+      await context.close();
+    });
+
+    it("hides with --ascribe-copy-display: none", async () => {
+      const page = await fresh(`<style>:root { --ascribe-copy-display: none; }</style>${CODE}`);
+      await expect(page.locator("#plain + button").isVisible()).resolves.toBe(false);
+      await expect(page.getByRole("button", { name: "Copy" }).count()).resolves.toBe(0);
+      await context.close();
+    });
+
+    it("sits in its own block's top corner, over neither the text before nor the next block", async () => {
+      const page = await fresh(
+        `<style>pre { margin: 2rem 0; padding: 0.75rem 1rem; border: 1px solid; }</style><p>Before.</p>${CODE}`,
+      );
+      const supported = await page.evaluate(() => CSS.supports("anchor-name", "--a"));
+      for (const id of ["plain", "titled", "tabbed"]) {
+        const pre = await page.locator(`#${id}`).boundingBox();
+        const button = await page.locator(`#${id} + button`).boundingBox();
+        if (pre === null || button === null) throw new Error(`no box for #${id}`);
+        if (supported) {
+          expect(button.y, id).toBeGreaterThan(pre.y);
+          expect(button.y + button.height, id).toBeLessThan(pre.y + pre.height);
+          expect(button.x + button.width, id).toBeLessThan(pre.x + pre.width);
+          expect(button.x + button.width, id).toBeGreaterThan(pre.x + pre.width - 24);
+        } else {
+          // Under the block, at its end.
+          expect(button.y, id).toBeGreaterThanOrEqual(pre.y + pre.height);
+        }
+      }
+      await context.close();
+    });
+
+    it("gives code blocks added later a button", async () => {
+      const page = await fresh("<p>Empty.</p>");
+      await page.evaluate(() => {
+        const block = document.createElement("div");
+        block.innerHTML = '<pre id="late"><code>late\n</code></pre>';
+        document.querySelector("main")?.append(block);
+      });
+      await expect.poll(() => withButtons(page)).toEqual(["late"]);
+      await page.locator("#late + button").click();
+      await expect.poll(() => copied(page)).toEqual(["late"]);
+      await context.close();
+    });
+  });
+
   describe("accessibility", () => {
     async function audit(page: Page) {
       await page.addScriptTag({ content: axeSource });
@@ -529,6 +761,9 @@ export function suiteFor(engine: Engine): void {
       const page = await fresh(ALL);
       expect(await audit(page)).toEqual([]);
       await page.locator("#a").getByRole("tab", { name: "bun" }).click();
+      expect(await audit(page)).toEqual([]);
+      await page.locator("#plain + button").click();
+      await expect.poll(() => page.getByRole("status").textContent()).toBe("Copied");
       expect(await audit(page)).toEqual([]);
       await context.close();
     });

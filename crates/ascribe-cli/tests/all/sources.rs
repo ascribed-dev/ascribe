@@ -214,6 +214,53 @@ fn update_names_the_page_and_rewrites_the_lock_and_the_copy() {
     assert_eq!(pair.read("ascribe.lock"), lock);
 }
 
+/// The git guard: `update` refuses a copy with changes not committed,
+/// `--dry-run` says what it would change and changes nothing, and `--force`
+/// writes it (decision #965).
+#[test]
+fn update_refuses_a_copy_git_cant_put_back_until_force() {
+    let pair = Pair::new();
+    pair.change_api();
+    write(
+        pair.docs(),
+        "sources/api/src/auth.rs",
+        "// edited by hand\n",
+    );
+    let lock = pair.read("ascribe.lock");
+
+    let out = pair.ascribe(&["sources", "update"]);
+    assert_eq!(code_of(&out), 2, "{}", stdout(&out));
+    assert!(
+        stderr(&out).contains(
+            "error: this would change files git can't put back as they are: sources/api/src/auth.rs; commit or stash them, or pass --force"
+        ),
+        "{}",
+        stderr(&out)
+    );
+    assert_eq!(pair.read("ascribe.lock"), lock);
+
+    let out = pair.ascribe(&["sources", "update", "--dry-run"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out)
+            .ends_with("\nWith --dry-run, no file was written, so the pages aren't compared.\n"),
+        "{}",
+        stdout(&out)
+    );
+    assert_eq!(pair.read("sources/api/src/auth.rs"), "// edited by hand\n");
+    assert_eq!(pair.read("ascribe.lock"), lock);
+
+    let out = pair.ascribe(&["sources", "fetch", "--dry-run", "--format", "json"]);
+    let json: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(json["written"], false, "{json}");
+    assert_eq!(pair.read("sources/api/src/auth.rs"), "// edited by hand\n");
+
+    let out = pair.ascribe(&["sources", "update", "--force"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert_eq!(pair.read("sources/api/src/auth.rs"), AUTH_V2);
+    assert_ne!(pair.read("ascribe.lock"), lock);
+}
+
 #[test]
 fn update_as_text_and_json() {
     let pair = Pair::new();
@@ -490,6 +537,30 @@ fn fetch_and_status_say_what_they_did() {
     );
 }
 
+/// `fetch --format json` says what it copied, and which files it couldn't,
+/// in one document, and keeps its exit code.
+#[test]
+fn fetch_writes_json() {
+    let pair = Pair::new();
+    fs::remove_file(
+        pair.docs()
+            .join("sources")
+            .join("api")
+            .join("src")
+            .join("auth.rs"),
+    )
+    .unwrap();
+    let out = pair.ascribe(&["sources", "fetch", "--format", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let fetched: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(fetched["schema_version"], 1);
+    assert_eq!(fetched["sources"][0]["name"], "api");
+    assert_eq!(fetched["sources"][0]["copied"][0], "src/auth.rs");
+    assert_eq!(fetched["lock_written"], false);
+    let out = pair.ascribe(&["sources", "fetch", "--format", "concise"]);
+    assert_eq!(stdout(&out), "The copies already match ascribe.lock.\n");
+}
+
 /// A tested example in another repository: its config and observation come
 /// with the copies, the page says what it was tested with, an update says
 /// which examples went stale, and nothing the config names is ever run.
@@ -667,7 +738,8 @@ fn examples_from_another_repository_say_what_they_were_tested_with() {
         ]),
     );
     commit(code_dir, "Test the examples again");
-    let out = ascribe(dir, &["sources", "update", "--format", "json"]);
+    // The last update's copies aren't committed: `--force` writes over them.
+    let out = ascribe(dir, &["sources", "update", "--force", "--format", "json"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let json: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(

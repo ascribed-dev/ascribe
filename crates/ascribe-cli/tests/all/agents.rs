@@ -90,9 +90,14 @@ fn read(path: &Path) -> String {
 }
 
 fn ascribe(dir: &Path, args: &[&str]) -> Output {
+    // The files here aren't committed, so a command that writes passes the
+    // git guard with `--force`; `guard.rs` tests the guard.
+    let writes = args.iter().any(|a| matches!(*a, "sync" | "index"))
+        && !args.iter().any(|a| matches!(*a, "--check" | "--dry-run"));
     Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
+        .args(writes.then_some("--force"))
         .env("NO_COLOR", "1")
         .output()
         .expect("run ascribe")
@@ -277,7 +282,7 @@ fn at_a_root_with_several_projects_each_is_synced() {
     // once.
     let out = run(repo.path(), &["agents", "sync", "--check"], 1);
     assert!(
-        stdout(&out).contains("stale      AGENTS.md\n"),
+        stdout(&out).contains("+++ b/AGENTS.md\n"),
         "{}",
         stdout(&out)
     );
@@ -358,6 +363,87 @@ fn each_file_says_who_reads_it() {
     assert!(!check.contains("read by"), "{check}");
 }
 
+/// `sync --format json` lists each file, whether it changed, and who reads
+/// it, as the text does; with `--check`, which files are out of date, and
+/// the same exit code.
+#[test]
+fn sync_writes_json() {
+    let repo = repository("quill");
+    let root = repo.path();
+    let out = run(root, &["agents", "sync", "--format", "json"], 0);
+    let synced: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(synced["schema_version"], 1);
+    assert_eq!(synced["check"], false);
+    let agents_md = synced["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["path"] == "AGENTS.md")
+        .unwrap_or_else(|| panic!("no AGENTS.md: {synced}"));
+    assert_eq!(agents_md["changed"], true);
+    assert_eq!(
+        agents_md["read_by"],
+        serde_json::json!(["claude_code", "codex", "copilot", "cursor"])
+    );
+    let unread = synced["unread"].as_array().unwrap();
+    assert!(
+        unread.iter().any(|line| line
+            .as_str()
+            .unwrap()
+            .starts_with("Claude Code doesn't read the skill")),
+        "{synced}"
+    );
+    assert_eq!(synced["mcp_settings"], serde_json::Value::Null);
+
+    let model = root.join("ascribe.toml");
+    write(
+        &model,
+        &read(&model).replace("type = \"string?\", role", "type = \"string\", role"),
+    );
+    let out = run(root, &["agents", "sync", "--check", "--format", "json"], 1);
+    let checked: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(checked["check"], true);
+    let stale: Vec<&str> = checked["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["changed"] == true)
+        .map(|f| f["path"].as_str().unwrap())
+        .collect();
+    assert_eq!(stale, ["AGENTS.md"], "{checked}");
+    assert!(
+        stderr(&out).contains("1 file is out of date"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+/// `prompt --format json` is the prompt the text prints, with its name, and
+/// `--list --format json` every prompt with its arguments.
+#[test]
+fn prompt_writes_json() {
+    let repo = repository("quill");
+    let root = repo.path();
+    let text = stdout(&run(root, &["agents", "prompt", "fix"], 0));
+    let out = run(root, &["agents", "prompt", "fix", "--format", "json"], 0);
+    let prompt: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(prompt["schema_version"], 1);
+    assert_eq!(prompt["name"], "fix");
+    assert_eq!(prompt["text"].as_str().unwrap().replace('\\', "/"), text);
+
+    let out = run(root, &["agents", "prompt", "--list", "--format", "json"], 0);
+    let list: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let names: Vec<&str> = list["prompts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["new-page", "fix", "review"]);
+    assert_eq!(list["prompts"][0]["arguments"][0]["name"], "type");
+    assert_eq!(list["prompts"][0]["arguments"][0]["required"], true);
+}
+
 /// The line `sync` printed about `path`.
 fn line_of(text: &str, path: &str) -> String {
     text.lines()
@@ -377,7 +463,7 @@ fn check_fails_when_the_content_model_changes() {
     );
     let out = run(repo.path(), &["agents", "sync", "--check"], 1);
     assert!(
-        stdout(&out).contains("stale      AGENTS.md"),
+        stdout(&out).contains("+++ b/AGENTS.md\n"),
         "{}",
         stdout(&out)
     );
@@ -455,6 +541,48 @@ fn claude_md_is_updated_only_when_there_is_one() {
     assert!(read(&repo.path().join(".claude/CLAUDE.md")).contains("\n@../AGENTS.md\n"));
     assert!(!repo.path().join("CLAUDE.md").exists());
 
+    // One that imports AGENTS.md itself is left as it is, with a note, and
+    // is up to date.
+    let repo = repository("quill");
+    write(&repo.path().join("CLAUDE.md"), "# Ours\n\n@AGENTS.md\n");
+    let out = sync(repo.path(), ".", &["--target", "claude"]);
+    assert!(
+        stderr(&out).contains("CLAUDE.md already loads AGENTS.md"),
+        "{}",
+        stderr(&out)
+    );
+    assert_eq!(
+        read(&repo.path().join("CLAUDE.md")),
+        "# Ours\n\n@AGENTS.md\n"
+    );
+    run(repo.path(), &["agents", "sync", "--check"], 0);
+
+    // One that only mentions the import, in a code span, still gets it.
+    let repo = repository("quill");
+    write(
+        &repo.path().join("CLAUDE.md"),
+        "# Ours\n\nSync adds `@AGENTS.md` here.\n",
+    );
+    let out = sync(repo.path(), ".", &["--target", "claude"]);
+    assert!(
+        !stderr(&out).contains("already loads AGENTS.md"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(
+        read(&repo.path().join("CLAUDE.md"))
+            .ends_with("\n@AGENTS.md\n<!-- ascribe:agents end -->\n")
+    );
+
+    // One that imports it twice, the block's and its own, loses the block.
+    let repo = repository("quill");
+    write(
+        &repo.path().join("CLAUDE.md"),
+        "@AGENTS.md\n\n<!-- ascribe:agents start (generated by `ascribe agents sync`; it loads AGENTS.md) -->\n@AGENTS.md\n<!-- ascribe:agents end -->\n",
+    );
+    sync(repo.path(), ".", &[]);
+    assert_eq!(read(&repo.path().join("CLAUDE.md")), "@AGENTS.md\n");
+
     // A personal CLAUDE.local.md is left alone, with a note.
     let repo = repository("quill");
     write(&repo.path().join("CLAUDE.local.md"), "Mine.\n");
@@ -496,18 +624,64 @@ fn the_rules_fit_their_budget() {
     sync(repo.path(), ".", &[]);
     let text = read(&repo.path().join("AGENTS.md"));
     assert!(text.chars().count() <= 4_200, "{}", text.chars().count());
-    assert!(text.contains(
-        "Programmatic check: after editing a page, run `ascribe check <file> --format concise`"
-    ));
-    // Quill writes `@variant`, so it's told about it, with its dimensions.
+    assert!(text.contains("After editing a page, run `ascribe check <file> --format concise`"));
+    // Quill writes `@variant`, so it's told about it, with its dimensions
+    // and their values; and its `@available` example is its own targets.
     assert!(text.contains("`@variant {<dimension>=<value>}:`"), "{text}");
-    assert!(text.contains("dimensions `pm`, `deployment`"), "{text}");
+    assert!(
+        text.contains(
+            "dimensions `pm` (`npm`, `pnpm`, `yarn`), `deployment` (`cloud`, `self-managed`)"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("an optional state and version (`cloud, self-managed`)"),
+        "{text}"
+    );
 
     // A project with no variants isn't told about them.
     let repo = repository("monorepo");
     sync(repo.path(), "handbook", &[]);
     let text = read(&repo.path().join("handbook/AGENTS.md"));
     assert!(!text.contains("@variant"), "{text}");
+}
+
+#[test]
+fn ascribes_own_rules_list_every_page_type_with_what_it_is_for() {
+    // Ascribe's docs run over the budget, with a long `--command`, so this
+    // holds that the types are the last thing cut (#1002, #1177).
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let rules = read(&root.join("docs/AGENTS.md"));
+    let model = run(
+        &root,
+        &[
+            "model",
+            "--config",
+            "docs",
+            "--section",
+            "types",
+            "--format",
+            "json",
+        ],
+        0,
+    );
+    let model: serde_json::Value = serde_json::from_slice(&model.stdout).unwrap();
+    let types = model["types"].as_array().unwrap();
+    assert_eq!(types.len(), 6, "{model}");
+    for t in types {
+        let name = t["name"].as_str().unwrap();
+        let line = rules
+            .lines()
+            .find(|l| l.starts_with(&format!("- `{name}`")))
+            .unwrap_or_else(|| panic!("no line for `{name}`:\n{rules}"));
+        if let Some(purpose) = t["purpose"].as_str() {
+            assert!(
+                line.ends_with(purpose.trim_end_matches('.')),
+                "{line}\n{purpose}"
+            );
+        }
+    }
+    assert!(!rules.contains("more: `cargo run"), "{rules}");
 }
 
 #[test]
@@ -657,7 +831,7 @@ fn with_hook_writes_each_agents_hooks() {
     write(&root.join(".github/hooks/ascribe.json"), "{}\n");
     let out = run(root, &["agents", "sync", "--check"], 1);
     assert!(
-        stdout(&out).contains("stale      .github/hooks/ascribe.json"),
+        stdout(&out).contains("+++ b/.github/hooks/ascribe.json\n"),
         "{}",
         stdout(&out)
     );
@@ -712,6 +886,175 @@ fn with_hook_runs_the_pinned_ascribe() {
     // system, so it runs `ascribe` from the path.
     let mcp = read(&root.join(".mcp.json"));
     assert!(mcp.contains(r#""command": "ascribe""#), "{mcp}");
+}
+
+/// A copy of quill synced for Claude Code with its hooks, with
+/// `package.json` and the lockfile given.
+fn synced_with(package: Option<&str>, lockfile: Option<&str>, more: &[&str]) -> TempDir {
+    let repo = repository("quill");
+    let root = repo.path();
+    if let Some(package) = package {
+        write(&root.join("package.json"), package);
+    }
+    if let Some(lockfile) = lockfile {
+        write(&root.join(lockfile), "");
+    }
+    let mut args = vec!["--target", "claude", "--with-hook"];
+    args.extend_from_slice(more);
+    sync(root, ".", &args);
+    repo
+}
+
+const DEPENDS_ON_CLI: &str = "{\"devDependencies\": {\"@ascribed/cli\": \"1.0.0\"}}\n";
+
+/// Asserts that each file an agent reads runs Ascribe with `command`.
+fn assert_runs(root: &Path, command: &str) {
+    for file in [
+        "AGENTS.md",
+        ".agents/skills/ascribe/SKILL.md",
+        ".agents/skills/ascribe/references/directives.md",
+        ".claude/skills/ascribe/SKILL.md",
+    ] {
+        let text = read(&root.join(file));
+        if command != "ascribe" {
+            assert!(!text.contains("`ascribe "), "{file}: {text}");
+        }
+        assert!(
+            text.contains(&format!("`{command} ")),
+            "{file} doesn't name `{command}`: {text}"
+        );
+    }
+    let skill = read(&root.join(".agents/skills/ascribe/SKILL.md"));
+    assert!(skill.contains(&format!("Run `{command} check <file> --format concise`.")));
+    assert_eq!(skill.contains("isn't on the path"), command == "ascribe");
+}
+
+#[test]
+fn sync_names_the_command_the_project_runs_ascribe_with() {
+    let astro = "{\"dependencies\": {\"@ascribed/astro\": \"1.0.0\"}}\n";
+    for (package, lockfile, command) in [
+        (None, None, "ascribe"),
+        (
+            Some("{\"dependencies\": {}}\n"),
+            Some("package-lock.json"),
+            "ascribe",
+        ),
+        (Some(DEPENDS_ON_CLI), None, "npx ascribe"),
+        (
+            Some(DEPENDS_ON_CLI),
+            Some("package-lock.json"),
+            "npx ascribe",
+        ),
+        (
+            Some(DEPENDS_ON_CLI),
+            Some("pnpm-lock.yaml"),
+            "pnpm exec ascribe",
+        ),
+        (Some(DEPENDS_ON_CLI), Some("yarn.lock"), "yarn ascribe"),
+        (Some(astro), Some("pnpm-lock.yaml"), "pnpm exec ascribe"),
+    ] {
+        let repo = synced_with(package, lockfile, &[]);
+        assert_runs(repo.path(), command);
+        // The hooks work it out themselves.
+        let settings = read(&repo.path().join(".claude/settings.json"));
+        assert!(!settings.contains("--command"), "{settings}");
+        run(repo.path(), &["agents", "sync", "--check"], 0);
+    }
+}
+
+#[test]
+fn command_overrides_the_one_worked_out() {
+    let repo = synced_with(
+        Some(DEPENDS_ON_CLI),
+        Some("pnpm-lock.yaml"),
+        &["--command", "bunx ascribe"],
+    );
+    let root = repo.path();
+    assert_runs(root, "bunx ascribe");
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.contains(r#"agents hook claude-code --event edit --command \"bunx ascribe\""#),
+        "{settings}"
+    );
+    run(
+        root,
+        &["agents", "sync", "--command", "bunx ascribe", "--check"],
+        0,
+    );
+    // Without it, the files name another command, so they're out of date.
+    let out = run(root, &["agents", "sync", "--check"], 1);
+    assert!(
+        stdout(&out).contains("+++ b/AGENTS.md\n"),
+        "{}",
+        stdout(&out)
+    );
+    // A command a hook's command line can't carry is refused.
+    let out = ascribe(root, &["agents", "sync", "--command", "npx ascribe; rm x"]);
+    assert_eq!(out.status.code(), Some(2), "{}", stderr(&out));
+}
+
+#[test]
+fn projects_that_run_ascribe_differently_share_a_skill_that_says_how() {
+    let repo = repository("monorepo");
+    let root = repo.path();
+    write(&root.join("docs/package.json"), DEPENDS_ON_CLI);
+    write(&root.join("pnpm-lock.yaml"), "");
+    sync(root, "docs", &[]);
+    sync(root, "handbook", &[]);
+    assert!(read(&root.join("docs/AGENTS.md")).contains("`pnpm exec ascribe check"));
+    assert!(!read(&root.join("handbook/AGENTS.md")).contains("pnpm exec"));
+    let skill = read(&root.join(".agents/skills/ascribe/SKILL.md"));
+    assert!(
+        skill.contains("Run `ascribe check <file> --format concise`."),
+        "{skill}"
+    );
+    assert!(skill.contains("isn't on the path"), "{skill}");
+    for project in ["docs", "handbook"] {
+        run(root, &["agents", "sync", "--config", project, "--check"], 0);
+    }
+}
+
+#[test]
+fn the_skill_gives_a_lone_project_in_a_folder_its_config() {
+    let repo = tempfile::tempdir().unwrap();
+    let root = repo.path();
+    copy_dir(&examples().join("quill"), &root.join("docs"));
+    git_init(root);
+    // From the repository's root, a command with no file finds no project.
+    run(root, &["check"], 2);
+    sync(root, "docs", &["--target", "claude"]);
+    for file in [".agents/skills/ascribe", ".claude/skills/ascribe"] {
+        let skill = read(&root.join(file).join("SKILL.md"));
+        for command in [
+            "`ascribe check --config docs` with no file",
+            "`ascribe model --config docs --section types`",
+            "`ascribe addresses move --config docs --from-git`",
+        ] {
+            assert!(skill.contains(command), "{file}: {skill}");
+        }
+        // A command given a page finds the project from the page.
+        assert!(skill.contains("Run `ascribe check <file> --format concise`."));
+        let directives = read(&root.join(file).join("references/directives.md"));
+        assert!(
+            directives.contains("`ascribe model --config docs --section sources`"),
+            "{directives}"
+        );
+    }
+    // The commands it names work from the root.
+    run(root, &["check", "--config", "docs"], 0);
+    run(
+        root,
+        &["model", "--config", "docs", "--section", "types"],
+        0,
+    );
+    run(root, &["agents", "rules", "--config", "docs"], 0);
+
+    // With a second project, the skill is both's, so it names no folder.
+    write(&root.join("handbook/ascribe.toml"), "spec = \"0.1\"\n");
+    sync(root, "docs", &[]);
+    let skill = read(&root.join(".agents/skills/ascribe/SKILL.md"));
+    assert!(!skill.contains("--config docs"), "{skill}");
+    assert!(skill.contains("`ascribe check` with no file"), "{skill}");
 }
 
 #[test]
@@ -796,7 +1139,7 @@ fn cloud_prints_the_mcp_settings_unless_it_writes_the_agent() {
         );
         let out = run(root, &["agents", "sync", "--check"], 1);
         assert!(
-            stdout(&out).contains(&format!("stale      {file}")),
+            stdout(&out).contains(&format!("+++ b/{file}\n")),
             "{}",
             stdout(&out)
         );

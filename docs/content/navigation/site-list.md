@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Move a site's own list to the navigation
-description: Replace an Astro site's own list of pages, the src/nav.ts that init wrote in 0.3, with the project's navigation in ascribe.nav.
+description: "Replace an Astro site's own list of pages, the `src/nav.ts` that `ascribe init` wrote in 0.3, with the project's navigation in `ascribe.nav`."
 ---
 
 A site that [`npx @ascribed/astro init`](../astro/index.md#set-up-a-site) started before 0.4 has its own list of pages, `src/nav.ts`, which the layout passes as `sidebar(entries, { nav, entry })`. It keeps working: the sidebar shows the list's groups in its order, and the build fails when the list leaves out a page, names a file that isn't one, or names a page twice. This guide moves the site over to the project's [navigation](index.md), so the site keeps no list of its own.

@@ -8,6 +8,7 @@ import {
   baseName,
   causes,
   nextChangedPage,
+  operationSpec,
   pageDetail,
   pageLabel,
   parseSource,
@@ -72,6 +73,34 @@ describe("pageDetail", () => {
     ).toBe("1 changed · via _fragments/prereqs.md");
   });
 
+  it("says where a page moved from, and that a link changed because a page moved", () => {
+    const none = { changed: 0, added: 0, removed: 0, moved: 0 };
+    expect(
+      pageDetail(
+        page({ moved_from: "guides/configure.md", own_file_changed: false, counts: none }),
+      ),
+    ).toBe("Moved from guides/configure.md · no change to the page");
+    expect(
+      pageDetail(
+        page({
+          moved_from: "guides/configure.md",
+          counts: { changed: 2, added: 0, removed: 0, moved: 0 },
+        }),
+      ),
+    ).toBe("Moved from guides/configure.md · 2 changed");
+    const moved_links = [{ from: "guides/configure.md", to: "guides/setup.md" }];
+    const linking = {
+      because: ["guides/setup.md"],
+      moved_links,
+      counts: { changed: 1, added: 0, removed: 0, moved: 0 },
+    };
+    expect(pageDetail(page({ ...linking, own_file_changed: false }))).toBe(
+      "1 changed · a link changed because guides/configure.md moved",
+    );
+    // Its own file changed too: the page that moved is listed itself.
+    expect(pageDetail(page(linking))).toBe("1 changed");
+  });
+
   it("says a page is new or removed, and what about the page itself changed", () => {
     expect(pageDetail(page({ status: "added" }))).toBe("New page");
     expect(pageDetail(page({ status: "removed" }))).toBe("Removed");
@@ -80,6 +109,17 @@ describe("pageDetail", () => {
         page({ counts: { changed: 0, added: 0, removed: 0, moved: 0 }, page_changed: ["title"] }),
       ),
     ).toBe("title changed");
+  });
+});
+
+describe("operationSpec", () => {
+  it("is the spec of an operation, and null for any other cause", () => {
+    expect(operationSpec("api/openapi.yaml#createWidget")).toBe("api/openapi.yaml");
+    expect(operationSpec("../api/openapi.yaml#post/widgets")).toBe("../api/openapi.yaml");
+    expect(operationSpec("_fragments/prereqs.md")).toBeNull();
+    expect(operationSpec("notes/c#.md")).toBeNull();
+    expect(operationSpec("code:app.py#main")).toBeNull();
+    expect(operationSpec("ascribe.toml")).toBeNull();
   });
 });
 
@@ -92,13 +132,20 @@ describe("causes", () => {
   it("points each cause at its file: a content path in the content root, ascribe.toml in the project", () => {
     expect(
       causes(
-        page({ own_file_changed: false, because: ["_fragments/prereqs.md", "ascribe.toml"] }),
+        page({
+          own_file_changed: false,
+          because: ["_fragments/prereqs.md", "api/openapi.yaml#createWidget", "ascribe.toml"],
+        }),
         roots,
       ),
     ).toEqual([
       {
         label: "_fragments/prereqs.md",
         path: path.join("/w", "docs-project", "docs", "_fragments", "prereqs.md"),
+      },
+      {
+        label: "api/openapi.yaml#createWidget",
+        path: path.join("/w", "docs-project", "api", "openapi.yaml"),
       },
       { label: "ascribe.toml", path: path.join("/w", "docs-project", "ascribe.toml") },
     ]);

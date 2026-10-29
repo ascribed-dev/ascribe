@@ -8,6 +8,10 @@ use std::path::{Path, PathBuf};
 use ascribe_core::Span;
 use ascribe_syntax::*;
 
+/// The problem [`check_tree`] gives a span outside the source or off a
+/// character boundary.
+const NOT_IN_SOURCE: &str = "not a valid range of the source";
+
 /// Checks every span in `doc` against `source`. Returns the problems found.
 pub fn check_tree(source: &str, doc: &ParsedDocument) -> Vec<String> {
     let mut c = Checker {
@@ -53,7 +57,7 @@ impl Checker<'_> {
             && self.source.is_char_boundary(span.start())
             && self.source.is_char_boundary(span.end());
         if !ok {
-            self.problem(what, span, "not a valid range of the source");
+            self.problem(what, span, NOT_IN_SOURCE);
         }
         ok
     }
@@ -99,6 +103,18 @@ impl Checker<'_> {
             self.problem(what, span, "starts with whitespace");
         } else if text.ends_with([' ', '\t', '\n', '\r']) {
             self.problem(what, span, "ends with whitespace");
+        }
+    }
+
+    /// A span that begins a line's worth of content but may end with its
+    /// last block's whitespace: it isn't empty and doesn't begin with
+    /// whitespace.
+    fn tight_start(&mut self, span: Span, what: &str) {
+        let text = self.text(span);
+        if text.is_empty() {
+            self.problem(what, span, "empty");
+        } else if text.starts_with([' ', '\t', '\n', '\r']) {
+            self.problem(what, span, "starts with whitespace");
         }
     }
 
@@ -280,18 +296,27 @@ impl Checker<'_> {
                 }
             }
             BlockKind::Container(c) => {
-                self.tight(span, "container");
+                // Unclosed, it ends where its last block does, which may end
+                // with whitespace, as a list item or code block can; the
+                // check of its end below holds that.
+                self.tight_start(span, "container");
                 self.opener(&c.opener, span, span.start(), "container opener");
                 self.blocks(&c.children, span, "container child");
                 self.closer(c.end.as_ref(), span);
+                // Unclosed, it ends with its last block, or a raw
+                // container with its last line that isn't blank.
                 let last = c
                     .children
                     .last()
-                    .map_or(c.opener.span.end(), |b| b.span.end());
+                    .map_or(c.opener.span.end(), |b| b.span.end())
+                    .max(c.raw.filter(|r| !r.is_empty()).map_or(0, |r| r.end()));
                 let want_end = c
                     .end
                     .as_ref()
                     .map_or(last.max(c.opener.span.end()), |e| e.span.end());
+                if let Some(raw) = c.raw {
+                    self.raw_lines(raw, c, span);
+                }
                 if span.end() != want_end {
                     self.problem(
                         "container",
@@ -301,7 +326,9 @@ impl Checker<'_> {
                 }
             }
             BlockKind::Group(g) => {
-                self.tight(span, "group");
+                // Unclosed, it ends where its last arm does, as a container
+                // does.
+                self.tight_start(span, "group");
                 if g.arms.is_empty() {
                     self.problem("group", span, "has no arms");
                 }
@@ -335,6 +362,35 @@ impl Checker<'_> {
             BlockKind::Title(_) => {
                 self.problem("block", span, "a node the structure pass doesn't produce");
             }
+        }
+    }
+
+    /// A raw container's lines: from the start of the line after the
+    /// opener, and, when the container is unclosed and they aren't empty,
+    /// through the last of them that isn't blank, without trailing spaces.
+    fn raw_lines(&mut self, raw: Span, c: &Container, parent: Span) {
+        // Empty, they sit at the start of the next line, past the span.
+        if !raw.is_empty() {
+            self.within(raw, parent, "raw lines");
+        }
+        let after = self
+            .source
+            .get(c.opener.span.end()..raw.start())
+            .unwrap_or("")
+            .trim_start_matches([' ', '\t']);
+        let at_line = matches!(after, "\n" | "\r" | "\r\n")
+            || (after.is_empty() && raw.start() == self.source.len());
+        if !at_line {
+            self.problem("raw lines", raw, "don't start on the line after the opener");
+        }
+        if c.end.is_none() && !raw.is_empty() {
+            self.tight_end(raw, "raw lines");
+        }
+    }
+
+    fn tight_end(&mut self, span: Span, what: &str) {
+        if self.text(span).ends_with([' ', '\t', '\n', '\r']) {
+            self.problem(what, span, "ends with whitespace");
         }
     }
 
@@ -490,6 +546,9 @@ impl Checker<'_> {
         }
         let expected = match (d.colon, &d.primary, d.unexpected) {
             (Some(_), None, None) => Form::Container,
+            // Attributes without their braces before the colon
+            // (`@note type=warning:`): the colon is inside the extra text.
+            (Some(c), None, Some(u)) if u.contains_span(c) => Form::Container,
             _ => Form::Line,
         };
         if d.form != expected {

@@ -13,8 +13,8 @@ use ascribe_core::{Issue, Location, Span, diagnostics};
 use ascribe_model::short_commit;
 use ascribe_resolve::openapi::operation_issue;
 use ascribe_resolve::{
-    ExampleStatus, RefKind, Resolution, SnippetUse, closest_fixes, destination_phrases,
-    destination_span, example, include_issue, include_target, reference_issue, reference_target,
+    ExampleStatus, RefKind, Resolution, SnippetUse, destination_phrases, destination_span, example,
+    include_fixes, include_issue, include_target, offer_closest, reference_issue, reference_target,
     resolve_reference, resolve_snippet, snippet_issues,
 };
 use ascribe_syntax::{DirectiveLine, Image, Inline, Link, LinkForm, Phrase};
@@ -29,11 +29,18 @@ impl Ctx<'_> {
     pub(super) fn check_include(&mut self, primary: &str, span: Span) {
         let include = include_target(primary, &self.file.path);
         let at = self.location(span);
-        if let Some(issue) =
+        let Some(mut issue) =
             include_issue(&include.written, include.target.as_ref(), self.project, at)
+        else {
+            return;
+        };
+        if issue.variant != Some("not-source")
+            && let Some(target) = &include.target
         {
-            self.report(issue);
+            issue.fixes =
+                include_fixes(&include.written, target, &self.file.path, self.project, at);
         }
+        self.report(issue);
     }
 
     /// A `@snippet`'s address names a file of a source, and a region of it
@@ -99,6 +106,57 @@ impl Ctx<'_> {
         } else {
             issue
         };
+        self.report(issue);
+    }
+
+    /// An `@operation`'s link (SPEC §4.13), checked as a link is (SPEC
+    /// §5.2), which must name an operation of a declared API: a link to a
+    /// declared spec with a fragment.
+    pub(super) fn check_operation(&mut self, primary: &str, span: Span) {
+        let path = &self.file.path;
+        let target = reference_target(RefKind::Link, primary, &[], path, self.model);
+        let resolution = resolve_reference(
+            RefKind::Link,
+            &target,
+            path,
+            self.model,
+            self.project,
+            self.project.file_system(),
+            self.project.layout(),
+        );
+        let at = Location::new(self.id, span);
+        if let Some(mut issue) =
+            reference_issue(RefKind::Link, &target, primary, &resolution, at, Some(span))
+        {
+            if issue.slug == diagnostics::LINK_TARGET_MISSING {
+                offer_closest(
+                    &mut issue,
+                    self.project.index(),
+                    path,
+                    &target,
+                    &resolution,
+                    self.id,
+                    Some(span),
+                );
+            }
+            self.report(issue);
+            return;
+        }
+        if matches!(resolution, Resolution::Operation { .. }) {
+            if let Some(issue) = operation_issue(
+                self.project.index(),
+                path,
+                &target,
+                &resolution,
+                at,
+                Some(span),
+            ) {
+                self.report(issue);
+            }
+            return;
+        }
+        let issue = Issue::new(diagnostics::OPERATION_LINK_NOT_OPERATION, at)
+            .with_arg("link", primary.to_owned());
         self.report(issue);
     }
 
@@ -188,15 +246,17 @@ impl Ctx<'_> {
             destination_at,
         ) {
             // A broken link is offered the targets `ascribe link` lists as
-            // closest. Looking for them takes the source index, so it's only
-            // made for a link that's broken.
+            // closest, and its message names one that clearly wins. Looking
+            // for them takes the source index, so it's only made for a link
+            // that's broken.
             let broken = [
                 diagnostics::LINK_TARGET_MISSING,
                 diagnostics::LINK_TO_FRAGMENT,
             ];
-            if broken.contains(&issue.slug) && destination_at.is_some() {
-                issue.fixes = closest_fixes(
-                    self.project.link_index(),
+            if broken.contains(&issue.slug) {
+                offer_closest(
+                    &mut issue,
+                    self.project.index(),
                     &self.file.path,
                     &target,
                     &resolution,
@@ -210,7 +270,7 @@ impl Ctx<'_> {
         // index read, so it's only asked of a link to one.
         if matches!(resolution, Resolution::Operation { .. })
             && let Some(issue) = operation_issue(
-                self.project.link_index(),
+                self.project.index(),
                 &self.file.path,
                 &target,
                 &resolution,
@@ -218,6 +278,21 @@ impl Ctx<'_> {
                 destination_at,
             )
         {
+            self.report(issue);
+        }
+    }
+
+    /// The code blocks marked as examples of an operation's request or
+    /// response: their links, checked as links are, and their code against
+    /// the bodies' schemas. The source index holds this file's text too, so
+    /// only its file ids need to become this project's.
+    pub(super) fn check_marked_examples(&mut self) {
+        let index = self.project.index();
+        for mut issue in index.example_problems(&self.file.path) {
+            issue.location.file = self.id;
+            for fix in &mut issue.fixes {
+                fix.file = self.id;
+            }
             self.report(issue);
         }
     }

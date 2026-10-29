@@ -4,8 +4,10 @@
 //! The page's text is the type's template, read through the project's
 //! [`FileSystem`], with its frontmatter's `type` set to the type's name and
 //! its `title` to the title given, and nothing else changed. A type with no
-//! template gives its frontmatter: its type, the title, and each other field
-//! it requires, empty. The implicit `page` type of a project that declares
+//! template gives its frontmatter: its type, the title, each other field
+//! it requires, empty, and `draft: true`. A page starts as a draft, which no
+//! build publishes, so what's left of its template is advice while it's
+//! written and an error once `draft` is taken out (#1005). The implicit `page` type of a project that declares
 //! none isn't named. The page goes where it's asked to, or, when it's asked
 //! for a folder or nothing, in that folder or the content root, named for
 //! the title slugged as a route's segments are.
@@ -13,9 +15,9 @@
 
 use ascribe_check::Project;
 use ascribe_core::{RelPath, Slugger as _};
-use ascribe_model::{ContentModel, ContentType, TYPE_KEY};
+use ascribe_model::{ContentModel, ContentType, Field, TYPE_KEY};
 use ascribe_resolve::slug::GithubSlugger;
-use ascribe_resolve::{FileSystem, Probe};
+use ascribe_resolve::{DRAFT, FileSystem, Probe};
 use ascribe_syntax::frontmatter_lines;
 
 /// A page to start: where it goes, and its text.
@@ -93,7 +95,9 @@ impl ascribe_core::Coded for StartError {
 
 /// The page of type `type_name` titled `title`, at `path` from the content
 /// root: a page's path, ending in `.md`, or a folder, where the page is named
-/// for the title. When it's `None`, the page goes in the content root.
+/// for the title. When it's `None`, the page goes in the content root. With
+/// no title, the page keeps the template's, which is left to fill in as its
+/// placeholders are, and needs a page's path.
 ///
 /// # Errors
 ///
@@ -103,7 +107,7 @@ impl ascribe_core::Coded for StartError {
 pub fn start(
     project: &Project,
     type_name: &str,
-    title: &str,
+    title: Option<&str>,
     path: Option<&RelPath>,
 ) -> Result<NewPage, StartError> {
     let model = project.model();
@@ -156,27 +160,50 @@ pub fn start(
 
 /// The text a page of `page_type` titled `title` starts with, wherever it
 /// goes: the type's template with the type and the title set, or its
-/// frontmatter when it has none.
+/// frontmatter when it has none. With no title, the template's stays, and a
+/// type with none has an empty one.
 ///
 /// # Errors
 ///
 /// A template that can't be read.
-pub fn text(project: &Project, page_type: &ContentType, title: &str) -> Result<String, StartError> {
+pub fn text(
+    project: &Project,
+    page_type: &ContentType,
+    title: Option<&str>,
+) -> Result<String, StartError> {
     Ok(match &page_type.template {
         Some(template) => {
-            let text = with_key(
-                &read_template(project.file_system(), &template.path)?,
-                "title",
-                &yaml_string(title),
-            );
-            if page_type.implicit {
+            let text = read_template(project.file_system(), &template.path)?;
+            let text = match title {
+                Some(title) => with_key(&text, "title", &yaml_string(title)),
+                None => text,
+            };
+            let text = if page_type.implicit {
                 text
             } else {
                 with_key(&text, TYPE_KEY, &type_value(&page_type.name))
-            }
+            };
+            as_draft(&text)
         }
         None => frontmatter_only(page_type, title),
     })
+}
+
+/// `text` with `draft: true` in its frontmatter: the template's `draft`
+/// set, or one added after its last field. A page starts as a draft, so
+/// what it has left of its template is advice until it publishes (#1005).
+fn as_draft(text: &str) -> String {
+    let Some((start, end)) = frontmatter(text) else {
+        return with_key(text, DRAFT, "true");
+    };
+    let lines = frontmatter_lines(&text[start..end]);
+    if lines
+        .iter()
+        .any(|l| l.key == Some(DRAFT) && l.indent == 0 && l.item.is_none())
+    {
+        return with_key(text, DRAFT, "true");
+    }
+    format!("{}{DRAFT}: true\n{}", &text[..end], &text[end..])
 }
 
 /// Whether a page of `page_type` can be started in `folder`, from the
@@ -228,7 +255,13 @@ fn not_of_type(model: &ContentModel, _page_type: &ContentType, path: &RelPath) -
 
 /// The file a page titled `title` is named: the title slugged as a route's
 /// segment is, with `.md`.
-fn file_name(page_type: &ContentType, title: &str) -> Result<String, StartError> {
+fn file_name(page_type: &ContentType, title: Option<&str>) -> Result<String, StartError> {
+    let Some(title) = title else {
+        return Err(StartError::NoPath {
+            type_name: page_type.name.clone(),
+            reason: "there's no title".to_owned(),
+        });
+    };
     // A fresh scope's first slug is the slug of the text alone, as a route's
     // segment is (`ascribe_resolve::astro`).
     let slug = GithubSlugger.new_scope().slug(title);
@@ -315,21 +348,31 @@ fn frontmatter(text: &str) -> Option<(usize, usize)> {
 /// The page a type with no template starts with: its type, its title, and
 /// each other field it requires, empty, in its frontmatter. Every type has a
 /// `title` field (SPEC §7.2).
-fn frontmatter_only(page_type: &ContentType, title: &str) -> String {
+fn frontmatter_only(page_type: &ContentType, title: Option<&str>) -> String {
     let mut lines = Vec::new();
     if !page_type.implicit {
         lines.push(format!("{TYPE_KEY}: {}", type_value(&page_type.name)));
     }
-    lines.push(format!("title: {}", yaml_string(title)));
-    for field in page_type
+    lines.push(match title {
+        Some(title) => format!("title: {}", yaml_string(title)),
+        None => "title:".to_owned(),
+    });
+    for field in empty_fields(page_type) {
+        lines.push(format!("{}:", field.name));
+    }
+    lines.push(format!("{DRAFT}: true"));
+    format!("---\n{}\n---\n", lines.join("\n"))
+}
+
+/// The fields a type with no template starts its frontmatter with, empty,
+/// for the writer to fill in: its required ones, but its title, which
+/// [`text`] sets.
+pub fn empty_fields(page_type: &ContentType) -> impl Iterator<Item = &Field> {
+    page_type
         .frontmatter
         .fields
         .iter()
         .filter(|f| f.required && f.name != "title")
-    {
-        lines.push(format!("{}:", field.name));
-    }
-    format!("---\n{}\n---\n", lines.join("\n"))
 }
 
 /// A type's name as the value of `type`: plain, as a page's is written,

@@ -4,6 +4,7 @@ import type { InventoryResult } from "../../src/shapes.js";
 import type { AgentFilesResult } from "../../src/ui/agentFiles.js";
 import type { EveryBuildResult } from "../../src/ui/checkEveryBuild.js";
 import {
+  addressesGroup,
   asYouTypeGroup,
   everyBuildGroup,
   inventoryCounts,
@@ -30,6 +31,7 @@ const facts = (everyBuild: EveryBuildResult, more: Partial<ProjectFacts> = {}): 
   state: "running",
   version: "0.4.0",
   everyBuild,
+  addresses: { kind: "off" },
   inventory: { orphans: 0, unused: 0 },
   agentFiles: { kind: "made", at: 7000, stale: [], error: null, current: true },
   now: 6000,
@@ -72,7 +74,7 @@ const made = (
   error: more.error ?? null,
   current,
   unsaved: more.unsaved ?? 0,
-  counted: { examples: nothing, reviews: nothing, permalinks: nothing, ...more.counted },
+  counted: { examples: nothing, rechecks: nothing, permalinks: nothing, ...more.counted },
 });
 
 describe("projectAnswer", () => {
@@ -214,9 +216,9 @@ describe("projectAnswer", () => {
         ),
       ).toDo,
     ).toBe(2);
-    // Overdue reviews from another day aren't counted, though their group is current.
+    // Overdue rechecks from another day aren't counted, though their group is current.
     expect(
-      projectAnswer(facts(made(true, clean, { counted: { reviews: found(2) } }), { now: DAY + 1 }))
+      projectAnswer(facts(made(true, clean, { counted: { rechecks: found(2) } }), { now: DAY + 1 }))
         .toDo,
     ).toBe(0);
   });
@@ -232,7 +234,7 @@ describe("projectAnswer", () => {
       [
         [PROJECT_KEYS.problems, "Problems"],
         [PROJECT_KEYS.examples, "Tested examples"],
-        [PROJECT_KEYS.reviews, "Reviews overdue"],
+        [PROJECT_KEYS.rechecks, "Rechecks overdue"],
         [PROJECT_KEYS.permalinks, "Permalinks behind"],
       ],
       [
@@ -277,7 +279,7 @@ describe("everyBuildGroup", () => {
   const keys = [
     PROJECT_KEYS.problems,
     PROJECT_KEYS.examples,
-    PROJECT_KEYS.reviews,
+    PROJECT_KEYS.rechecks,
     PROJECT_KEYS.permalinks,
   ];
   const check = { key: PROJECT_KEYS.checkEveryBuild, label: "Check Every Build" };
@@ -353,7 +355,7 @@ describe("everyBuildGroup", () => {
     const group = everyBuildGroup(
       facts(
         made(true, undefined, {
-          counted: { examples: found(3), reviews: found(1), permalinks: found(2) },
+          counted: { examples: found(3), rechecks: found(1), permalinks: found(2) },
         }),
       ),
     );
@@ -392,21 +394,21 @@ describe("everyBuildGroup", () => {
     );
   });
 
-  it("leaves overdue reviews alone a dash when the day changes, with their own note and the check", () => {
+  it("leaves overdue rechecks alone a dash when the day changes, with their own note and the check", () => {
     const group = everyBuildGroup(
-      facts(made(true, undefined, { counted: { reviews: found(1) } }), { now: DAY + 1 }),
+      facts(made(true, undefined, { counted: { rechecks: found(1) } }), { now: DAY + 1 }),
     );
     expect(group).toMatchObject({
       state: "current",
       note: "checked yesterday at 5s",
       action: null,
     });
-    expect(countOf(group, PROJECT_KEYS.reviews)).toEqual({
-      key: PROJECT_KEYS.reviews,
-      label: "Reviews overdue",
+    expect(countOf(group, PROJECT_KEYS.rechecks)).toEqual({
+      key: PROJECT_KEYS.rechecks,
+      label: "Rechecks overdue",
       state: "outOfDate",
       value: "—",
-      note: "checked on day 0; reviews fall due by the day",
+      note: "checked on day 0; rechecks fall due by the day",
       opens: false,
       action: check,
     });
@@ -470,6 +472,76 @@ describe("asYouTypeGroup", () => {
   });
 });
 
+describe("addressesGroup", () => {
+  const base = { requested: "main", commit: "abc", merge_base: "abc" };
+
+  it("isn't shown for a project without ascribe.addresses, which compares nothing", () => {
+    expect(addressesGroup(facts(made(true)))).toBeUndefined();
+    const groups = projectAnswer(facts(made(true))).health.map((group) => group.key);
+    expect(groups).toEqual(["everyBuild", "asYouType", "lastSave"]);
+  });
+
+  it("counts the pages lost against the base, current between checks, after Every build", () => {
+    const answer = projectAnswer(
+      facts(made(true), { addresses: { kind: "made", at: 5000, lost: 1, base } }),
+    );
+    expect(answer.health.map((group) => group.key)).toEqual([
+      "everyBuild",
+      "addresses",
+      "asYouType",
+      "lastSave",
+    ]);
+    const group = answer.health[1];
+    expect(group).toMatchObject({
+      label: "Against the base",
+      state: "current",
+      note: "main at 5s",
+      action: null,
+    });
+    expect(group?.counts).toEqual([
+      expect.objectContaining({
+        key: PROJECT_KEYS.addresses,
+        label: "Addresses lost",
+        value: "1 page",
+        state: "current",
+        opens: true,
+      }),
+    ]);
+    // Even when the check of every build is out of date: a page deleted since.
+    const out = projectAnswer(
+      facts(made(false), { addresses: { kind: "made", at: 5000, lost: 2, base } }),
+    );
+    expect(out.health[1]?.counts[0]).toMatchObject({ state: "current", value: "2 pages" });
+    const none = addressesGroup(
+      facts(made(true), { addresses: { kind: "made", at: 5000, lost: 0, base } }),
+    );
+    expect(none?.counts[0]).toMatchObject({ state: "none", value: "0", opens: false });
+  });
+
+  it("shows a dash while the server compares, while it isn't running, and when the base can't be read", () => {
+    expect(addressesGroup(facts(made(true), { addresses: { kind: "unknown" } }))).toMatchObject({
+      state: "running",
+      note: "comparing…",
+      counts: [{ value: "—" }],
+    });
+    expect(
+      addressesGroup(facts(made(true), { addresses: { kind: "unknown" }, state: "stopped" })),
+    ).toMatchObject({
+      state: "unknown",
+      note: "compared while the language server runs: it's not started",
+    });
+    expect(
+      addressesGroup(
+        facts(made(true), { addresses: { kind: "made", at: 5000, lost: null, base: null } }),
+      ),
+    ).toMatchObject({
+      state: "outOfDate",
+      note: "not compared at 5s: the Problems panel says why",
+      counts: [{ value: "—" }],
+    });
+  });
+});
+
 describe("lastSaveGroup", () => {
   const files = (agentFiles: AgentFilesResult) => lastSaveGroup(facts(made(true), { agentFiles }));
   const check = { key: PROJECT_KEYS.checkAgentFiles, label: "Check Agent Files" };
@@ -529,12 +601,17 @@ describe("lastSaveGroup", () => {
     });
   });
 
-  it("reads the stale files from ascribe agents sync --check", () => {
-    expect(
-      staleFiles(
-        "stale      AGENTS.md\nup to date .claude/skills/ascribe/SKILL.md\r\nstale      ../.github/copilot-instructions.md\n",
-      ),
-    ).toEqual(["AGENTS.md", "../.github/copilot-instructions.md"]);
+  it("reads the stale files from ascribe agents sync --check --format json", () => {
+    const files = [
+      { path: "AGENTS.md", changed: true, read_by: [] },
+      { path: ".claude/skills/ascribe/SKILL.md", changed: false, read_by: [] },
+      { path: "../.github/copilot-instructions.md", changed: true, read_by: [] },
+    ];
+    expect(staleFiles(JSON.stringify({ check: true, files }))).toEqual([
+      "AGENTS.md",
+      "../.github/copilot-instructions.md",
+    ]);
+    expect(staleFiles("not JSON")).toEqual([]);
   });
 
   it("asks before Sync Agent Files, naming the files it would change", () => {

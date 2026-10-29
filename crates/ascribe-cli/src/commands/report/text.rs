@@ -5,15 +5,16 @@
 
 use std::io::{self, Write};
 
-use ascribe_check::links::{Answer, Unconfirmed};
 use ascribe_check::{Acknowledged, Diagnostic, Next};
 use ascribe_core::Date;
 use ascribe_model::{ListingFrom, ListingLevel};
 use ascribe_query::report::{
-    Agents, Builds, Inventory, Links, NotRun, Pages, Problems, Ran, Report,
+    Builds, Delivery, Inventory, Links, NotRun, Pages, Problems, Ran, Report,
 };
+use ascribe_report::links::{Answer, Unconfirmed};
 use ascribe_resolve::pages::PageRecord;
 
+use crate::commands::drift::escape;
 use crate::report::{Counts, FileTable};
 
 /// How the report is written.
@@ -99,9 +100,9 @@ fn write_sections(
         gap(&mut w)?;
         w.links(l)?;
     }
-    if let Some(a) = &report.agents {
+    if let Some(a) = &report.delivery {
         gap(&mut w)?;
-        w.agents(a)?;
+        w.delivery(a)?;
     }
     Ok(())
 }
@@ -217,11 +218,18 @@ impl Writer<'_> {
         self.heading("Problems")?;
         let counts = Counts::of(&p.diagnostics);
         let mut line = counts_words(counts);
+        let mut aside = Vec::new();
         if !p.acknowledged.is_empty() {
-            line.push_str(&format!(
-                ", and {} acknowledged as intended",
-                p.acknowledged.len()
-            ));
+            aside.push(format!("{} acknowledged as intended", p.acknowledged.len()));
+        }
+        if p.baselined > 0 {
+            aside.push(format!("{} in the baseline", p.baselined));
+        }
+        if let Some((last, rest)) = aside.split_last() {
+            for part in rest {
+                line.push_str(&format!(", {part}"));
+            }
+            line.push_str(&format!(", and {last}"));
         }
         self.line(&format!("{}.", capitalized(&line)))?;
         self.problems_since(p)?;
@@ -326,8 +334,25 @@ impl Writer<'_> {
                 e.unobserved,
             ))?;
         }
+        if let Some(apis) = i.apis.as_ref().filter(|a| !a.is_empty()) {
+            let counts = apis
+                .iter()
+                .map(|a| {
+                    format!(
+                        "{}: {} {}, {} linked, {} with a checked example",
+                        self.code(&a.api),
+                        a.operations,
+                        plural(a.operations, "operation", "operations"),
+                        a.linked,
+                        a.examples,
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+            self.line(&format!("APIs: {counts}."))?;
+        }
         for (label, list) in [
-            ("Overdue reviews", &i.overdue),
+            ("Overdue rechecks", &i.overdue),
             ("Pages nothing links to", &i.orphans),
             ("Entries nothing uses", &i.unused),
         ] {
@@ -349,39 +374,80 @@ impl Writer<'_> {
                 self.line(&format!("{build} leaves out nothing another build keeps."))?;
                 continue;
             }
+            // Each mark is counted once, by what it takes out.
+            let mut parts = Vec::new();
+            if !left.pages.is_empty() {
+                parts.push(counted(left.pages.len(), "page", "pages"));
+            }
+            for (scope, one, many) in SCOPES {
+                let n = left.content.iter().filter(|c| c.scope == scope).count();
+                if n > 0 {
+                    parts.push(counted(n, one, many));
+                }
+            }
             self.line(&format!(
-                "{build} leaves out {} and {} that another build keeps:",
-                counted(left.pages.len(), "page", "pages"),
-                counted(left.content.len(), "piece of content", "pieces of content"),
+                "{build} leaves out {} that another build keeps:",
+                names(&parts, str::to_owned),
             ))?;
             let mut lines: Vec<String> = left
                 .pages
                 .iter()
                 .map(|p| {
+                    let why = match p.kind {
+                        "variant" => "not this build's variant",
+                        _ => "not available",
+                    };
+                    let key = match p.kind {
+                        "variant" => "variant",
+                        _ => "available",
+                    };
+                    let mark = if p.mark.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" ({})", self.code(&format!("{key}: {}", p.mark)))
+                    };
                     format!(
-                        "{}: {}; {} publishes it",
+                        "{}: {why}{mark}; {} {} it",
                         self.code(p.path.as_str()),
-                        p.why,
-                        names(&p.kept_by, |n| self.code(n))
+                        names(&p.kept_by, |n| self.code(n)),
+                        plural(p.kept_by.len(), "publishes", "publish"),
                     )
                 })
                 .collect();
             lines.extend(left.content.iter().map(|c| {
-                let start = self
+                let line = self
                     .files
-                    .position(c.location.file, c.location.span.start());
-                let at = format!("{}:{}", self.files.path(c.location.file), start.line);
-                let on = if self.files.path(c.location.file) == c.page.as_str() {
-                    String::new()
+                    .position(c.location.file, c.location.span.start())
+                    .line;
+                let heading = c.heading.as_ref().map_or(String::new(), |h| {
+                    if self.style.markdown {
+                        format!(" § {}", escape(h))
+                    } else {
+                        format!(" § {h}")
+                    }
+                });
+                // A variant arm's reason names only what the build shows.
+                let why = if c.kind == "variant" {
+                    let mut chars = c.why.chars();
+                    let shows: String = chars
+                        .next()
+                        .map(|first| first.to_lowercase().chain(chars).collect())
+                        .unwrap_or_default();
+                    format!("variant arm the build doesn't show (it {shows})")
                 } else {
-                    format!(", on {}", self.code(c.page.as_str()))
+                    c.why.clone()
+                };
+                // A mark in a fragment says which, so it can be found.
+                let at = if c.in_page {
+                    format!("line {line}")
+                } else {
+                    self.code(&format!("{}:{line}", self.files.path(c.location.file)))
                 };
                 format!(
-                    "{} ({}{on}): {}; {} keeps it",
-                    self.code(&at),
-                    c.kind,
-                    c.why,
-                    names(&c.kept_by, |n| self.code(n))
+                    "{}{heading} ({at}): {why}; {} {} it",
+                    self.code(c.page.as_str()),
+                    names(&c.kept_by, |n| self.code(n)),
+                    plural(c.kept_by.len(), "keeps", "keep"),
                 )
             }));
             self.items(&lines, |_, line| line.clone())?;
@@ -611,14 +677,14 @@ impl Writer<'_> {
         )
     }
 
-    fn agents(&mut self, a: &Ran<Agents>) -> io::Result<()> {
-        self.heading("Agents")?;
-        let agents = match a {
+    fn delivery(&mut self, a: &Ran<Delivery>) -> io::Result<()> {
+        self.heading("Delivery")?;
+        let delivery = match a {
             Ran::NotRun(why) => return self.not_run(why),
-            Ran::Done(agents) => agents,
+            Ran::Done(delivery) => delivery,
         };
         let mut counts: Vec<(&str, usize)> = Vec::new();
-        for r in &agents.results {
+        for r in &delivery.results {
             let status = r.status.as_str();
             match counts.iter_mut().find(|(s, _)| *s == status) {
                 Some((_, n)) => *n += 1,
@@ -628,24 +694,24 @@ impl Writer<'_> {
         let said: Vec<String> = counts.iter().map(|(s, n)| format!("{n} {s}")).collect();
         self.line(&format!(
             "The delivery spec's checks on {}: {}.",
-            self.code(&agents.site),
+            self.code(&delivery.site),
             said.join(", ")
         ))?;
-        self.agents_since(agents)?;
-        if agents.diagnostics.is_empty() {
+        self.delivery_since(delivery)?;
+        if delivery.diagnostics.is_empty() {
             self.line("Nothing for the hosting or Ascribe to change.")?;
         } else {
             self.line("To change:")?;
-            self.items(&agents.diagnostics, |w, d| w.diagnostic(d))?;
+            self.items(&delivery.diagnostics, |w, d| w.diagnostic(d))?;
         }
-        let pages: Vec<String> = agents
+        let pages: Vec<String> = delivery
             .results
             .iter()
             .filter(|r| {
                 r.status.is_finding()
                     && matches!(
-                        ascribe_check::site::owner(&r.id),
-                        ascribe_check::site::Owner::Pages(_)
+                        ascribe_report::site::owner(&r.id),
+                        ascribe_report::site::Owner::Pages(_)
                     )
             })
             .map(|r| self.code(&r.id))
@@ -663,17 +729,17 @@ impl Writer<'_> {
     /// any more: `23 checks: 21 passing, 2 failing, 1 of them failing since
     /// 9 October: `content-negotiation`.` Nothing on a first run, or when
     /// nothing fails now or did then.
-    fn agents_since(&mut self, agents: &Agents) -> io::Result<()> {
+    fn delivery_since(&mut self, delivery: &Delivery) -> io::Result<()> {
         let (Some(since), Some(new), Some(resolved)) =
-            (agents.previous_run, &agents.new, agents.resolved)
+            (delivery.previous_run, &delivery.new, delivery.resolved)
         else {
             return Ok(());
         };
         let since = day(since);
-        let results = &agents.results;
+        let results = &delivery.results;
         let passing = results
             .iter()
-            .filter(|r| r.status == ascribe_check::site::Status::Pass)
+            .filter(|r| r.status == ascribe_report::site::Status::Pass)
             .count();
         let failing = results.iter().filter(|r| r.status.is_finding()).count();
         if failing == 0 && resolved == 0 {
@@ -691,15 +757,17 @@ impl Writer<'_> {
             (_, 0) => line.push_str(&format!(", none of them new since {since}")),
             (_, k) => line.push_str(&format!(", {k} of them failing since {since}")),
         }
+        // The new checks are named next to what says they're new, before
+        // what's no longer failing, which they aren't.
+        if !new.is_empty() {
+            let ids: Vec<String> = new.iter().map(|id| self.code(id)).collect();
+            line.push_str(&format!(": {}", ids.join(", ")));
+        }
         if resolved > 0 {
             line.push_str(&format!(
                 "; {resolved} that failed on {since} no longer {}",
                 plural(resolved, "fails", "fail")
             ));
-        }
-        if !new.is_empty() {
-            let ids: Vec<String> = new.iter().map(|id| self.code(id)).collect();
-            line.push_str(&format!(": {}", ids.join(", ")));
         }
         line.push('.');
         self.line(&line)
@@ -754,6 +822,15 @@ fn counts_words(counts: Counts) -> String {
 fn day(date: Date) -> String {
     format!("{} {}", date.day(), date.month_name())
 }
+
+/// What a mark of `builds` takes out, in the order a build's line counts
+/// them: its scope, and the words for one and for several.
+const SCOPES: [(&str, &str, &str); 4] = [
+    ("section", "section", "sections"),
+    ("block", "block", "blocks"),
+    ("row", "table row", "table rows"),
+    ("arm", "variant arm", "variant arms"),
+];
 
 fn plural<'a>(n: usize, one: &'a str, many: &'a str) -> &'a str {
     if n == 1 { one } else { many }

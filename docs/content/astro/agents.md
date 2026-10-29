@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Publish for AI agents
-description: Publish llms.txt and a Markdown version of each page with an Astro site, so an AI agent reading the docs gets Markdown and an index to choose pages from.
+description: "Publish `llms.txt` and a Markdown version of each page with an Astro site, so an AI agent reading the docs gets Markdown and an index to choose pages from."
 permalink: publish-for-agents
 ---
 
@@ -26,8 +26,10 @@ An AI agent reading your docs does better with Markdown than with HTML, and with
 4. Build the site, with `npx astro dev` or `npx astro build`. Each build publishes:
 
    - **`llms.txt`** at the base path: every page, in the sections and order of the project's [navigation](../navigation/index.md), as its title, a link to its Markdown, and its description. Past 50,000 characters it's split into one `llms.txt` per top section, which the root file links to.
-   - **Each page's Markdown** at its URL with `.md`: `/docs/guides/setup` is also `/docs/guides/setup.md`.
+   - **Each page's Markdown** at its URL with `.md`: `/docs/guides/setup` is also `/docs/guides/setup.md`. It opens with a line pointing at `llms.txt`, and after the title says what the page is for, its type and its description, as `> How-to · Set up sync between two machines.`, so an agent that lands on the page from a search sees what the site shows under the title. Its links to other pages lead to their Markdown too, and a link to a heading to that heading's anchor there, so an agent that follows a link stays in Markdown.
    - **A pointer** at the top of each page to both, which the elements' stylesheet hides from sight but not from an agent reading the page.
+
+   With [`[releases]`](../content-model/variation.md#121-releasestarget), `llms.txt`'s summary and each `.md`'s opening line also say which release the build describes, `This documentation describes Quill 2.4. Anything marked planned isn't in that release yet.`, so an agent helping someone on that release knows that a page without an availability mark applies to them.
 
 5. Open `llms.txt` at the base path, `http://localhost:4321/docs/llms.txt` in `astro dev`, and a page's `.md`.
 6. [Serve the Markdown versions](serve-markdown.md): what your host sends with them is the rest of the spec.

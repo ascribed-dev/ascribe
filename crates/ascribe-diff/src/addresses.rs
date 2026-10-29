@@ -28,17 +28,7 @@ impl BaseAddresses {
     /// The base as a message names it: the revision asked for, and its
     /// commit when that's something else.
     pub fn named(&self) -> String {
-        named(&self.base)
-    }
-}
-
-/// `base` as a message names it.
-fn named(base: &Base) -> String {
-    let short = &base.commit[..base.commit.len().min(12)];
-    if base.requested.starts_with(short) {
-        format!("`{}`", base.requested)
-    } else {
-        format!("`{}` ({short})", base.requested)
+        self.base.named()
     }
 }
 
@@ -61,13 +51,25 @@ pub fn base_addresses(
     let base = repo.base(requested, exact)?;
     let published = match Revision::read(&repo, base.compared())? {
         Some(revision) => {
-            let mut published = Published::of(&revision.project());
+            let mut published = Published::of(revision.workspace().snapshot().index());
             published.renames = renames(&repo, base.compared(), content_root)?;
             Some(published)
         }
         None => None,
     };
     Ok(BaseAddresses { base, published })
+}
+
+/// Whether the project at `root` can't have published anything yet, by
+/// git: it isn't in a repository, or the repository has no commit. The
+/// default base can't be read then, and there's nothing it could have
+/// published (decision #1016), so a project `ascribe init` just started
+/// isn't told the addresses weren't compared.
+pub fn before_history(root: &Path) -> bool {
+    match Repository::discover(root) {
+        Ok(repo) => !repo.has_commit(),
+        Err(e) => matches!(e, DiffError::NotARepository { .. }),
+    }
 }
 
 /// The source files git sees renamed between `commit` and the working tree,

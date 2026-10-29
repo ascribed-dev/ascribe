@@ -11,9 +11,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use ascribe_check::{Project, SourceFile, check_files};
+use ascribe_check::side_files::SIDE_FILES;
+use ascribe_check::{Project, check_files};
 use ascribe_core::{FileId, RelPath};
 use ascribe_resolve::{Change, IncrementalProject, Layout, MemoryFs, Snapshot};
+use ascribe_workspace::WorkspaceSnapshot;
 
 const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n";
 
@@ -33,23 +35,16 @@ fn incremental(files: &[(&str, &str)]) -> IncrementalProject {
 
 /// An `ascribe_check::Project` over a snapshot's files, with the snapshot's ids.
 fn check_project(snapshot: &Snapshot) -> Project {
-    let sources = snapshot
-        .files()
-        .map(|f| SourceFile {
-            id: f.file,
-            path: f.path.clone(),
-            text: f.source.to_string(),
-            unreadable: None,
-        })
-        .collect();
     let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("a model");
-    Project::from_parts(
+    let fs = Arc::new(MemoryFs::new(snapshot.layout()));
+    Project::new(WorkspaceSnapshot::of_index(
         PathBuf::from("/project"),
-        path("docs"),
-        model,
+        Arc::new(model),
         MODEL.to_owned(),
-        sources,
-    )
+        snapshot.shared_project(),
+        SIDE_FILES,
+        fs,
+    ))
 }
 
 #[test]
@@ -60,8 +55,17 @@ fn a_fresh_load_numbers_files_as_check_does() {
         ("sub/c.md", "x\n"),
     ];
     let inc = incremental(&files);
-    let sources = Project::from_sources(files.iter().map(|(p, t)| (path(p), (*t).to_owned())));
-    for source in &sources {
+    let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("a model");
+    let workspace = ascribe_check::in_memory(
+        PathBuf::from("/nonexistent-ascribe-project"),
+        path("docs"),
+        model,
+        MODEL.to_owned(),
+        files.iter().map(|(p, t)| (path(p), (*t).to_owned())),
+    );
+    let snapshot = workspace.snapshot();
+    let sources = snapshot.sources();
+    for source in sources {
         assert_eq!(
             inc.snapshot().file(&source.path).map(|f| f.file),
             Some(source.id),

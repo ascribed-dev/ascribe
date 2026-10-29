@@ -1,0 +1,15 @@
+description: >-
+  A JSON block marked as an operation's request or response is checked
+  against that body's schema, with the schema's `$ref`s into the same file
+  followed, and each disagreement is an error at its place in the block: a
+  value at the value, a property the schema doesn't allow at its key, and a
+  missing required property at its object's opening brace. JSON Schema's
+  formats are asserted.
+spec: ["7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: api-example-schema-mismatch, file: index.md, line: 8, column: 11}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 14, column: 1}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 16, column: 3}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 17, column: 13}

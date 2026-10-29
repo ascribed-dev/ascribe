@@ -1,6 +1,7 @@
 // The files that map the repository for someone starting cold (ARCHITECTURE.md,
 // AGENTS.md, the crates' READMEs, the decisions and their folder, and the change checklists) name paths and commands, and each one
-// must exist: a map that points at a moved file sends its reader nowhere.
+// must exist: a map that points at a moved file sends its reader nowhere. A
+// link to a heading of a Markdown file in the repository must find it.
 //
 // A path is a relative link, or a code span whose first segment is a file or
 // folder next to the file or at the repository's root; it must be a file git
@@ -224,6 +225,51 @@ test("every path the map names exists", () => {
   }
   expect(missing).toEqual([]);
   expect(checked).toBeGreaterThan(100);
+});
+
+/** The ids GitHub gives a Markdown file's headings, outside its code blocks. */
+function headings(markdown: string): Set<string> {
+  const ids = new Set<string>();
+  for (const [, text = ""] of split(markdown).prose.matchAll(/^#{1,6} +(.+?) *#* *$/gm)) {
+    const id = text
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N} _-]/gu, "")
+      .replace(/ /g, "-");
+    let n = 0;
+    while (ids.has(n === 0 ? id : `${id}-${n}`)) n++;
+    ids.add(n === 0 ? id : `${id}-${n}`);
+  }
+  return ids;
+}
+
+test("every link to a heading of a Markdown file in the repository finds it", () => {
+  // The map sends a reader to a section, as AGENTS.md's table of changes does
+  // to the checklists. A page of the docs is left out: it's an Ascribe page,
+  // and its ids are Ascribe's, which `ascribe check` holds.
+  const missing: string[] = [];
+  let checked = 0;
+  for (const file of files()) {
+    const markdown = readFileSync(path.join(root, file), "utf8");
+    for (const [, to = "", id = ""] of split(markdown).prose.matchAll(
+      /\]\(([^)\s#]*)#([^)\s]+)\)/g,
+    )) {
+      if (/^[a-z]+:/.test(to)) continue;
+      const target =
+        to === "" ? file : path.posix.join(path.posix.dirname(file), decodeURIComponent(to));
+      if (
+        !target.endsWith(".md") ||
+        target.startsWith("docs/") ||
+        !isTracked(path.join(root, target))
+      )
+        continue;
+      checked++;
+      if (!headings(readFileSync(path.join(root, target), "utf8")).has(decodeURIComponent(id))) {
+        missing.push(`${file}: ${target}#${id}`);
+      }
+    }
+  }
+  expect(missing).toEqual([]);
+  expect(checked).toBeGreaterThan(10);
 });
 
 test("every command the map names runs something that exists", () => {

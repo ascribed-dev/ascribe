@@ -1118,6 +1118,11 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             "\n[listing]\ndefault = \"unquoted\"\n",
         ),
         ("memo-empty", "\n@memo:\n@end\nText.\n", ""),
+        (
+            "github-alert",
+            "\n> [!TIP]\n> Quill runs in the browser too.\n",
+            "",
+        ),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()
@@ -1131,6 +1136,9 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         // It's reported in `ascribe.toml`, not a page:
         // `a_repeated_field_is_deleted_from_ascribe_toml` applies its fix.
         .filter(|e| e.slug.as_str() != "frontmatter-field-repeated")
+        // It needs a spec, a file of its own:
+        // `a_link_by_method_and_path_is_fixed_to_the_id` applies its fix.
+        .filter(|e| e.slug.as_str() != "link-operation-by-path")
         // Theirs edit `ascribe.nav`, from the file or from a page:
         // `nav_file.rs` applies them and sees the problem go.
         .filter(|e| {
@@ -1187,6 +1195,47 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             action["title"]
         );
     }
+}
+
+#[test]
+fn a_link_by_method_and_path_is_fixed_to_the_id() {
+    let f = quill();
+    write(
+        &f,
+        "ascribe.toml",
+        &format!(
+            "{}\n[apis.public]\nspec = \"api/openapi.yaml\"\nreference = {{ renderer = \"redoc\", at = \"/api/\" }}\n",
+            read(&f, "ascribe.toml")
+        ),
+    );
+    std::fs::create_dir_all(f.path("api")).expect("api");
+    write(
+        &f,
+        "api/openapi.yaml",
+        "openapi: 3.1.0\ninfo: { title: Keys, version: \"1\" }\npaths:\n  /keys/{id}:\n    get:\n      operationId: getKey\n",
+    );
+    let path = f.path("docs/keys.md");
+    let text = format!(
+        "{}\nFetch it with [Get a key](../api/openapi.yaml#get/keys/{{id}}).\n",
+        read(&f, "docs/keys.md")
+    );
+    write(&f, "docs/keys.md", &text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let diag = diagnostic(&client, &path, "link-operation-by-path");
+    let action = actions(&mut client, &path, diag)
+        .into_iter()
+        .find(|action| action.get("edit").is_some())
+        .expect("a quick fix");
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    notify_changed(&mut client, &changed);
+    assert!(read(&f, "docs/keys.md").contains("[Get a key](../api/openapi.yaml#getKey)"));
+    assert!(
+        !client
+            .diagnostics(&path)
+            .iter()
+            .any(|d| support::slug(d) == "link-operation-by-path")
+    );
 }
 
 /// The page `body` gives, after its HTML comment's **Rewrite as a memo**,
@@ -1305,7 +1354,9 @@ fn fix_all_makes_the_edits_check_fix_makes() {
     let fixed = apply_edit(FIX_ME, edits);
 
     // `ascribe check --editor-build --fix`, as the command takes them.
-    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).expect("a project");
+    let project = ascribe_check::load(&f.path("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .expect("a project");
     let mut diagnostics = ascribe_check::diagnose_editor_build(&project, None).diagnostics;
     diagnostics.sort_by_key(|d| d.severity == ascribe_check::Severity::Advice);
     let files = ascribe_check::fix::safe_fixes(&project, &f.path("ascribe.toml"), &diagnostics);
@@ -1408,7 +1459,9 @@ fn every_safe_fix_in_the_project_is_one_edit_over_unsaved_text() {
     let answer = project_edit(&mut client, &f, "fixAll");
 
     // check --fix's edits to the page on disk, as the editor's build has it.
-    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).expect("a project");
+    let project = ascribe_check::load(&f.path("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .expect("a project");
     let mut diagnostics = ascribe_check::diagnose_editor_build(&project, None).diagnostics;
     diagnostics.sort_by_key(|d| d.severity == ascribe_check::Severity::Advice);
     let files = ascribe_check::fix::safe_fixes(&project, &f.path("ascribe.toml"), &diagnostics);
@@ -1591,16 +1644,19 @@ fn moving_a_page_records_the_move_in_the_addresses_file_when_there_is_one() {
             .expect("will rename");
         apply_workspace_edit(f, &result)
     };
+    // A permalink moved to a heading on the page follows it.
     let f = quill();
     write(
         &f,
         "ascribe.addresses",
-        "version = 1\n\n[moved]\n\n[retired]\n",
+        "version = 1\n\n[moved]\n\"go:old-rotate\" = \"keys.md#rotate-keys\"\n\n[retired]\n",
     );
     let changed = rename(&f);
     assert!(changed.contains(&f.path("ascribe.addresses")));
     assert!(
-        read(&f, "ascribe.addresses").contains("[moved]\n\"keys.md\" = \"api-keys.md\"\n"),
+        read(&f, "ascribe.addresses").contains(
+            "[moved]\n\"go:old-rotate\" = \"api-keys.md#rotate-keys\"\n\"keys.md\" = \"api-keys.md\"\n"
+        ),
         "{}",
         read(&f, "ascribe.addresses")
     );
@@ -1613,11 +1669,12 @@ fn moving_a_page_records_the_move_in_the_addresses_file_when_there_is_one() {
 
 #[test]
 fn renaming_a_page_s_id_records_it_in_the_addresses_file_when_there_is_one() {
+    // A permalink moved to the heading follows its id.
     let f = quill();
     write(
         &f,
         "ascribe.addresses",
-        "version = 1\n\n[moved]\n\n[retired]\n",
+        "version = 1\n\n[moved]\n\"go:old-rotate\" = \"keys.md#rotate-keys\"\n\n[retired]\n",
     );
     let page = f.path("docs/keys.md");
     let mut client = Client::start(&f.root());
@@ -1638,7 +1695,7 @@ fn renaming_a_page_s_id_records_it_in_the_addresses_file_when_there_is_one() {
     assert!(changed.contains(&f.path("ascribe.addresses")), "{result}");
     assert!(
         read(&f, "ascribe.addresses")
-            .contains("[moved]\n\"keys.md#rotate-keys\" = \"keys.md#rotate-a-key\"\n"),
+            .contains("[moved]\n\"go:old-rotate\" = \"keys.md#rotate-a-key\"\n\"keys.md#rotate-keys\" = \"keys.md#rotate-a-key\"\n"),
         "{}",
         read(&f, "ascribe.addresses")
     );

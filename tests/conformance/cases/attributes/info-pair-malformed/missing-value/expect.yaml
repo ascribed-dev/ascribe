@@ -1,0 +1,9 @@
+description: >-
+  A key and `=` with no value isn't a pair, and is reported, even when a
+  pair follows after a space.
+spec: ["3.3.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: info-pair-malformed, line: 5, column: 9, severity: warning}
+  - {slug: info-pair-malformed, line: 5, column: 34}

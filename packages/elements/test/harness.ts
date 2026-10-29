@@ -55,6 +55,13 @@ export interface PageOptions {
   css?: boolean;
   /** Make `localStorage` throw, as in a private window with storage blocked. */
   blockStorage?: boolean;
+  /**
+   * The page's clipboard: `record`, the default, a stand-in that keeps what's
+   * written in `window.copied` (the test page isn't a secure context, so it
+   * has no clipboard of its own); `refuse`, one whose writes fail; `none`, no
+   * clipboard.
+   */
+  clipboard?: "record" | "refuse" | "none";
 }
 
 /** Serve `body` from a fixed origin, so `localStorage` works, with the library files from disk. */
@@ -63,8 +70,19 @@ export async function open(
   body: string,
   options: PageOptions = {},
 ): Promise<Page> {
-  const { script = true, css = true, blockStorage = false } = options;
+  const { script = true, css = true, blockStorage = false, clipboard = "record" } = options;
   const page = await context.newPage();
+  await page.addInitScript((kind) => {
+    const writeText = async (text: string): Promise<void> => {
+      if (kind === "refuse") throw new DOMException("refused", "NotAllowedError");
+      (window as unknown as { copied: string[] }).copied.push(text);
+    };
+    (window as unknown as { copied: string[] }).copied = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: kind === "none" ? undefined : { writeText },
+    });
+  }, clipboard);
   if (blockStorage) {
     await page.addInitScript(() => {
       Object.defineProperty(window, "localStorage", {
@@ -109,17 +127,23 @@ export const TABS = `
 
 <ascribe-tab value="npm" label="npm">
 
+<p class="ascribe-tab-label">npm</p>
+
 Install with npm.
 
 </ascribe-tab>
 
 <ascribe-tab value="pnpm yarn" label="pnpm / yarn">
 
+<p class="ascribe-tab-label">pnpm / yarn</p>
+
 Install with pnpm or yarn.
 
 </ascribe-tab>
 
 <ascribe-tab value="bun" label="bun">
+
+<p class="ascribe-tab-label">bun</p>
 
 Install with bun.
 
@@ -131,11 +155,15 @@ Install with bun.
 
 <ascribe-tab value="pnpm" label="pnpm">
 
+<p class="ascribe-tab-label">pnpm</p>
+
 Configure with pnpm.
 
 </ascribe-tab>
 
 <ascribe-tab value="npm" label="npm">
+
+<p class="ascribe-tab-label">npm</p>
 
 Configure with npm.
 
@@ -147,11 +175,15 @@ Configure with npm.
 
 <ascribe-tab value="linux" label="Linux">
 
+<p class="ascribe-tab-label">Linux</p>
+
 Linux steps.
 
 </ascribe-tab>
 
 <ascribe-tab value="windows" label="Windows">
+
+<p class="ascribe-tab-label">Windows</p>
 
 Windows steps.
 
@@ -163,11 +195,15 @@ Windows steps.
 
 <ascribe-tab label="First look">
 
+<p class="ascribe-tab-label">First look</p>
+
 First look content.
 
 </ascribe-tab>
 
 <ascribe-tab label="Second look">
+
+<p class="ascribe-tab-label">Second look</p>
 
 Second look content.
 

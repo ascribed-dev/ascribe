@@ -1,0 +1,10 @@
+description: >-
+  An `@operation` is checked as its link is: an operation the spec doesn't
+  have is an error, and one with an id named by its method and path is
+  advice to name it by the id.
+spec: ["4.13", "5.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-operation-missing, file: index.md, line: 5, column: 13}
+  - {slug: link-operation-by-path, file: index.md, line: 7, column: 13}

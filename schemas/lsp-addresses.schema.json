@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "BaseInfo": {
+      "description": "The base of a comparison, in the report.",
+      "properties": {
+        "commit": {
+          "description": "The commit it names.",
+          "type": "string"
+        },
+        "merge_base": {
+          "description": "The merge base of that commit and `HEAD`, which the comparison reads;\n`null` with `--base-exact`, which reads `commit`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested": {
+          "description": "The revision asked for, or the default branch used.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requested",
+        "commit",
+        "merge_base"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The parameters of `ascribe/addresses`: what the last comparison found.\nSent once the project loads and after each change that compares again,\nwhen it, or a page's old addresses (This page's \"Also answers at\"),\ndiffer from what was sent last.",
+  "properties": {
+    "base": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BaseInfo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The base compared with; `null` when there's no file, it doesn't\nread, or the base couldn't be read."
+    },
+    "diagnostics": {
+      "description": "The problems, all at `ascribe.addresses`, as `ascribe check`\nreports them: the protocol's diagnostics, each with the data a\npublished diagnostic has, its fixes among it.",
+      "items": true,
+      "type": "array"
+    },
+    "lost": {
+      "description": "How many `address-lost` warnings there are: one for each page whose\naddresses are lost.",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "uri": {
+      "description": "`ascribe.addresses`' `file:` URI; `null` when the project has no\nfile, and nothing is compared.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "uri",
+    "base",
+    "lost",
+    "diagnostics"
+  ],
+  "title": "AddressesParams",
+  "type": "object"
+}

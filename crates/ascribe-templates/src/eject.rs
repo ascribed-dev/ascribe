@@ -78,7 +78,10 @@ pub struct EjectAnswer {
     /// `/`-separated, in the order they were written: each template, its
     /// guide, and Ascribe's notes on its type, then `templates.lock`, then
     /// `ascribe.toml`, when it changed. Empty when anything was refused.
+    /// With `dry_run`, the files it would write.
     pub written: Vec<String>,
+    /// Whether it ran with `--dry-run`, and wrote nothing.
+    pub dry_run: bool,
     /// The types added to `ascribe.toml`, in the order they were named.
     /// Empty when anything was refused.
     pub added: Vec<Added>,
@@ -247,6 +250,8 @@ pub struct Eject<'a> {
     /// Whether a type `ascribe.toml` declares already is kept, given only
     /// its `template` and `guide`, rather than refused.
     pub keep_type: bool,
+    /// Whether to write nothing, and answer with what would be written.
+    pub dry_run: bool,
 }
 
 /// Writes the templates `request` names into the project, with their guides,
@@ -268,6 +273,7 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
         schema_version: SCHEMA_VERSION,
         ascribe_version: ASCRIBE_VERSION,
         written: Vec::new(),
+        dry_run: request.dry_run,
         added: Vec::new(),
         kept: Vec::new(),
         refused: Vec::new(),
@@ -364,15 +370,17 @@ pub fn eject(request: &Eject<'_>, fs: &dyn FileSystem) -> Result<EjectAnswer, Ej
         files.extend(theirs);
         files.extend(ours);
     }
-    for (path, text) in &files {
-        write(request.root, path, text)?;
-        answer.written.push(path.clone());
-    }
-    write(request.root, lock_path.as_str(), &lock.to_string())?;
-    answer.written.push(lock_path.to_string());
+    let lock_text = lock.to_string();
+    let mut files: Vec<(String, &str)> = files;
+    files.push((lock_path.to_string(), &lock_text));
     if model_text != request.model_text {
-        write(request.root, MODEL_FILE, &model_text)?;
-        answer.written.push(MODEL_FILE.to_owned());
+        files.push((MODEL_FILE.to_owned(), &model_text));
+    }
+    for (path, text) in &files {
+        if !request.dry_run {
+            write(request.root, path, text)?;
+        }
+        answer.written.push(path.clone());
     }
     Ok(answer)
 }
@@ -1055,6 +1063,8 @@ fn write(root: &Path, path: &str, text: &str) -> Result<(), EjectError> {
         path: path.to_owned(),
         reason: e.to_string(),
     };
+    // Library write: the templates, `templates.lock`, and `ascribe.toml`
+    // `ascribe templates eject` writes, after checking each.
     if let Some(dir) = file.parent() {
         std::fs::create_dir_all(dir).map_err(failed)?;
     }

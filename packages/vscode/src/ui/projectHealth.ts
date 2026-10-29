@@ -15,7 +15,7 @@
 import type { Counted } from "../everyBuild.js";
 import { problemsText } from "../problems.js";
 import type { ServerState } from "../serverState.js";
-import type { InventoryResult } from "../shapes.js";
+import type { AgentsSyncReport, InventoryResult } from "../shapes.js";
 import { TASKS, type TaskName } from "../tasks.js";
 import type {
   ProjectAboutRow,
@@ -29,7 +29,7 @@ import type {
   ProjectHealthGroup,
 } from "../webview/viewProtocol.js";
 import type { AgentFilesResult } from "./agentFiles.js";
-import type { EveryBuildResult } from "./checkEveryBuild.js";
+import type { AddressesResult, EveryBuildResult } from "./checkEveryBuild.js";
 import { choices, lineDescription, type ListedBuild } from "./chosenBuild.js";
 import { STATE_NAMES } from "./describe.js";
 
@@ -39,10 +39,12 @@ export const PROJECT_KEYS = {
   problems: "problems",
   /** Tested examples changed since they were tested, or never tested: the Problems panel, at the first. */
   examples: "examples",
-  /** Reviews overdue: the Problems panel, at the first. */
-  reviews: "reviews",
+  /** Rechecks overdue: the Problems panel, at the first. */
+  rechecks: "rechecks",
   /** A permalinks list that's behind: the Problems panel, at it. */
   permalinks: "permalinks",
+  /** Pages whose published addresses are lost, against the base: the Problems panel, at `ascribe.addresses`. */
+  addresses: "addresses",
   /** Pages nothing links to or includes: Pages, with Orphans Only. */
   orphans: "orphans",
   /** Content model entries nothing uses: Content model, with Unused Only. */
@@ -106,15 +108,17 @@ export interface ProjectFacts {
   version: string | undefined;
   /** Its check of every build. */
   everyBuild: EveryBuildResult;
+  /** What its server last found comparing its addresses with the base's. */
+  addresses: AddressesResult;
   /** What its server's inventory counts, while it has one. */
   inventory: InventoryCounts | undefined;
   /** Its check of its agent files. */
   agentFiles: AgentFilesResult;
-  /** Now, in milliseconds since the epoch: overdue reviews are counted for a day. */
+  /** Now, in milliseconds since the epoch: overdue rechecks are counted for a day. */
   now: number;
   /** A time of day, as the view says when something ran. */
   time: (at: number) => string;
-  /** A day, as the view says which day overdue reviews are for: the same text for the same day. */
+  /** A day, as the view says which day overdue rechecks are for: the same text for the same day. */
   day: (at: number) => string;
   /** Its builds, as its server lists them; empty until it has. */
   builds: readonly ListedBuild[];
@@ -432,8 +436,9 @@ type Base = Pick<ProjectCount, "key" | "label">;
 const COUNTS = {
   problems: { key: PROJECT_KEYS.problems, label: "Problems" },
   examples: { key: PROJECT_KEYS.examples, label: "Tested examples" },
-  reviews: { key: PROJECT_KEYS.reviews, label: "Reviews overdue" },
+  rechecks: { key: PROJECT_KEYS.rechecks, label: "Rechecks overdue" },
   permalinks: { key: PROJECT_KEYS.permalinks, label: "Permalinks behind" },
+  addresses: { key: PROJECT_KEYS.addresses, label: "Addresses lost" },
   orphans: { key: PROJECT_KEYS.orphans, label: "Pages nothing links to" },
   unused: { key: PROJECT_KEYS.unused, label: "Unused model entries" },
   agentFiles: { key: PROJECT_KEYS.agentFiles, label: "Agent files out of date" },
@@ -441,9 +446,19 @@ const COUNTS = {
 
 const CHECK: ProjectCheck = { key: CHECK_EVERY_BUILD.key, label: CHECK_EVERY_BUILD.label };
 
-/** Health's groups: every build's counts, those as you type, and the agent files'. */
+/**
+ * Health's groups: every build's counts, the addresses lost against the
+ * base for a project that keeps them, those as you type, and the agent
+ * files'.
+ */
 function healthGroups(facts: ProjectFacts): ProjectHealthGroup[] {
-  return [everyBuildGroup(facts), asYouTypeGroup(facts), lastSaveGroup(facts)];
+  const addresses = addressesGroup(facts);
+  return [
+    everyBuildGroup(facts),
+    ...(addresses ? [addresses] : []),
+    asYouTypeGroup(facts),
+    lastSaveGroup(facts),
+  ];
 }
 
 /** A count, current, of `value`: `0`, dimmed, for none, which opens nothing. */
@@ -486,7 +501,7 @@ function notCurrent(
  * The counts from the last Check Every Build: dashes until it has run, while
  * it runs, while one kept from an earlier session is compared with the
  * project's files, once it's out of date, or when it couldn't finish. A
- * check from another day says which (`checkedWhen`). Overdue reviews
+ * check from another day says which (`checkedWhen`). Overdue rechecks
  * depend on the day as well as the files, so a check from another day leaves
  * that count alone a dash, with its own note and the check, whatever
  * `isCurrent` says.
@@ -494,7 +509,7 @@ function notCurrent(
 export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
   const { everyBuild, day, now } = facts;
   const head = { key: "everyBuild", label: "Every build" };
-  const bases = [COUNTS.problems, COUNTS.examples, COUNTS.reviews, COUNTS.permalinks];
+  const bases = [COUNTS.problems, COUNTS.examples, COUNTS.rechecks, COUNTS.permalinks];
   switch (everyBuild.kind) {
     case "none":
       return notCurrent(head, bases, "unknown", "not checked yet", CHECK);
@@ -529,14 +544,14 @@ export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
         return counted(base, n, count(n, noun));
       };
       const checkedOn = day(everyBuild.at);
-      const reviews: ProjectCount =
+      const rechecks: ProjectCount =
         checkedOn === day(now)
-          ? kind(COUNTS.reviews, "reviews", "page")
+          ? kind(COUNTS.rechecks, "rechecks", "page")
           : {
-              ...COUNTS.reviews,
+              ...COUNTS.rechecks,
               state: "outOfDate",
               value: "—",
-              note: `checked on ${checkedOn}; reviews fall due by the day`,
+              note: `checked on ${checkedOn}; rechecks fall due by the day`,
               opens: false,
               action: CHECK,
             };
@@ -557,7 +572,7 @@ export function everyBuildGroup(facts: ProjectFacts): ProjectHealthGroup {
                 problems: { errors, warnings, advice },
               },
           kind(COUNTS.examples, "examples", "example"),
-          reviews,
+          rechecks,
           kind(COUNTS.permalinks, "permalinks", "permalink"),
         ],
       };
@@ -575,6 +590,56 @@ function checkedWhen(at: number, { time, day, now }: ProjectFacts): string {
   // In the hour after a day of 23, when the clocks went forward, this gives the day before: it names it.
   const yesterday = day(now - 24 * 60 * 60 * 1000);
   return on === yesterday ? `yesterday at ${time(at)}` : `on ${on} at ${time(at)}`;
+}
+
+/**
+ * The pages whose published addresses are lost, from the language
+ * server's comparison with the base, which runs again after each save and
+ * change on disk, so it's current between checks of every build: the
+ * head says which base, and when. `undefined` for a project without
+ * `ascribe.addresses`, which compares nothing.
+ */
+export function addressesGroup({
+  addresses,
+  state,
+  time,
+}: ProjectFacts): ProjectHealthGroup | undefined {
+  const head = { key: "addresses", label: "Against the base" };
+  const bases = [COUNTS.addresses];
+  switch (addresses.kind) {
+    case "off":
+      return undefined;
+    case "unknown":
+      return state === "running" || state === "starting"
+        ? notCurrent(head, bases, "running", "comparing…", null)
+        : notCurrent(
+            head,
+            bases,
+            "unknown",
+            `compared while the language server runs: it's ${STATE_NAMES[state]}`,
+            null,
+          );
+    case "made": {
+      const at = time(addresses.at);
+      if (addresses.lost === null || addresses.base === null) {
+        return notCurrent(
+          head,
+          bases,
+          "outOfDate",
+          `not compared at ${at}: the Problems panel says why`,
+          null,
+        );
+      }
+      const n = addresses.lost;
+      return {
+        ...head,
+        state: "current",
+        note: `${addresses.base.requested} at ${at}`,
+        action: null,
+        counts: [counted(COUNTS.addresses, n, count(n, "page"))],
+      };
+    }
+  }
 }
 
 /**
@@ -654,11 +719,17 @@ export function lastSaveGroup({ agentFiles, time }: ProjectFacts): ProjectHealth
   }
 }
 
-/** The files `ascribe agents sync --check` lists as `stale`, in its order. */
+/**
+ * The files `ascribe agents sync --check --format json` says are out of
+ * date, in its order: none when what it wrote isn't its JSON.
+ */
 export function staleFiles(stdout: string): string[] {
-  return stdout
-    .split(/\r?\n/)
-    .flatMap((line) => (line.startsWith("stale ") ? [line.slice("stale ".length).trim()] : []));
+  try {
+    const report = JSON.parse(stdout) as AgentsSyncReport;
+    return report.files.flatMap((file) => (file.changed ? [file.path] : []));
+  } catch {
+    return [];
+  }
 }
 
 /** What Sync Agent Files asks before it runs. */

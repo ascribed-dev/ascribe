@@ -26,6 +26,10 @@
 //! The Elastic corpus is fetched at the pinned commit (skipped, with a
 //! message, when the network isn't there). With `ASCRIBE_BENCH_OUT` set, the
 //! command timings are also appended as JSON lines for `corpora compare`.
+//!
+//! With `ASCRIBE_BENCH_QUICK` set, as on a pull request, it times `ascribe
+//! check` on the synthetic project and measures its peak memory, and nothing
+//! else.
 
 #![allow(
     clippy::expect_used,
@@ -44,7 +48,8 @@ use ascribe_corpora::convert::{self, Extra};
 use ascribe_corpora::corpus::{self, Corpus};
 use ascribe_emit::{EmitContext, Emitter, PlainEmitter, emit};
 use ascribe_resolve::AstroRouter;
-use ascribe_synthetic::{CONTENT_ROOT, Synthetic, report::record};
+use ascribe_synthetic::report::{self, record};
+use ascribe_synthetic::{CONTENT_ROOT, Synthetic};
 
 mod memory;
 
@@ -103,7 +108,9 @@ fn time_cli(name: &str, metric: &str, bin: &Path, dir: &Path, args: &[&str], run
 fn phases(name: &str, dir: &Path) {
     let config = dir.join("ascribe.toml");
     let start = Instant::now();
-    let project = Project::load(&config).expect("loads");
+    let project = ascribe_check::load(&config)
+        .map(|w| Project::new(w.snapshot()))
+        .expect("loads");
     let load = start.elapsed();
     let start = Instant::now();
     let file_level = check_files(&project);
@@ -506,10 +513,11 @@ fn main() {
     println!();
 
     let dir = tempfile::tempdir().expect("a temp dir");
-    let root = dir.path().join("synthetic");
-    std::fs::create_dir_all(&root).expect("creates");
-    Synthetic::standard().write_to(&root).expect("writes");
-    println!("synthetic project: 3,000 pages, 100 fragments, 60 images");
+    let root = standard(dir.path());
+    if report::quick() {
+        quick(&bin, dir.path(), &root);
+        return;
+    }
     phases("  library, in-process", &root);
     time_cli(
         "  ascribe check",
@@ -642,7 +650,8 @@ fn main() {
         3,
     );
     println!();
-    let model = Project::load_model(&root.join("ascribe.toml"))
+    let model = ascribe_check::LOADER
+        .load_model(&root.join("ascribe.toml"))
         .expect("the converted model loads")
         .model;
     let pages: Vec<String> = converted
@@ -658,6 +667,40 @@ fn main() {
         convert::CONTENT_ROOT,
         &pages,
     ));
+}
+
+/// Writes the standard synthetic project under `dir`, and returns its root.
+fn standard(dir: &Path) -> PathBuf {
+    let root = dir.join("synthetic");
+    std::fs::create_dir_all(&root).expect("creates");
+    Synthetic::standard().write_to(&root).expect("writes");
+    println!("synthetic project: 3,000 pages, 100 fragments, 60 images");
+    root
+}
+
+/// The pull request's run: `ascribe check` on the synthetic project at
+/// `root`, its time and its peak memory.
+fn quick(bin: &Path, dir: &Path, root: &Path) {
+    time_cli(
+        "  ascribe check",
+        "check/synthetic-3000",
+        bin,
+        root,
+        &["check"],
+        5,
+    );
+    println!();
+    if let Some(meter) = memory::Meter::new(dir) {
+        println!("synthetic project: peak memory");
+        meter.cli(
+            "  ascribe check",
+            "memory/check-synthetic-3000",
+            bin,
+            root,
+            &["check"],
+            || {},
+        );
+    }
 }
 
 /// Says why a part of the bench was skipped, so the rest still runs and

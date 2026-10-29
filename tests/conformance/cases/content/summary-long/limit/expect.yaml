@@ -1,8 +1,8 @@
 description: >-
-  `[checks.summary-long] limit` sets the length a summary is reported at,
-  here 40 characters. A summary is measured as plain text on one line, so
-  emphasis and a code span's backticks don't count: the second summary is
-  32 characters.
+  `[checks.summary-long] limit` turns the check on, at its default level,
+  and sets the length a summary is reported at, here 40 characters. A
+  summary is measured as plain text on one line, so emphasis and a code
+  span's backticks don't count: the second summary is 32 characters.
 spec: ["4.12"]
 tags: [check, page-check]
 

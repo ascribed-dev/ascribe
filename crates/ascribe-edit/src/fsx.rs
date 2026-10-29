@@ -1,0 +1,175 @@
+//! The file system the server loads its project through, and the checks
+//! read: the disk, with the editor's open buffers over it.
+
+use std::collections::{BTreeMap, BTreeSet};
+use std::io;
+use std::sync::{PoisonError, RwLock};
+
+use ascribe_core::RelPath;
+use ascribe_resolve::{DiskFs, FileSystem, Probe, Sources, in_nested_project};
+
+/// The disk with the editor's open buffers over it, as a project's
+/// `Workspace` is loaded through it and its checks read it.
+///
+/// The open sources' buffers are read in place of the files on disk when
+/// the project is loaded (an open document's contents win over the file),
+/// and a buffer in a nested project's folder isn't a source, as the file on
+/// disk isn't. They're the buffers as the project was loaded: each edit
+/// after that is a change the `Workspace` takes, and a project loaded again
+/// is loaded through a new layer.
+///
+/// For files that aren't sources it answers as the disk does, with the
+/// files the editor and the file watcher have reported appearing or
+/// disappearing layered over it, exactly as the incremental project's own
+/// overlay does (`ascribe_resolve::incremental`), so the checks and the
+/// source index agree on which images exist. It's shared and updated as
+/// changes arrive; a result computed from an older snapshot is dropped by
+/// the currency check before it's published, so a probe that sees a newer
+/// state than its snapshot can't reach the editor.
+///
+/// It also holds the buffers of the open files that aren't sources but are
+/// read as the editor has them: memo files (SPEC §7.7), which a memo store
+/// reads through it, and the side files whose open buffer wins, as
+/// `ascribe.nav` (SPEC §7.8).
+pub struct LayerFs {
+    disk: DiskFs,
+    sources: BTreeMap<RelPath, String>,
+    layers: RwLock<Layers>,
+    buffers: RwLock<BTreeMap<RelPath, String>>,
+}
+
+#[derive(Default)]
+struct Layers {
+    added: BTreeSet<RelPath>,
+    removed: BTreeSet<RelPath>,
+}
+
+impl LayerFs {
+    /// `disk`, with no buffer over it yet.
+    pub fn new(disk: DiskFs) -> LayerFs {
+        LayerFs::with_sources(disk, BTreeMap::new())
+    }
+
+    /// `disk`, with `sources`, by content path, read in place of the files
+    /// they name.
+    pub fn with_sources(disk: DiskFs, sources: BTreeMap<RelPath, String>) -> LayerFs {
+        LayerFs {
+            disk,
+            sources,
+            layers: RwLock::new(Layers::default()),
+            buffers: RwLock::new(BTreeMap::new()),
+        }
+    }
+
+    /// An open memo file's or `ascribe.nav`'s text, at a path relative to
+    /// the project root, or `None` once it's closed and the disk has it
+    /// again.
+    pub fn set_buffer(&self, project_path: &RelPath, text: Option<String>) {
+        let mut buffers = self.buffers.write().unwrap_or_else(PoisonError::into_inner);
+        match text {
+            Some(text) => buffers.insert(project_path.clone(), text),
+            None => buffers.remove(project_path),
+        };
+    }
+
+    /// A file appeared (`present`) or disappeared, at a path relative to the
+    /// project root.
+    pub fn set(&self, project_path: &RelPath, present: bool) {
+        let mut layers = self.layers.write().unwrap_or_else(PoisonError::into_inner);
+        if present {
+            layers.removed.remove(project_path);
+            layers.added.insert(project_path.clone());
+        } else {
+            layers.added.remove(project_path);
+            layers.removed.insert(project_path.clone());
+        }
+    }
+}
+
+impl FileSystem for LayerFs {
+    fn sources(&self) -> Sources {
+        let mut sources = self.disk.sources();
+        for path in self.sources.keys() {
+            if !sources.paths.contains(path) && !in_nested_project(path, &sources.nested) {
+                sources.paths.push(path.clone());
+            }
+        }
+        // A directory that couldn't be listed stays listed, but a file the
+        // editor holds is readable whatever the disk says about it.
+        sources
+            .unreadable
+            .retain(|u| !self.sources.contains_key(&u.path));
+        sources.paths.sort();
+        sources
+    }
+
+    fn read(&self, path: &RelPath) -> io::Result<String> {
+        match self.sources.get(path) {
+            Some(text) => Ok(text.clone()),
+            None => self.disk.read(path),
+        }
+    }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        let buffers = self.buffers.read().unwrap_or_else(PoisonError::into_inner);
+        match buffers.get(project_path) {
+            Some(text) => Ok(text.clone().into_bytes()),
+            None => self.disk.read_file(project_path),
+        }
+    }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        self.disk.real_path(project_path)
+    }
+
+    /// The disk's files, and an open file that isn't saved yet.
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        let mut files = self.disk.files_in(project_dir);
+        let buffers = self.buffers.read().unwrap_or_else(PoisonError::into_inner);
+        for path in buffers.keys() {
+            if path.starts_with(project_dir) && path != project_dir && !files.contains(path) {
+                files.push(path.clone());
+            }
+        }
+        files.sort();
+        files
+    }
+
+    /// The disk's files: an open file that isn't saved yet is looked for by
+    /// name only when it's asked about, as `ascribe.examples.toml` is.
+    fn files_named(
+        &self,
+        project_dir: &RelPath,
+        name: &str,
+        enter: &dyn Fn(&RelPath) -> bool,
+    ) -> Vec<RelPath> {
+        self.disk.files_named(project_dir, name, enter)
+    }
+
+    /// Exact names win; among names that differ only in case, files added here
+    /// come before the disk's, first in path order.
+    fn probe(&self, project_path: &RelPath) -> Probe {
+        let layers = self.layers.read().unwrap_or_else(PoisonError::into_inner);
+        if layers.added.contains(project_path) {
+            return Probe::File;
+        }
+        let from_disk = self.disk.probe(project_path);
+        if from_disk == Probe::File && !layers.removed.contains(project_path) {
+            return Probe::File;
+        }
+        let folded = project_path.as_str().to_lowercase();
+        if let Some(twin) = layers
+            .added
+            .iter()
+            .find(|p| p.as_str().to_lowercase() == folded)
+        {
+            return Probe::CaseMismatch(twin.clone());
+        }
+        match from_disk {
+            Probe::CaseMismatch(actual) if !layers.removed.contains(&actual) => {
+                Probe::CaseMismatch(actual)
+            }
+            _ => Probe::Missing,
+        }
+    }
+}

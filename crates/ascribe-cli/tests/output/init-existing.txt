@@ -1,0 +1,12 @@
+wrote ascribe.toml
+wrote ascribe.addresses, where a page's move is recorded, so the addresses it published keep working
+found 4 pages in docs/; with no page types declared in ascribe.toml, no page needs `type:`
+3 pages have no `title`; `ascribe check --fix` takes the opening heading as the title of 2 of them, and the rest need `title:` written in their frontmatter
+`ascribe check` finds 4 errors, 0 warnings, 5 advice:
+  3  ASC048 frontmatter-missing-field (error)
+  3  ASC150 page-description-missing (advice)
+  2  ASC151 heading-level-skipped (advice)
+  1  ASC036 link-target-missing (error)
+Next, run `ascribe check --fix`, which fixes 2 of them, then `ascribe check --code ASC048`
+To put the advice off, so the check reports only what's new: `ascribe baseline write`
+Then, to publish the pages as a site with Astro, read https://ascribed-dev.com/go/astro-guide/

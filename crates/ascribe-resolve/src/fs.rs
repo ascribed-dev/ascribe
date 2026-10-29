@@ -125,6 +125,38 @@ pub trait FileSystem {
     fn files_in(&self, _project_dir: &RelPath) -> Vec<RelPath> {
         Vec::new()
     }
+
+    /// Every file named `name` in a folder and the folders in it that
+    /// `enter` takes, as paths relative to the project root, in path order.
+    /// `enter` is asked of each folder below `project_dir`, by its path
+    /// relative to the project root, before anything in it is looked at, so
+    /// a folder it refuses isn't walked. A symbolic link is listed, not
+    /// followed, as [`FileSystem::files_in`] lists it.
+    fn files_named(
+        &self,
+        project_dir: &RelPath,
+        name: &str,
+        enter: &dyn Fn(&RelPath) -> bool,
+    ) -> Vec<RelPath> {
+        self.files_in(project_dir)
+            .into_iter()
+            .filter(|path| path.file_name() == Some(name))
+            .filter(|path| {
+                // Each folder between `project_dir` and the file is entered.
+                let mut dir = path.parent();
+                while let Some(folder) = dir {
+                    if folder == *project_dir {
+                        return true;
+                    }
+                    if !enter(&folder) {
+                        return false;
+                    }
+                    dir = folder.parent();
+                }
+                false
+            })
+            .collect()
+    }
 }
 
 /// A project on disk.
@@ -170,6 +202,25 @@ impl DiskFs {
             listings: Some(Arc::default()),
             files: Some(Arc::default()),
             ..DiskFs::new(project_root, layout)
+        }
+    }
+
+    /// Forgets the listings and files kept ([`DiskFs::with_listing_cache`]),
+    /// in this value and every clone of it, so each is read from the disk
+    /// again when it's next asked for: a value kept while the disk changes,
+    /// told when it has.
+    pub fn forget(&self) {
+        if let Some(listings) = &self.listings {
+            listings
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clear();
+        }
+        if let Some(files) = &self.files {
+            files
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clear();
         }
     }
 
@@ -359,6 +410,21 @@ impl FileSystem for DiskFs {
         out.sort();
         out
     }
+
+    fn files_named(
+        &self,
+        project_dir: &RelPath,
+        name: &str,
+        enter: &dyn Fn(&RelPath) -> bool,
+    ) -> Vec<RelPath> {
+        let dir = project_dir
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        let mut out = Vec::new();
+        find_named(&dir, project_dir, name, enter, &mut out);
+        out.sort();
+        out
+    }
 }
 
 /// Why a file reached through a symbolic link can't be read: the link leads
@@ -472,6 +538,36 @@ fn list_files(dir: &Path, rel: &RelPath, out: &mut Vec<RelPath>) {
         if kind.is_dir() {
             list_files(&entry.path(), &child, out);
         } else {
+            out.push(child);
+        }
+    }
+}
+
+/// The files named `name` under `dir`, whose path from the project root is
+/// `rel`, looking only in the folders `enter` takes.
+fn find_named(
+    dir: &Path,
+    rel: &RelPath,
+    name: &str,
+    enter: &dyn Fn(&RelPath) -> bool,
+    out: &mut Vec<RelPath>,
+) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let Ok(kind) = entry.file_type() else {
+            continue;
+        };
+        let entry_name = entry.file_name().to_string_lossy().into_owned();
+        let Ok(child) = rel.join(&entry_name) else {
+            continue;
+        };
+        if kind.is_dir() {
+            if enter(&child) {
+                find_named(&entry.path(), &child, name, enter, out);
+            }
+        } else if entry_name == name {
             out.push(child);
         }
     }

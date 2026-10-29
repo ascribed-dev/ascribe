@@ -6,9 +6,9 @@ use std::process::ExitCode;
 
 use ascribe_core::Coded;
 
-/// Everything passed: no errors (and, with `--deny-warnings`, no warnings).
+/// Everything passed: no errors (and, with `--exit-code=warning`, no warnings).
 pub const OK: u8 = 0;
-/// The documentation set has errors (or warnings under `--deny-warnings`).
+/// The documentation set has errors (or warnings under `--exit-code=warning`).
 pub const PROBLEMS: u8 = 1;
 /// The command couldn't do its work: a usage error, no `ascribe.toml`, a
 /// content model that doesn't load, or a file that can't be read.
@@ -40,16 +40,18 @@ mod tests {
     use std::io;
     use std::path::PathBuf;
 
-    use ascribe_check::prose::EjectError;
-    use ascribe_check::{BaselineError, LoadError, LocateError, ScopeError, UnknownBuild};
+    use ascribe_check::{BaselineError, DiagnoseError, ScopeError, UnknownBuild};
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
+    use ascribe_edit::{ReleaseError, RenameError, RetireError};
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
-    use ascribe_lsp::{ReleaseError, RenameError, RetireError, ServeError};
+    use ascribe_lsp::ServeError;
     use ascribe_query::QueryError;
+    use ascribe_report::prose::EjectError;
     use ascribe_resolve::reading::BadQuery;
     use ascribe_sources::SourcesError;
+    use ascribe_workspace::{LoadError, LocateError};
 
     use crate::agents::markers::Damage;
     use crate::agents::sync::SyncError;
@@ -57,12 +59,14 @@ mod tests {
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::permalinks::PermalinksError;
+    use crate::commands::preview::PreviewError;
     use crate::commands::rename::RenameCommandError;
     use crate::commands::report::ReportError;
     use crate::commands::sources::PagesUnavailable;
     use crate::commands::templates::TemplatesError;
     use crate::commands::versions::VersionsError;
     use crate::context::Failure;
+    use crate::guard::GuardError;
 
     /// Every error code, once, with what it means. A tool that wraps a
     /// command tells failures apart by these, so don't rename one.
@@ -352,8 +356,28 @@ mod tests {
         ),
         ("init_folder_refused", "init's folder is a file"),
         (
+            "init_content_root_refused",
+            "init's content root isn't a folder inside the project's",
+        ),
+        (
+            "init_templates_refused",
+            "init was asked for the templates in a folder of pages",
+        ),
+        (
             "init_unwritable",
             "init can't write ascribe.toml or make the content root",
+        ),
+        (
+            "preview_port_unavailable",
+            "preview can't listen on its port",
+        ),
+        (
+            "guard_unrestorable",
+            "a command would change a file git can't put back as it was",
+        ),
+        (
+            "guard_no_git",
+            "a command would change a file in no git repository",
         ),
     ];
 
@@ -461,12 +485,18 @@ mod tests {
                 | CheckError::Fix(_)
                 | CheckError::Code(_)
                 | CheckError::Baseline(_)
-                | CheckError::LimitNotConcise => {}
+                | CheckError::LimitNotConcise
+                | CheckError::Guard(_) => {}
             }
         }
         fn report(e: &ReportError) {
             match e {
                 ReportError::PromptSection => {}
+            }
+        }
+        fn diagnose(e: &DiagnoseError) {
+            match e {
+                DiagnoseError::UnknownBuild(_) | DiagnoseError::Baseline(_) => {}
             }
         }
         fn eject(e: &EjectError) {
@@ -510,7 +540,8 @@ mod tests {
                 | SyncError::Git(_)
                 | SyncError::Read { .. }
                 | SyncError::Settings { .. }
-                | SyncError::Write { .. } => {}
+                | SyncError::Write { .. }
+                | SyncError::Guard(_) => {}
             }
         }
         fn baseline(e: &BaselineCommandError) {
@@ -524,8 +555,7 @@ mod tests {
                 | PermalinksError::Unreadable { .. }
                 | PermalinksError::Unwritable { .. }
                 | PermalinksError::NoReason
-                | PermalinksError::ModelUnchanged(_)
-                | PermalinksError::ModelUnwritable { .. } => {}
+                | PermalinksError::Addresses(_) => {}
             }
         }
         fn rename(e: &RenameError) {
@@ -545,6 +575,8 @@ mod tests {
             match e {
                 ascribe_templates::InitError::Project { .. }
                 | ascribe_templates::InitError::NotAFolder { .. }
+                | ascribe_templates::InitError::ContentRoot { .. }
+                | ascribe_templates::InitError::TemplatesWithPages { .. }
                 | ascribe_templates::InitError::Templates(_)
                 | ascribe_templates::InitError::Write { .. } => {}
             }
@@ -607,12 +639,18 @@ mod tests {
                 RenameCommandError::BadTarget { .. } | RenameCommandError::Unwritable { .. } => {}
             }
         }
+        fn preview(e: &PreviewError) {
+            match e {
+                PreviewError::Listen { .. } => {}
+            }
+        }
         let _ = (
             locate,
             load,
             scope,
             check,
             report,
+            diagnose,
             eject,
             format,
             emit,
@@ -632,6 +670,7 @@ mod tests {
             templates,
             templates_command,
             init,
+            preview,
         );
 
         let store_errors = || {
@@ -662,7 +701,7 @@ mod tests {
         };
         let model_invalid = || LoadError::Model {
             text: text(),
-            diagnostics: Vec::new(),
+            issues: Vec::new(),
         };
         let not_a_repository = || DiffError::NotARepository {
             dir: text(),
@@ -777,6 +816,11 @@ mod tests {
                 message: text(),
             })),
             Box::new(BaselineCommandError::Unwritable(text())),
+            Box::new(DiagnoseError::UnknownBuild(unknown_build())),
+            Box::new(DiagnoseError::Baseline(BaselineError {
+                line: 1,
+                message: text(),
+            })),
             Box::new(ReportError::PromptSection),
             Box::new(EjectError::NoPreset { config: None }),
             Box::new(EjectError::Exists { path: text() }),
@@ -803,6 +847,14 @@ mod tests {
             }),
             Box::new(ascribe_templates::InitError::Project { found: path() }),
             Box::new(ascribe_templates::InitError::NotAFolder { folder: path() }),
+            Box::new(ascribe_templates::InitError::ContentRoot {
+                given: text(),
+                reason: "isn't a relative path",
+            }),
+            Box::new(ascribe_templates::InitError::TemplatesWithPages {
+                pages: 2,
+                content_root: text(),
+            }),
             Box::new(ascribe_templates::InitError::Templates(
                 ascribe_templates::EjectError::Write {
                     path: text(),
@@ -812,6 +864,10 @@ mod tests {
             Box::new(ascribe_templates::InitError::Write {
                 path: text(),
                 reason: text(),
+            }),
+            Box::new(PreviewError::Listen {
+                address: text(),
+                message: text(),
             }),
             Box::new(TemplatesError::NoProject(LocateError::NotFound {
                 dir: path(),
@@ -830,6 +886,19 @@ mod tests {
                 below: Vec::new(),
             })),
             Box::new(Failure::Load(model_invalid())),
+            Box::new(GuardError::NotRestorable {
+                files: vec![text()],
+            }),
+            Box::new(GuardError::NoGit {
+                why: text(),
+                files: vec![text()],
+            }),
+            Box::new(CheckError::Guard(GuardError::NotRestorable {
+                files: vec![text()],
+            })),
+            Box::new(SyncError::Guard(GuardError::NotRestorable {
+                files: vec![text()],
+            })),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),
             Box::new(FmtError::Model {
                 config: path(),
@@ -875,11 +944,12 @@ mod tests {
                 message: text(),
             }),
             Box::new(PermalinksError::NoReason),
-            Box::new(PermalinksError::ModelUnchanged(text())),
-            Box::new(PermalinksError::ModelUnwritable {
-                path: path(),
-                message: text(),
-            }),
+            // `ascribe addresses init` writing `ascribe.toml` without its
+            // `[permalinks]`.
+            Box::new(crate::commands::addresses::AddressesError::Model(
+                "write",
+                text(),
+            )),
             Box::new(QueryError::BadLine { given: text() }),
             Box::new(QueryError::NoLines {
                 target: text(),

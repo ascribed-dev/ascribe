@@ -180,6 +180,13 @@
         "null"
       ]
     },
+    "expected": {
+      "description": "The outputs of builds that aren't lines of the target whose pages\nchange only in the target's part of their availability lines, by\nbuild and output: expected, so they need no `--force`.",
+      "items": {
+        "$ref": "#/$defs/OutputJson"
+      },
+      "type": "array"
+    },
     "features": {
       "description": "Each feature whose spec is rewritten.",
       "items": {
@@ -211,6 +218,10 @@
         "$ref": "#/$defs/OutputJson"
       },
       "type": "array"
+    },
+    "recorded": {
+      "description": "Whether `ascribe.addresses` records the redirects that go to a page\nin the current line, in `[moved]` keyed by the address, so the build\nwrites them: true when the project has the file and the line has\none. With `--dry-run`, whether it would. Those to the archive are\nnever recorded.",
+      "type": "boolean"
     },
     "redirects": {
       "description": "Where each address the line published should go, by address: the\nsame page in the current line, the page that replaces it there, or\nits page in the archive.",
@@ -269,7 +280,9 @@
     "unused",
     "removed",
     "redirects",
+    "recorded",
     "outputs",
+    "expected",
     "from"
   ],
   "title": "VersionsRetireReport",

@@ -11,7 +11,8 @@
 //!
 //! It also checks the docs' phrases whose values come from another file, such
 //! as the version, against that file, and that the `ascribe.toml` reference
-//! and its contract share their text only through fragments.
+//! and its contract share their text only through fragments, and that no
+//! mark in the docs names a release of Ascribe before 1.0 (decision #973).
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -180,9 +181,10 @@ fn the_diagnostics_reference_is_current() {
 /// The pages of the diagnostics reference, in `docs/content/checks/diagnostics/`,
 /// each with the fragment it lists the diagnostics of. The reference's own page has
 /// the index.
-const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
+const DIAGNOSTICS_PAGES: [(&str, &str); 9] = [
     ("directives", "diagnostics-directives.md"),
     ("pages", "diagnostics-pages.md"),
+    ("sources", "diagnostics-sources.md"),
     ("project-files", "diagnostics-project-files.md"),
     ("content-model", "diagnostics-content-model.md"),
     (
@@ -190,6 +192,7 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
         "diagnostics-content-model-builds.md",
     ),
     ("content-checks", "diagnostics-content-checks.md"),
+    ("project-checks", "diagnostics-project-checks.md"),
     ("output-checks", "diagnostics-output-checks.md"),
 ];
 
@@ -198,16 +201,25 @@ const DIAGNOSTICS_PAGES: [(&str, &str); 7] = [
 const FIRST_ON_PAGES: &str = "Links";
 
 /// The first construct of the source-file diagnostics listed on the
-/// `project-files` page; those from `FIRST_ON_PAGES` to it are on the `pages`
-/// page.
+/// `sources` page; those from `FIRST_ON_PAGES` to it are on the `pages` page.
+const FIRST_ON_SOURCES: &str = "Files";
+
+/// The first construct of the source-file diagnostics listed on the
+/// `project-files` page; those from `FIRST_ON_SOURCES` to it are on the
+/// `sources` page.
 const FIRST_ON_PROJECT_FILES: &str = "Addresses file";
 
 /// The first rule group of the content model listed on the
 /// `content-model-builds` page; those before it are on the `content-model` page.
-const FIRST_ON_CONTENT_MODEL_BUILDS: &str = "consumer";
+const FIRST_ON_CONTENT_MODEL_BUILDS: &str = "releases";
+
+/// The first area of the content checks listed on the `project-checks` page;
+/// those before it are on the `content-checks` page.
+const FIRST_ON_PROJECT_CHECKS: &str = "project";
 
 /// The first area of the content checks listed on the `output-checks` page;
-/// those before it are on the `content-checks` page.
+/// those from `FIRST_ON_PROJECT_CHECKS` to it are on the `project-checks`
+/// page.
 const FIRST_ON_OUTPUT_CHECKS: &str = "outputs";
 
 /// Each phrase in `docs/ascribe.toml` whose value is also in another file
@@ -280,6 +292,134 @@ fn the_docs_phrases_match_their_sources() {
     );
 
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+/// Before 1.0, the docs don't say which release a feature arrived in
+/// (decision #973): a mark for `ascribe` in `docs/content/` is `planned`, for
+/// what `main` has and no release does, or a lifecycle state, as `ascribe
+/// deprecated`, never a released version or a bare `ascribe`. Every reader is
+/// on the live line, so "since 0.4.4" tells them nothing.
+#[test]
+fn the_docs_name_no_released_version_before_1_0() {
+    let docs: toml::Table = read("docs/ascribe.toml").parse().unwrap();
+    let live = docs["releases"]["ascribe"]["live"][0].as_str().unwrap();
+    assert!(
+        live.starts_with("0."),
+        "Ascribe's live line is {live}: revisit decision #973 \
+         (project-docs/decisions/973-no-release-marks-before-1-0.md), which holds only before 1.0, \
+         and this test with it"
+    );
+    let mut files = Vec::new();
+    markdown_files(&repo().join("docs/content"), &mut files);
+    let mut wrong = Vec::new();
+    for path in files {
+        let text = std::fs::read_to_string(&path).unwrap();
+        let shown = path.strip_prefix(repo()).unwrap().display().to_string();
+        for (line, spec) in availability_specs(&text) {
+            let Ok(parsed) = ascribe_core::availability::parse_availability(&spec, 0) else {
+                continue;
+            };
+            let says_something = |entry: &ascribe_core::availability::Entry| {
+                use ascribe_core::availability::{Detail, PLANNED};
+                match &entry.detail {
+                    Detail::None => false,
+                    Detail::State {
+                        state,
+                        version: None,
+                    } => state.text != "ga",
+                    Detail::Version(v)
+                    | Detail::State {
+                        version: Some(v), ..
+                    } => v.text == PLANNED,
+                    Detail::History(steps) => {
+                        steps.last().is_some_and(|s| s.version.text == PLANNED)
+                    }
+                }
+            };
+            if parsed
+                .entries
+                .iter()
+                .any(|e| e.target.text == "ascribe" && !says_something(e))
+            {
+                wrong.push(format!("{shown}:{line}: {spec}"));
+            }
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "before 1.0, a docs mark for `ascribe` is `ascribe planned` or names a lifecycle state, \
+         never a released version or a bare `ascribe` (decision #973): remove the mark, or, for \
+         one with a state, its version, as `ascribe preview 0.2.0` becomes `ascribe preview`. A \
+         generated table's mark comes from crates/ascribe-cli/src/docs.rs, \
+         crates/ascribe-cli/src/docs/builtins.rs, or packages/vscode/test/unit/docs.test.ts:\n{}",
+        wrong.join("\n")
+    );
+}
+
+/// Every Markdown file under `dir`, at any depth.
+fn markdown_files(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            markdown_files(&path, out);
+        } else if path.extension().is_some_and(|e| e == "md") {
+            out.push(path);
+        }
+    }
+}
+
+/// The availability specs a page writes, each with its line: an `@available`
+/// line, the frontmatter's `available`, and an `{available=…}` attribute,
+/// outside code blocks and code spans.
+fn availability_specs(text: &str) -> Vec<(usize, String)> {
+    let mut specs = Vec::new();
+    let mut fence: Option<String> = None;
+    let mut frontmatter = text.starts_with("---\n");
+    for (i, line) in text.lines().enumerate() {
+        let number = i + 1;
+        if frontmatter {
+            if i > 0 && line == "---" {
+                frontmatter = false;
+            } else if let Some(value) = line.strip_prefix("available:") {
+                specs.push((number, value.trim().trim_matches('"').to_owned()));
+            }
+            continue;
+        }
+        let trimmed = line.trim_start();
+        if let Some(open) = &fence {
+            if trimmed.starts_with(open.as_str()) {
+                fence = None;
+            }
+            continue;
+        }
+        if let Some(open) = ["```", "~~~"].into_iter().find(|f| trimmed.starts_with(f)) {
+            fence = Some(open.to_owned());
+            continue;
+        }
+        if let Some(spec) = trimmed.strip_prefix("@available:") {
+            specs.push((number, spec.trim().to_owned()));
+        }
+        // An attribute, outside code spans: every other run between
+        // backticks is code.
+        for (j, part) in line.split('`').enumerate() {
+            if j % 2 == 1 {
+                continue;
+            }
+            let mut rest = part;
+            while let Some(at) = rest.find("available=") {
+                rest = &rest[at + "available=".len()..];
+                let value = match rest.strip_prefix('"') {
+                    Some(quoted) => quoted.split('"').next().unwrap_or(""),
+                    None => rest
+                        .split(|c: char| c == '}' || c == ',' || c.is_whitespace())
+                        .next()
+                        .unwrap_or(""),
+                };
+                specs.push((number, value.to_owned()));
+            }
+        }
+    }
+    specs
 }
 
 /// A page, from the repository's root, and its parts: the pages in the folder
@@ -600,21 +740,21 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
     },
     SettingsTable {
         name: "content-model-versions.md",
-        page: "content-model/content.md",
+        page: "content-model/variation.md",
         table: "versions",
         keys: &[],
         releases: false,
     },
     SettingsTable {
         name: "content-model-releases-target.md",
-        page: "content-model/content.md",
+        page: "content-model/variation.md",
         table: "releases.<target>",
         keys: &[],
         releases: true,
     },
     SettingsTable {
         name: "content-model-releases.md",
-        page: "content-model/content.md",
+        page: "content-model/variation.md",
         table: "releases",
         keys: &[],
         releases: true,
@@ -684,7 +824,7 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
     },
     SettingsTable {
         name: "content-model-sources.md",
-        page: "content-model/output.md",
+        page: "content-model/sources.md",
         table: "sources.<name>",
         keys: &[],
         releases: false,
@@ -728,13 +868,6 @@ const SETTINGS_TABLES: &[SettingsTable] = &[
         name: "content-model-apis-reference.md",
         page: "_fragments/content-model/apis.md",
         table: "apis.<name>.reference",
-        keys: &[],
-        releases: false,
-    },
-    SettingsTable {
-        name: "content-model-permalinks-retired.md",
-        page: "content-model/checks.md",
-        table: "permalinks.retired.<name>",
         keys: &[],
         releases: false,
     },
@@ -834,9 +967,6 @@ const DESCRIBED_IN_PROSE: &[(&str, &str)] = &[
     ("", "checks"),
     ("", "intended"),
     ("checks", "vale"),
-    ("", "permalinks"),
-    ("permalinks", "retired"),
-    ("permalinks", "aliases"),
     ("listing", "older-lines"),
 ];
 
@@ -970,7 +1100,6 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("phrases", "Phrases and the glossary"),
     ("widgets", "Widgets"),
     ("consumer", "The consumer, builds, and the editor"),
-    ("permalinks", "`[permalinks]`"),
     ("crawlers", "`[crawlers]`"),
     ("listing", "`[listing]`"),
     ("apis", "`[apis]`"),
@@ -980,15 +1109,16 @@ const RULE_GROUPS: &[(&str, &str)] = &[
 /// What each fragment starts with: a memo saying what generates it, and
 /// how. It touches the fragment's first block, or, where that's a heading,
 /// which a memo can't be about, it's at the top of the first section.
-const HEADER: &str = "@memo: Generated from tests/conformance/diagnostics.toml by \
+const HEADER: &str = "@memo: Generated from crates/ascribe-core/data/diagnostics.toml by \
      tests/conformance/tests/docs.rs; edit the registry, then run \
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics in three (directives; links, pages, and sources;
-/// and the addresses file and API specs), the content model's in two (the file through its widgets, and
-/// the consumer, builds, and the site's settings), and the content checks in two (pages and
-/// the project, and outputs, prose, links, the site, and examples). The index links to each entry on the page
+/// source-file diagnostics in four (directives; links and pages; sources,
+/// memo files, and navigation; and the addresses file and API specs), the
+/// content model's in two (the file through its names, and releases through
+/// the site's settings), and the content checks in three (pages; the project
+/// as a whole; and outputs, prose, links, the site, and examples). The index links to each entry on the page
 /// that includes its fragment (SPEC §4.2).
 fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)> {
     let active: Vec<&Entry> = registry.entries.iter().collect();
@@ -1008,6 +1138,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         .iter()
         .position(|(construct, _)| *construct == FIRST_ON_PAGES)
         .unwrap_or_else(|| panic!("no construct {FIRST_ON_PAGES}: change FIRST_ON_PAGES"));
+    let sources_split = constructs
+        .iter()
+        .position(|(construct, _)| *construct == FIRST_ON_SOURCES)
+        .unwrap_or_else(|| panic!("no construct {FIRST_ON_SOURCES}: change FIRST_ON_SOURCES"));
     let files_split = constructs
         .iter()
         .position(|(construct, _)| *construct == FIRST_ON_PROJECT_FILES)
@@ -1016,13 +1150,16 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         });
     let mut directives = String::new();
     let mut source_pages = String::new();
+    let mut sources = String::new();
     let mut project_files = String::new();
     let mut page_of: BTreeMap<&str, &str> = BTreeMap::new();
     for (i, (construct, entries)) in constructs.into_iter().enumerate() {
         let (out, page) = if i < split {
             (&mut directives, "directives")
-        } else if i < files_split {
+        } else if i < sources_split {
             (&mut source_pages, "pages")
+        } else if i < files_split {
+            (&mut sources, "sources")
         } else {
             (&mut project_files, "project-files")
         };
@@ -1065,6 +1202,12 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         }
     }
 
+    let project_split = AREAS
+        .iter()
+        .position(|(area, _)| *area == FIRST_ON_PROJECT_CHECKS)
+        .unwrap_or_else(|| {
+            panic!("no area {FIRST_ON_PROJECT_CHECKS}: change FIRST_ON_PROJECT_CHECKS")
+        });
     let split = AREAS
         .iter()
         .position(|(area, _)| *area == FIRST_ON_OUTPUT_CHECKS)
@@ -1072,10 +1215,13 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             panic!("no area {FIRST_ON_OUTPUT_CHECKS}: change FIRST_ON_OUTPUT_CHECKS")
         });
     let mut content_checks = String::new();
+    let mut project_checks = String::new();
     let mut output_checks = String::new();
     for (i, (area, title)) in AREAS.iter().enumerate() {
-        let (out, page) = if i < split {
+        let (out, page) = if i < project_split {
             (&mut content_checks, "content-checks")
+        } else if i < split {
+            (&mut project_checks, "project-checks")
         } else {
             (&mut output_checks, "output-checks")
         };
@@ -1100,6 +1246,7 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
             with_memo(&directives),
         ),
         ("diagnostics-pages.md".to_owned(), with_memo(&source_pages)),
+        ("diagnostics-sources.md".to_owned(), with_memo(&sources)),
         (
             "diagnostics-project-files.md".to_owned(),
             with_memo(&project_files),
@@ -1115,6 +1262,10 @@ fn render(registry: &DiagnosticsRegistry, pages: &Pages) -> Vec<(String, String)
         (
             "diagnostics-content-checks.md".to_owned(),
             with_memo(&content_checks),
+        ),
+        (
+            "diagnostics-project-checks.md".to_owned(),
+            with_memo(&project_checks),
         ),
         (
             "diagnostics-output-checks.md".to_owned(),
@@ -1146,7 +1297,7 @@ fn index<'a>(entries: impl Iterator<Item = &'a Entry>, page_of: &BTreeMap<&str, 
             page = page_of[entry.code.as_str()],
             anchor = entry.code,
             slug = entry.slug,
-            severity = severity(entry.severity),
+            severity = shown_severity(entry),
             level = level(entry.level),
             next = next(entry),
         );
@@ -1165,33 +1316,40 @@ fn model_group(entry: &Entry) -> &str {
     entry.group.as_deref().unwrap_or("names")
 }
 
+/// The diagnostics reference's own page, from a fragment in `_generated/`:
+/// where an entry's header line links its words to.
+const REFERENCE: &str = "../checks/diagnostics.md";
+
 fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: &Pages) {
     let section = match pages.spec.get(&entry.spec) {
+        None if entry.spec == "none" => "Ascribe's own, not in SPEC".to_owned(),
         Some(anchor) => format!(
             "[SPEC §{}]({{repo}}/blob/main/SPEC.md#{anchor})",
             entry.spec
         ),
         None => format!("SPEC §{}", entry.spec),
     };
+    // Each word of the header line links to where the reference, or the
+    // glossary, says what it means.
     let configurable = if entry.configurable {
-        " · configurable in `[checks]`"
+        format!(" · [configurable]({REFERENCE}#setting-a-checks-level) in `[checks]`")
     } else {
-        ""
+        String::new()
     };
     let acknowledged = entry
         .place
         .as_deref()
         .and_then(place_words)
-        .map(|words| format!(" · acknowledged {words}"))
+        .map(|words| format!(" · [acknowledged](../glossary.md#acknowledgement) {words}"))
         .unwrap_or_default();
     let _ = write!(
         out,
-        "\n### {} `{}`\n@id {{permalink=true}}: {}\n{}\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
+        "\n### {} `{}`\n@id {{permalink=true}}: {}\n{}\n[{}]({REFERENCE}#severity) · [{} level]({REFERENCE}#file-level-and-page-level) · next step: [{}]({REFERENCE}#what-to-do-next){configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
         entry.code,
         summary(entry.summary.as_deref().or(condition)),
-        severity(entry.severity),
+        shown_severity(entry),
         level(entry.level).to_lowercase(),
         next(entry),
     );
@@ -1210,7 +1368,9 @@ fn write_entry(out: &mut String, entry: &Entry, condition: Option<&str>, pages: 
     let _ = writeln!(
         out,
         "**Fix:** {}",
-        escape_braces(&rebase_links(entry.fix.as_deref().unwrap_or_default()))
+        escape_braces(&rebase_links(&local_links(
+            entry.fix.as_deref().unwrap_or_default()
+        )))
     );
     let section = entry
         .reference
@@ -1239,7 +1399,7 @@ fn summary(condition: Option<&str>) -> String {
 /// The reference pages a diagnostic's entry can send its reader on to, and
 /// what the entry calls each: a page, from the content root, and its parts,
 /// as `content-model/checks.md`.
-const REFERENCES: [(&str, &str); 8] = [
+const REFERENCES: [(&str, &str); 9] = [
     ("writing/directives.md", "directive reference"),
     ("writing/syntax.md", "directive syntax reference"),
     ("writing/frontmatter.md", "frontmatter reference"),
@@ -1248,6 +1408,7 @@ const REFERENCES: [(&str, &str); 8] = [
     ("content-model/index.md", "`ascribe.toml` reference"),
     ("navigation/index.md", "navigation reference"),
     ("publishing/redirects.md", "guide to keeping addresses"),
+    ("openapi/examples.md", "guide to checked examples"),
 ];
 
 /// The files of the reference pages, relative to `docs/content/`, each with
@@ -1370,6 +1531,17 @@ fn place_words(place: &str) -> Option<&'static str> {
     }
 }
 
+/// An entry's severity, as the reference shows it: with "off by default"
+/// for a check that's off unless a project names it in `[checks]`.
+fn shown_severity(entry: &Entry) -> String {
+    let shown = severity(entry.severity);
+    if entry.off_by_default {
+        format!("{shown}, off by default")
+    } else {
+        shown.to_owned()
+    }
+}
+
 fn severity(severity: Severity) -> &'static str {
     match severity {
         Severity::Error => "Error",
@@ -1418,6 +1590,57 @@ fn message(template: &str) -> String {
 /// registry's are, resolve from `_generated/` instead, where the fragment is.
 fn rebase_links(text: &str) -> String {
     relink(text, |_| "../")
+}
+
+/// Text whose links to the docs' permalinks, as the registry's help writes
+/// them so an agent reading the JSON can follow them, lead to the place each
+/// permalink names in `docs/ascribe.permalinks` instead, written from the
+/// content root, so the docs link to their own pages.
+fn local_links(text: &str) -> String {
+    let list = std::fs::read_to_string(repo().join("docs/ascribe.permalinks")).unwrap();
+    let list = ascribe_model::PermalinkList::parse(&list, ascribe_core::FileId::new(0)).unwrap();
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    let at = concat!("](", ascribe_core::docs_permalinks!());
+    while let Some(i) = rest.find(at) {
+        out.push_str(&rest[..i + 2]);
+        let after = &rest[i + at.len()..];
+        let name = after.split('/').next().unwrap_or_default();
+        let place = &list
+            .permalinks
+            .get(name)
+            .unwrap_or_else(|| panic!("the help links to go/{name}, which the docs don't publish"))
+            .place;
+        out.push_str(place);
+        rest = &after[name.len() + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
+/// A diagnostic's help, which `ascribe check --format json` gives an agent
+/// as `help`, has no relative link: each leads to a permalink of the docs,
+/// an address an agent can follow, which the reference writes as a link to
+/// its own page.
+#[test]
+fn help_links_are_permalinks() {
+    let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
+    for entry in &registry.entries {
+        let help = entry.fix.as_deref().unwrap_or_default();
+        let relative = std::cell::RefCell::new(Vec::new());
+        relink(help, |dest| {
+            relative.borrow_mut().push(dest.to_owned());
+            ""
+        });
+        let relative = relative.into_inner();
+        assert!(
+            relative.is_empty(),
+            "{}'s fix links to {relative:?}: link to a permalink of the docs, `{}<name>/`",
+            entry.code,
+            ascribe_core::docs_permalinks!()
+        );
+        let _ = local_links(help);
+    }
 }
 
 /// Text with `prefix(destination)` written before each relative link's

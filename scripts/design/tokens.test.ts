@@ -164,7 +164,7 @@ test("the source is checked", () => {
   expect(unused).toContain("palette blue.2 isn't used by any color");
 });
 
-// The colors the element library, review, the HTML report, and the Astro
+// The colors the element library, review, the HTML preview, and the Astro
 // toolbar share: the top-level [color] tokens named as the candidates name
 // their semantic colors.
 describe("the shared colors", () => {
@@ -256,6 +256,11 @@ test("the public custom properties keep their names", () => {
     "--ascribe-border-width",
     "--ascribe-caution-background",
     "--ascribe-caution-color",
+    "--ascribe-copy-background",
+    "--ascribe-copy-color",
+    "--ascribe-copy-display",
+    "--ascribe-copy-focus-color",
+    "--ascribe-copy-hover-background",
     "--ascribe-font-family",
     "--ascribe-font-size-small",
     "--ascribe-font-weight-strong",

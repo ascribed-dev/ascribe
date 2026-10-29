@@ -1,0 +1,7 @@
+description: >-
+  An operation the spec marks `deprecated` isn't reported when no link names
+  it, since it's on its way out.
+spec: ["5.2", "7.11"]
+tags: [check]
+
+diagnostics: []

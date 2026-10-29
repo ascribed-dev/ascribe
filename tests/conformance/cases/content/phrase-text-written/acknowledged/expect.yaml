@@ -1,0 +1,11 @@
+description: >-
+  A value that means what it says whatever the phrase becomes, as a
+  changelog's version does, is acknowledged with `@intended` above its
+  block; the block's other values are acknowledged with it, and a block
+  that isn't acknowledged is still reported.
+spec: ["5.1", "4.9"]
+tags: [check]
+
+diagnostics:
+  - {slug: phrase-text-written, line: 8, column: 1}
+  - {slug: phrase-text-written, line: 8, column: 7}

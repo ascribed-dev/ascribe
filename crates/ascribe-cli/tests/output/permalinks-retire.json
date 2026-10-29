@@ -1,10 +1,12 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "ascribe_version": "{version}",
   "retired": [
     "rotate-keys"
   ],
   "reason": "Merged into the security guide",
-  "to": "guides/security.md",
-  "list_changed": true
+  "to": null,
+  "created": false,
+  "list_changed": true,
+  "written": true
 }

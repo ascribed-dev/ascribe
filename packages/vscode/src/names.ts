@@ -14,6 +14,12 @@ export const ELEMENT_TABS = "ascribe-tabs";
 /** `<ascribe-tab>`: one arm of `<ascribe-tabs>` (packages/elements/CONTRACT.md §3). */
 export const ELEMENT_TAB = "ascribe-tab";
 
+/**
+ * On the paragraph that starts an `<ascribe-tab>` and holds its label as
+ * text, for a reader of the HTML with no script (packages/elements/CONTRACT.md §3).
+ */
+export const CLASS_TAB_LABEL = "ascribe-tab-label";
+
 /** `<ascribe-availability>`: a badge or filter (packages/elements/CONTRACT.md §4). */
 export const ELEMENT_AVAILABILITY = "ascribe-availability";
 
@@ -35,6 +41,37 @@ export const CLASS_AVAILABILITY_LEAD_IN = "ascribe-availability-lead-in";
  * (packages/elements/CONTRACT.md §9).
  */
 export const CLASS_CODE_TESTED = "ascribe-code-tested";
+
+/**
+ * On the button the element library's script adds after a code block's
+ * `<pre>`, which copies its code; its words are the stylesheet's
+ * (packages/elements/CONTRACT.md §12).
+ */
+export const CLASS_COPY = "ascribe-copy";
+
+/**
+ * On a copy button for a moment after a click: `copied`, or `failed`
+ * when the clipboard refused (packages/elements/CONTRACT.md §12).
+ */
+export const DATA_COPY = "data-ascribe-copy";
+
+/**
+ * The visually hidden live region that says a copy button copied
+ * (packages/elements/CONTRACT.md §12).
+ */
+export const CLASS_COPY_STATUS = "ascribe-copy-status";
+
+/**
+ * `<ascribe-operation>`: an operation of a declared API, from `@operation`
+ * (packages/elements/CONTRACT.md §11).
+ */
+export const ELEMENT_OPERATION = "ascribe-operation";
+
+/**
+ * On the `(deprecated)` after a deprecated operation's link in
+ * `<ascribe-operation>` (packages/elements/CONTRACT.md §11).
+ */
+export const CLASS_OPERATION_DEPRECATED = "ascribe-operation-deprecated";
 
 /** `<ascribe-group>`: a project widget's group (packages/elements/CONTRACT.md §6). */
 export const ELEMENT_GROUP = "ascribe-group";

@@ -59,13 +59,29 @@ pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<L
         .join(from.as_str())
         .map_or_else(|_| from.to_string(), |path| path.to_string());
     let named = answer::from_here(project.root(), &in_project);
-    Ok(ascribe_query::link(
+    let link = ascribe_query::link(
         loaded.index(),
         project.file_system(),
         &from,
         &named,
         &args.target,
-    )?)
+    )?;
+    // A link to an operation the spec doesn't have is answered again with
+    // the base's specs, as `ascribe check` checks it: an id renamed since is
+    // answered with the operation now at its method and path.
+    if link.kind == ascribe_query::LinkKind::Operation
+        && !link.exists
+        && let Some(index) = loaded.index_with_base_apis()
+    {
+        return Ok(ascribe_query::link(
+            index,
+            project.file_system(),
+            &from,
+            &named,
+            &args.target,
+        )?);
+    }
+    Ok(link)
 }
 
 fn link(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
@@ -95,15 +111,27 @@ fn write_text(out: &mut dyn Write, l: &LinkAnswer) -> io::Result<()> {
             }
             (ascribe_query::LinkKind::Heading, Some(path)) => format!("a heading on {path}"),
             (ascribe_query::LinkKind::File, Some(path)) => format!("the file {path}"),
+            (ascribe_query::LinkKind::Operation, Some(path)) => match &l.operation {
+                Some(o) => format!("an operation of API `{}`, in its spec {path}", o.api),
+                None => format!("an operation in {path}"),
+            },
             (_, Some(path)) => format!("the page {path}"),
             (_, None) => "it".to_owned(),
         };
         writeln!(out, "{} exists: {what}.", l.target)?;
+        if let Some(operation) = &l.operation {
+            write_operation(out, operation)?;
+        }
         let titled = matches!(
             l.kind,
             ascribe_query::LinkKind::Page | ascribe_query::LinkKind::Heading
         );
-        match (&l.href, l.title.as_deref()) {
+        // An operation's link text is its summary, as a reference titles it.
+        let text = l
+            .title
+            .as_deref()
+            .or_else(|| l.operation.as_ref().and_then(|o| o.summary.as_deref()));
+        match (&l.href, text) {
             // Empty link text shows the target's title (SPEC §5.2), so the
             // empty form is as good, and a smaller edit to a link that has
             // none.
@@ -129,6 +157,27 @@ fn write_text(out: &mut dyn Write, l: &LinkAnswer) -> io::Result<()> {
         for s in &l.closest {
             writeln!(out, "  [{}]({})", s.title.as_deref().unwrap_or(""), s.href)?;
         }
+    }
+    Ok(())
+}
+
+/// The operation a link names: its method and path, its summary, whether
+/// it's deprecated, its id, and its address in the reference.
+fn write_operation(out: &mut dyn Write, o: &ascribe_query::LinkOperation) -> io::Result<()> {
+    let mut line = format!("{} {}", o.method.to_uppercase(), o.path);
+    if let Some(summary) = &o.summary {
+        line.push_str(&format!(": {summary}"));
+    }
+    if o.deprecated {
+        line.push_str(" (deprecated)");
+    }
+    writeln!(out, "{line}")?;
+    match &o.operation_id {
+        Some(id) => writeln!(out, "Id: {id}")?,
+        None => writeln!(out, "Id: none; linked by its method and path")?,
+    }
+    if let Some(address) = &o.address {
+        writeln!(out, "Address: {address}")?;
     }
     Ok(())
 }

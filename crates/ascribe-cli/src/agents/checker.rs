@@ -5,36 +5,43 @@
 //! loading and indexing the whole project, which takes over a second on a
 //! large one. So the first hook in a project starts a check server: the same
 //! binary, `ascribe agents hook-server`, in the background, which keeps the
-//! project loaded and answers each hook in milliseconds: for the files an
-//! edit wrote, as the language server does (`ascribe_lsp::Watched`), which
-//! redoes only what the edit affects; for the whole project, as the MCP
-//! server does (`crate::mcp::cache`). Hook and server talk through files
+//! project loaded, as one `Workspace` kept as the language server keeps it
+//! (`ascribe_lsp::Watched`), and answers each hook in milliseconds. Before
+//! each request it lists the project's files, as the MCP server does
+//! (`ascribe_workspace::Listing`), and tells the project what changed on
+//! disk; for the files an edit wrote it redoes only what the edit affects,
+//! and the whole project is checked on the same `Workspace`'s snapshot, on
+//! a thread of its own. Hook and server talk through files
 //! in a folder of the user's cache folder named for the project
 //! ([`Mailbox`]), not a socket: the binary opens none. It stops after
 //! [`IDLE`] without a request, when the project's `ascribe.toml` is gone,
 //! or when another server has taken its place. `ASCRIBE_HOOK_SERVER=off`
 //! checks in the hook's own process instead.
 
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::io::{self, Cursor, Write};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use ascribe_check::{Project, Reported, Severity, prose};
+use ascribe_check::{Reported, Request, Severity};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{RelPath, diagnostics};
+use ascribe_report::prose;
 use ascribe_resolve::is_source_path;
 use serde::{Deserialize, Serialize};
 
-use crate::answer::Projects;
+use crate::answer::{FromDisk, Loaded, Projects};
 use crate::cli::{Color, Global};
 use crate::commands::check;
-use crate::mcp::cache::{Stamp, content_listing};
+use crate::mcp::cache::Stamp;
 use crate::report::concise;
 use ascribe_lsp::Watched;
+use ascribe_workspace::{CodeStamps, LoadError, WorkspaceSnapshot};
 
 /// The most errors a hook passes on.
 pub const LIMIT: usize = 10;
@@ -43,7 +50,8 @@ pub const LIMIT: usize = 10;
 pub const IDLE: Duration = Duration::from_secs(10 * 60);
 
 /// What a check found, as a hook reports it: the counts, the first
-/// [`LIMIT`] errors as `ascribe check --format concise` writes them, and
+/// [`LIMIT`] errors as `ascribe check --format concise` writes them but for
+/// their fixes, and
 /// for a quick check the build it covered and the advice with a safe fix.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Found {
@@ -65,7 +73,7 @@ pub struct Found {
     #[serde(default)]
     pub fixable: usize,
     /// The first [`LIMIT`] of them: each one's line, as `--format concise`
-    /// writes it, and the title of its safe fix.
+    /// writes it but for its fix, and the title of its safe fix.
     #[serde(default)]
     pub fixes: Vec<(String, String)>,
     /// How many advice `ascribe.baseline` holds back in what was checked,
@@ -77,9 +85,30 @@ pub struct Found {
     /// why.
     #[serde(default)]
     pub baseline_problem: Option<String>,
+    /// For a quick check, how many of the advice in the files are what the
+    /// page's template left to fill in (`template-placeholder-left`,
+    /// `template-section-empty`), which have no fix: the agent writes them
+    /// while the file is still its own (#1005).
+    #[serde(default)]
+    pub unfilled: usize,
+    /// The first [`LIMIT`] of them, each one's line as `--format concise`
+    /// writes it but for its fix.
+    #[serde(default)]
+    pub unfilled_lines: Vec<String>,
 }
 
 impl Found {
+    /// Adds an advice the page's template left to fill in, once.
+    fn add_unfilled(&mut self, line: String) {
+        if self.unfilled_lines.contains(&line) {
+            return;
+        }
+        self.unfilled += 1;
+        if self.unfilled_lines.len() < LIMIT {
+            self.unfilled_lines.push(line);
+        }
+    }
+
     /// Adds an advice with a safe fix, once.
     fn add_fixable(&mut self, line: String, fix: &str) {
         if self.fixes.iter().any(|(l, _)| *l == line) {
@@ -90,6 +119,20 @@ impl Found {
             self.fixes.push((line, fix.to_owned()));
         }
     }
+}
+
+/// The diagnostics that say what a page's template left to fill in, which
+/// an agent that started the page from the template writes.
+const UNFILLED: [ascribe_core::DiagnosticSlug; 2] = [
+    diagnostics::TEMPLATE_PLACEHOLDER_LEFT,
+    diagnostics::TEMPLATE_SECTION_EMPTY,
+];
+
+/// Whether the diagnostic with `code` is one of [`UNFILLED`].
+fn is_unfilled(code: &str) -> bool {
+    ascribe_check::Registry::global()
+        .find(code)
+        .is_some_and(|entry| UNFILLED.iter().any(|slug| slug.as_str() == entry.slug))
 }
 
 /// The title of a diagnostic's first safe fix.
@@ -136,7 +179,7 @@ pub fn is_source(config: &Path, file: &Path) -> bool {
 /// content model doesn't load, and so can't be checked file by file (the
 /// full check says why).
 fn content_dir(config: &Path) -> Option<PathBuf> {
-    let model = Project::load_model(config).ok()?;
+    let model = ascribe_check::LOADER.load_model(config).ok()?;
     let content = RelPath::parse(&model.model.project.content_root).ok()?;
     let root = normalize(&std::path::absolute(&model.root).unwrap_or(model.root));
     Some(normalize(&root.join(content.as_str())))
@@ -146,7 +189,7 @@ fn in_content(config: &Path, content: &Path, file: &Path) -> bool {
     relative_path(content, file).is_some_and(|rel| is_source_path(&rel))
         && file
             .parent()
-            .and_then(Project::find_config)
+            .and_then(ascribe_workspace::find_config)
             .is_some_and(|c| normalize(&c) == normalize(config))
 }
 
@@ -180,6 +223,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         summary: false,
         format: check::Format::Concise,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
@@ -187,6 +231,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         // project's check's, in CI, the MCP tool, and Check Every Build.
         addresses: check::Addresses::NotCompared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         // What `ascribe.baseline` holds back, the project's backlog, isn't
         // the agent's to fix now: it's left out, and counted (#790).
@@ -227,10 +272,10 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         .map(|i| &reported[i])
         .filter(|r| r.diagnostic.severity == Severity::Error)
         .collect();
+    // Without the fix `--format concise` adds: the hook says what to do
+    // itself, as the language server's lines do.
     let line_of = |r: &Reported| -> Result<String, String> {
-        let mut line = Vec::new();
-        concise::write_line(&mut line, files, r).map_err(|e| e.to_string())?;
-        Ok(String::from_utf8_lossy(&line).trim_end().to_owned())
+        Ok(concise::head(files, r).trim_end().to_owned())
     };
     let mut lines = Vec::new();
     for r in errors.iter().take(LIMIT) {
@@ -273,20 +318,22 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
                 .collect();
             ascribe_check::diagnose_every_build_in(project, &paths)
         });
-        // What the baseline lists is held back here too.
-        let across = match project.baseline() {
-            Some(Ok(baseline)) => {
-                ascribe_check::baseline::apply(project, baseline, across, false, &[]).diagnostics
-            }
-            _ => across,
+        // What the baseline lists is held back here too, as the check of
+        // the files holds it back: none of these entries is stale, since
+        // they're a few files' findings.
+        let request = Request {
+            editor_build,
+            baseline: matches!(project.baseline(), Some(Ok(_))),
+            ..Request::default()
         };
-        let across: Vec<Reported> = across
-            .into_iter()
-            .map(|diagnostic| Reported {
-                diagnostic,
-                repeats: 0,
-            })
-            .collect();
+        let across = ascribe_check::Found {
+            diagnostics: across,
+            ..ascribe_check::Found::default()
+        };
+        let across = request
+            .settle(project, across)
+            .map_err(|e| e.to_string())?
+            .reported;
         for r in concise::order(files, reported)
             .into_iter()
             .map(|i| &reported[i])
@@ -295,7 +342,9 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
             if r.diagnostic.severity != Severity::Advice {
                 continue;
             }
-            if let Some(fix) = safe_fix(&r.diagnostic) {
+            if UNFILLED.contains(&r.diagnostic.slug) {
+                found.add_unfilled(line_of(r)?);
+            } else if let Some(fix) = safe_fix(&r.diagnostic) {
                 found.add_fixable(line_of(r)?, fix);
             }
         }
@@ -685,20 +734,23 @@ pub fn serve(config: &Path, idle: Duration, binary: Option<&Path>) -> io::Result
             }
         })
     };
+    // The whole project is checked on a thread of its own, so a check of
+    // the files an edit wrote isn't kept waiting on it, on the kept
+    // project's snapshot as each request finds it.
     let projects = {
-        let (send, receive) = mpsc::channel::<(String, Ask)>();
+        let (send, receive) = mpsc::channel::<(String, Option<WorkspaceSnapshot>)>();
         let mailbox = mailbox.clone();
         let config = config.clone();
         let thread = std::thread::spawn(move || {
-            // Its own projects: they aren't `Send`.
-            let cache = crate::mcp::Cache::default();
-            for (name, ask) in receive {
-                mailbox.answer(&name, &check(&cache, &config, &ask));
+            let mut given = Given(RefCell::new(None));
+            for (name, snapshot) in receive {
+                given.give(snapshot);
+                mailbox.answer(&name, &check(&given, &config, &Ask::Project));
             }
         });
         (send, thread)
     };
-    let mut kept = Kept { watched: None };
+    let mut kept = Kept { watching: None };
     let mut last = Instant::now();
     let mut looked = Instant::now();
     loop {
@@ -709,7 +761,8 @@ pub fn serve(config: &Path, idle: Duration, binary: Option<&Path>) -> io::Result
                     mailbox.answer(&name, &Ok(found));
                 }
                 Ask::Project => {
-                    let _ = projects.0.send((name, Ask::Project));
+                    let snapshot = kept.snapshot(&config);
+                    let _ = projects.0.send((name, snapshot));
                 }
             }
             last = Instant::now();
@@ -752,10 +805,19 @@ fn stamp(binary: &Path) -> Option<(Option<std::time::SystemTime>, u64)> {
     Some((meta.modified().ok(), meta.len()))
 }
 
-/// What a check server keeps for the files an edit wrote: the project,
-/// kept current as the language server keeps it.
+/// The project a check server keeps, and checks both ways.
 struct Kept {
-    watched: Option<(Watched, Vec<Stamp>)>,
+    watching: Option<Watching>,
+}
+
+/// A project kept current as the language server keeps it, and what was
+/// on disk when it was last told.
+struct Watching {
+    watched: Watched,
+    /// The project's files, as last listed.
+    listed: Vec<Stamp>,
+    /// The code files its snippets read, as each was first seen read.
+    code: CodeStamps,
 }
 
 impl Kept {
@@ -763,13 +825,7 @@ impl Kept {
     /// project what changed on disk since the last request: what the
     /// listing shows, and `files`, whose times may not have moved.
     fn check_files(&mut self, config: &Path, files: &[PathBuf]) -> Found {
-        let listing = listing(config);
-        let (watched, before) = self.watched.get_or_insert_with(|| {
-            (
-                Watched::load(config, Some(std::sync::Arc::new(crate::clock::today))),
-                listing.clone(),
-            )
-        });
+        let (listing, folders) = listing(config);
         // Each file as it's named on disk: a harness may spell it in
         // another case, where the system doesn't tell them apart.
         let by_case: HashMap<String, &Path> = listing
@@ -788,21 +844,9 @@ impl Kept {
                     .map_or_else(|| file.clone(), |p| p.to_path_buf())
             })
             .collect();
-        let then: HashSet<&Stamp> = before.iter().collect();
-        let mut present: Vec<PathBuf> = listing
-            .iter()
-            .filter(|now| !then.contains(now))
-            .map(|(path, _, _)| path.clone())
-            .collect();
-        present.extend(files.iter().cloned());
-        present.sort();
-        present.dedup();
-        let gone: Vec<PathBuf> = before
-            .iter()
-            .filter(|(path, _, _)| !named.contains(path.as_path()))
-            .map(|(path, _, _)| path.clone())
-            .collect();
-        watched.changed(&present, &gone);
+        drop(named);
+        drop(by_case);
+        let watched = self.refresh(config, listing, &folders, &files);
         let root = watched.root().map(Path::to_owned).unwrap_or_default();
         let mut found = Found {
             build: watched.build(),
@@ -829,9 +873,12 @@ impl Kept {
                         found.warnings += 1;
                         continue;
                     }
-                    // Advice reaches the agent only with a safe fix.
+                    // Advice reaches the agent only with a safe fix, or
+                    // when it's what the template left to fill in.
                     Severity::Advice => {
-                        if let Some(fix) = problem.safe_fixes.first() {
+                        if is_unfilled(&problem.code) {
+                            found.add_unfilled(line);
+                        } else if let Some(fix) = problem.safe_fixes.first() {
                             found.add_fixable(line, fix);
                         }
                         continue;
@@ -846,22 +893,139 @@ impl Kept {
         // Counted once `problems` has checked them.
         found.baselined = files.iter().map(|file| watched.held(file)).sum();
         found.baseline_problem = watched.baseline_problem();
-        drop(named);
-        drop(by_case);
-        *before = listing;
         found
+    }
+
+    /// The kept project as it is on disk now, for a check of the whole
+    /// project; `None` when its content model doesn't load.
+    fn snapshot(&mut self, config: &Path) -> Option<WorkspaceSnapshot> {
+        let (listing, folders) = listing(config);
+        self.refresh(config, listing, &folders, &[]).snapshot()
+    }
+
+    /// The kept project, loaded when it isn't yet, and told what changed on
+    /// disk since it was last told: the files whose stamps in `listing`
+    /// differ, the code files its snippets read that changed, and `files`.
+    /// A local source's folder, one of `folders`, appearing or going loads
+    /// it again, as the MCP server's does.
+    fn refresh(
+        &mut self,
+        config: &Path,
+        listing: Vec<Stamp>,
+        folders: &[PathBuf],
+        files: &[PathBuf],
+    ) -> &mut Watched {
+        let moved = |w: &Watching| {
+            let then: HashSet<&Stamp> = w.listed.iter().collect();
+            let now: HashSet<&Stamp> = listing.iter().collect();
+            then.symmetric_difference(&now)
+                .any(|(path, _, _)| folders.contains(path))
+        };
+        if self.watching.as_ref().is_some_and(moved) {
+            self.watching = None;
+        }
+        let watching = self.watching.get_or_insert_with(|| {
+            let watched = Watched::load(config, Some(std::sync::Arc::new(crate::clock::today)));
+            let mut code = CodeStamps::default();
+            if let (Some(root), Some(snapshot)) = (watched.root(), watched.snapshot()) {
+                code.changed(root, &snapshot);
+            }
+            Watching {
+                watched,
+                listed: listing.clone(),
+                code,
+            }
+        });
+        let named: HashSet<&Path> = listing.iter().map(|(path, _, _)| path.as_path()).collect();
+        let then: HashSet<&Stamp> = watching.listed.iter().collect();
+        let mut present: Vec<PathBuf> = listing
+            .iter()
+            .filter(|now| !then.contains(now))
+            .map(|(path, _, _)| path.clone())
+            .collect();
+        present.extend(files.iter().cloned());
+        let mut gone: Vec<PathBuf> = watching
+            .listed
+            .iter()
+            .filter(|(path, _, _)| !named.contains(path.as_path()))
+            .map(|(path, _, _)| path.clone())
+            .collect();
+        drop(then);
+        drop(named);
+        if let (Some(root), Some(snapshot)) = (watching.watched.root(), watching.watched.snapshot())
+        {
+            for (path, there) in watching.code.changed(root, &snapshot) {
+                let path = normalize(&root.join(path.as_str()));
+                if there {
+                    present.push(path);
+                } else {
+                    gone.push(path);
+                }
+            }
+        }
+        present.retain(|path| !folders.contains(path));
+        gone.retain(|path| !folders.contains(path));
+        present.sort();
+        present.dedup();
+        watching.watched.changed(&present, &gone);
+        watching.listed = listing;
+        &mut watching.watched
+    }
+}
+
+/// The project a check of the whole project is given: the kept project's
+/// snapshot, and what was kept with it between checks, or, when its content
+/// model doesn't load, the project read from disk, which says why.
+type Snapshotted = (Option<WorkspaceSnapshot>, Option<Rc<Loaded>>);
+struct Given(RefCell<Option<Snapshotted>>);
+
+impl Given {
+    /// Takes the kept project's snapshot now. What was kept with the last
+    /// one stays when it's the same.
+    fn give(&mut self, snapshot: Option<WorkspaceSnapshot>) {
+        let loaded = self.0.get_mut();
+        let same = match (loaded.as_ref(), &snapshot) {
+            (Some((_, Some(kept))), Some(snapshot)) => kept.is_of(snapshot),
+            _ => false,
+        };
+        if !same {
+            *loaded = Some((snapshot, None));
+        }
+    }
+}
+
+impl Projects for Given {
+    fn load(&self, config: &Path) -> Result<Rc<Loaded>, LoadError> {
+        let mut loaded = self.0.borrow_mut();
+        let Some((Some(snapshot), kept)) = loaded.as_mut() else {
+            return FromDisk.load(config);
+        };
+        Ok(Rc::clone(kept.get_or_insert_with(|| {
+            Rc::new(Loaded::new(snapshot.clone()))
+        })))
     }
 }
 
 /// The files of the project of `config` a check reads, as the MCP server
-/// lists them; nothing when its content model doesn't load.
-fn listing(config: &Path) -> Vec<Stamp> {
-    let Ok(model) = Project::load_model(config) else {
-        return Vec::new();
+/// lists them, and its local sources' folders, absolute; nothing when its
+/// content model doesn't load.
+fn listing(config: &Path) -> (Vec<Stamp>, Vec<PathBuf>) {
+    let Ok(model) = ascribe_check::LOADER.load_model(config) else {
+        return (Vec::new(), Vec::new());
     };
     let layout = ascribe_resolve::Layout::from_model(&model.model);
     let root = normalize(&std::path::absolute(&model.root).unwrap_or(model.root));
-    let mut files = content_listing(&root, &layout.content_root, &layout.output_dir);
-    files.sort();
-    files
+    let folders = model
+        .model
+        .sources
+        .iter()
+        .map(|source| normalize(&root.join(&source.path)))
+        .collect();
+    let listing = ascribe_workspace::Listing::of(
+        &root,
+        &layout,
+        &model.model,
+        ascribe_check::LOADER.side_files,
+    );
+    (listing.stamps().to_vec(), folders)
 }

@@ -18,7 +18,9 @@
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 // - SearchResult (the language server, answering `ascribe/search`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
+// - AddressesParams (the language server, sending `ascribe/addresses`)
 // - ModelReport (`ascribe model --format json`)
+// - AgentsSyncReport (`ascribe agents sync --format json`)
 
 /** A problem acknowledged as intended. */
 export interface AcknowledgedEntry {
@@ -41,6 +43,39 @@ export interface AcknowledgedEntry {
 }
 
 /**
+ * The parameters of `ascribe/addresses`: what the last comparison found.
+ * Sent once the project loads and after each change that compares again,
+ * when it, or a page's old addresses (This page's "Also answers at"),
+ * differ from what was sent last.
+ */
+export interface AddressesParams {
+  /**
+   * `ascribe.addresses`' `file:` URI; `null` when the project has no
+   * file, and nothing is compared.
+   */
+  uri: string | null;
+  /**
+   * The base compared with; `null` when there's no file, it doesn't
+   * read, or the base couldn't be read.
+   */
+  base: BaseInfo | null;
+  /**
+   * How many `address-lost` warnings there are: one for each page whose
+   * addresses are lost.
+   */
+  lost: number;
+  /**
+   * The problems, all at `ascribe.addresses`, as `ascribe check`
+   * reports them: the protocol's diagnostics, each with the data a
+   * published diagnostic has, its fixes among it.
+   */
+  diagnostics: unknown[];
+}
+
+/** An agent that reads a file `sync` writes, as `sync` names it. */
+export type Agent = "claude_code" | "codex" | "copilot" | "copilot_cloud" | "cursor" | "gemini_cli";
+
+/**
  * The answer to `ascribe/agentPrompt`, or `null` when there's nothing to
  * prompt about: the file has no problem, the diagnostic is no longer
  * reported, review is off, or the page or fragment didn't change.
@@ -51,6 +86,41 @@ export interface AgentPromptResult {
    * link to carry.
    */
   prompt: string;
+}
+
+/**
+ * What `ascribe agents sync --format json` writes: each file it writes,
+ * and what it has to say.
+ */
+export interface AgentsSyncReport {
+  /**
+   * The version of this schema. It changes only when a field is removed
+   * or changes meaning.
+   */
+  schema_version: number;
+  /** The version of Ascribe that wrote it. */
+  ascribe_version: string;
+  /** Whether it ran with `--check`, which writes nothing. */
+  check: boolean;
+  /** Whether it wrote the files: false with `--check` or `--dry-run`. */
+  written: boolean;
+  /** Each file, in the order it was first planned. */
+  files: SyncFile[];
+  /**
+   * The notes for the person running it, which it also writes to
+   * standard error.
+   */
+  notes: string[];
+  /**
+   * What an agent doesn't read of what's written, and the target that
+   * adds it, a sentence each.
+   */
+  unread: string[];
+  /**
+   * With `--cloud` and no `--agent`, the MCP server's JSON to paste into
+   * the repository's settings for Copilot's cloud agent; else `null`.
+   */
+  mcp_settings: unknown;
 }
 
 /**
@@ -204,14 +274,22 @@ export interface ChangedPage {
    * The other changed files the page's change can come from: fragments it
    * includes and pages its links take a title or a heading from, in path
    * order; then the snippets whose code changed, by address
-   * (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-   * is a cause.
+   * (`code:app.py#main`); then the operations of a declared API whose spec
+   * changed what the page writes for them, an `@operation`'s method, path,
+   * summary, or deprecation, or a link's address, each by its spec's path
+   * from the project root, `#`, and the fragment the page names it by
+   * (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+   * content model is a cause. The kinds are told apart by their form: a
+   * content file's path ends in `.md`, a snippet's address has its
+   * source's name and `:` before its path, and an operation's has a `#`
+   * and neither.
    */
   because: string[];
   /**
    * What changed about the page itself besides its blocks, in this
    * order: `title`, `frontmatter`, `availability` (the page-level one),
-   * and `route`. Empty for an added or removed page.
+   * and `route`. Empty for an added or removed page. A moved page's
+   * route moves with it, so it isn't listed for one.
    */
   page_changed: string[];
   /** How many changes of each kind. */
@@ -220,6 +298,21 @@ export interface ChangedPage {
   title: string | null;
   /** The title formatted, when its field sets `inline = "code"`; `null` when it doesn't. */
   formatted_title: FormattedPiece[] | null;
+  /**
+   * For a page that moved, the content path it was at: git sees its
+   * file renamed, or `ascribe.addresses` records the move. The page is
+   * listed once, at `path`, compared with the page as it was at
+   * `moved_from`; `status` is `changed`, and its `counts` and `changes`
+   * are what differs besides the move, none for a page that only moved.
+   * Absent for a page that didn't move.
+   */
+  moved_from?: string;
+  /**
+   * The pages among `because` whose only change is that they moved, each
+   * by where it was and where it is: a link on this page leads to its new
+   * address. Absent when there's none.
+   */
+  moved_links?: MovedPage[];
 }
 
 /** The answer to `ascribe/review/changes`. */
@@ -365,7 +458,9 @@ export interface CheckReport {
   /**
    * With `--fix`, the safe fixes it applied, in file order and, within a
    * file, in the order of their diagnostics; the rest of the report is
-   * the check after them. Left out when none was applied.
+   * the check after them. With `--dry-run`, the fixes it would apply,
+   * none of which was, and the check is of the files as they are. Left
+   * out when there's none.
    */
   fixed?: FixedEntry[];
 }
@@ -743,7 +838,8 @@ export interface Entry {
   unpublished: boolean;
   /**
    * How to fix it, in general: the diagnostics reference's advice for its
-   * code.
+   * code, in Markdown, whose links are the docs' permalinks, such as
+   * `https://ascribed-dev.com/go/22-checks/`.
    */
   help: string;
   /**
@@ -834,7 +930,7 @@ export type Form = "line" | "block" | "container" | "group";
 /**
  * A piece of a formatted value, as the JSON output writes it:
  * `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
- * formatted title, such as the review report's, writes it the same way.
+ * formatted title, such as the HTML preview's, writes it the same way.
  */
 export interface FormattedPiece {
   /** What the piece is. */
@@ -1026,7 +1122,7 @@ export interface InventoryValue {
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */
-export type LeftOut = "variant" | "availability";
+export type LeftOut = "variant" | "availability" | "draft";
 
 /** A file to create, empty. */
 export interface LspCreateFile {
@@ -1107,6 +1203,24 @@ export interface LspWorkspaceEdit {
    * before the edit that gives it its text.
    */
   documentChanges?: LspDocumentChange[];
+}
+
+/** An API: an OpenAPI spec that pages link into. */
+export interface ModelApi {
+  /** Its name, as `@operation` and `api:` addresses write it. */
+  name: string;
+  /** The spec's file, from the folder `ascribe.toml` is in. */
+  spec: string;
+  /**
+   * Where its reference is: the renderer's page, or an address
+   * pattern, as written.
+   */
+  reference: string;
+  /**
+   * The renderer its reference is published with, `redoc`; absent when
+   * `reference` is an address pattern.
+   */
+  renderer?: string;
 }
 
 /** An attribute a widget accepts. */
@@ -1234,9 +1348,56 @@ export interface ModelField {
   declared?: string;
 }
 
+/** `[fragments]`. */
+export interface ModelFragments {
+  /**
+   * The patterns of the files that are fragments besides those whose
+   * path has a file or folder name starting with `_`, from the content
+   * root.
+   */
+  patterns: string[];
+  /** The fields a fragment's frontmatter may give, in declaration order. */
+  fields: ModelField[];
+}
+
+/** A file `[from]` takes tables or keys from. */
+export interface ModelFrom {
+  /** The file, from the folder `ascribe.toml` is in. */
+  file: string;
+  /** What it takes, as `take` names it: `releases`, `consumer.site`. */
+  take: string[];
+}
+
+/**
+ * An acknowledged problem: a check's problem about a content model entry
+ * or an image, which is intended.
+ */
+export interface ModelIntended {
+  /** The check, by its slug. */
+  check: string;
+  /** What it's about: `phrase`, `feature`, or `image`. */
+  kind: string;
+  /** Its key, or the image's path. */
+  name: string;
+  /** Why the problem is intended. */
+  reason: string;
+}
+
 /** A kind of content model entry. */
 export type ModelKind =
   "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build" | "type";
+
+/** A lifecycle state. */
+export interface ModelLifecycleState {
+  /** Its name, which an availability spec gives. */
+  name: string;
+  /** Its label. */
+  label: string;
+  /** Whether content in it counts as available. */
+  available: boolean;
+  /** Whether it's built in, rather than declared by the project. */
+  builtin: boolean;
+}
 
 /** A release line. */
 export interface ModelLine {
@@ -1288,6 +1449,16 @@ export interface ModelNavSection {
    * name, which is then one of the parent's `pages` too.
    */
   page?: ModelNavPage;
+}
+
+/** A note type. */
+export interface ModelNoteType {
+  /** Its name, which `@note`'s `type` gives. */
+  name: string;
+  /** Its label. */
+  label: string;
+  /** Whether it's built in, rather than declared by the project. */
+  builtin: boolean;
 }
 
 /** An observation of a source's examples. */
@@ -1349,6 +1520,8 @@ export interface ModelReport {
   schema_version: number;
   /** The version of Ascribe that wrote it. */
   ascribe_version: string;
+  /** APIs, in declaration order. */
+  apis?: ModelApi[];
   /**
    * Builds, in declaration order, a versioned build as one for each live
    * line, the current line first.
@@ -1370,10 +1543,37 @@ export interface ModelReport {
   /** Features, in declaration order. */
   features?: ModelFeature[];
   /**
+   * `[fragments]`: the files that are fragments, and the fields a
+   * fragment's frontmatter may give.
+   */
+  fragments?: ModelFragments;
+  /**
+   * `[from]`: each file the project takes from, in the order `take`
+   * names them, with what it takes.
+   */
+  from?: ModelFrom[];
+  /**
+   * `[frontmatter]`: the fields every page type has, as written, in
+   * declaration order. Each type's `fields` has them already.
+   */
+  frontmatter?: ModelField[];
+  /**
    * Glossary terms, in the order of `[glossary] pages`, and on each page
    * in document order.
    */
   glossary?: ModelTerm[];
+  /**
+   * `[images.attributes]`: the keys an image's attribute block may give,
+   * in declaration order.
+   */
+  images?: ModelAttribute[];
+  /** `[[intended]]`: the acknowledged problems, in declaration order. */
+  intended?: ModelIntended[];
+  /**
+   * Lifecycle states: the built-in ones, as the project adjusts them,
+   * then the ones it declares.
+   */
+  lifecycle?: ModelLifecycleState[];
   /** `[listing]`: each key, with its value in effect. */
   listing?: ModelSetting[];
   /**
@@ -1382,8 +1582,11 @@ export interface ModelReport {
    * share of it. Only in the whole report.
    */
   navigation?: ModelNavSection;
-  /** `[permalinks]`: each key, with its value in effect. */
-  permalinks?: ModelSetting[];
+  /**
+   * Note types, the values of `@note`'s `type`: the built-in ones, as
+   * the project labels them, then the ones it declares.
+   */
+  notes?: ModelNoteType[];
   /** Phrases, in declaration order. */
   phrases?: ModelPhrase[];
   /** `[project]`: each key, with its value in effect. */
@@ -1400,6 +1603,8 @@ export interface ModelReport {
    * is declared.
    */
   types?: ModelType[];
+  /** `[versions]`: each key, with its value in effect. */
+  versions?: ModelSetting[];
   /** Project widgets, in declaration order. */
   widgets?: ModelWidget[];
 }
@@ -1543,6 +1748,14 @@ export interface ModelWidget {
   attributes: ModelAttribute[];
 }
 
+/** A page that moved: where it was, and where it is, by content path. */
+export interface MovedPage {
+  /** Where it was, in the base. */
+  from: string;
+  /** Where it is now. */
+  to: string;
+}
+
 /** What a page or fragment is. */
 export interface PageAbout {
   /** Its content path. */
@@ -1585,10 +1798,10 @@ export interface PageAbout {
    */
   description: PageDescription | null;
   /**
-   * When it's due for review, when its type gives a field the
-   * review-date role and the page has a date in it.
+   * When it's due to be checked again, when its type gives a field the
+   * recheck-date role and the page has a date in it.
    */
-  review: PageReview | null;
+  recheck: PageRecheck | null;
   /** Its own `available`, as shown; `null` when it has none. */
   availability: string | null;
   /**
@@ -1603,6 +1816,14 @@ export interface PageAbout {
   listing: PageListing | null;
   /** The permalinks the file declares, in document order. */
   permalinks: PagePermalink[];
+  /**
+   * The old addresses that lead to it, each once, in address order: each
+   * `from` of a redirect a build writes to it in `redirects.json`, with
+   * its entry, as the server last compared the addresses, at the last
+   * save or change on disk. Empty for a fragment, and for a project
+   * without `ascribe.addresses`.
+   */
+  alsoAnswersAt: PageOldAddress[];
   /**
    * What its type's template still leaves to fill in; `null` when its
    * type has no template or nothing of it is left.
@@ -1665,14 +1886,22 @@ export interface PageDiff {
    * The other changed files the page's change can come from: fragments it
    * includes and pages its links take a title or a heading from, in path
    * order; then the snippets whose code changed, by address
-   * (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-   * is a cause.
+   * (`code:app.py#main`); then the operations of a declared API whose spec
+   * changed what the page writes for them, an `@operation`'s method, path,
+   * summary, or deprecation, or a link's address, each by its spec's path
+   * from the project root, `#`, and the fragment the page names it by
+   * (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+   * content model is a cause. The kinds are told apart by their form: a
+   * content file's path ends in `.md`, a snippet's address has its
+   * source's name and `:` before its path, and an operation's has a `#`
+   * and neither.
    */
   because: string[];
   /**
    * What changed about the page itself besides its blocks, in this
    * order: `title`, `frontmatter`, `availability` (the page-level one),
-   * and `route`. Empty for an added or removed page.
+   * and `route`. Empty for an added or removed page. A moved page's
+   * route moves with it, so it isn't listed for one.
    */
   page_changed: string[];
   /** How many changes of each kind. */
@@ -1683,6 +1912,21 @@ export interface PageDiff {
    * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
+  /**
+   * For a page that moved, the content path it was at: git sees its
+   * file renamed, or `ascribe.addresses` records the move. The page is
+   * listed once, at `path`, compared with the page as it was at
+   * `moved_from`; `status` is `changed`, and its `counts` and `changes`
+   * are what differs besides the move, none for a page that only moved.
+   * Absent for a page that didn't move.
+   */
+  moved_from?: string;
+  /**
+   * The pages among `because` whose only change is that they moved, each
+   * by where it was and where it is: a link on this page leads to its new
+   * address. Absent when there's none.
+   */
+  moved_links?: MovedPage[];
 }
 
 /** A tested example a `@snippet` of the file shows. */
@@ -1793,6 +2037,17 @@ export interface PageMemo {
   body: LspRange;
 }
 
+/** An old address that leads to a page: This page's "Also answers at". */
+export interface PageOldAddress {
+  /** The address, from the host's root, as `redirects.json`'s `from`. */
+  address: string;
+  /**
+   * The `ascribe.addresses` key it comes from, as `redirects.json`'s
+   * `entry`.
+   */
+  entry: string;
+}
+
 /** A permalink declared in the file (SPEC §7.5). */
 export interface PagePermalink {
   /** Its name. */
@@ -1823,6 +2078,28 @@ export interface PagePlace {
   range: LspRange;
   /** The text of the line it starts on, trimmed. */
   text: string;
+}
+
+/** When a page is due to be checked again. */
+export interface PageRecheck {
+  /** The frontmatter field with the recheck-date role. */
+  field: string;
+  /** The date it holds, `YYYY-MM-DD`. */
+  date: string;
+  /**
+   * The days from today to the date: negative once it's passed. `null`
+   * when the server has no day to count from.
+   */
+  days: number | null;
+  /** Whether the date has passed. */
+  overdue: boolean;
+  /**
+   * Whether `recheck-overdue` reports the page: the date has passed, and
+   * the project hasn't turned the check off.
+   */
+  reported: boolean;
+  /** The field's line, in the negotiated position encoding. */
+  range: LspRange;
 }
 
 /**
@@ -1867,28 +2144,6 @@ export interface PageResult {
   health: PageHealth;
   /** The file's `@include`s and `@snippet`s, in document order. */
   includes: PageInclude[];
-}
-
-/** When a page is due for review. */
-export interface PageReview {
-  /** The frontmatter field with the review-date role. */
-  field: string;
-  /** The date it holds, `YYYY-MM-DD`. */
-  date: string;
-  /**
-   * The days from today to the date: negative once it's passed. `null`
-   * when the server has no day to count from.
-   */
-  days: number | null;
-  /** Whether the date has passed. */
-  overdue: boolean;
-  /**
-   * Whether `review-overdue` reports the page: the date has passed, and
-   * the project hasn't turned the check off.
-   */
-  reported: boolean;
-  /** The field's line, in the negotiated position encoding. */
-  range: LspRange;
 }
 
 /** A page's size, as `page-size` measures it. */
@@ -2451,14 +2706,24 @@ export interface Summary {
   acknowledged?: number;
   /**
    * How many problems `ascribe.baseline` holds back, which `diagnostics`
-   * leaves out and which are advice. Left out when there are none, and by
-   * `ascribe build`, which doesn't read the baseline.
+   * leaves out and which are advice. Left out when there are none, and
+   * with `--no-baseline`.
    */
   baselined?: number;
   /** With `--summary`: how many diagnostics have each code, most first. */
   by_code?: CodeCount[];
   /** With `--summary`: how many diagnostics are in each file, most first. */
   by_file?: FileCount[];
+}
+
+/** A file in `ascribe agents sync --format json`. */
+export interface SyncFile {
+  /** Its path, from the current directory, `/`-separated. */
+  path: string;
+  /** Whether it changed: with `check`, whether it's out of date. */
+  changed: boolean;
+  /** The agents that read it. */
+  read_by: Agent[];
 }
 
 /** An attribute a widget accepts. */

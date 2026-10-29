@@ -7,31 +7,4 @@
    │
    │ Help: Link to the page's file instead of its route
 ───╯
-[ASC252] Advice: the permalink `prerequisites` has no summary, so a product showing its help has none; add a `@summary` to its section
-    ╭─[ docs/install-agent.md:15:1 ]
-    │
- 15 │ @id {permalink=true}: prerequisites
-    │ ─────────────────┬─────────────────
-    │                  ╰─────────────────── summary-missing
-    │
-    │ Help: Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = "warning"`.
-────╯
-[ASC252] Advice: the permalink `install-agent` has no summary, so a product showing its help has none; add a `@summary` to its section
-    ╭─[ docs/install-agent.md:20:1 ]
-    │
- 20 │ @id {permalink=true}: install-agent
-    │ ─────────────────┬─────────────────
-    │                  ╰─────────────────── summary-missing
-    │
-    │ Help: Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = "warning"`.
-────╯
-[ASC252] Advice: the permalink `connect` has no summary, so a product showing its help has none; add a `@summary` to its section
-    ╭─[ docs/install-agent.md:59:1 ]
-    │
- 59 │ @id {permalink=true}: connect
-    │ ──────────────┬──────────────
-    │               ╰──────────────── summary-missing
-    │
-    │ Help: Give the section a summary with `@summary`: a sentence or two a product shows in a tooltip or beside an error. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once and shown in both places, or write `@summary: <text>` directly under the heading and its `@id` when nothing on the page reads well alone. A project that ships embedded help can raise this check to a warning, so every permalink needs one: `[checks] summary-missing = "warning"`.
-────╯
-checked 8 files for every build, reported on 8: 0 errors, 1 warning, 3 advice
+checked 8 files for every build, 1 with problems: 0 errors, 1 warning, 0 advice

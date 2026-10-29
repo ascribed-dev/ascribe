@@ -5,7 +5,7 @@ description: "`@ascribed/elements`: the custom elements the site output uses, th
 permalink: elements
 ---
 
-The site output writes Ascribe's constructs as custom elements, such as `<ascribe-note>` for a note. `@ascribed/elements` is the library that draws them: a stylesheet for every element, and a small script for `<ascribe-tabs>`, the only one with behavior. This page lists the elements and the CSS custom properties a site sets to theme them, and shows how to style what the library doesn't know, such as a project's own note types.
+The site output writes Ascribe's constructs as custom elements, such as `<ascribe-note>` for a note. `@ascribed/elements` is the library that draws them: a stylesheet for every element, and a small script for `<ascribe-tabs>`, the only one with behavior, which also adds a [copy button](#copy-buttons) to each code block. This page lists the elements and the CSS custom properties a site sets to theme them, and shows how to style what the library doesn't know, such as a project's own note types.
 
 The [element contract]({repo}/blob/main/packages/elements/CONTRACT.md) defines each element exactly: its attributes, its children, and how it renders with and without the script. It's in the package, as `CONTRACT.md`.
 
@@ -14,13 +14,14 @@ The [element contract]({repo}/blob/main/packages/elements/CONTRACT.md) defines e
 A site built with [`@ascribed/astro`](index.md) has the library already: its `<Elements />` component loads the stylesheet and the script. Any other site imports them:
 
 ```js
-// Registers <ascribe-tabs>, <ascribe-tab>, and <ascribe-group>.
+// Registers <ascribe-tabs>, <ascribe-tab>, and <ascribe-group>, and adds
+// the copy buttons.
 import "@ascribed/elements";
 // The styles. Import this alone to style the elements without the script.
 import "@ascribed/elements/style.css";
 ```
 
-The elements render into the page, with no shadow DOM, so the site's own styles apply to them too. The stylesheet works with no script at all: without it, every tab of a group shows, one after another, each with its label, and nothing is hidden.
+The elements render into the page, with no shadow DOM, so the site's own styles apply to them too. The stylesheet works with no script at all: without it, every tab of a group shows, one after another, each with its label, nothing is hidden, and code blocks have no copy button.
 
 ## The elements
 
@@ -35,6 +36,7 @@ The elements render into the page, with no shadow DOM, so the site's own styles 
 | `<ascribe-tab>` | One arm of `<ascribe-tabs>`, with its `label`. | [§3]({repo}/blob/main/packages/elements/CONTRACT.md#3-ascribe-tabs-and-ascribe-tab) |
 | `<ascribe-availability>` | An `@available` badge, holding one target for each thing it's available on. | [§4]({repo}/blob/main/packages/elements/CONTRACT.md#4-ascribe-availability-and-ascribe-availability-target) |
 | `<ascribe-availability-target>` | One target of `<ascribe-availability>`. Its `states` attribute lists its lifecycle states, and the last one styles the badge. | [§4]({repo}/blob/main/packages/elements/CONTRACT.md#4-ascribe-availability-and-ascribe-availability-target) |
+| `<ascribe-operation>` | An [`@operation`](../openapi/operation.md): an operation of a declared API, as a line linking to it in the reference, with its `method`, `path`, and `deprecated` as attributes to style it by. | [§11]({repo}/blob/main/packages/elements/CONTRACT.md#11-ascribe-operation) |
 | `<ascribe-group>` | A group of a project widget's arms, so the project's styles or script can find them together. The library gives it `display: block` and nothing else. | [§6]({repo}/blob/main/packages/elements/CONTRACT.md#6-project-widgets) |
 | `<ascribe-for-agents>` | The pointer to `llms.txt` at the top of each page, when the build publishes the outputs for agents (on by default with a `[consumer] site`). The library hides it from sight, not from the page's text. | [§8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents) |
 
@@ -89,7 +91,7 @@ The colors can come from the library's own properties, so a project's state look
 
 ## Generated text
 
-A note's heading line and a tab's label, when the script isn't running, come from the elements' attributes through CSS generated content. So does the lead-in of a line of availability badges, `ascribe-availability::before`, which is `Available: `; the lead-in of a tested code block's caption, `.ascribe-code-tested::before`, which is `Tested with ` ([§9]({repo}/blob/main/packages/elements/CONTRACT.md#9-a-tested-code-block)); and the line after a link to another line of a versioned build, `a[data-ascribe-release-line]::after`, such as ` (3.5)` ([§10]({repo}/blob/main/packages/elements/CONTRACT.md#10-a-link-out-of-a-line)). A site can restyle or translate each:
+A note's heading line comes from the element's attributes through CSS generated content. So does the lead-in of a line of availability badges, `ascribe-availability::before`, which is `Available: `; the lead-in of a tested code block's caption, `.ascribe-code-tested::before`, which is `Tested with ` ([§9]({repo}/blob/main/packages/elements/CONTRACT.md#9-a-tested-code-block)); and the line after a link to another line of a versioned build, `a[data-ascribe-release-line]::after`, such as ` (3.5)` ([§10]({repo}/blob/main/packages/elements/CONTRACT.md#10-a-link-out-of-a-line)). A site can restyle or translate each:
 
 ```css
 ascribe-availability::before {
@@ -98,6 +100,37 @@ ascribe-availability::before {
 ```
 
 A table row's badges have no lead-in in sight. Their `(Available: ` and `)` are in the HTML, in spans with the class `ascribe-availability-lead-in`, which the stylesheet hides from sight and not from a screen reader, so the row reads as the page's Markdown writes it.
+
+A tab's label isn't generated: it's text, the tab's first paragraph, `<p class="ascribe-tab-label">`, so a reader of the HTML that runs neither script nor stylesheet, such as a tool that converts the page to text for an AI agent, finds each label before its tab's content. Without the script it introduces the tab; with it, the tab's button shows the label, and the paragraph is out of sight and hidden from screen readers, which hear the label once, from the button ([§3]({repo}/blob/main/packages/elements/CONTRACT.md#3-ascribe-tabs-and-ascribe-tab)).
+
+## Copy buttons
+@available: ascribe planned
+
+The script adds a button to each code block, a `<pre>` holding a `<code>`, that copies the code: one with a title or a tested line, and one in a tab, too. It copies the code alone, without its caption or the newline that ends it, and says "Copied" in a live region, so a screen reader hears it. The button is `<button class="ascribe-copy">`, put after the `<pre>`, not inside it, so the code's text never holds it, and it sits in the block's top corner. With scripts off there's no button, and on a page that isn't a secure context, which has no clipboard, the script adds none either ([§12]({repo}/blob/main/packages/elements/CONTRACT.md#12-a-code-blocks-copy-button)).
+
+To leave it out, everywhere or around some blocks, set `--ascribe-copy-display` to `none`:
+
+```css
+:root {
+  --ascribe-copy-display: none;
+}
+```
+
+Restyle it with `--ascribe-copy-color`, `--ascribe-copy-background`, `--ascribe-copy-hover-background`, and `--ascribe-copy-focus-color`, or by selecting `.ascribe-copy`. Its words are the stylesheet's generated content, like the lead-ins below, and its name and what the live region says are read from them, so translating them translates all three:
+
+```css
+.ascribe-copy::before {
+  content: "Copier";
+}
+
+.ascribe-copy[data-ascribe-copy="copied"]::before {
+  content: "Copié";
+}
+
+.ascribe-copy[data-ascribe-copy="failed"]::before {
+  content: "Échec de la copie";
+}
+```
 
 ## Choosing a tab from a script
 

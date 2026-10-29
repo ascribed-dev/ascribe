@@ -1,0 +1,1 @@
+- **Long agent rules keep every page type, with what it's for.** Over 4,000 characters, each directive's syntax and the text the skill repeats go first, and the page types are cut last. See [Write the agent files](docs/content/agents/instructions.md).

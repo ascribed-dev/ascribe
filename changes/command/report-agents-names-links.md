@@ -1,0 +1,1 @@
+- **`ascribe report delivery` names the links `llms-txt-links-resolve` didn't reach.** `delivery-output` (`ASC171`) lists each address with its status or why it couldn't be fetched. See [What to measure](docs/content/agents/measuring.md#check-what-the-site-delivers-to-agents).

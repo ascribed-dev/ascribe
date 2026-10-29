@@ -16,6 +16,8 @@ mod support;
 
 #[path = "all/across.rs"]
 mod across;
+#[path = "all/addresses.rs"]
+mod addresses;
 #[path = "all/agent_prompt.rs"]
 mod agent_prompt;
 #[path = "all/baseline.rs"]
@@ -48,6 +50,8 @@ mod nav_file;
 mod navigation;
 #[path = "all/new_page.rs"]
 mod new_page;
+#[path = "all/openapi.rs"]
+mod openapi;
 #[path = "all/page.rs"]
 mod page;
 #[path = "all/page_rows.rs"]

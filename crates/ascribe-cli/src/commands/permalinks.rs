@@ -2,22 +2,26 @@
 //! `ascribe.permalinks` (SPEC §7.5), and retiring them (§7.6). `sync`
 //! brings the list up to date, `list` shows every permalink and whether the
 //! list has it, `verify` checks names against a list alone, as a product's
-//! CI does, and `retire` ends permalinks on purpose, with a reason.
+//! CI does, and `retire` ends permalinks on purpose, with a reason, or
+//! moves them to a page, in `ascribe.addresses`.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use ascribe_core::Coded;
-use ascribe_model::{PERMALINKS_FILE, is_retired_placeholder};
+use ascribe_model::{
+    ADDRESSES_FILE, AddressFile, PERMALINKS_FILE, is_retired_placeholder, permalink_key,
+};
 use ascribe_query::permalinks::{ListState, ListedAs};
 use ascribe_query::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
 use clap::{Args as ClapArgs, Subcommand};
 
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::context::load_project;
+use crate::context::{checked, load_project};
 use crate::exit;
+use crate::guard;
 
 /// Arguments of `ascribe permalinks`.
 #[derive(Debug, ClapArgs)]
@@ -42,11 +46,10 @@ pub enum Command {
     /// list, so a product's repository can check its links against a copy.
     #[command(after_help = docs_link!("cli-permalinks-verify"))]
     Verify(VerifyArgs),
-    /// Retire permalinks, with a reason, in ascribe.toml's
-    /// [permalinks.retired]: names gone from the content, every permalink
-    /// on a page, or every one under a folder. Their addresses show the
-    /// reason, or lead to --to. With ascribe.permalinks, records them there
-    /// too.
+    /// Retire permalinks in ascribe.addresses, as `go:<name>`: names gone
+    /// from the content, every permalink on a page, or every one under a
+    /// folder. Their addresses show --reason, or lead to --to. With
+    /// ascribe.permalinks, records them there too.
     #[command(after_help = docs_link!("cli-permalinks-retire"))]
     Retire(RetireArgs),
 }
@@ -54,9 +57,14 @@ pub enum Command {
 /// Arguments of `ascribe permalinks sync`.
 #[derive(Debug, ClapArgs)]
 pub struct SyncArgs {
-    /// Write nothing, and exit with 1 when the list would change: for CI.
+    /// Write nothing, print how the list would change as a unified diff,
+    /// and exit with 1 when it would: for CI.
     #[arg(long)]
     pub check: bool,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what changed.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -102,12 +110,17 @@ pub struct RetireArgs {
     pub names: Vec<String>,
 
     /// Why they were retired, for a reader whose link leads there.
-    #[arg(long, value_name = "TEXT")]
-    pub reason: String,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required_unless_present = "to",
+        conflicts_with = "to"
+    )]
+    pub reason: Option<String>,
 
-    /// Where their addresses lead now: a page, by its path from the current
-    /// folder or from the content root, and `#` and a heading's id. Without
-    /// it, an address shows the reason.
+    /// Where their addresses lead now, in place of a reason: a page, by its
+    /// path from the current folder or from the content root, and `#` and a
+    /// heading's id; or another permalink, `go:<name>`.
     #[arg(long, value_name = "PAGE")]
     pub to: Option<String>,
 
@@ -121,6 +134,10 @@ pub struct RetireArgs {
     /// the content root.
     #[arg(long, value_name = "FOLDER")]
     pub under: Option<String>,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what was retired.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -154,17 +171,9 @@ pub enum PermalinksError {
         "give --reason a sentence that says why they were retired: a reader whose link leads there sees it"
     )]
     NoReason,
-    /// `ascribe.toml` can't be changed in place.
-    #[error("{0}")]
-    ModelUnchanged(String),
-    /// `ascribe.toml` can't be written.
-    #[error("can't write {}: {message}", path.display())]
-    ModelUnwritable {
-        /// The file.
-        path: PathBuf,
-        /// What went wrong.
-        message: String,
-    },
+    /// `ascribe.addresses` can't be read or written.
+    #[error(transparent)]
+    Addresses(#[from] crate::commands::addresses::AddressesError),
 }
 
 impl Coded for PermalinksError {
@@ -174,8 +183,7 @@ impl Coded for PermalinksError {
             PermalinksError::Unreadable { .. } => "permalinks_file_unreadable",
             PermalinksError::Unwritable { .. } => "permalinks_list_unwritable",
             PermalinksError::NoReason => "retire_reason_missing",
-            PermalinksError::ModelUnchanged(_) => "model_edit_refused",
-            PermalinksError::ModelUnwritable { .. } => "model_unwritable",
+            PermalinksError::Addresses(e) => e.code(),
         }
     }
 }
@@ -201,27 +209,37 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// the list can't be read or written.
 fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let synced = match ascribe_query::permalinks::sync(
-        &project.index(),
+    let mut synced = match ascribe_query::permalinks::sync(
+        project.index(),
         project.permalinks(),
         project.permalinks_text(),
     ) {
         Ok(synced) => synced,
         Err(e) => return answer::fail(err, &e),
     };
-    if synced.changed
-        && !args.check
-        && let Err(error) = write_permalinks(project.root(), &synced.text)
-    {
-        return answer::fail(err, &error);
+    if synced.changed && !args.check {
+        if let Err(e) = args.guard.allow(&[project.root().join(PERMALINKS_FILE)]) {
+            return answer::fail(err, &e);
+        }
+        if !args.guard.dry_run {
+            if let Err(error) = write_permalinks(project.root(), &synced.text) {
+                return answer::fail(err, &error);
+            }
+            synced.written = true;
+        }
     }
     let result = match args.format {
         Format::Json => answer::write_json(out, &synced),
-        Format::Text if args.check => write_sync_check(out, err, &synced),
-        Format::Text => write_sync(out, err, &synced),
+        Format::Text if args.check => write_sync_check(
+            out,
+            err,
+            &synced,
+            project.permalinks_text().unwrap_or_default(),
+        ),
+        Format::Text => write_sync(out, err, &synced, args.guard.dry_run),
     };
     if let Some(code) = answer::written(result, err) {
         return code;
@@ -233,7 +251,19 @@ fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn
     }
 }
 
-fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::Result<()> {
+/// What `sync` says it did, or with `--dry-run`, would do.
+fn write_sync(
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+    s: &SyncAnswer,
+    dry_run: bool,
+) -> io::Result<()> {
+    let would = if dry_run { "would " } else { "" };
+    let (wrote, add, recorded) = if dry_run {
+        ("would write", "add", "record")
+    } else {
+        ("wrote", "added", "recorded")
+    };
     if s.created {
         let count = s.added.len();
         let permalinks = if count == 1 {
@@ -241,25 +271,37 @@ fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::R
         } else {
             "permalinks"
         };
+        let commit = if dry_run {
+            ""
+        } else {
+            "; commit it with the docs"
+        };
         return writeln!(
             out,
-            "wrote {PERMALINKS_FILE}, with {count} {permalinks}; commit it with the docs"
+            "{wrote} {PERMALINKS_FILE}, with {count} {permalinks}{commit}"
         );
     }
     for name in &s.added {
-        writeln!(out, "added {name}")?;
+        writeln!(out, "{would}{add} {name}")?;
     }
     for moved in &s.moved {
-        writeln!(out, "moved {}: {} to {}", moved.name, moved.from, moved.to)?;
+        writeln!(
+            out,
+            "{would}{} {}: {} to {}",
+            if dry_run { "move" } else { "moved" },
+            moved.name,
+            moved.from,
+            moved.to
+        )?;
     }
     for name in &s.aliased {
-        writeln!(out, "recorded the alias {name}")?;
+        writeln!(out, "{would}{recorded} the alias {name}")?;
     }
     for name in &s.retired {
-        writeln!(out, "recorded {name} as retired")?;
+        writeln!(out, "{would}{recorded} {name} as retired")?;
     }
     if s.changed {
-        writeln!(out, "wrote {PERMALINKS_FILE}")?;
+        writeln!(out, "{wrote} {PERMALINKS_FILE}")?;
     } else {
         writeln!(out, "{PERMALINKS_FILE} is up to date.")?;
     }
@@ -272,30 +314,21 @@ fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::R
     Ok(())
 }
 
-/// What `sync --check` says: what `sync` would write, without writing it.
-fn write_sync_check(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::Result<()> {
+/// What `sync --check` says: how `sync` would change the list, as a
+/// unified diff of `old`, its text now, without writing it.
+fn write_sync_check(
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+    s: &SyncAnswer,
+    old: &str,
+) -> io::Result<()> {
     if s.created {
         return writeln!(
             err,
             "error: there's no {PERMALINKS_FILE}; run `ascribe permalinks sync` to make one"
         );
     }
-    for name in &s.added {
-        writeln!(out, "would add {name}")?;
-    }
-    for moved in &s.moved {
-        writeln!(
-            out,
-            "would move {}: {} to {}",
-            moved.name, moved.from, moved.to
-        )?;
-    }
-    for name in &s.aliased {
-        writeln!(out, "would record the alias {name}")?;
-    }
-    for name in &s.retired {
-        writeln!(out, "would record {name} as retired")?;
-    }
+    answer::write_unified_diff(out, PERMALINKS_FILE, old, &s.text)?;
     for name in &s.removed {
         writeln!(
             err,
@@ -316,10 +349,10 @@ fn write_sync_check(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) ->
 /// or its list can't be read.
 fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let listed = match ascribe_query::permalinks::list(&project.index(), project.permalinks()) {
+    let listed = match ascribe_query::permalinks::list(project.index(), project.permalinks()) {
         Ok(listed) => listed,
         Err(e) => return answer::fail(err, &e),
     };
@@ -333,6 +366,7 @@ fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn
 fn write_list(out: &mut dyn Write, a: &PermalinksAnswer) -> io::Result<()> {
     if a.permalinks.is_empty()
         && a.aliases.is_empty()
+        && a.moved.is_empty()
         && a.retired.is_empty()
         && a.removed.is_empty()
     {
@@ -358,19 +392,23 @@ fn write_list(out: &mut dyn Write, a: &PermalinksAnswer) -> io::Result<()> {
         let state = behind(alias.state);
         writeln!(
             out,
-            "ascribe.toml: {} is an alias of {}{state}",
+            "{ADDRESSES_FILE}: {} moved to the permalink {}{state}",
             alias.name, alias.target
+        )?;
+    }
+    for moved in &a.moved {
+        let state = behind(moved.state);
+        writeln!(
+            out,
+            "{ADDRESSES_FILE}: {} moved to {}{state}",
+            moved.name, moved.to
         )?;
     }
     for retired in &a.retired {
         let state = behind(retired.state);
-        let to = retired
-            .to
-            .as_deref()
-            .map_or_else(String::new, |to| format!(", leading to {to}"));
         writeln!(
             out,
-            "ascribe.toml: {} is retired{to}: {}{state}",
+            "{ADDRESSES_FILE}: {} is retired: {}{state}",
             retired.name, retired.reason
         )?;
     }
@@ -378,10 +416,16 @@ fn write_list(out: &mut dyn Write, a: &PermalinksAnswer) -> io::Result<()> {
         let was = match r.was {
             ListedAs::Permalink => format!("was in {}, and nothing declares it now", r.place),
             ListedAs::Alias => format!(
-                "was an alias of {}, and ascribe.toml doesn't declare it now",
+                "was moved to the permalink {}, and {ADDRESSES_FILE} doesn't record it now",
                 r.place
             ),
-            ListedAs::Retired => "was retired, and ascribe.toml doesn't retire it now".to_owned(),
+            ListedAs::Moved => format!(
+                "was moved to {}, and {ADDRESSES_FILE} doesn't record it now",
+                r.place
+            ),
+            ListedAs::Retired => {
+                format!("was retired, and {ADDRESSES_FILE} doesn't record it now")
+            }
         };
         writeln!(out, "{PERMALINKS_FILE}: {} {was}", r.name)?;
     }
@@ -389,7 +433,7 @@ fn write_list(out: &mut dyn Write, a: &PermalinksAnswer) -> io::Result<()> {
         writeln!(out)?;
         writeln!(
             out,
-            "No {PERMALINKS_FILE}: `ascribe permalinks sync` makes one, and then `ascribe check` reports a permalink that's removed."
+            "No {PERMALINKS_FILE}: `ascribe permalinks sync` makes one, and then `ascribe check` reports a permalink that's lost."
         )?;
     }
     Ok(())
@@ -468,16 +512,12 @@ fn write_verify(out: &mut dyn Write, err: &mut dyn Write, v: &VerifyAnswer) -> i
 /// Exit codes: 0 when the names are retired; 2 when the project doesn't
 /// load, a name can't be retired, or a file can't be read or written.
 fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let reason = args.reason.trim();
-    if reason.is_empty() || is_retired_placeholder(reason) {
+    let reason = args.reason.as_deref().map(str::trim);
+    if reason.is_some_and(|r| r.is_empty() || is_retired_placeholder(r)) {
         return answer::fail(err, &PermalinksError::NoReason);
     }
-    let config = match crate::context::locate(global) {
-        Ok(config) => config,
-        Err(e) => return answer::fail(err, &e),
-    };
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let index = project.index();
@@ -499,7 +539,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             under: place.as_deref().filter(|_| args.under.is_some()),
             named: given,
         };
-        match ascribe_query::permalinks::retiring(&index, project.permalinks(), &retire) {
+        match ascribe_query::permalinks::retiring(index, project.permalinks(), &retire) {
             Ok(names) => {
                 found = Some(Ok(names));
                 break;
@@ -514,87 +554,107 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Some(Err(e)) => return answer::fail(err, &e),
         None => Vec::new(),
     };
-    // What's written into ascribe.toml is from the content root, as links
-    // there are.
+    // What's written into ascribe.addresses is from the content root, as
+    // its other entries are.
     let to = args.to.as_deref().map(|to| target_in_content(&project, to));
-    let entries: Vec<ascribe_lsp::Retirement<'_>> = names
-        .iter()
-        .map(|name| ascribe_lsp::Retirement {
-            name,
-            reason,
-            to: to.as_deref(),
-        })
-        .collect();
-    // `[permalinks.retired]` is written where it is: here, or in the file
-    // `[from]` takes it from.
-    let taken = ascribe_lsp::read_taken(project.model_text(), &config);
-    let retired = match ascribe_lsp::retire(project.model_text(), &taken, &entries) {
-        Ok(retired) => retired,
-        Err(message) => return answer::fail(err, &PermalinksError::ModelUnchanged(message)),
-    };
-    let mut writes: Vec<(PathBuf, &str)> = Vec::new();
-    if retired.text != project.model_text() {
-        writes.push((config.clone(), &retired.text));
+    if let (Some(to), Some(given)) = (&to, &args.to)
+        && ascribe_model::addresses::split_place(to).is_none()
+        && ascribe_model::permalink_name(to).is_none()
+    {
+        return answer::fail(
+            err,
+            &PermalinksError::from(crate::commands::addresses::AddressesError::NotAPage(
+                given.clone(),
+            )),
+        );
     }
-    writes.extend(
-        retired
-            .taken
-            .iter()
-            .map(|t| (t.path.clone(), t.text.as_str())),
-    );
-    for (path, text) in &writes {
-        if let Err(e) = std::fs::write(path, text) {
-            let error = PermalinksError::ModelUnwritable {
-                path: path.clone(),
-                message: e.to_string(),
-            };
+    let (mut file, created) = match project.addresses() {
+        None => (AddressFile::default(), true),
+        Some(Ok(file)) => (file.clone(), false),
+        Some(Err(issues)) => {
+            let detail = issues
+                .first()
+                .and_then(|i| i.arg("detail"))
+                .unwrap_or("it doesn't read")
+                .to_owned();
+            return answer::fail(
+                err,
+                &PermalinksError::from(crate::commands::addresses::AddressesError::Invalid(detail)),
+            );
+        }
+    };
+    if let Some(to) = to
+        .as_deref()
+        .filter(|to| ascribe_model::permalink_name(to).is_some())
+        && let Err(e) = crate::commands::addresses::known_permalink(&project, &file, to)
+    {
+        return answer::fail(err, &PermalinksError::from(e));
+    }
+    for name in &names {
+        let key = permalink_key(name);
+        match (&to, reason) {
+            (Some(to), _) => file.record_move(&key, to),
+            (None, Some(reason)) => file.record_retired(&key, reason),
+            (None, None) => {}
+        }
+    }
+    let list = match project.permalinks() {
+        Some(Ok(list)) => ascribe_query::permalinks::record_retired(
+            index,
+            list,
+            &names,
+            reason.unwrap_or_default(),
+            to.as_deref(),
+        ),
+        _ => None,
+    };
+    let mut changing = vec![project.root().join(ADDRESSES_FILE)];
+    if list.is_some() {
+        changing.push(project.root().join(PERMALINKS_FILE));
+    }
+    if let Err(e) = args.guard.allow(&changing) {
+        return answer::fail(err, &e);
+    }
+    if !args.guard.dry_run {
+        if let Err(e) = crate::commands::addresses::write_file(project.root(), &file.to_toml()) {
+            return answer::fail(err, &PermalinksError::from(e));
+        }
+        if let Some(text) = &list
+            && let Err(error) = write_permalinks(project.root(), text)
+        {
             return answer::fail(err, &error);
         }
     }
-    let wrote: Vec<String> = writes
-        .iter()
-        .map(|(path, _)| {
-            if *path == config {
-                ascribe_check::MODEL_FILE.to_owned()
-            } else {
-                answer::path_from_here(path)
-            }
-        })
-        .collect();
-    let list = match project.permalinks() {
-        Some(Ok(list)) => ascribe_query::permalinks::record_retired(&index, list, &names, reason),
-        _ => None,
-    };
-    if let Some(text) = &list
-        && let Err(error) = write_permalinks(project.root(), text)
-    {
-        return answer::fail(err, &error);
-    }
-    let done = RetireAnswer::new(names, reason, args.to.as_deref(), list.is_some());
+    let done = RetireAnswer::new(
+        names,
+        reason,
+        to.as_deref(),
+        created,
+        list.is_some(),
+        !args.guard.dry_run,
+    );
     let result = match args.format {
         Format::Json => answer::write_json(out, &done),
-        Format::Text => write_retire(out, &done, &wrote, project.permalinks().is_some()),
+        Format::Text => write_retire(out, &done, project.permalinks().is_some()),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-fn write_retire(
-    out: &mut dyn Write,
-    r: &RetireAnswer,
-    wrote: &[String],
-    has_list: bool,
-) -> io::Result<()> {
+fn write_retire(out: &mut dyn Write, r: &RetireAnswer, has_list: bool) -> io::Result<()> {
+    let (moved, retired, wrote) = if r.written {
+        ("moved", "retired", "wrote")
+    } else {
+        ("would move", "would retire", "would write")
+    };
     for name in &r.retired {
         match &r.to {
-            Some(to) => writeln!(out, "retired {name}, leading to {to}")?,
-            None => writeln!(out, "retired {name}")?,
+            Some(to) => writeln!(out, "{moved} {name} to {to}")?,
+            None => writeln!(out, "{retired} {name}")?,
         }
     }
-    for file in wrote {
-        writeln!(out, "wrote {file}")?;
-    }
+    writeln!(out, "{wrote} {ADDRESSES_FILE}")?;
     if r.list_changed {
-        writeln!(out, "wrote {PERMALINKS_FILE}")?;
+        writeln!(out, "{wrote} {PERMALINKS_FILE}")?;
     } else if has_list {
         writeln!(
             out,
@@ -622,7 +682,11 @@ fn content_paths(project: &ascribe_check::Project, given: &str) -> Vec<String> {
 /// `--to`, a page and `#` and a heading's id, with the page as a path from
 /// the content root: the first of [`content_paths`] that's a page or
 /// fragment of the project, else as given, which `ascribe check` reports.
+/// A permalink, `go:<name>`, is as given.
 fn target_in_content(project: &ascribe_check::Project, to: &str) -> String {
+    if to.starts_with(ascribe_model::PERMALINK_PREFIX) {
+        return to.to_owned();
+    }
     let (page, id) = match to.split_once('#') {
         Some((page, id)) => (page, Some(id)),
         None => (to, None),

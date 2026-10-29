@@ -1,4 +1,4 @@
-//! The diagnostics registry, `tests/conformance/diagnostics.toml`.
+//! The diagnostics registry, `crates/ascribe-core/data/diagnostics.toml`.
 //!
 //! The harness reads it to check the slugs cases expect: every slug must be
 //! registered, file-level slugs belong in a case's top-level `diagnostics`
@@ -109,6 +109,10 @@ pub struct Entry {
     /// Whether a project may set its level in `[checks]`.
     #[serde(default)]
     pub configurable: bool,
+    /// Whether a configurable check is off unless a project names it in
+    /// `[checks]`.
+    #[serde(default, rename = "off-by-default")]
+    pub off_by_default: bool,
     /// For a `review` entry, where it reports its problems and so where one
     /// is acknowledged: `page`, `block`, or `entry`.
     #[serde(default)]

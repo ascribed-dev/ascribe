@@ -88,10 +88,10 @@ pub use router::DefaultRouter;
 pub use section::PageSection;
 pub use summary::{FoundSummary, SectionSummary, SummaryForm, find_summaries};
 pub use tree::{
-    Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
-    LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock,
-    ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope,
-    Substitution,
+    Annotation, Availability, DRAFT, DropReason, DroppedPage, EmbeddedOperation, FormattedField,
+    GlossaryUse, HeadingIds, LinkTarget, NAV_LABEL, NavLabel, PagePermalink, Removal, Removed,
+    ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink,
+    ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 
 use crate::index::FileKind;
@@ -122,15 +122,21 @@ impl Project {
         self.resolver(build, router).build()
     }
 
-    /// Why the build doesn't publish a page, if it doesn't (SPEC §9.3): its
-    /// `variant` frontmatter conflicts with a selection, or its `available`
-    /// frontmatter makes it unavailable in a filter build. `None` for a page
-    /// the build publishes, and for a file that isn't a page.
+    /// Why the build doesn't publish a page, if it doesn't (SPEC §9.3): it's
+    /// a draft, its `variant` frontmatter conflicts with a selection, or its
+    /// `available` frontmatter makes it unavailable in a filter build. `None`
+    /// for a page the build publishes, and for a file that isn't a page.
     pub fn dropped(&self, page: &RelPath, build: &Build) -> Option<DropReason> {
         let index = self.file(page)?;
         (index.kind == FileKind::Page)
             .then(|| modes::drop_reason(self.model(), index, build))
             .flatten()
+    }
+
+    /// Whether any page is a draft (SPEC §2.1), which no build the content
+    /// model declares publishes.
+    pub fn has_drafts(&self) -> bool {
+        self.pages().any(crate::index::FileIndex::is_draft)
     }
 
     /// What a build's modes take out of a page it publishes, and why: the
@@ -260,6 +266,51 @@ impl<'p> BuildResolver<'p> {
 
     pub(crate) fn project(&self) -> &'p Project {
         self.project
+    }
+
+    /// A link to an operation: its address in the API's reference, when the
+    /// spec has it, by its id when it has one, however the link names it.
+    /// When the spec doesn't have it, or can't be read, or the reference has
+    /// no address for an operation with no id, the file-level problem is the
+    /// source index's.
+    pub fn operation_link(&self, api: &str, fragment: &str) -> LinkTarget {
+        let project = self.project();
+        let model = project.model();
+        let (Some(declared), Some(named)) = (
+            model.api(api),
+            project.apis().spec(api).and_then(|s| s.named(fragment)),
+        ) else {
+            return LinkTarget::Unresolved;
+        };
+        let operation = named.operation();
+        let address = match &operation.operation_id {
+            Some(id) => declared.reference.address(id, operation.tag.as_deref()),
+            None => match declared
+                .reference
+                .path_address(&operation.method, &operation.path)
+            {
+                Some(address) => address,
+                None => return LinkTarget::Unresolved,
+            },
+        };
+        // The reference is the site's, not a line's: an older line's link
+        // goes to the same address.
+        let address = if ascribe_model::is_absolute_address(&address) {
+            address
+        } else {
+            format!(
+                "{}/{}",
+                self.site_base().trim_end_matches('/'),
+                address.trim_start_matches('/')
+            )
+        };
+        LinkTarget::Operation {
+            api: api.to_owned(),
+            operation_id: operation.operation_id.clone(),
+            method: operation.method.clone(),
+            path: operation.path.clone(),
+            address,
+        }
     }
 
     pub(crate) fn router(&self) -> &'p dyn Router {

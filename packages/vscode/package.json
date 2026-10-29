@@ -1,7 +1,7 @@
 {
   "name": "ascribe-vscode",
   "displayName": "Ascribe",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "A toolchain for documentation written as code. This extension checks pages as you type, previews them as the site shows them, and writes directives for you.",
   "private": true,
   "type": "module",
@@ -39,7 +39,7 @@
     "onWebviewPanel:ascribe.preview"
   ],
   "ascribe": {
-    "minServerVersion": "0.4.3"
+    "minServerVersion": "0.4.4"
   },
   "contributes": {
     "commands": [
@@ -748,7 +748,7 @@
         "toolReferenceName": "ascribe_review_changes",
         "displayName": "Ascribe Review Changes",
         "userDescription": "While review is on: the pages the change touches, against the review's base, with counts and causes.",
-        "modelDescription": "While review is on in the editor (the person turned it on with Ascribe: Start Review): the pages whose published content the branch's change touches, against the review's base, in the build the preview shows. Each page has its file, its status (added, removed, or changed), counts of its changed blocks, `page_changed` (title, frontmatter, availability, route), and `because`: the other changed files it changed through (fragments it includes, pages its links take a title from, snippets, ascribe.toml). For the changes block by block, use the ascribe_changes tool or `ascribe diff`. `path` picks the project, by a file or its folder; without it, the project of the active editor. With review off, a line saying so.",
+        "modelDescription": "While review is on in the editor (the person turned it on with Ascribe: Start Review): the pages whose published content the branch's change touches, against the review's base, in the build the preview shows. Each page has its file, its status (added, removed, or changed), counts of its changed blocks, `page_changed` (title, frontmatter, availability, route), and `because`: the other changed files it changed through (fragments it includes, pages its links take a title from, snippets, ascribe.toml). For the changes block by block, use the ascribe_diff tool or `ascribe diff`. `path` picks the project, by a file or its folder; without it, the project of the active editor. With review off, a line saying so.",
         "canBeReferencedInPrompt": true,
         "icon": "$(git-compare)",
         "tags": [

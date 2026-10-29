@@ -15,6 +15,7 @@ use ascribe_emit::labels::{availability_display, availability_display_of_text};
 use ascribe_model::{
     ContentModel, ContentType, Field, FieldSource, LineStatus, Placement, TypeFile,
 };
+use ascribe_resolve::openapi::Operation;
 use ascribe_resolve::{DefaultRouter, FileIndex, Heading, Resolution, Snapshot, Usable};
 use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position, Range};
 
@@ -196,6 +197,10 @@ fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
             };
             (include.primary?, text)
         }
+        Hit::Operation(link, span) => (
+            span,
+            describe_resolution(ctx, &crate::nav::operation_resolution(ctx, link)?, link),
+        ),
         Hit::Snippet(snippet) => (
             snippet.primary?,
             crate::examples::snippet_hover(ctx, snippet)?,
@@ -278,7 +283,16 @@ fn describe_resolution(ctx: &Ctx, resolution: &Resolution, destination: &str) ->
             }
         }
         Resolution::AssetMissing(_) => format!("**Not found:** `{destination}`"),
-        Resolution::Operation { api, id } => format!("Operation `{id}` of API `{api}`"),
+        Resolution::Operation { api, id } => {
+            let project = ctx.snapshot.project();
+            match project.apis().spec(api) {
+                Some(spec) => match spec.named(id) {
+                    Some(named) => operation_markdown(api, named.operation()),
+                    None => format!("**Not found:** operation `{id}` of API `{api}`"),
+                },
+                None => format!("Operation `{id}` of API `{api}`, whose spec can't be read"),
+            }
+        }
         Resolution::SpecOutside { api } => format!(
             "The spec of API `{api}`, outside the project's folder: link to one of its operations"
         ),
@@ -296,6 +310,37 @@ fn describe_resolution(ctx: &Ctx, resolution: &Resolution, destination: &str) ->
             }
         }
     }
+}
+
+/// An operation's method, in capitals, and its path: `GET /users/{id}`, as
+/// a reference shows it.
+pub(crate) fn method_and_path(operation: &Operation) -> String {
+    operation.method_and_path_shown()
+}
+
+/// What a link to an operation names: its method and path, its summary,
+/// whether it's deprecated, and its id, API, and tag.
+pub(crate) fn operation_markdown(api: &str, operation: &Operation) -> String {
+    let mut out = format!(
+        "**{}** `{}`",
+        operation.method.to_uppercase(),
+        operation.path
+    );
+    if let Some(summary) = &operation.summary {
+        out.push_str(&format!("\n\n{summary}"));
+    }
+    if operation.deprecated {
+        out.push_str("\n\n**Deprecated**");
+    }
+    let mut about = match &operation.operation_id {
+        Some(id) => format!("Operation `{id}` of API `{api}`"),
+        None => format!("Operation of API `{api}`, with no id"),
+    };
+    if let Some(tag) = &operation.tag {
+        about.push_str(&format!(", tagged {tag}"));
+    }
+    out.push_str(&format!("\n\n{about}"));
+    out
 }
 
 /// A source file, or a heading in it: its full path and a preview.

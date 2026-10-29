@@ -5,9 +5,12 @@
 // `_ascribe/permalinks.json`. It forwards without a script, links to the same
 // place for a browser that doesn't follow, and isn't indexed. Its script
 // first takes the reader's choices from the address's parameters
-// (`?platform=macos`), as if they'd picked those tabs, then forwards.
+// (`?platform=macos`), as if they'd picked those tabs, then forwards. A host
+// that takes redirects forwards with a 301 instead, and serves this page only
+// for an address with parameters. The page names its section's Markdown and
+// JSON as its alternates, for an agent that doesn't follow it.
 //
-// A retired permalink with nowhere to lead gets a page that says what was
+// A retired permalink gets a page that says what was
 // here was removed, gives the reason as its authors wrote it, as text, and
 // links to the docs' home: the root of the project whose list named it.
 import { home as root, permalinks } from "virtual:ascribe/site";
@@ -20,6 +23,7 @@ export function getStaticPaths() {
 const props = Astro.props as Forwarding;
 const to = "to" in props ? props.to : undefined;
 const dimensions = "to" in props ? props.dimensions : {};
+const alternates = "to" in props ? props.alternates : undefined;
 const reason = "reason" in props ? props.reason : undefined;
 const home = ("reason" in props ? props.home : undefined) ?? root;
 const canonical =
@@ -35,6 +39,14 @@ const canonical =
     <meta name="robots" content="noindex" />
     {to !== undefined && <meta http-equiv="refresh" content={`0;url=${to}`} />}
     {canonical !== undefined && <link rel="canonical" href={canonical} />}
+    {
+      alternates !== undefined && (
+        <>
+          <link rel="alternate" type="text/markdown" href={alternates.markdown} />
+          <link rel="alternate" type="application/json" href={alternates.json} />
+        </>
+      )
+    }
   </head>
   <body>
     {

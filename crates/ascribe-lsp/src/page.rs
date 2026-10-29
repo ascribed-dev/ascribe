@@ -29,9 +29,10 @@ use ascribe_resolve::{AstroRouter, FileIndex, FileKind, Project, Usable, Use, Us
 use lsp_types::{Position, Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
 
+use crate::addresses::{PageOldAddress, Redirects};
 use crate::nav::{Ctx, Lines};
 use crate::page_rows::{
-    PageBuild, PageDescription, PageHealth, PageInclude, PageListing, PagePermalink, PageReview,
+    PageBuild, PageDescription, PageHealth, PageInclude, PageListing, PagePermalink, PageRecheck,
     PageTemplate, Rows,
 };
 
@@ -114,9 +115,9 @@ pub struct PageAbout {
     /// Its description, when its type gives a field the description role;
     /// `null` for a fragment.
     pub description: Option<PageDescription>,
-    /// When it's due for review, when its type gives a field the
-    /// review-date role and the page has a date in it.
-    pub review: Option<PageReview>,
+    /// When it's due to be checked again, when its type gives a field the
+    /// recheck-date role and the page has a date in it.
+    pub recheck: Option<PageRecheck>,
     /// Its own `available`, as shown; `null` when it has none.
     pub availability: Option<String>,
     /// Whether each build publishes it, in declaration order; empty for a
@@ -127,6 +128,12 @@ pub struct PageAbout {
     pub listing: Option<PageListing>,
     /// The permalinks the file declares, in document order.
     pub permalinks: Vec<PagePermalink>,
+    /// The old addresses that lead to it, each once, in address order: each
+    /// `from` of a redirect a build writes to it in `redirects.json`, with
+    /// its entry, as the server last compared the addresses, at the last
+    /// save or change on disk. Empty for a fragment, and for a project
+    /// without `ascribe.addresses`.
+    pub also_answers_at: Vec<PageOldAddress>,
     /// What its type's template still leaves to fill in; `null` when its
     /// type has no template or nothing of it is left.
     pub template: Option<PageTemplate>,
@@ -285,8 +292,14 @@ impl PageCache {
     }
 }
 
-/// What's known about the requested file, and the heading at `position`.
-pub(crate) fn page(ctx: &Ctx, cache: &PageCache, position: Position) -> PageResult {
+/// What's known about the requested file, and the heading at `position`,
+/// with `redirects`, the old addresses the server last found.
+pub(crate) fn page(
+    ctx: &Ctx,
+    cache: &PageCache,
+    redirects: &Redirects,
+    position: Position,
+) -> PageResult {
     let Some(file) = ctx.file() else {
         return PageResult::default();
     };
@@ -316,7 +329,7 @@ pub(crate) fn page(ctx: &Ctx, cache: &PageCache, position: Position) -> PageResu
         }
     }
     PageResult {
-        about: Some(about(ctx, file, &kept.rows)),
+        about: Some(about(ctx, file, &kept.rows, redirects)),
         heading: heading.map(|h| PageHeading {
             id: h.source_id.clone(),
             text: h.text.clone(),
@@ -335,7 +348,7 @@ pub(crate) fn page(ctx: &Ctx, cache: &PageCache, position: Position) -> PageResu
     }
 }
 
-fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows) -> PageAbout {
+fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows, redirects: &Redirects) -> PageAbout {
     let rows = &rows.about;
     let fragment = file.kind == FileKind::Fragment;
     let router = (!fragment).then(|| AstroRouter::from_consumer(&ctx.model.consumer));
@@ -352,11 +365,16 @@ fn about(ctx: &Ctx, file: &FileIndex, rows: &Rows) -> PageAbout {
             .map(|r| r.markdown_url(&file.path)),
         site: ctx.model.consumer.site.clone().filter(|_| !fragment),
         description: rows.description.clone(),
-        review: rows.review.clone(),
+        recheck: rows.recheck.clone(),
         availability: rows.availability.clone(),
         builds: rows.builds.clone(),
         listing: rows.listing.clone(),
         permalinks: rows.permalinks.clone(),
+        also_answers_at: if fragment {
+            Vec::new()
+        } else {
+            redirects.of(&file.path)
+        },
         template: rows.template.clone(),
     }
 }

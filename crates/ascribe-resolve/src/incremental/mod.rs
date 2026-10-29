@@ -25,7 +25,7 @@
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
 //! | **A file a `@snippet` reads, created, changed, or deleted** ([`Change::AssetCreated`], [`Change::AssetDeleted`]) | The snippets of the files that show it, read again: the code file itself, or its source's `ascribe.examples.toml` or observations. Those files are checked again, and every page that is one or includes one is re-resolved. |
 //! | **A nested project's `ascribe.toml` created or deleted** | Nothing: it changes which files are sources (a nested project's files aren't), so the batch is refused ([`ApplyError::NestedProjectChanged`]) and the caller loads the project again. A file created, changed, or deleted inside a nested project's folder is a non-source file. |
-//! | **`ascribe.nav`** ([`Change::Nav`]) | Nothing a file holds: the project's [`Project::navigation`] follows it. A new version when the file reads differently. |
+//! | **A side file the index reads** ([`Change::SideFiles`]: `ascribe.nav`, `ascribe.addresses`) | Nothing a file holds: the project's [`Project::navigation`] and [`Project::recorded_permalinks`] follow them. A new version when one reads differently. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, slugger, or sources re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
 //! "What others see of a file" is [`structure_signature`]'s hash: the kind
@@ -47,7 +47,8 @@
 //!   an update drops only the pages that (transitively) include a file that
 //!   changed.
 //! - **Reverse edges** ([`Project::includers`], [`Project::links_to`],
-//!   [`Project::asset_users`]) are updated by removing and adding what the
+//!   [`Project::asset_users`], [`Project::files_linking_missing_pages`]) are
+//!   updated by removing and adding what the
 //!   files involved contribute.
 //! - **Resolved pages**: [`ResolvedCache`] keeps them per build until an update
 //!   lists them in [`Affected::re_resolve`].
@@ -78,8 +79,8 @@
 //!
 //! See [`ids`]: an id names a path for the life of the project, is never
 //! reused for another path, and a rename is a deletion plus a creation.
-//! `ascribe_check::Project` numbers its sources the same way on a fresh load
-//! and accepts the ids a snapshot gives.
+//! `ascribe_check::Project` takes its sources' ids from the snapshot it
+//! checks.
 
 mod cache;
 mod ids;
@@ -92,10 +93,11 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use ascribe_core::{RelPath, Slugger};
+use ascribe_model::ContentModel;
 use ascribe_model::examples::{EXAMPLES_FILE, OBSERVATIONS_FOLDER};
-use ascribe_model::{ContentModel, NavFile};
 
 pub use cache::ResolvedCache;
+pub(crate) use ids::CodeFileIds;
 pub use ids::FileIds;
 pub use signature::ModelImpact;
 
@@ -108,6 +110,7 @@ use crate::fs::{FileSystem, MODEL_FILE, in_nested_project, is_source_path};
 use crate::index::{FileIndex, FileKind, Target, index_parsed, parse_source};
 use crate::layout::Layout;
 use crate::project::{Project, Unreadable};
+use crate::side_file::Indexed;
 use crate::slug::{default_slugger, slugger_by_name};
 
 /// One change to the project, as the editor or the file watcher reports it.
@@ -166,7 +169,8 @@ pub enum Change {
     /// A file that isn't a source appeared (an image, a download), or its
     /// contents changed, at a path relative to the **project root**, as
     /// [`FileSystem::probe`] takes it. The `@snippet`s that read it read it
-    /// again, from the project's [`FileSystem`].
+    /// again, from the project's [`FileSystem`], and a declared spec is read
+    /// again, wherever it is.
     AssetCreated {
         /// The path.
         path: RelPath,
@@ -181,9 +185,15 @@ pub enum Change {
     /// the content root or the output directory can't be applied in place
     /// ([`ApplyError::LayoutChanged`]).
     Model(Arc<ContentModel>),
-    /// `ascribe.nav` changed: this is what it says now, `None` when it's gone
-    /// or doesn't read ([`Project::nav_file`]).
-    Nav(Option<Arc<NavFile>>),
+    /// A side file the index reads changed: this is what they say now, each
+    /// `None` when it's gone or doesn't read ([`Project::nav_file`],
+    /// [`Project::addresses_file`]), as [`Indexed::read`] reads them.
+    SideFiles(Indexed),
+    /// A base revision's specs, as the project there read them: where each
+    /// `operationId` was there is kept, so a link to one renamed since is
+    /// fixed to the operation now in its place
+    /// ([`crate::openapi::ApiSpecs::remember`]).
+    BaseApis(Arc<crate::openapi::ApiSpecs>),
 }
 
 /// Why a batch of changes wasn't applied. Nothing changed.
@@ -601,6 +611,10 @@ pub struct IncrementalProject {
     include_rev: IncludeRev,
     parse_cache: ParseCache,
     fingerprints: Fingerprints,
+    /// Whether the parse cache, the signatures, the dependencies, and the
+    /// include revisions hold the loaded files yet: a project loaded with
+    /// [`IncrementalProject::load_deferred`] makes them on its first update.
+    prepared: bool,
     history: VecDeque<HistoryEntry>,
     stats: Stats,
 }
@@ -616,26 +630,29 @@ impl IncrementalProject {
         layout: Layout,
         fs: impl FileSystem + Send + 'static,
     ) -> IncrementalProject {
+        let mut project = IncrementalProject::load_deferred(model, layout, fs);
+        project.prepare();
+        project
+    }
+
+    /// [`IncrementalProject::load`], without what only an update needs: each
+    /// file's parse kept for reuse, its structure signature, and the paths
+    /// its references depend on are made on the first
+    /// [`IncrementalProject::apply`], if one comes. A project that's loaded
+    /// and never updated, as a command's, costs what a [`Project::load`]
+    /// costs; one that's updated ends up as if loaded with
+    /// [`IncrementalProject::load`].
+    pub fn load_deferred(
+        model: Arc<ContentModel>,
+        layout: Layout,
+        fs: impl FileSystem + Send + 'static,
+    ) -> IncrementalProject {
         let mut ids = FileIds::new();
         let project = Project::load_with_ids(model.clone(), layout, &fs, &mut ids);
-        let fingerprints = Fingerprints::of(&model);
-        let mut parse_cache = ParseCache::default();
-        let mut sigs = BTreeMap::new();
-        let mut deps = Deps::default();
-        let mut include_rev = IncludeRev::default();
-        let mut stamps = BTreeMap::new();
-        for index in project.files() {
-            parse_cache.put(
-                index.file,
-                &index.source,
-                fingerprints.parse(),
-                &index.document,
-            );
-            sigs.insert(index.path.clone(), structure_signature(index));
-            deps.set(project.layout(), index);
-            include_rev.set(index);
-            stamps.insert(index.path.clone(), Version(0));
-        }
+        let stamps = project
+            .files()
+            .map(|index| (index.path.clone(), Version(0)))
+            .collect();
         IncrementalProject {
             fs: Overlay::new(Box::new(fs)),
             ids,
@@ -644,13 +661,38 @@ impl IncrementalProject {
             latest: Arc::new(AtomicU64::new(0)),
             model_revision: 0,
             stamps: Arc::new(stamps),
-            sigs,
-            deps,
-            include_rev,
-            parse_cache,
-            fingerprints,
+            sigs: BTreeMap::new(),
+            deps: Deps::default(),
+            include_rev: IncludeRev::default(),
+            parse_cache: ParseCache::default(),
+            fingerprints: Fingerprints::of(&model),
+            prepared: false,
             history: VecDeque::new(),
             stats: Stats::default(),
+        }
+    }
+
+    /// Makes what an update reads of the loaded files, once: the parse
+    /// cache, the signatures, the dependencies, and the include revisions.
+    /// A project loaded with [`IncrementalProject::load_deferred`] that will
+    /// be updated, and whose first update should cost no more than the
+    /// next, makes them now.
+    pub fn prepare(&mut self) {
+        if self.prepared {
+            return;
+        }
+        self.prepared = true;
+        for index in self.project.files() {
+            self.parse_cache.put(
+                index.file,
+                &index.source,
+                self.fingerprints.parse(),
+                &index.document,
+            );
+            self.sigs
+                .insert(index.path.clone(), structure_signature(index));
+            self.deps.set(self.project.layout(), index);
+            self.include_rev.set(index);
         }
     }
 
@@ -717,6 +759,7 @@ impl IncrementalProject {
         &mut self,
         changes: impl IntoIterator<Item = Change>,
     ) -> Result<Affected, ApplyError> {
+        self.prepare();
         let layout = self.project.layout().clone();
         // Which files are sources: the nested projects stay what they were at
         // load, since a batch that would change them is refused below.
@@ -731,7 +774,8 @@ impl IncrementalProject {
         // read. Any other change to the path clears it.
         let mut unreadable_state: BTreeMap<RelPath, Option<String>> = BTreeMap::new();
         let mut new_model: Option<Arc<ContentModel>> = None;
-        let mut new_nav: Option<Option<Arc<NavFile>>> = None;
+        let mut new_side: Option<Indexed> = None;
+        let mut base_apis: Option<Arc<crate::openapi::ApiSpecs>> = None;
         for change in changes {
             match change {
                 Change::Unreadable { path, reason } => {
@@ -796,10 +840,11 @@ impl IncrementalProject {
                     }
                     new_model = Some(model);
                 }
-                Change::Nav(nav) => new_nav = Some(nav),
+                Change::SideFiles(side) => new_side = Some(side),
+                Change::BaseApis(apis) => base_apis = Some(apis),
             }
         }
-        let new_nav = new_nav.filter(|nav| nav.as_deref() != self.project.nav_file());
+        let new_side = new_side.filter(|side| side != self.project.side_files());
 
         // A nested project's `ascribe.toml` arrives as any other file that isn't
         // a source does. One appearing where there is no nested project, or
@@ -843,6 +888,15 @@ impl IncrementalProject {
         // reported, whether or not it was there before: its contents may
         // have changed.
         let reported: Vec<&RelPath> = file_state.keys().collect();
+        // A declared spec reported, whether or not it was there before: its
+        // operations may have changed, and with them the problems of the
+        // links to them.
+        let specs_reported = {
+            let model = new_model.as_deref().unwrap_or(&self.project.model);
+            reported
+                .iter()
+                .any(|path| model.apis.iter().any(|api| api.spec == path.as_str()))
+        };
         let showing: BTreeSet<RelPath> = showing(&self.project, &reported)
             .into_iter()
             .filter(|p| !gone.contains(p))
@@ -900,7 +954,9 @@ impl IncrementalProject {
             && showing.is_empty()
             && impact.is_none()
             && !unreadable_changed
-            && new_nav.is_none()
+            && new_side.is_none()
+            && !specs_reported
+            && base_apis.is_none()
         {
             return Ok(Affected {
                 version: self.version,
@@ -1041,12 +1097,29 @@ impl IncrementalProject {
                 self.fs.remove(path);
             }
         }
-        let nav_changed = new_nav.is_some();
-        if let Some(nav) = new_nav {
-            project.set_nav(nav);
+        let side_changed = new_side.is_some();
+        if let Some(side) = new_side {
+            project.set_side_files(side);
+        }
+        // The specs are read again with the model, and when one is reported,
+        // keeping where each id was, for a link to one that was renamed.
+        let mut changed_apis = if new_model.is_some() || specs_reported {
+            let apis = project.apis().read_again(&model, &self.fs);
+            let changed = apis.changed(project.apis());
+            project.set_apis(apis);
+            changed
+        } else {
+            Vec::new()
+        };
+        if let Some(base) = base_apis {
+            let mut apis = project.apis().clone();
+            apis.remember(&base);
+            if apis != *project.apis() {
+                changed_apis.extend(base.names().map(str::to_owned));
+                project.set_apis(apis);
+            }
         }
         if let Some((model, fingerprints)) = new_model {
-            project.set_apis(crate::openapi::ApiSpecs::read(&model, &self.fs));
             project.set_model(model);
             self.fingerprints = fingerprints;
             if impact.is_some_and(|m| m >= ModelImpact::Index) {
@@ -1060,13 +1133,15 @@ impl IncrementalProject {
             project.put_index(index);
         }
         let mut res_changed: BTreeSet<RelPath> = BTreeSet::new();
+        // Code files keep their ids, and one read for the first time gets
+        // the next, as a fresh load with the same ids gives it.
+        let code = crate::snippet::CodeFiles::with_ids(std::mem::take(&mut self.ids.code));
         for path in &resolve_set {
             let Some(index) = project.file(path).cloned() else {
                 continue;
             };
             let resolutions = project.resolve_file(&index, &self.fs);
-            let snippets =
-                project.resolve_snippets(&index, &self.fs, &crate::snippet::CodeFiles::new());
+            let snippets = project.resolve_snippets(&index, &self.fs, &code);
             project.put_snippets(path, snippets);
             self.stats.resolutions += 1;
             if old_resolutions
@@ -1078,12 +1153,29 @@ impl IncrementalProject {
             project.put_resolutions(path, resolutions);
             project.attach_file(path);
         }
-        let code = crate::snippet::CodeFiles::new();
+        // The files that link to an operation of a spec that changed, in a
+        // link or an `@operation`.
+        let spec_linkers: BTreeSet<RelPath> = if changed_apis.is_empty() {
+            BTreeSet::new()
+        } else {
+            let names = |r: &crate::Resolution| matches!(r, crate::Resolution::Operation { api, .. } if changed_apis.contains(api));
+            project
+                .files()
+                .filter(|file| {
+                    project.resolution_list(&file.path).iter().any(names)
+                        || crate::openapi::embedded_operations(project, file)
+                            .iter()
+                            .any(names)
+                })
+                .map(|file| file.path.clone())
+                .collect()
+        };
         for path in showing.iter().filter(|p| !resolve_set.contains(*p)) {
             if let Some(index) = project.file(path).cloned() {
                 project.put_snippets(path, project.resolve_snippets(&index, &self.fs, &code));
             }
         }
+        self.ids.code = code.into_ids();
         for path in created.keys().chain(&gone) {
             let includers: Vec<RelPath> = self.include_rev.includers(path).into_iter().collect();
             project.refresh_include_edges(path, &includers);
@@ -1106,8 +1198,9 @@ impl IncrementalProject {
             && impact.is_none()
             && res_changed.is_empty()
             && showing.is_empty()
+            && spec_linkers.is_empty()
             && !unreadable_changed
-            && !nav_changed
+            && !side_changed
         {
             return Ok(Affected {
                 version: previous,
@@ -1155,7 +1248,7 @@ impl IncrementalProject {
                     }
                 }
             }
-            for path in res_changed.iter().chain(&showing) {
+            for path in res_changed.iter().chain(&showing).chain(&spec_linkers) {
                 widen(path, &mut recheck, &mut re_resolve);
             }
             // The files that write an `@include` of a path that appeared or
@@ -1206,6 +1299,15 @@ impl IncrementalProject {
                 for includer in self.include_rev.includers(path) {
                     recheck.insert(includer);
                 }
+            }
+            // A link to a missing page names the page it most likely meant,
+            // by its path or its headings, so a page appearing, going, or
+            // changing its headings can change what any such link says.
+            let reshaped = touched
+                .iter()
+                .any(|p| old_sigs.get(p).copied().flatten() != self.sigs.get(p).copied());
+            if !created.is_empty() || !gone.is_empty() || reshaped {
+                recheck.extend(project.files_linking_missing_pages().iter().cloned());
             }
             if glossary_edited && !all_pages && old_glossary != Some(glossary_signature(project)) {
                 all_pages = true;

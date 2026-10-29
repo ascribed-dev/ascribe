@@ -1,2 +1,2 @@
-docs/keys.md:8: [ASC041] this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
-checked 8 files for every build, reported on 1: 0 errors, 1 warning, 0 advice
+docs/keys.md:8: [ASC041] this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md` → Link to the page's file instead of its route
+checked 8 files for every build, reported on 1 file in the paths, 1 with problems: 0 errors, 1 warning, 0 advice

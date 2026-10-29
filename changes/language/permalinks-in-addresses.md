@@ -1,0 +1,1 @@
+- **Behavior change: retired and aliased permalinks are kept in `ascribe.addresses`, not `ascribe.toml`.** `[permalinks]` in `ascribe.toml` is an error, which `ascribe addresses init` moves, and `permalink-removed` is now `permalink-lost`. See [Permalinks](docs/content/permalinks/index.md).

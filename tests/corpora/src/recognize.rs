@@ -21,7 +21,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use ascribe_check::{Project, SourceFile, check_file};
+use ascribe_check::{Project, check_file};
 use ascribe_core::{FileId, LineCol, LineIndex, RelPath, Span};
 use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
@@ -129,7 +129,7 @@ pub fn recognize(pages: &[(String, String)]) -> Report {
         Ok(model) => model,
         Err(_) => return report,
     };
-    let mut sources = Vec::new();
+    let mut sources: Vec<(RelPath, String)> = Vec::new();
     let mut names: Vec<(String, String)> = Vec::new();
     for (path, text) in pages {
         let md = markdown_path(path);
@@ -137,26 +137,27 @@ pub fn recognize(pages: &[(String, String)]) -> Report {
             report.skipped.push(path.clone());
             continue;
         };
-        if sources.iter().any(|s: &SourceFile| s.path == rel) {
+        if sources.iter().any(|(p, _)| *p == rel) {
             report.skipped.push(path.clone());
             continue;
         }
-        sources.push(SourceFile {
-            id: FileId::new(sources.len() as u32 + 1),
-            path: rel,
-            text: text.clone(),
-            unreadable: None,
-        });
+        sources.push((rel, text.clone()));
         names.push((path.clone(), text.clone()));
     }
-    let project = Project::from_parts(
+    let paths: Vec<RelPath> = sources.iter().map(|(p, _)| p.clone()).collect();
+    let workspace = ascribe_check::in_memory(
         PathBuf::from("."),
         RelPath::root(),
         model,
         String::new(),
         sources,
     );
-    for (source, (name, text)) in project.sources().iter().zip(&names) {
+    let project = Project::new(workspace.snapshot());
+    // In the order the pages were given.
+    for (path, (name, text)) in paths.iter().zip(&names) {
+        let Some(source) = project.source_at(path) else {
+            continue;
+        };
         report.files += 1;
         report.bytes += text.len();
         let lines = LineIndex::new(text);

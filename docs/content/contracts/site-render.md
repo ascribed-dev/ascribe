@@ -122,13 +122,17 @@ Apart from markers, both implementations render CommonMark with raw HTML passed 
 
 ### 5.1 A tested code block
 
-A fenced code block whose info string has a `tested="…"` word after its language, as a `@snippet` of a tested example has (SPEC §4.8), is put in a figure with a caption: the block's title, when its info string has `title="…"`, then a `<div class="ascribe-code-tested">` holding the tested line, escaped as text. The value is read as a title is: from a space or the start, to the quote that's followed by a space or the end, with the Markdown escapes taken off.
+A fenced code block whose info string has a `tested="…"` word after its language, as a `@snippet` of a tested example has (SPEC §4.8), is put in a figure with a caption: the block's title, when its info string has `title="…"`, then a `<div class="ascribe-code-tested">` holding the tested line, escaped as text. Both are pairs of the info string, read as [SPEC §3.3.1]({repo}/blob/main/SPEC.md) reads them from the info string CommonMark gives, with its Markdown escapes taken off: a quoted value runs to its closing quote, inside it `\"` and `\\` escape, and the pair is followed by a space or the end. The site output writes a quote in a title as `\\"`, which CommonMark reads as `\"`. A word that isn't a pair, such as `title="say "hi""`, gives no title.
 
 ```html
 <figure class="code-title"><figcaption>connect.ts<div class="ascribe-code-tested">Node 24.9.0 on Linux</div></figcaption><pre><code class="language-ts">…</code></pre></figure>
 ```
 
 A block with no `tested` word is left as everything else is. The element contract's §9 says how the caption renders.
+
+### 5.2 A code block's language
+
+A fenced code block with a language renders with it as a class on its `<code>`, `<pre><code class="language-sh">`, as CommonMark renders it, and a renderer that highlights the code keeps that class on the `<code>`, so a reader of the HTML that converts it to text or Markdown names the block's language ([decision #1038]({repo}/blob/main/project-docs/decisions/1038-tab-labels-and-code-languages.md)). `@ascribed/astro` adds it to Shiki's output with a transformer of its own; a block Shiki highlights as `plaintext`, which it does for one with no language or one in a language it doesn't know, has none.
 
 ## 6. Constructs and fixtures
 
@@ -162,6 +166,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `availability-row` | §5 | A table row's availability ends its first cell, its targets between the hidden `(Available: ` and `)` (element contract §4) |
 | `availability-planned` | §5 | A planned target keeps its empty `planned` attribute, in a block's availability and a row's (element contract §4) |
 | `code-tested` | §5.1 | A code block with a tested line alone, and with a title and a tested line, each in a figure with its caption |
+| `operation` | §5 | An operation from `@operation` (element contract §11) is an HTML block holding its link, with an id and a summary, and deprecated with neither |
 
 ## 7. Source anchors
 @id {permalink=true}: 7-source-anchors
@@ -191,6 +196,7 @@ Every block a reviewer could point at: headings, paragraphs, code blocks, lists 
 - An element that wraps the block after it (a line-form `@note`, `@steps`, `@details`, or widget) spans the directive and that block. A line-form directive whose text is its content (`@note: Text.`) gives that text's paragraph its own line too.
 - `@summary` writes no element: the paragraph a `@summary` marks has its own anchor, its own lines, not the directive's, and `@summary: Text.` writes nothing, so it has none.
 - A paragraph in a tight list has no element (CommonMark renders its text straight into the `<li>`), so it has no anchor: its item's anchor says where it is.
+- A tab's label paragraph, `<p class="ascribe-tab-label">` (element contract §3), has no anchor: it's the tab's `label` again, as text, and the tab's anchor says where it is.
 - The pointer for agents at the top of a page (`ascribe-for-agents`, element contract §8) has no anchor, nor does its paragraph: no source wrote it.
 - A raw HTML block that doesn't start with an open tag (one that starts with a comment, a closing tag, or text) has no anchor.
 

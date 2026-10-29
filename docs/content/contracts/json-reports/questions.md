@@ -1,7 +1,8 @@
 ---
 type: reference
 title: "JSON reports: the commands that answer questions"
-description: "The JSON Schemas of what ascribe explain, outline, link, refs, resolve, search, and agents index write with --format json."
+nav-label: "The commands that answer questions"
+description: "The JSON Schemas of what `ascribe explain`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search` write with `--format json`."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
@@ -26,6 +27,10 @@ With `--list`:
 
 @include: ../../_generated/json-refs.md
 
+## `ascribe rename`
+
+@include: ../../_generated/json-rename.md
+
 ## `ascribe resolve`
 
 @include: ../../_generated/json-resolve.md
@@ -38,7 +43,3 @@ With `--list`:
 ## `ascribe search`
 
 @include: ../../_generated/json-search.md
-
-## `ascribe agents index`
-
-@include: ../../_generated/json-agents-index.md

@@ -150,7 +150,7 @@ fn files() -> Vec<(String, String)> {
         ),
         (LAUNCHER.to_owned(), LAUNCHER_TEXT.to_owned()),
     ];
-    for (file, text) in skill::files(None) {
+    for (file, text) in skill::files(None, super::command::PLAIN, None) {
         files.push((format!("skills/{}/{file}", skill::NAME), text));
     }
     for prompt in prompts::PROMPTS {

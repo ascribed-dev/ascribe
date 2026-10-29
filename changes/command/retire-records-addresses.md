@@ -1,0 +1,1 @@
+- **`ascribe versions retire` records the line's addresses in `ascribe.addresses`.** Each address that goes to a page in the current line is recorded in `[moved]`, so the build writes its redirect. See [Archive and retire a line](docs/content/versions/archive.md).

@@ -1,7 +1,8 @@
 //! A link to an operation of a declared API (`[apis.<name>]`) in each
 //! output: its address in the published reference, Redoc's or a template's,
 //! under the base path unless it's absolute, absolute in the plain output with
-//! a site, and an `operation` target in the JSON output.
+//! a site, and an `operation` target in the JSON output; and one with no id,
+//! by its method and path, at Redoc 3's address for it.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -139,4 +140,73 @@ fn openapi_an_older_line_links_to_the_site_s_reference() {
             "{build}: {out}"
         );
     }
+}
+
+const NO_ID: &str = r#"
+openapi: 3.1.0
+info: { title: Users, version: "1" }
+paths:
+  /users/{id}:
+    get:
+      operationId: getUser
+    delete:
+      summary: Delete a user
+  /files/~home:
+    get:
+      summary: The home folder
+"#;
+
+const BY_PATH: &str = "Delete the user with [Delete a user](../api/openapi.yaml#delete/users/{id}), see [home](../api/openapi.yaml#get/files/~home), or [get it](../api/openapi.yaml#get/users/{id}).\n";
+
+fn by_path() -> ascribe_resolve::Project {
+    memory_project_with_files(
+        &model("base-path = \"/docs/\"", REDOC),
+        &[("guide.md", &page(BY_PATH))],
+        &[("api/openapi.yaml", NO_ID)],
+    )
+}
+
+#[test]
+fn openapi_redoc_addresses_an_operation_with_no_id_by_its_path_as_a_pointer() {
+    let out = site(&by_path(), "site", "guide.md");
+    assert!(
+        out.contains("[Delete a user](/docs/api/#paths/~1users~1%7Bid%7D/delete)"),
+        "{out}"
+    );
+    assert!(
+        out.contains("[home](/docs/api/#paths/~1files~1~0home/get)"),
+        "{out}"
+    );
+    // An operation that has an id is addressed by it, however it's linked.
+    assert!(
+        out.contains("[get it](/docs/api/#operation/getUser)"),
+        "{out}"
+    );
+}
+
+#[test]
+fn openapi_the_json_output_gives_an_operation_with_no_id_its_method_and_path() {
+    let files = emit_build(Path::new("/nowhere"), &by_path(), "site", &JsonEmitter);
+    let doc: serde_json::Value =
+        serde_json::from_str(&files["guide.json"]).expect("the page's JSON");
+    let links = doc["blocks"][0]["links"].as_array().expect("links");
+    assert_eq!(
+        links[0]["target"],
+        serde_json::json!({
+            "type": "operation",
+            "api": "public",
+            "method": "delete",
+            "path": "/users/{id}",
+            "address": "/docs/api/#paths/~1users~1%7Bid%7D/delete",
+        })
+    );
+    assert_eq!(
+        links[2]["target"],
+        serde_json::json!({
+            "type": "operation",
+            "api": "public",
+            "operationId": "getUser",
+            "address": "/docs/api/#operation/getUser",
+        })
+    );
 }

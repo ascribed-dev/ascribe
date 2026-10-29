@@ -166,7 +166,7 @@ export interface ThisPageApi {
   items(): SidebarItem[];
   /** The message in place of its items, if it shows one. */
   message(): string | undefined;
-  /** The badge's number and tooltip, when it shows one: Health's things to do. */
+  /** The badge's number and tooltip, when it shows one: how many of Health's rows warn. */
   badge(): { value: number; tooltip: string } | undefined;
   /** Whether it's showing: neither collapsed nor in a hidden container. */
   visible(): boolean;
@@ -696,6 +696,11 @@ export class SidebarViews implements vscode.Disposable {
       }),
       this.projects.onDidChangeState((server) => {
         if (server === this.server) this.follow(true);
+      }),
+      // About's "Also answers at" is the server's comparison of the
+      // addresses, which says when it's run again.
+      this.projects.onDidChangeAddresses((server) => {
+        if (server === this.server) this.soon("thisPage");
       }),
       this.projects.onDidChangeProjects(() => this.follow(true)),
       // The links of the views' welcome while their project's server has failed.
@@ -1492,7 +1497,7 @@ export class SidebarViews implements vscode.Disposable {
 
   /**
    * Sends This page's webview the model's items as they stand, under the
-   * page's head, or its notice; and sets its badge to Health's things to do.
+   * page's head, or its notice; and sets its badge to how many of Health's rows warn.
    */
   private drawThisPage(): void {
     const roots = this.thisPage.roots();

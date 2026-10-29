@@ -25,6 +25,8 @@ Before you install the agent, make sure you have:
 
    <ascribe-tab value="npm" label="npm">
 
+   <p class="ascribe-tab-label">npm</p>
+
    ```shell
    npm install -g @quill/agent
    ```
@@ -33,6 +35,8 @@ Before you install the agent, make sure you have:
 
    <ascribe-tab value="pnpm" label="pnpm">
 
+   <p class="ascribe-tab-label">pnpm</p>
+
    ```shell
    pnpm add -g @quill/agent
    ```
@@ -40,6 +44,8 @@ Before you install the agent, make sure you have:
    </ascribe-tab>
 
    <ascribe-tab value="yarn" label="Yarn">
+
+   <p class="ascribe-tab-label">Yarn</p>
 
    ```shell
    yarn global add @quill/agent

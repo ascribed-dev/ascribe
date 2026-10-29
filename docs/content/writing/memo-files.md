@@ -21,7 +21,9 @@ The agent goes first because its installer writes the config file that
 doesn't mention the agent.
 ```
 
-- **`about`**, required, names what the memo is about, the way [`ascribe refs`](../command/questions.md#cli-refs) names a target: a page or fragment by its path from the content root (`install-agent.md`), a heading as the path, `#`, and its id (`install-agent.md#install-agent`), a glossary term by its id (`term:api-key`), or an entry of `ascribe.toml` as `phrase:product`, `feature:sso`, `dimension:deployment`, `note:warning`, or `widget:release-note`. A heading in a fragment is named in the fragment. A term is a heading on a glossary page, so a memo about `term:api-key` is on that heading, as one about `glossary.md#api-key` is.
+- **`about`**, required, names what the memo is about: a page or fragment by its path from the content root (`install-agent.md`), a heading as the path, `#`, and its id (`install-agent.md#install-agent`), a glossary term by its id (`term:api-key`), or an entry of `ascribe.toml` as `phrase:product`, `feature:sso`, `dimension:deployment`, `note:warning`, or `widget:release-note`. A heading in a fragment is named in the fragment. A term is a heading on a glossary page, so a memo about `term:api-key` is on that heading, as one about `glossary.md#api-key` is.
+
+  A path is written as a link's is: `%20` and the rest are decoded, so a file whose name has a `#` is written with `%23`, and a `%` with `%25`. The first `#` starts the heading's id. A path that starts like an entry, such as `term:basics.md`, is written `./term:basics.md`. Names and paths are compared as written, so `phrase:Product` names no phrase. SPEC §7.7 and its rule `about-target` say exactly how `about` is read.
 - **`quote`**, which you can leave out, narrows the memo to the block that holds those words: a paragraph, a heading, a list item's paragraph, a code block, or a table, for instance. An entry of `ascribe.toml` has no words to quote; a term's are those of its section.
 - **The text** after the frontmatter is the memo, as you write it, read by nothing, as a [`@memo`](directives.md#memo)'s isn't.
 
@@ -33,19 +35,19 @@ The files are every `.md` file in `memos/` and its subfolders. A file's name and
 
 A memo that's only for you goes in `.ascribe/memos/` instead, in the same format. It's a **personal memo**: `.ascribe/` is the folder the project doesn't commit ([project files](../command/project-files.md)), so it stays on your machine. The editor, `ascribe outline`, and `ascribe refs` read both folders, and mark a personal memo as one. `ascribe check` reads `memos/` only, so what it reports is the same on every machine; the editor reports a personal memo's problems as it reports a team memo's.
 
-A memo is read by someone about to change the page, so it's short: over 2,000 characters, `ascribe check` reports it as advice, [`memo-long`](../checks/diagnostics/content-checks.md#ASC228). `[checks.memo-long] limit` sets another limit, in characters.
+A memo is read by someone about to change the page, so it's short: over 2,000 characters, `ascribe check` reports it as advice, [`memo-long`](../checks/diagnostics/project-checks.md#ASC228). `[checks.memo-long] limit` sets another limit, in characters.
 
 ## Placed, outdated, and detached
 
 Where a memo is is worked out each time it's read, from the pages as they are, and nothing is written back to the file. A memo is in one of three states:
 
 - **Placed.** With no `quote`, it's on what `about` names. With one, it's on the first block of that page or section, in the order they're written, whose source holds the quote. Line breaks and runs of spaces count as one space, and case counts. A quote is found in one block: words that run across two paragraphs aren't.
-- **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/content-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.
-- **Detached.** `about` names nothing: the page was deleted, or it moved or the heading's id changed by hand rather than by a rename. It's a warning, [`memo-detached`](../checks/diagnostics/pages.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
+- **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/project-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.
+- **Detached.** `about` names nothing: the page was deleted, or it moved or the heading's id changed by hand rather than by a rename. It's a warning, [`memo-detached`](../checks/diagnostics/sources.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
 
 A rename keeps a memo attached: [`ascribe rename`](../command/questions.md#cli-rename), and renaming in the editor ([Refactoring](../editor/writing.md#refactoring)), rewrite the `about` of each memo that names what changes, in both folders, and leave its `quote` and its text as they are.
 
-A memo file that isn't one, with no frontmatter, no `about`, an `about` that isn't a target, or a key besides `about` and `quote`, is an error, [`memo-invalid`](../checks/diagnostics/pages.md#ASC225). `ascribe check` reports each problem on the memo file, at its `about` or `quote` line.
+A memo file that isn't one, with no frontmatter, no `about`, an `about` that isn't a target, or a key besides `about` and `quote`, is an error, [`memo-invalid`](../checks/diagnostics/sources.md#ASC225). `ascribe check` reports each problem on the memo file, at its `about` or `quote` line.
 
 ## Where memos are listed
 

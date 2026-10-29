@@ -1,8 +1,9 @@
 //! The diagnostics registry: codes, severities, and message templates.
 //!
-//! `tests/conformance/diagnostics.toml` is the one source. It's embedded at
-//! build time and parsed on first use, so every tool words and ranks a
-//! problem the same way. [`Registry::global`] is the parsed registry.
+//! `crates/ascribe-core/data/diagnostics.toml` is the one source. It's
+//! embedded at build time, as [`ascribe_core::diagnostics::REGISTRY`], and
+//! parsed on first use, so every tool words and ranks a problem the same way.
+//! [`Registry::global`] is the parsed registry.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -12,7 +13,7 @@ use ascribe_core::{DiagnosticSlug, Issue, Place};
 use crate::Severity;
 
 /// The registry file, embedded.
-const SOURCE: &str = include_str!("../../../tests/conformance/diagnostics.toml");
+const SOURCE: &str = ascribe_core::diagnostics::REGISTRY;
 
 /// Which level a diagnostic is checked at (SPEC §8.1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -96,6 +97,10 @@ pub struct Entry {
     pub evidence: Vec<String>,
     /// Whether a project may set its level in `[checks]`.
     pub configurable: bool,
+    /// Whether the check is off unless a project names it in `[checks]`
+    /// (`off-by-default`), its `severity` being the level it's reported at
+    /// when named without one.
+    pub off_by_default: bool,
     /// For a check whose next step is review: where it reports its problems,
     /// and so where one is acknowledged (SPEC §4.9).
     pub place: Option<Place>,
@@ -252,6 +257,10 @@ impl Registry {
                 .get("configurable")
                 .and_then(toml::Value::as_bool)
                 .unwrap_or(false),
+            off_by_default: t
+                .get("off-by-default")
+                .and_then(toml::Value::as_bool)
+                .unwrap_or(false),
             place: text("place").and_then(|p| Place::from_name(&p)),
             report_only: text("stage").as_deref() == Some("report"),
             when: text("when"),
@@ -264,12 +273,16 @@ impl Registry {
         self.entries.get(slug.as_str())
     }
 
-    /// The entry with this slug, or this code (`ASC036`, in any case).
+    /// The entry with this slug, or this code (`ASC036`, in any case), or
+    /// the entry of the check that had this slug as its old name.
     pub fn find(&self, code_or_slug: &str) -> Option<&Entry> {
-        self.entries.get(code_or_slug).or_else(|| {
-            self.entries()
-                .find(|e| e.code.eq_ignore_ascii_case(code_or_slug))
-        })
+        self.entries
+            .get(code_or_slug)
+            .or_else(|| {
+                self.entries()
+                    .find(|e| e.code.eq_ignore_ascii_case(code_or_slug))
+            })
+            .or_else(|| self.get(DiagnosticSlug::from_name(code_or_slug)?))
     }
 
     /// Every entry, in registry order.

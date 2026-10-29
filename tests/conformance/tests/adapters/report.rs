@@ -3,7 +3,7 @@
 //! `site`).
 //!
 //! Its diagnostics are the case's file-level diagnostics with those the
-//! report's `links` or `agents` section gives, through
+//! report's `links` or `delivery` section gives, through
 //! `ascribe_query::report`, the call `ascribe report` makes. Neither lychee
 //! nor afdocs is run, and nothing reaches the network: stand-ins answer from
 //! the address alone, so a case shows where a problem lands and what's
@@ -30,20 +30,23 @@
 //! The site checker's stand-in checks `[consumer] site`: on a host
 //! `failing.test`, three checks fail, one each that Ascribe, the hosting,
 //! and the pages own (`llms-txt-exists`, `content-negotiation`,
-//! `page-size-markdown`); every other check passes.
+//! `page-size-markdown`); on a host `unfetched.test`,
+//! `llms-txt-links-resolve` warns that a link couldn't be fetched; every
+//! other check passes.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ascribe_check::Project;
-use ascribe_check::links::{self, Answer, LinkChecker};
-use ascribe_check::site::{self, CheckResult, SiteChecker, Status};
-use ascribe_check::tool::ToolError;
 use ascribe_conformance::{
     AdapterError, AdapterResult, BuildResult, Case, ConformanceAdapter, Diagnostic,
 };
 use ascribe_query::report::{Options, Ran, Section, Tools};
+use ascribe_report::links::{self, Answer, LinkChecker};
+use ascribe_report::site::{self, CheckResult, SiteChecker, Status};
+use ascribe_report::store::{MemoryStore, Store};
+use ascribe_report::tool::ToolError;
 
 /// Handles the cases that expect the report's problems.
 pub struct ReportAdapter;
@@ -80,12 +83,12 @@ fn is_page_level(d: &ascribe_check::Diagnostic) -> bool {
     d.slug == ascribe_core::diagnostics::INTENDED_UNUSED
 }
 
-/// The case's project, and what the report's `links` or `agents` section
+/// The case's project, and what the report's `links` or `delivery` section
 /// finds in it.
 fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), AdapterError> {
     let project = super::check::project(case)?;
     let section = if case.expect.tags.iter().any(|t| t == "site") {
-        Section::Agents
+        Section::Delivery
     } else {
         Section::Links
     };
@@ -99,46 +102,43 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
     };
     let site = project.model().consumer.site.clone();
     let cached = case.dir.join("link-cache");
-    let store = match project.today() {
+    let cache = match project.today() {
         Some(today) if cached.is_dir() => {
-            let dir = tempfile::tempdir().map_err(|e| AdapterError(e.to_string()))?;
-            copy(&cached, &dir.path().join(links::cache::FOLDER))?;
-            let cache = links::Cache::open(&project, dir.path(), today, false);
-            Some((dir, cache))
+            let store = Arc::new(MemoryStore::new());
+            load(&cached, links::cache::FOLDER, &store)?;
+            Some(links::Cache::open(&project, store, today, false))
         }
         _ => None,
     };
     let remembered = case.dir.join("link-history.json");
     let history = match project.today() {
         Some(today) if remembered.is_file() => {
-            let dir = tempfile::tempdir().map_err(|e| AdapterError(e.to_string()))?;
-            let to = dir.path().join(links::history::FILE);
-            let failed = |e: std::io::Error| {
-                AdapterError(format!("couldn't copy {}: {e}", remembered.display()))
-            };
-            std::fs::create_dir_all(to.parent().unwrap_or(dir.path())).map_err(failed)?;
-            std::fs::copy(&remembered, &to).map_err(failed)?;
+            let text = std::fs::read_to_string(&remembered).map_err(|e| {
+                AdapterError(format!("couldn't read {}: {e}", remembered.display()))
+            })?;
+            let store = Arc::new(MemoryStore::new());
+            let _ = store.write(links::history::FILE, &text);
             let confirm_days = project.model().checks.links.confirm_days;
-            let history = links::History::open(dir.path(), today, confirm_days, false);
-            Some((dir, history))
+            Some(links::History::open(store, today, confirm_days, false))
         }
         _ => None,
     };
     let options = Options {
         sections: &[section],
         builds: &[],
+        baseline: true,
         not_listed: false,
         site: site.as_deref(),
         tools: &tools,
-        link_cache: store.as_ref().map(|(_, cache)| cache),
-        link_history: history.as_ref().map(|(_, history)| history),
+        link_cache: cache.as_ref(),
+        link_history: history.as_ref(),
         history: None,
     };
     let report =
         ascribe_query::report(&project, &options).map_err(|e| AdapterError(e.to_string()))?;
-    let found = match (report.links, report.agents) {
+    let found = match (report.links, report.delivery) {
         (Some(Ran::Done(links)), _) => links.diagnostics,
-        (_, Some(Ran::Done(agents))) => agents.diagnostics,
+        (_, Some(Ran::Done(delivery))) => delivery.diagnostics,
         (Some(Ran::NotRun(why)), _) | (_, Some(Ran::NotRun(why))) => {
             return Err(AdapterError(format!(
                 "the section didn't run: {}",
@@ -151,18 +151,20 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
 }
 
 /// Copies the folder `from` to `to`, with what's in it.
-fn copy(from: &std::path::Path, to: &std::path::Path) -> Result<(), AdapterError> {
-    let failed = |e: std::io::Error| AdapterError(format!("couldn't copy {}: {e}", from.display()));
-    std::fs::create_dir_all(to).map_err(failed)?;
+/// Puts each file under `from` into `store`, under `folder`.
+fn load(from: &std::path::Path, folder: &str, store: &MemoryStore) -> Result<(), AdapterError> {
+    let failed = |e: std::io::Error| AdapterError(format!("couldn't read {}: {e}", from.display()));
     for entry in std::fs::read_dir(from).map_err(failed)? {
         let path = entry.map_err(failed)?.path();
-        let Some(name) = path.file_name() else {
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
             continue;
         };
+        let at = format!("{folder}/{name}");
         if path.is_dir() {
-            copy(&path, &to.join(name))?;
+            load(&path, &at, store)?;
         } else {
-            std::fs::copy(&path, to.join(name)).map_err(failed)?;
+            let text = std::fs::read_to_string(&path).map_err(failed)?;
+            let _ = store.write(&at, &text);
         }
     }
     Ok(())
@@ -228,12 +230,14 @@ impl LinkChecker for StandInLinks {
     }
 }
 
-/// A site checker that fails three checks on `failing.test`.
+/// A site checker that fails three checks on `failing.test`, and on
+/// `unfetched.test` warns of a link that couldn't be fetched.
 struct StandInSite;
 
 impl SiteChecker for StandInSite {
     fn check(&self, request: &site::Request) -> Result<Vec<CheckResult>, ToolError> {
         let failing = links::host(&request.site) == Some("failing.test");
+        let unfetched = links::host(&request.site) == Some("unfetched.test");
         Ok(site::CHECKS
             .iter()
             .map(|(id, _)| {
@@ -242,6 +246,18 @@ impl SiteChecker for StandInSite {
                         *id,
                         "llms-txt-exists" | "content-negotiation" | "page-size-markdown"
                     );
+                if unfetched && *id == "llms-txt-links-resolve" {
+                    return CheckResult {
+                        id: (*id).to_owned(),
+                        category: "test".to_owned(),
+                        status: Status::Warn,
+                        message: "1/2 same-origin links resolve (50%); 1 broken; 1 failed to fetch"
+                            .to_owned(),
+                        details: serde_json::json!({"sameOrigin": {"broken": [
+                            {"url": "https://unfetched.test/a.md", "status": 0, "error": "fetch failed"}
+                        ]}}),
+                    };
+                }
                 CheckResult {
                     id: (*id).to_owned(),
                     category: "test".to_owned(),
@@ -251,6 +267,7 @@ impl SiteChecker for StandInSite {
                     } else {
                         "passed".to_owned()
                     },
+                    details: serde_json::Value::Null,
                 }
             })
             .collect())

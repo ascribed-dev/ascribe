@@ -1,0 +1,1 @@
+- **Behavior change: `ascribe fmt --check` writes a unified diff.** `--dry-run` lists each change, as `--check` did, and `--diff` is `--check`'s old spelling. See [`ascribe fmt`](docs/content/checks/check.md).

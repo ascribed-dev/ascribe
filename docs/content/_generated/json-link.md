@@ -33,6 +33,11 @@
           "type": "string"
         },
         {
+          "const": "operation",
+          "description": "An operation of a declared API's spec: a link to the spec with a\nfragment.",
+          "type": "string"
+        },
+        {
           "const": "missing",
           "description": "Nothing: no file has that path.",
           "type": "string"
@@ -70,6 +75,66 @@
         "line",
         "page",
         "leads_to"
+      ],
+      "type": "object"
+    },
+    "LinkOperation": {
+      "description": "An operation of a declared API's spec (`[apis.<name>]`), as a link to it\nnames it.",
+      "properties": {
+        "address": {
+          "description": "Its address in the published reference, as the editor's build writes\nthe link; `null` when the reference has none for it: an operation\nwith no id, under an address pattern.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "api": {
+          "description": "The API's name.",
+          "type": "string"
+        },
+        "deprecated": {
+          "description": "Whether the spec marks it `deprecated`.",
+          "type": "boolean"
+        },
+        "method": {
+          "description": "Its method, in lowercase.",
+          "type": "string"
+        },
+        "operation_id": {
+          "description": "Its `operationId`; `null` for an operation with none, which a link\nnames by its method and path.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "description": "Its path, as the spec writes it.",
+          "type": "string"
+        },
+        "summary": {
+          "description": "Its `summary`, when it has one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tag": {
+          "description": "Its first tag, when it has one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "api",
+        "operation_id",
+        "method",
+        "path",
+        "summary",
+        "tag",
+        "deprecated",
+        "address"
       ],
       "type": "object"
     },
@@ -154,6 +219,17 @@
         "$ref": "#/$defs/LinkLine"
       },
       "type": "array"
+    },
+    "operation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LinkOperation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The operation a link to a declared API's spec names, when the spec\nhas it; absent for any other target."
     },
     "path": {
       "description": "The file it names, as a path from the content root; `null` for an\nexternal URL, or a file that doesn't exist.",

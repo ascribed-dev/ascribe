@@ -3,9 +3,9 @@
 The Ascribe language server, run as `ascribe lsp` (LSP over stdio). It keeps a
 project in memory, follows every change to it, and publishes the diagnostics
 `ascribe check --build <editor build>` reports, as the author types. It
-computes nothing itself: every diagnostic comes from `ascribe_check`, over a
-`ascribe_resolve::IncrementalProject`, so the editor and the command line can't
-disagree (SPEC §8, §10).
+computes nothing itself: every diagnostic comes from `ascribe_check`, over an
+`ascribe_workspace::Workspace`, as a command's does, so the editor and the
+command line can't disagree (SPEC §8, §10).
 
 It provides initialization, document and file synchronization, diagnostics, and
 semantic tokens; completion, hover, go to definition, find references, document
@@ -14,7 +14,8 @@ rename, formatting, and folding ranges; and the custom requests `ascribe/preview
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/review/baseFile`,
 `ascribe/context`, `ascribe/targets`, `ascribe/edit`, `ascribe/buildView`,
 `ascribe/inventory`, `ascribe/page`, `ascribe/projectEdit`, `ascribe/search`, and
-`ascribe/settings`.
+`ascribe/settings`, and the notifications `ascribe/preview/changed` and
+`ascribe/addresses`.
 
 ## The project
 
@@ -449,7 +450,7 @@ What every edit holds to:
   to either, is refused with an error instead, naming the other page when
   the problem is there.
 - **The content model in place.** The content model's actions edit
-  `ascribe.toml` as text (`src/model_file.rs`), as it is in the editor when
+  `ascribe.toml` as text (`ascribe_edit::model_file`), as it is in the editor when
   it's open: an entry goes after the last one of its table, a new table after
   the last of its section, and a value is replaced where it's written, so
   comments, blank lines, and order stay. `toml_edit` finds the place from
@@ -628,7 +629,8 @@ Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
 ```jsonc
 {
   "about": { "path": "keys.md", "fragment": false, "title": "API keys", "type": "page",
-             "address": "/keys/", "markdownAddress": null },
+             "address": "/keys/", "markdownAddress": null,
+             "alsoAnswersAt": [{ "address": "/guides/keys/", "entry": "guides/keys.md" }] },
   "heading": { "id": "rotate-keys", "text": "Rotate keys", "range": { "start": …, "end": … } },
   "linkedFrom": [{ "uri": "file:///…/docs/install-agent.md", "path": "install-agent.md",
                    "range": { "start": …, "end": … }, "text": "See [](keys.md#rotate-keys)." }],
@@ -647,6 +649,12 @@ Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
 - `address` is the page's route, from the host's root, as the site output's
   links write it, and `markdownAddress` its Markdown version's, when the
   project publishes one (`[consumer] agents = true`). A fragment has neither.
+- `alsoAnswersAt` is each old address an entry of `ascribe.addresses` leads
+  to the page, with the entry's key, as the build's `redirects.json` writes
+  them, in address order; empty for a fragment, or without the file. It's
+  what the last comparison of the addresses worked out
+  ([`ascribe/addresses`](#lost-addresses-between-checks-ascribeaddresses)), so
+  an unsaved entry counts.
 - `memos` are the memo files about the heading, or the file when there's no
   heading, or a block in it ([Memo files](#memo-files)): committed, then
   personal, each in path order, with `state` `placed` or `outdated`; a
@@ -661,6 +669,45 @@ texts, and kept for the file until the snapshot changes (`PageCache` in
 `src/page.rs`), so a cursor move on the same file only picks the heading's
 share. It answers from the current snapshot, so it includes unsaved edits.
 See [Performance](#performance) for its cost.
+
+## Lost addresses between checks: `ascribe/addresses`
+
+A notification the server sends when the project keeps its addresses
+(SPEC §7.10): what comparing them with the base's found, as `ascribe check`
+would report it, so an editor shows a lost address between checks. The
+server compares once the project loads, then after a save, a change on disk
+(`workspace/didChangeWatchedFiles`), or an edit to `ascribe.addresses`'
+buffer, 250 ms after the last of them, on a thread of its own, never as a
+page is typed: each comparison resolves every build. It sends again only when
+what it found changed.
+
+```jsonc
+{
+  "uri": "file:///…/ascribe.addresses",
+  "base": { "requested": "main", "commit": "4f2c…", "merge_base": "4f2c…" },
+  "lost": 1,
+  "diagnostics": [{ "range": …, "severity": 2, "code": "ASC255",
+                    "message": "guides/keys.md was published at /docs/guides/keys…",
+                    "data": { "slug": "address-lost", "fixes": […] } }]
+}
+```
+
+Its TypeScript type is `AddressesParams` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-addresses.schema.json`).
+
+- `uri` is `ascribe.addresses`, or `null` when the project has none, and then
+  nothing is compared: `base` is `null`, `lost` 0, and `diagnostics` empty.
+- `base` is the revision compared with, as `ascribe check` chooses it, or
+  `null` when it couldn't be read, which a diagnostic says.
+- `lost` counts `address-lost`, once for each page.
+- `diagnostics` are all at `ascribe.addresses`, with the levels of
+  `[checks]` and the baseline applied, each with its fixes in `data` as a
+  published diagnostic has them. The file's own problems as you edit it are
+  among them, and not published as the file's diagnostics.
+
+The base's addresses are listed once for each base commit and version of
+Ascribe, and kept (`src/addresses.rs`); a new commit, as after a pull, lists
+them again. The agents' hook runs no comparison.
 
 ## One edit for the whole project: `ascribe/projectEdit`
 
@@ -910,17 +957,21 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
 
 ## How it works
 
-- **The project** is an `ascribe_resolve::IncrementalProject` built from the
-  `ascribe.toml` found as [The project](#the-project) says. File ids follow `ascribe-resolve`: source files
-  have ids from 1, `ascribe.toml` is 0, an id names a path and is never reused.
-- **Changes** reach it as `Change`s from three sources: open documents
-  (`didOpen`, `didChange`, `didClose`; an open document's text wins over the
-  file on disk, and closing one reverts to the disk), the file watcher (files
-  and directories created, changed, deleted, or moved by anything else, sources
-  and assets alike), and `ascribe.toml` (open or on disk). `ascribe.nav`,
-  open or on disk, is read again when it changes, and the long-lived project
-  takes its navigation (`Change::Nav`).
-- **The model.** An `ascribe.toml` that loads is applied as `Change::Model`
+- **The project** is an `ascribe_workspace::Workspace` loaded from the
+  `ascribe.toml` found as [The project](#the-project) says, through
+  `ascribe_edit::fsx::LayerFs`: the disk, with the open documents' buffers
+  over it. File ids follow `ascribe-resolve`: source files have ids from 1,
+  `ascribe.toml` is 0, an id names a path and is never reused.
+- **Changes** reach it through `Workspace::apply`, from three sources: open
+  documents (`didOpen`, `didChange`, `didClose`; an open document's text wins
+  over the file on disk, and closing one reverts to the disk), the file
+  watcher (files and directories created, changed, deleted, or moved by
+  anything else, sources and assets alike), and `ascribe.toml` (open or on
+  disk). A side file, open or on disk, is read again when it changes, and
+  what its `Stale` names follows it: the source index takes `ascribe.nav`'s
+  navigation and `ascribe.addresses`' records, and `ascribe.baseline` is
+  matched again. An open memo file's buffer is read again as it's typed.
+- **The model.** An `ascribe.toml` that loads is applied as `Changed::Model`
   (`ascribe-resolve`'s tiers decide what is re-parsed, re-indexed, or re-resolved). One
   that doesn't load has its problems published on `ascribe.toml`, and the
   project keeps the last model that did; every other file's diagnostics are
@@ -937,7 +988,7 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   Problems panel. An error is published as `Error`, a warning as `Warning`,
   and advice as `Information`, after the levels `[checks]` sets
   (`ascribe_check::apply_levels`). The content checks run with the rest; the
-  day `review-overdue` compares with is asked of `Options::today` each round,
+  day `recheck-overdue` compares with is asked of `Options::today` each round,
   and a server without a clock doesn't report it. `page-size` renders each
   checked page's plain Markdown in the page-level round, on every change: at
   3,000 pages it added 0.36 ms to a page keystroke's median, against the
@@ -951,7 +1002,7 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   client waiting on the change learns the server has caught up with it: the
   extension forgets the changed pages review keeps when it sees one. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
-  (`Project::from_parts_with_fs`), as the source index does.
+  (`WorkspaceSnapshot::of_index`), as the source index does.
 - **A code file's `snippet-tags`.** Each `snippet-tags` (ASC132) problem a
   file's `@snippet` has is also published on the code file whose tags it's
   about, at the tag (`compute::on_code_files`): the same message, severity,
@@ -987,9 +1038,10 @@ glossary page, not in `ascribe.toml`. Elsewhere in the file it answers `null`.
   when the editor's build is every build, and never Vale's or those of the
   checks the editor doesn't run (`NOT_IN_EDITOR`); a line that
   doesn't parse is published there as an error, and nothing is held back.
-- **Stale results.** A worker thread computes from a `Snapshot`. Before it
-  publishes a file's diagnostics it checks, under the lock that serializes
-  every change, that `IncrementalProject::is_file_current` holds for the file
+- **Stale results.** A worker thread computes from a `WorkspaceSnapshot` and
+  the source index's `Snapshot` it was taken with. Before it publishes a
+  file's diagnostics it checks, under the lock that serializes every change,
+  that `Workspace::is_file_current` holds for the file
   and that an open document still has the version the result was computed for.
   A result that fails either check is dropped, and the file stays queued for the
   newer snapshot. Work overtaken by a newer edit is abandoned between stages.
@@ -1043,6 +1095,7 @@ each context offers, from the content model and the index:
 | `{` in prose, a title, a heading, a text primary, or a `phrases=true` fence | Declared phrase keys, each showing its value |
 | `@include:` | Source files, relative to the file (or from the content root after a `/`); after `#`, the ids of the file named |
 | A link destination, `](…`, or a reference definition | Pages and headings by **title**: inserts the relative path and the source id, shows the path as the detail |
+| A link destination, or an `@operation`'s primary, after a declared spec's `#` (`[apis.<name>]`) | The spec's operations, matched on the id, the method and path, and the summary: inserts the id, or the method and path for one with none, shows `GET /users/{id}` as the detail and the summary beside it, and marks a deprecated one |
 
 Nothing is offered inside inline code or a code fence. A search is cut at 100
 items and marked incomplete, so the client asks again as the author types.
@@ -1056,7 +1109,9 @@ key a page's type declares, or a field's key in `ascribe.toml`'s
 which types replace a shared one), and a heading or its `@id` line (its
 section's summary in the editor's build, from `ascribe_emit::section_summary`,
 which `_ascribe/help.json` writes; `summary.rs`, which `ascribe/page`'s
-permalinks read too).
+permalinks read too). A link to an operation, or an `@operation`'s primary,
+shows its method and path, its summary, whether it's deprecated, its id, API,
+and first tag.
 
 **Folding ranges**: each closed container `@memo`, from its opening line to
 its `@end`, so it folds to its first line. A page's other folding (headings,
@@ -1065,7 +1120,17 @@ a container; VS Code merges the ranges of every provider.
 
 **Go to definition**: links and includes to the file or heading;
 `@id`'s primary to its heading; phrases and feature keys to their entries in
-`ascribe.toml`.
+`ascribe.toml`; a link to an operation, or an `@operation`'s primary, to its
+method's line in the spec, which `ascribe_resolve::openapi` finds in the text.
+
+**Specs.** The server watches each spec `[apis]` declares by its folder and
+name, as it watches `[from]`'s files, so one outside the folders the client
+watches is reported too, and the file watcher's report of one is
+`Change::AssetCreated`, which reads the specs again and checks the links to
+their operations and the `@operation`s that name them. Each reading keeps where each `operationId` was, and setting
+a review's base adds the base's specs (`Change::BaseApis`), so a link to an
+id the spec lost gets the one operation now at its method and path as a safe
+fix (`ApiSpecs::renamed`).
 
 **Find all references** lists every place that uses what's under the cursor,
 from `ascribe_resolve::Project::uses`, the search the inventory counts with:

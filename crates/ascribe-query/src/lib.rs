@@ -47,7 +47,7 @@ pub use error::QueryError;
 pub use explain::{
     DiagnosticList, ExampleText, Explanation, ListedDiagnostic, code_of, explain, list,
 };
-pub use link::{LinkAnswer, LinkKind, LinkLine, LinkSuggestion, link};
+pub use link::{LinkAnswer, LinkKind, LinkLine, LinkOperation, LinkSuggestion, link};
 pub use model::{
     ModelNavPage, ModelNavSection, ModelReport, ModelSetting, ModelTerm, Section, model,
     navigation, summary, terms,
@@ -59,8 +59,8 @@ pub use report::{Report, report};
 pub use resolve::{Emit, PermalinkHelp, Resolved, ResolvedPermalink, resolve};
 pub use rules::{pointer, rules};
 pub use search::{
-    PageCount, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched, SourcePlace,
-    search,
+    PageCount, PartialPlace, Readings, Search, SearchPage, SearchPlace, SearchThrough, Searched,
+    SourcePlace, excerpt, search,
 };
 pub use versions::{VersionChanges, VersionsList};
 

@@ -83,6 +83,7 @@ pub mod fs;
 mod glossary;
 pub mod incremental;
 mod index;
+pub mod json_schema;
 mod layout;
 mod links;
 pub mod llms;
@@ -95,20 +96,21 @@ mod project;
 pub mod reading;
 pub mod references;
 mod replaces;
+pub mod side_file;
 pub mod slug;
 pub mod snippet;
 mod uses;
 
 pub use astro::AstroRouter;
 pub use build::{
-    Annotation, Availability, BuildResolver, DeclaredPermalink, DefaultRouter, Destination,
-    DropReason, DroppedPage, FormattedField, FoundSummary, GlossaryUse, HeadingIds, InLine,
-    LinkTarget, NAV_LABEL, NavLabel, PagePermalink, PageSection, Permalink, Removal, Removed,
-    ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink,
-    ResolvedPage, ResolvedRow, Scope, SectionSummary, Substitution, SummaryForm, find_summaries,
-    glossary_targets, in_release_line, permalinks, select,
+    Annotation, Availability, BuildResolver, DRAFT, DeclaredPermalink, DefaultRouter, Destination,
+    DropReason, DroppedPage, EmbeddedOperation, FormattedField, FoundSummary, GlossaryUse,
+    HeadingIds, InLine, LinkTarget, NAV_LABEL, NavLabel, PagePermalink, PageSection, Permalink,
+    Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,
+    ResolvedLink, ResolvedPage, ResolvedRow, Scope, SectionSummary, Substitution, SummaryForm,
+    find_summaries, glossary_targets, in_release_line, permalinks, select,
 };
-pub use closest::{Closest, closest_fixes, closest_targets, link_href};
+pub use closest::{Closest, closest_fixes, closest_targets, link_href, offer_closest};
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite,
     MAX_EXPANDED_BLOCKS, MAX_EXPANDED_BYTES, PageProblem,
@@ -123,9 +125,9 @@ pub use incremental::{
     Snapshot, Stats, Version,
 };
 pub use index::{
-    AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, Mention,
-    MentionKind, PhrasePlace, PhraseUse, RefKind, Reference, Target, TermMark, heading_text,
-    index_file,
+    AvailabilityMarker, ExampleMarker, ExampleOf, ExplicitId, FileIndex, FileKind, Heading,
+    Include, Local, Mention, MentionKind, PhrasePlace, PhraseUse, RefKind, Reference, Target,
+    TermMark, heading_text, index_file,
 };
 pub use layout::Layout;
 pub use links::{encode_destination, link_path, named_headings};
@@ -140,12 +142,13 @@ pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };
 pub use references::{
-    IncludeTarget, SourceSet, destination_phrases, destination_span, include_issue, include_target,
-    reference_issue, reference_target, resolve_reference,
+    IncludeTarget, SourceSet, destination_phrases, destination_span, include_fixes, include_issue,
+    include_target, operation_target, reference_issue, reference_target, resolve_reference,
 };
 pub use replaces::{REPLACES, replaces_span, replaces_target};
 pub use snippet::examples::{
-    CurrentObservation, Example, ExampleStatus, FolderExamples, ReadObservation, example,
+    CurrentObservation, Example, ExampleStatus, FolderExamples, ReadObservation, UnreadConfig,
+    example, unread_config, unread_configs,
 };
 pub use snippet::{
     Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,

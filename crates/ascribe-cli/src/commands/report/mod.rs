@@ -4,22 +4,25 @@
 //! run says why, and the others still run.
 
 pub mod json;
+mod store;
 mod text;
 
 use std::io::{self, Write};
 use std::process::ExitCode;
+use std::sync::Arc;
 use std::time::Duration;
 
-use ascribe_check::links::{Cache, History};
 use ascribe_check::prompt::{self, Builds as PromptBuilds};
-use ascribe_check::report_history::ReportHistory;
 use ascribe_check::{Diagnostic, Project, Reported, Severity};
 use ascribe_core::Coded;
 use ascribe_query::report::{Options, Ran, Report, Section, Tools};
+use ascribe_report::links::{Cache, History};
+use ascribe_report::report_history::ReportHistory;
+use ascribe_report::store::Store;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::context::{Failure, load_project};
+use crate::context::{Failure, checked, load_project};
 use crate::exit;
 use crate::report::FileTable;
 use crate::shell::quote;
@@ -62,7 +65,7 @@ pub struct Args {
     #[arg(long)]
     pub not_listed: bool,
 
-    /// The address of a built site, for `agents`: the published site, or a
+    /// The address of a built site, for `delivery`: the published site, or a
     /// preview of it.
     #[arg(long, value_name = "URL")]
     pub site: Option<String>,
@@ -83,17 +86,27 @@ pub struct Args {
     pub recheck: bool,
 
     /// Report as a first run would: say nothing about what's new in
-    /// `problems`, `links`, and `agents`, and report every failure of
-    /// `links`. `problems` and `agents` keep nothing for the next report,
+    /// `problems`, `links`, and `delivery`, and report every failure of
+    /// `links`. `problems` and `delivery` keep nothing for the next report,
     /// and `links` still keeps what this run sees.
     ///
     /// By default, `problems` and `links` say which problems are new since
-    /// the last report and how many it listed are gone, `agents` says which
+    /// the last report and how many it listed are gone, `delivery` says which
     /// checks are failing since the last report, and a link that answered
     /// before and fails now is listed as unconfirmed until it has kept
     /// failing for `[checks.links] confirm-days`.
     #[arg(long)]
     pub no_history: bool,
+
+    /// Report the advice `ascribe.baseline` holds back too, without reading
+    /// the file.
+    ///
+    /// By default, `problems` and `inventory` leave out what the baseline
+    /// lists while it's advice, as `ascribe check` does, and `problems`
+    /// counts it. A baseline that can't be read stops a report with either
+    /// section, unless this is given.
+    #[arg(long)]
+    pub no_baseline: bool,
 
     /// Exit with 1 when a section finds something at this severity or
     /// above, and with 2 when a section asked for couldn't run: for a
@@ -118,7 +131,7 @@ pub enum SectionArg {
     /// What `ascribe check` finds, counted by check, by file, and by kind
     /// of next step; and every acknowledgement, with its reason.
     Problems,
-    /// Pages by type and by owner; overdue reviews, orphan pages, and
+    /// Pages by type and by owner; overdue rechecks, orphan pages, and
     /// unused entries.
     Inventory,
     /// What each build leaves out that another keeps.
@@ -131,7 +144,8 @@ pub enum SectionArg {
     Links,
     /// The delivery spec's checks on a built site. Needs `afdocs`, the
     /// network, and `--site`.
-    Agents,
+    #[value(alias = "agents")]
+    Delivery,
 }
 
 impl SectionArg {
@@ -142,7 +156,7 @@ impl SectionArg {
             SectionArg::Builds => Section::Builds,
             SectionArg::Pages => Section::Pages,
             SectionArg::Links => Section::Links,
-            SectionArg::Agents => Section::Agents,
+            SectionArg::Delivery => Section::Delivery,
         }
     }
 }
@@ -151,13 +165,14 @@ impl SectionArg {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Each section, for people.
+    #[value(alias = "concise")]
     Text,
     /// Markdown, for a CI job's summary or an issue's body.
     Markdown,
     /// One JSON document, for tools.
     Json,
     /// A prompt for an agent that acts on one section's problems: only
-    /// with one section, `problems`, `links`, or `agents`. Nothing when it
+    /// with one section, `problems`, `links`, or `delivery`. Nothing when it
     /// finds nothing.
     Prompt,
 }
@@ -188,7 +203,7 @@ impl Level {
 pub enum ReportError {
     /// `--format prompt` with other than one of the sections it writes.
     #[error(
-        "--format prompt writes one section's prompt: name one of `problems`, `links`, or `agents`"
+        "--format prompt writes one section's prompt: name one of `problems`, `links`, or `delivery`"
     )]
     PromptSection,
 }
@@ -246,13 +261,13 @@ pub(crate) fn report(
     if args.format == Format::Prompt
         && !matches!(
             sections.as_slice(),
-            [Section::Problems | Section::Links | Section::Agents]
+            [Section::Problems | Section::Links | Section::Delivery]
         )
     {
         return exit::fail(err, &ReportError::PromptSection);
     }
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => {
             let message = failure_message(failure);
             if args.format == Format::Json {
@@ -262,33 +277,36 @@ pub(crate) fn report(
             return exit::FAILURE;
         }
     };
+    // The files the report keeps between runs, in the project's folder.
+    let store: Arc<dyn Store> = Arc::new(store::DiskStore::new(project.root()));
     // The store of answers `links` reuses, in the project's `.ascribe/`,
     // on the day the binary gives.
     let link_cache = project
         .today()
         .filter(|_| sections.contains(&Section::Links))
-        .map(|today| Cache::open(&project, project.root(), today, args.recheck));
+        .map(|today| Cache::open(&project, store.clone(), today, args.recheck));
     // What `links` remembers from earlier runs, beside it.
     let link_history = link_cache.as_ref().and(project.today()).map(|today| {
         let confirm_days = project.model().checks.links.confirm_days;
-        History::open(project.root(), today, confirm_days, args.no_history)
+        History::open(store.clone(), today, confirm_days, args.no_history)
     });
     // What the other sections remember from the last report, beside it;
     // with `--no-history`, it's neither read nor written.
     let history = project
         .today()
         .filter(|_| {
-            (sections.contains(&Section::Problems) || sections.contains(&Section::Agents))
+            (sections.contains(&Section::Problems) || sections.contains(&Section::Delivery))
                 && !args.no_history
         })
         .and_then(|today| {
             let builds = ascribe_check::select_builds(&project, &args.build).ok()?;
             let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
-            Some(ReportHistory::open(project.root(), today, &names))
+            Some(ReportHistory::open(store.clone(), today, &names))
         });
     let options = Options {
         sections: &sections,
         builds: &args.build,
+        baseline: !args.no_baseline,
         not_listed: args.not_listed,
         site: args.site.as_deref(),
         tools,
@@ -332,17 +350,17 @@ pub(crate) fn report(
 fn failure_message(failure: Failure) -> String {
     match failure {
         Failure::Config(e) => e.to_string(),
-        Failure::Load(ascribe_check::LoadError::Model { diagnostics, .. }) => {
+        Failure::Load(ascribe_workspace::LoadError::Model { issues, .. }) => {
             let mut text = format!(
                 "{} has errors, so nothing can be reported",
                 ascribe_check::MODEL_FILE
             );
-            for d in diagnostics {
+            for d in issues.iter().map(ascribe_check::Diagnostic::from_issue) {
                 text.push_str(&format!("\n  {}", d.message));
             }
             text
         }
-        Failure::Load(e @ ascribe_check::LoadError::Read { .. }) => e.to_string(),
+        Failure::Load(e @ ascribe_workspace::LoadError::Read { .. }) => e.to_string(),
     }
 }
 
@@ -444,6 +462,9 @@ fn command(global: &Global, args: &Args, sections: &[Section], limit: usize) -> 
         // Without it, the lists would differ.
         words.push("--no-history".to_owned());
     }
+    if args.no_baseline {
+        words.push("--no-baseline".to_owned());
+    }
     words.extend(["--limit".to_owned(), limit.to_string()]);
     match args.format {
         Format::Json => words.extend(["--format".to_owned(), "json".to_owned()]),
@@ -457,6 +478,9 @@ fn command(global: &Global, args: &Args, sections: &[Section], limit: usize) -> 
 fn check_command(global: &Global, args: &Args) -> String {
     let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
     words.extend(options(global, args));
+    if args.no_baseline {
+        words.push("--no-baseline".to_owned());
+    }
     if args.format == Format::Json {
         words.extend(["--format".to_owned(), "json".to_owned()]);
     } else {
@@ -528,16 +552,16 @@ fn write_prompt(
             }
             _ => None,
         },
-        [Section::Agents] => match &report.agents {
-            Some(Ran::Done(agents)) => {
-                let problems: Vec<&Diagnostic> = agents.diagnostics.iter().collect();
+        [Section::Delivery] => match &report.delivery {
+            Some(Ran::Done(delivery)) => {
+                let problems: Vec<&Diagnostic> = delivery.diagnostics.iter().collect();
                 prompt::batch(
                     project,
                     &context,
                     "Change what the delivery spec's checks find on the published site. None of it is in the pages: it's the hosting's settings, or a bug to report in Ascribe.",
-                    vec![format!("Site: {}", agents.site)],
+                    vec![format!("Site: {}", delivery.site)],
                     &problems,
-                    &verify(Section::Agents),
+                    &verify(Section::Delivery),
                 )
             }
             _ => None,

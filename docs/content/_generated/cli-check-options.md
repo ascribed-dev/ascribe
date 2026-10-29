@@ -10,11 +10,17 @@
   - `text` (the default): Problems with source snippets, for people.
   - `concise`: One line per problem, `file:line: [code] message`, grouped by file: for an agent. At most 50, or as many as `--limit` says, then how many more and the command that lists them all.
   - `json`: One JSON document, for tools.
+  - `github`: A GitHub Actions workflow command per problem, which shows it on the pull request's lines, with the path from the repository's root, then the summary line: for CI.
   - `prompt`: A prompt for an agent that fixes the problems: about the file, when the paths name one file, else about the project or the paths. Nothing when there are no problems.
 - `--limit <N>`: List at most this many problems with `--format concise`, or `all` of them. By default, 50. When some are left out, the list ends with how many, and the command that lists them all. Only with `--format concise`, and not with `--summary`, which lists none.
-- `--deny-warnings`: Make warnings fail the command too (exit code 1), for CI.
+- `--exit-code[=<LEVEL>]`: Exit with 1 on problems at this level or above: `error`, the default, or `warning`, for CI. Errors fail the command without it. Advice never fails it.
+  - `error`: An error.
+  - `warning`: A warning or an error.
+- `--deny-warnings`: Make warnings fail the command too: `--exit-code=warning`.
 - `--base <REV>`: The revision whose addresses the check compares the project's with, when it has `ascribe.addresses`: anything git accepts (a branch, a tag, a commit). An address the base published that no build publishes now, and that no entry of `ascribe.addresses` accounts for, is `address-lost`. By default, the repository's default branch, the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists, from its merge base with `HEAD`, as `ascribe diff` chooses it. A base that can't be read is `addresses-base-unreadable`, and the rest of the check is the same. Only when the check covers the whole project: with paths, `--stdin`, or `--editor-build`, the base isn't read. A project without `ascribe.addresses` reads the base's only when this names the base: `addresses-file-deleted` when it has one.
 - `--base-exact`: Compare the addresses with the base revision itself instead of its merge base with `HEAD`: in CI on a push, the commit before it.
 - `--fix`: Apply the fixes marked safe, then report what's left. A fix is safe when applying it can't change what the page says and leaves nothing to decide, such as linking to a page's file instead of its route. Only the fixes of the diagnostics reported are applied, so with paths, those that count for them. Unsafe fixes are never applied. The report, and the exit code, are the check after the fixes.
+- `--dry-run`: Say what it would change, and change nothing.
+- `--force`: Change files even when git couldn't put them back as they are: ones with changes not committed, ones git doesn't track, or ones in no repository.
 - `--vale`: Check the prose with Vale too, as `[checks.vale]` in `ascribe.toml` sets it up. Vale runs once, on the files reported on. Its alerts are `prose` diagnostics, at their place in the source. A Vale that can't be run is one `prose-not-checked` advice, and the rest of the check is the same. `[checks.vale] in-check = true` checks the prose without this option. Without `[checks.vale]`, it's a usage error.
 - `--no-baseline`: Report the advice `ascribe.baseline` holds back too, without reading the file. By default, a problem the baseline lists isn't reported while it's advice, and is counted instead, and an entry that matches nothing is reported, as `baseline-entry-unmatched`. A baseline that can't be read stops the check, unless this is given.

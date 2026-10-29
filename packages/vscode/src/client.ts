@@ -25,6 +25,7 @@ import {
 } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { PREVIEW_CHANGED, type PreviewChangedParams } from "./preview/protocol.js";
+import type { AddressesParams } from "./shapes.js";
 import { isAscribeSource, SOURCE } from "./problems.js";
 import { follow, killTree } from "./processes.js";
 import { globFolder, samePath, type Project } from "./projects.js";
@@ -33,6 +34,9 @@ import { ServerStatus, type ServerState } from "./serverState.js";
 import { parseVersion } from "./version.js";
 
 export type { ServerState } from "./serverState.js";
+
+/** The notification that says what the server's comparison of the addresses found (`addresses.rs`). */
+const ADDRESSES = "ascribe/addresses";
 
 const OPEN_SETTINGS = "Open Settings";
 const SHOW_OUTPUT = "Show Output";
@@ -83,6 +87,9 @@ export class ProjectServer implements vscode.Disposable {
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
   private readonly pagesChanged = new vscode.EventEmitter<string[]>();
+  private readonly addressesChanged = new vscode.EventEmitter<AddressesParams>();
+  /** What the running server last said of the addresses; `undefined` until it has. */
+  private lastAddresses: AddressesParams | undefined;
   private disposed = false;
   private runningSince: number | undefined;
   /** The diagnostics the running server last published for each file, with their versions. */
@@ -189,6 +196,20 @@ export class ProjectServer implements vscode.Disposable {
    */
   get onDidChangePages(): vscode.Event<string[]> {
     return this.pagesChanged.event;
+  }
+
+  /**
+   * Fires with what the server found comparing the addresses with the
+   * base's, between checks: once the project loads, and after a change
+   * that compares them again (`ascribe/addresses`).
+   */
+  get onDidChangeAddresses(): vscode.Event<AddressesParams> {
+    return this.addressesChanged.event;
+  }
+
+  /** What the running server last said of the addresses; `undefined` until it has, or while it isn't running. */
+  get addresses(): AddressesParams | undefined {
+    return this.lastAddresses;
   }
 
   /**
@@ -351,6 +372,7 @@ export class ProjectServer implements vscode.Disposable {
     this.channel?.dispose();
     this.started.dispose();
     this.pagesChanged.dispose();
+    this.addressesChanged.dispose();
     this.status.dispose();
   }
 
@@ -425,7 +447,13 @@ export class ProjectServer implements vscode.Disposable {
     client.onNotification(PREVIEW_CHANGED, (params: PreviewChangedParams) =>
       this.pagesChanged.fire(params.pages),
     );
+    client.onNotification(ADDRESSES, (params: AddressesParams) => {
+      this.lastAddresses = params;
+      this.addressesChanged.fire(params);
+    });
     client.onDidChangeState(({ newState }) => {
+      // A server that starts again says again what it found.
+      if (newState !== State.Running) this.lastAddresses = undefined;
       if (newState === State.Running) {
         // Each process the client starts, after a crash too.
         if (client.serverProcess) follow(client.serverProcess);
@@ -612,6 +640,9 @@ function clientOptions(
       { scheme: "file", pattern: `${folder}/ascribe.permalinks` },
       // The navigation file, checked and completed as it's typed.
       { scheme: "file", pattern: `${folder}/ascribe.nav` },
+      // The addresses kept, which the server compares with its buffer, so a
+      // move's unsaved entry counts.
+      { scheme: "file", pattern: `${folder}/ascribe.addresses` },
       // A source's examples config, checked and completed as it's edited.
       { scheme: "file", pattern: `${folder}/**/ascribe.examples.toml` },
     ],

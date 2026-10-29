@@ -19,6 +19,8 @@ use crate::skips::{Check, SkipTarget, Skips, SkipsError};
 pub struct Suite {
     /// The suite's root, `tests/conformance/`.
     pub root: PathBuf,
+    /// The diagnostics registry the cases' slugs are checked against.
+    pub diagnostics: PathBuf,
 }
 
 /// A problem that stops the whole run.
@@ -92,14 +94,20 @@ pub struct Report {
 }
 
 impl Suite {
-    /// The suite in this crate's directory.
+    /// The suite in this crate's directory, checked against the registry
+    /// the binary ships, `crates/ascribe-core/data/diagnostics.toml`.
     pub fn bundled() -> Suite {
-        Suite::new(env!("CARGO_MANIFEST_DIR"))
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let diagnostics = root.join("../../crates/ascribe-core/data/diagnostics.toml");
+        Suite { root, diagnostics }
     }
 
-    /// A suite rooted at `root`.
+    /// A suite rooted at `root`, with its own registry,
+    /// `root/diagnostics.toml`.
     pub fn new(root: impl Into<PathBuf>) -> Suite {
-        Suite { root: root.into() }
+        let root = root.into();
+        let diagnostics = root.join("diagnostics.toml");
+        Suite { root, diagnostics }
     }
 
     /// `cases/`, where cases live.
@@ -114,7 +122,7 @@ impl Suite {
 
     /// `diagnostics.toml`, the diagnostics registry.
     pub fn diagnostics_path(&self) -> PathBuf {
-        self.root.join("diagnostics.toml")
+        self.diagnostics.clone()
     }
 
     /// `_model/ascribe.toml`, the shared fixture model.

@@ -1,0 +1,1 @@
+- **The specification says it's a draft until 1.0.** Its grammar and built-in vocabulary may grow until then, and `spec = "0.1"` names the draft, not a frozen version. See [SPEC.md §11](SPEC.md#11-versioning).

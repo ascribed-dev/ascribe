@@ -17,9 +17,10 @@
 //! page written on disk did, as running the checks across the project for it
 //! would. Each size runs again with `[checks.vale]` and a stand-in for Vale
 //! that takes 50 ms and finds nothing, which shows what checking the prose
-//! on open and on save costs a keystroke: it should cost nothing. A plain
-//! `main` rather than a benchmark framework: nothing here needs more
-//! statistics than that.
+//! on open and on save costs a keystroke: it should cost nothing. With
+//! `ASCRIBE_BENCH_QUICK` set, as on a pull request, it runs 3,000 pages
+//! without Vale and nothing else. A plain `main` rather than a benchmark
+//! framework: nothing here needs more statistics than that.
 
 #![allow(
     clippy::expect_used,
@@ -55,11 +56,11 @@ const KEYSTROKES: usize = 100;
 /// finds nothing. It counts its runs, so the benchmark knows it ran.
 struct SlowVale(AtomicUsize);
 
-impl ascribe_check::prose::Linter for SlowVale {
+impl ascribe_report::prose::Linter for SlowVale {
     fn lint(
         &self,
-        request: &ascribe_check::prose::Request,
-    ) -> Result<BTreeMap<String, Vec<ascribe_check::prose::Alert>>, ascribe_check::prose::ValeError>
+        request: &ascribe_report::prose::Request,
+    ) -> Result<BTreeMap<String, Vec<ascribe_report::prose::Alert>>, ascribe_report::prose::ValeError>
     {
         self.0.fetch_add(1, Ordering::SeqCst);
         thread::sleep(Duration::from_millis(50));
@@ -465,6 +466,10 @@ fn settle(client: &mut Client, idle: &AtomicBool) {
 
 fn main() {
     println!("keystroke-to-diagnostics latency, {KEYSTROKES} keystrokes per size");
+    if ascribe_synthetic::report::quick() {
+        run(3000, false);
+        return;
+    }
     for pages in [20, 100, 300, 1000, 3000] {
         run(pages, false);
         run(pages, true);

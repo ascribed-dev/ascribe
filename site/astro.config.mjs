@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import ascribe from "@ascribed/astro";
+import { changelogInLlms } from "./src/agents.ts";
 import { unindexed } from "./src/site.ts";
 
 // Three Ascribe projects in one site: the site's own pages (home/, at the
@@ -30,5 +31,7 @@ export default defineConfig({
       // demo's page has no route, so it isn't in it.
       sitemap: { exclude: unindexed },
     }),
+    // After the docs' llms.txt is copied: the changelog, under "Optional".
+    changelogInLlms(),
   ],
 });

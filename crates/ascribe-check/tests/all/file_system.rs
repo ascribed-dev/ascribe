@@ -17,19 +17,27 @@ const PAGE: &str = "---\ntitle: T\n---\n![A logo](logo.png)\n";
 fn project(fs: Option<MemoryFs>) -> Project {
     let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("a model");
     let content_root = RelPath::parse("docs").expect("a path");
-    let sources =
-        Project::from_sources([(RelPath::parse("index.md").expect("a path"), PAGE.into())]);
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+        RelPath::parse("index.md").expect("a path"),
+        PAGE.into(),
+    )]);
     let root = PathBuf::from("/no/such/project");
     match fs {
-        Some(fs) => Project::from_parts_with_fs(
-            root,
-            content_root,
-            model,
-            MODEL.to_owned(),
-            sources,
-            Arc::new(fs),
+        Some(fs) => Project::new(
+            ascribe_check::in_memory_with(
+                root,
+                content_root,
+                model,
+                MODEL.to_owned(),
+                sources,
+                Arc::new(fs),
+            )
+            .snapshot(),
         ),
-        None => Project::from_parts(root, content_root, model, MODEL.to_owned(), sources),
+        None => Project::new(
+            ascribe_check::in_memory(root, content_root, model, MODEL.to_owned(), sources)
+                .snapshot(),
+        ),
     }
 }
 

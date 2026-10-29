@@ -38,9 +38,12 @@ pub struct Review<'a> {
 impl Review<'_> {
     /// A content path, or another name `because` gives, relative to the
     /// project root, as unsaved files are named; a snippet's address as it
-    /// is.
+    /// is, and an operation's, which is from the project root already.
     fn in_project(&self, name: &str) -> String {
-        if name == crate::compare::MODEL_FILE || name.starts_with("code:") {
+        if name == crate::compare::MODEL_FILE
+            || name.starts_with("code:")
+            || crate::compare::names_operation(name)
+        {
             return name.to_owned();
         }
         match RelPath::parse(name).and_then(|p| self.content_root.join(p.as_str())) {
@@ -168,12 +171,29 @@ pub fn page(context: &Context, review: &Review<'_>, build: &str, page: &PageDiff
     known.push(match page.status {
         PageStatus::Added => "The page is new: the base doesn't publish it.".to_owned(),
         PageStatus::Removed => "The page is removed: the build doesn't publish it now.".to_owned(),
-        PageStatus::Changed => format!("What changed: {}", page.summary()),
+        PageStatus::Changed => format!(
+            "What changed: {}",
+            page.summary_with(&|p| review.shown(context, p))
+        ),
     });
-    if !page.because.is_empty() {
+    // A page that moved, and that a link here leads to, is named by why.
+    let moved = |c: &String| page.moved_links.iter().any(|m| m.to == *c);
+    if !page.own_file_changed && !page.moved_links.is_empty() {
+        let pages: Vec<String> = page
+            .moved_links
+            .iter()
+            .map(|m| review.shown(context, &m.from))
+            .collect();
+        known.push(format!(
+            "A link changed because a page it leads to moved: {}",
+            code_list(&pages)
+        ));
+    }
+    if page.because.iter().any(|c| !moved(c)) {
         let causes: Vec<String> = page
             .because
             .iter()
+            .filter(|c| !moved(c))
             .map(|c| review.shown(context, c))
             .collect();
         known.push(format!(

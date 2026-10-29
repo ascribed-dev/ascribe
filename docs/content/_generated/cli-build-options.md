@@ -8,3 +8,4 @@
   - `text` (the default): Diagnostics with source snippets, for people.
   - `json`: One JSON document, for tools.
 - `--anchors`: Mark each block of the site output with the source file and lines it came from, for review. Each Markdown block gets an `<!--ascribe-anchor …-->` comment before it, and each element Ascribe writes gets `data-ascribe-source` (with `data-ascribe-via` for a block from a fragment). The site output's manifest records `"anchors": true`. Without it, the output has no anchors. The other outputs are the same either way.
+- `--no-baseline`: Report the advice `ascribe.baseline` holds back too, without reading the file. By default, the checks hold back what the baseline lists while it's advice, and count it, as `ascribe check` does. A baseline that can't be read stops the build, unless this is given.

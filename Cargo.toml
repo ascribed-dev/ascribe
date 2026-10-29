@@ -11,10 +11,13 @@ members = [
     "crates/ascribe-diff",
     "crates/ascribe-sources",
     "crates/ascribe-fmt",
+    "crates/ascribe-edit",
     "crates/ascribe-lsp",
+    "crates/ascribe-report",
     "crates/ascribe-query",
     "crates/ascribe-mcp",
     "crates/ascribe-templates",
+    "crates/ascribe-workspace",
     "crates/ascribe-cli",
     "tests/conformance",
     "tests/commonmark",
@@ -23,7 +26,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.3"
+version = "0.4.4"
 edition = "2024"
 rust-version = "1.98"
 license = "MPL-2.0"
@@ -41,10 +44,13 @@ ascribe-emit = { path = "crates/ascribe-emit" }
 ascribe-diff = { path = "crates/ascribe-diff" }
 ascribe-sources = { path = "crates/ascribe-sources" }
 ascribe-fmt = { path = "crates/ascribe-fmt" }
+ascribe-edit = { path = "crates/ascribe-edit" }
 ascribe-lsp = { path = "crates/ascribe-lsp" }
+ascribe-report = { path = "crates/ascribe-report" }
 ascribe-query = { path = "crates/ascribe-query" }
 ascribe-mcp = { path = "crates/ascribe-mcp" }
 ascribe-templates = { path = "crates/ascribe-templates" }
+ascribe-workspace = { path = "crates/ascribe-workspace" }
 # The synthetic project the benchmarks share. A dev-dependency only.
 ascribe-synthetic = { path = "tests/corpora/synthetic" }
 # The comrak fork. Depend on it as `comrak-ascribe.workspace = true`.

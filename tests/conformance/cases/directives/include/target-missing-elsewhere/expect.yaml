@@ -1,0 +1,9 @@
+description: >-
+  An include path is relative to the including file, so a fragment with the
+  same name elsewhere doesn't satisfy it; the check offers that fragment's
+  path as a fix.
+spec: ["4.2", "8.2"]
+tags: [check, include]
+
+diagnostics:
+  - {slug: include-target-missing, file: guides/setup.md, line: 5}

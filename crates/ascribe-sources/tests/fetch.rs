@@ -32,7 +32,7 @@ fn a_first_fetch_pins_the_branch_and_copies_what_snippets_use() {
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs#login\n",
     );
 
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     let api = &report.sources[0];
     assert_eq!(api.commit.as_deref(), Some(commit.as_str()));
     assert!(api.pinned && api.first_copy);
@@ -48,7 +48,7 @@ fn a_first_fetch_pins_the_branch_and_copies_what_snippets_use() {
     assert_eq!(docs.check(), Vec::<String>::new());
 
     // Run again, nothing changes and nothing is fetched.
-    let again = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let again = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert!(again.sources[0].copied.is_empty() && !again.sources[0].pinned);
     assert!(!again.lock_written);
 }
@@ -63,14 +63,14 @@ fn fetch_never_moves_a_pin_and_reads_the_cache_the_second_time() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
 
     // The branch moves on; fetch keeps the pin.
     code.write("src/auth.rs", "fn login() { changed() }\n");
     code.commit("second");
     // A copy deleted, and one edited by hand, are put back as pinned.
     std::fs::remove_file(common::path(docs.root(), "sources/api/src/auth.rs")).unwrap();
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert_eq!(report.sources[0].commit.as_deref(), Some(first.as_str()));
     assert_eq!(docs.read("sources/api/src/auth.rs").as_deref(), Some(AUTH));
 
@@ -79,7 +79,7 @@ fn fetch_never_moves_a_pin_and_reads_the_cache_the_second_time() {
     common::write(docs.root(), "sources/api/src/auth.rs", "edited\n");
     let moved = code.root().with_extension("moved");
     std::fs::rename(code.root(), &moved).unwrap();
-    let report = fetch(&docs.workspace(), &[], &docs.options());
+    let report = fetch(&docs.view(), &[], &docs.options());
     std::fs::rename(&moved, code.root()).unwrap();
     assert_eq!(report.unwrap().sources[0].copied, ["src/auth.rs"]);
     assert_eq!(docs.read("sources/api/src/auth.rs").as_deref(), Some(AUTH));
@@ -98,7 +98,7 @@ fn files_that_cant_be_copied_are_reported_and_left_out() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n\n@snippet: api:src/big.txt\n\n@snippet: api:src/data.bin\n\n@snippet: api:src/gone.rs\n\n@snippet: api:private/key.rs\n",
     );
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert!(report.has_failures());
     let failed: Vec<(&str, &str)> = report.sources[0]
         .failed
@@ -148,7 +148,7 @@ fn files_that_cant_be_copied_are_reported_and_left_out() {
         problems[0].ends_with("run `ascribe sources fetch`"),
         "{problems:?}"
     );
-    let states: Vec<(String, CopyState)> = status(&docs.workspace()).sources[0]
+    let states: Vec<(String, CopyState)> = status(&docs.view()).sources[0]
         .files
         .iter()
         .map(|f| (f.path.clone(), f.state))
@@ -163,13 +163,13 @@ fn files_that_cant_be_copied_are_reported_and_left_out() {
     );
     // Fetching again finds it missing at the same pin, and once no snippet
     // names it, the lock no longer lists it.
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert_eq!(report.sources[0].failed[0].path, "src/gone.rs");
     docs.page(
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert!(!docs.read("ascribe.lock").unwrap().contains("missing"));
 }
 
@@ -184,19 +184,19 @@ fn a_copy_no_snippet_uses_is_removed() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n\n@snippet: api:src/other.rs\n",
     );
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert!(docs.exists("sources/api/src/other.rs"));
 
     docs.page(
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
     );
-    let st = status(&docs.workspace());
+    let st = status(&docs.view());
     let states: Vec<_> = st.sources[0].files.iter().map(|f| f.state).collect();
     assert_eq!(states, [CopyState::Current, CopyState::Unused]);
     assert!(docs.check()[0].starts_with("source-copy-unused"));
 
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert_eq!(report.sources[0].removed, ["src/other.rs"]);
     assert!(!docs.exists("sources/api/src/other.rs"));
     assert!(
@@ -206,7 +206,7 @@ fn a_copy_no_snippet_uses_is_removed() {
 
     // With no snippet left, the copies' folders go too, and the pin stays.
     docs.page("index.md", "---\ntitle: Home\n---\n\nNo code.\n");
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert!(!docs.exists("sources"));
     assert!(
         docs.read("ascribe.lock")
@@ -219,7 +219,7 @@ fn a_copy_no_snippet_uses_is_removed() {
         "ascribe.toml",
         "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n",
     );
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert_eq!(report.unpinned, ["api"]);
     assert!(
         docs.read("ascribe.lock")
@@ -245,16 +245,16 @@ fn two_sources_and_a_name() {
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n\n@snippet: cli:cmd/main.go\n",
     );
     // Only the source named.
-    let report = fetch(&docs.workspace(), &["cli".into()], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &["cli".into()], &docs.options()).unwrap();
     assert_eq!(report.sources.len(), 1);
     assert!(docs.exists("sources/cli/cmd/main.go") && !docs.exists("sources/api"));
     // Then every one; the one without a branch follows the default.
-    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert!(docs.exists("sources/api/src/auth.rs"));
     assert_eq!(docs.check(), Vec::<String>::new());
 
     assert!(matches!(
-        fetch(&docs.workspace(), &["web".into()], &docs.options()),
+        fetch(&docs.view(), &["web".into()], &docs.options()),
         Err(SourcesError::UnknownSource(name)) if name == "web"
     ));
 }
@@ -268,7 +268,7 @@ fn no_access_names_the_source_and_repeats_git() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
     );
-    let error = fetch(&docs.workspace(), &[], &docs.options()).unwrap_err();
+    let error = fetch(&docs.view(), &[], &docs.options()).unwrap_err();
     let SourcesError::Git { name, message } = &error else {
         panic!("{error}");
     };
@@ -290,7 +290,7 @@ fn a_copy_cant_be_written_through_a_link_out_of_its_folder() {
     let outside = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(docs.root().join("sources").join("api")).unwrap();
     links::dir(outside.path(), docs.root().join("sources/api/src"));
-    let error = fetch(&docs.workspace(), &[], &docs.options()).unwrap_err();
+    let error = fetch(&docs.view(), &[], &docs.options()).unwrap_err();
     assert!(matches!(error, SourcesError::Write { .. }), "{error}");
     assert!(!outside.path().join("auth.rs").exists());
 }
@@ -311,7 +311,7 @@ fn the_lock_isnt_written_through_a_link() {
     if !links::file(&victim, docs.root().join("ascribe.lock")) {
         return;
     }
-    let error = fetch(&docs.workspace(), &[], &docs.options()).unwrap_err();
+    let error = fetch(&docs.view(), &[], &docs.options()).unwrap_err();
     assert!(matches!(error, SourcesError::Write { .. }), "{error}");
     assert!(!victim.exists(), "the lock was written through the link");
 }
@@ -335,7 +335,7 @@ fn the_examples_config_and_observations_come_with_the_copies() {
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs#login\n",
     );
 
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert_eq!(
         report.sources[0].copied,
         [
@@ -352,14 +352,14 @@ fn the_examples_config_and_observations_come_with_the_copies() {
         "{lock}"
     );
     // They're in order: neither unused nor unlocked.
-    let state = status(&docs.workspace());
+    let state = status(&docs.view());
     assert!(state.in_order(), "{state:?}");
 
     // With every copy in order, the pin says which there are: the
     // repository isn't reached.
     let moved = code.root().with_extension("moved");
     std::fs::rename(code.root(), &moved).unwrap();
-    let again = fetch(&docs.workspace(), &[], &docs.options());
+    let again = fetch(&docs.view(), &[], &docs.options());
     std::fs::rename(&moved, code.root()).unwrap();
     let again = again.unwrap();
     assert!(again.sources[0].copied.is_empty() && again.sources[0].removed.is_empty());
@@ -370,7 +370,7 @@ fn the_examples_config_and_observations_come_with_the_copies() {
         "sources/api/examples.observations/default.toml",
     ))
     .unwrap();
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert_eq!(
         report.sources[0].copied,
         ["examples.observations/default.toml"]
@@ -388,8 +388,43 @@ fn a_source_with_no_examples_config_copies_what_it_did() {
         "index.md",
         "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs#login\n",
     );
-    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    let report = fetch(&docs.view(), &[], &docs.options()).unwrap();
     assert_eq!(report.sources[0].copied, ["src/auth.rs"]);
     let lock = docs.read("ascribe.lock").unwrap();
     assert_eq!(lock.matches(" = \"sha256:").count(), 1, "{lock}");
+}
+
+#[test]
+fn a_planned_fetch_copies_and_removes_only_when_applied() {
+    let code = Code::new();
+    code.write("src/auth.rs", AUTH)
+        .write("src/other.rs", "fn other() {}\n");
+    code.commit("first");
+    let docs = Docs::new(&api(&code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/other.rs\n",
+    );
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
+
+    // The page now uses `auth.rs` in place of `other.rs`.
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
+    );
+    let lock = docs.read("ascribe.lock").unwrap();
+    let view = docs.view().planning(true);
+    let report = fetch(&view, &[], &docs.options()).unwrap();
+    assert_eq!(report.sources[0].copied, ["src/auth.rs"]);
+    assert_eq!(report.sources[0].removed, ["src/other.rs"]);
+    assert!(report.lock_written);
+    assert_eq!(view.planned().len(), 3);
+    assert!(!docs.exists("sources/api/src/auth.rs"));
+    assert!(docs.exists("sources/api/src/other.rs"));
+    assert_eq!(docs.read("ascribe.lock").as_deref(), Some(lock.as_str()));
+
+    view.apply().unwrap();
+    assert_eq!(docs.read("sources/api/src/auth.rs").as_deref(), Some(AUTH));
+    assert!(!docs.exists("sources/api/src/other.rs"));
+    assert_eq!(docs.check(), Vec::<String>::new());
 }

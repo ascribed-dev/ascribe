@@ -22,6 +22,7 @@ allow = [
   "BSD-2-Clause",     # crates/comrak-ascribe, and upstream comrak
   "BSD-3-Clause",
   "MIT",
+  "MIT-0",            # borrow-or-share, under boon's fluent-uri (decision #920)
   "MPL-2.0",          # Ascribe's own crates
   "Unicode-3.0",
   "Unicode-DFS-2016",

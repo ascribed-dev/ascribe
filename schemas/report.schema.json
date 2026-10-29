@@ -51,80 +51,39 @@
       ],
       "type": "object"
     },
-    "AgentsJson": {
-      "description": "`agents`: the delivery spec's checks on a built site.",
+    "ApiCount": {
+      "description": "How many of one API's operations the pages cover.",
       "properties": {
-        "diagnostics": {
-          "$ref": "#/$defs/Capped_Entry",
-          "description": "A diagnostic for each check that failed or warned that the hosting\nor Ascribe owns. One a page owns is `ascribe check`'s, and isn't\nrepeated."
-        },
-        "new": {
-          "description": "How many checks fail or warn now that passed on the last report or\nweren't in it, or `null` when `previous_run` is. A check is told from\nanother by the site's address and its id.",
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "new_checks": {
-          "description": "The ids of the checks `new` counts, in the checker's order; empty\nwhen `previous_run` is `null`.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "not_run": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/NotRunJson"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Why it couldn't run, or `null` when it ran. When it isn't `null`,\nthe rest is empty."
-        },
-        "previous_run": {
-          "description": "The day of the last report that checked the same site,\n`YYYY-MM-DD`, or `null` on a first run, with `--no-history`, or when\nthe last report checked another site or none.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "resolved": {
-          "description": "How many checks that failed or warned on the last report pass now or\naren't in this one, or `null` when `previous_run` is.",
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "results": {
-          "description": "Each check's result, in the checker's order.",
-          "items": {
-            "$ref": "#/$defs/CheckResultJson"
-          },
-          "type": "array"
-        },
-        "site": {
-          "description": "The site checked, as `--site` gives it; empty when none was given.",
+        "api": {
+          "description": "The API's name, its key in `[apis]`.",
           "type": "string"
+        },
+        "examples": {
+          "description": "How many of them a checked example claims as its request or\nresponse.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "linked": {
+          "description": "How many of them a link names, by `operationId` or by method and\npath.",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "operations": {
+          "description": "How many operations its spec has.",
+          "minimum": 0,
+          "type": "integer"
         }
       },
       "required": [
-        "not_run",
-        "site",
-        "results",
-        "diagnostics",
-        "previous_run",
-        "new",
-        "resolved",
-        "new_checks"
+        "api",
+        "operations",
+        "linked",
+        "examples"
       ],
       "type": "object"
     },
     "BuildJson": {
-      "description": "What one build leaves out that another build keeps.",
+      "description": "What one build leaves out that another build keeps, once for each mark\nthat leaves it out.",
       "properties": {
         "build": {
           "description": "The build.",
@@ -132,7 +91,7 @@
         },
         "content": {
           "$ref": "#/$defs/Capped_LeftContentJson",
-          "description": "The content it takes out of the pages it publishes, in file and\nsource order."
+          "description": "The marks that take content out of the pages it publishes, in file\nand source order: each `@available` and variant arm once, however\nmany blocks it takes out."
         },
         "pages": {
           "$ref": "#/$defs/Capped_LeftPageJson",
@@ -477,6 +436,78 @@
       ],
       "type": "object"
     },
+    "DeliveryJson": {
+      "description": "`delivery`: the delivery spec's checks on a built site.",
+      "properties": {
+        "diagnostics": {
+          "$ref": "#/$defs/Capped_Entry",
+          "description": "A diagnostic for each check that failed or warned that the hosting\nor Ascribe owns. One a page owns is `ascribe check`'s, and isn't\nrepeated."
+        },
+        "new": {
+          "description": "How many checks fail or warn now that passed on the last report or\nweren't in it, or `null` when `previous_run` is. A check is told from\nanother by the site's address and its id.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "new_checks": {
+          "description": "The ids of the checks `new` counts, in the checker's order; empty\nwhen `previous_run` is `null`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "not_run": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NotRunJson"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Why it couldn't run, or `null` when it ran. When it isn't `null`,\nthe rest is empty."
+        },
+        "previous_run": {
+          "description": "The day of the last report that checked the same site,\n`YYYY-MM-DD`, or `null` on a first run, with `--no-history`, or when\nthe last report checked another site or none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolved": {
+          "description": "How many checks that failed or warned on the last report pass now or\naren't in this one, or `null` when `previous_run` is.",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "results": {
+          "description": "Each check's result, in the checker's order.",
+          "items": {
+            "$ref": "#/$defs/CheckResultJson"
+          },
+          "type": "array"
+        },
+        "site": {
+          "description": "The site checked, as `--site` gives it; empty when none was given.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "not_run",
+        "site",
+        "results",
+        "diagnostics",
+        "previous_run",
+        "new",
+        "resolved",
+        "new_checks"
+      ],
+      "type": "object"
+    },
     "Edit": {
       "description": "One edit of a fix.",
       "properties": {
@@ -525,7 +556,7 @@
           "type": "array"
         },
         "help": {
-          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode.",
+          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode, in Markdown, whose links are the docs' permalinks, such as\n`https://ascribed-dev.com/go/22-checks/`.",
           "type": "string"
         },
         "message": {
@@ -692,6 +723,16 @@
     "InventoryJson": {
       "description": "`inventory`: what the project holds.",
       "properties": {
+        "apis": {
+          "description": "How many of each declared API's operations the pages cover, for each\nAPI whose spec could be read, in the content model's order. Absent\nwhen the project declares no API.",
+          "items": {
+            "$ref": "#/$defs/ApiCount"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "by_owner": {
           "description": "How many pages each owner has, most first: the value of the\nfrontmatter field the page's type marks `role = \"owner\"`.",
           "items": {
@@ -722,7 +763,7 @@
         },
         "overdue": {
           "$ref": "#/$defs/Capped_Entry",
-          "description": "The pages whose review date has passed (`review-overdue`)."
+          "description": "The pages whose recheck date has passed (`recheck-overdue`)."
         },
         "pages": {
           "description": "How many pages.",
@@ -745,11 +786,18 @@
       "type": "object"
     },
     "LeftContentJson": {
-      "description": "Content a build takes out of a page it publishes.",
+      "description": "A mark that takes content out of a page a build publishes.",
       "properties": {
         "file": {
-          "description": "The file it's written in: the page, or a fragment it includes.",
+          "description": "The file the mark is written in: the page, or a fragment it includes.",
           "type": "string"
+        },
+        "heading": {
+          "description": "The text of the heading the mark is under, or `null`: the section's\nown heading, for a section's `@available`.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "kept_by": {
           "description": "The builds that keep it.",
@@ -768,7 +816,11 @@
         },
         "range": {
           "$ref": "#/$defs/Range",
-          "description": "Where in the file."
+          "description": "Where in the file: the `@available` line, the table row, or the\nvariant arm."
+        },
+        "scope": {
+          "description": "What the mark takes out: `section`, `block`, `row` (a table row), or\n`arm` (a variant arm).",
+          "type": "string"
         },
         "why": {
           "description": "Why, with the content model's labels: `Shows only os=linux`.",
@@ -779,7 +831,9 @@
         "file",
         "range",
         "page",
+        "heading",
         "kind",
+        "scope",
         "why",
         "kept_by"
       ],
@@ -799,14 +853,19 @@
           },
           "type": "array"
         },
-        "why": {
-          "description": "Why, as the end of a sentence: `its variant frontmatter names …`.",
+        "kind": {
+          "description": "`availability` when its `available` frontmatter leaves it out, or\n`variant` when its `variant` frontmatter does.",
+          "type": "string"
+        },
+        "mark": {
+          "description": "That frontmatter's value, as written: `self-managed 3.5`, or\n`deployment=cloud` for `variant`, with a dimension's values joined by\n`|`.",
           "type": "string"
         }
       },
       "required": [
         "file",
-        "why",
+        "kind",
+        "mark",
         "kept_by"
       ],
       "type": "object"
@@ -1157,6 +1216,11 @@
           "$ref": "#/$defs/Capped_AcknowledgedEntry",
           "description": "The problems acknowledged as intended, with their reasons, in file\norder."
         },
+        "baselined": {
+          "description": "How many advice `ascribe.baseline` holds back, which the counts\nleave out: the backlog the project has put off. Left out when there\nare none, and with `--no-baseline`.",
+          "minimum": 0,
+          "type": "integer"
+        },
         "by_check": {
           "$ref": "#/$defs/Capped_CheckCount",
           "description": "How many diagnostics each check reports, most first."
@@ -1376,17 +1440,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe report --format json` writes: one document, whatever the\noutcome. A reader ignores fields it doesn't know.",
   "properties": {
-    "agents": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/AgentsJson"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "`agents`, when asked for."
-    },
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
@@ -1407,6 +1460,17 @@
         "type": "string"
       },
       "type": "array"
+    },
+    "delivery": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DeliveryJson"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "`delivery`, when asked for."
     },
     "error": {
       "description": "Why the report couldn't be made (exit code 2), or `null`. When it\nisn't `null`, no section is there.",
@@ -1478,7 +1542,7 @@
       "type": "integer"
     },
     "sections": {
-      "description": "The sections asked for, in the order the report has them:\n`problems`, `inventory`, `builds`, `pages`, `links`, `agents`.",
+      "description": "The sections asked for, in the order the report has them:\n`problems`, `inventory`, `builds`, `pages`, `links`, `delivery`.",
       "items": {
         "type": "string"
       },
@@ -1486,7 +1550,7 @@
     },
     "summary": {
       "$ref": "#/$defs/Summary",
-      "description": "How many problems of each severity the sections that ran have, and\nof each kind of next step: the diagnostics of `problems`, `links`,\nand `agents`."
+      "description": "How many problems of each severity the sections that ran have, and\nof each kind of next step: the diagnostics of `problems`, `links`,\nand `delivery`."
     }
   },
   "required": [

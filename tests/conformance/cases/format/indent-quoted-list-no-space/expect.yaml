@@ -1,0 +1,4 @@
+description: "In a list item in a block quote, the space after `>` belongs to the quote on every line, so `>-` and `> -` give the same content column on the next line."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

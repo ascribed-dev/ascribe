@@ -118,7 +118,7 @@ describe("Project Settings on examples/quill", () => {
       (s) =>
         s.id.startsWith("checks.") && s.id.endsWith(".level") && s.id !== "checks.vale.max-level",
     );
-    assert.equal(levels.length, 52);
+    assert.equal(levels.length, 58);
     // Opening it again shows the tab that's open, with the focus. The focus
     // lands once the webview has loaded, which can be after the command is
     // done; a test that goes on to Undo in the file waits for it, or the
@@ -262,7 +262,7 @@ describe("Project Settings on examples/quill", () => {
       (d) => d.uri.toString() === model().toString(),
     );
     assert.ok(document, "ascribe.toml isn't open");
-    assert.equal(document.getText(), `${onDisk}\n[checks.page-orphan]\nlevel = "off"\n`);
+    assert.equal(document.getText(), `${onDisk}page-orphan = "off"\n`);
     await undoIn(document);
     await settings.whenDrawn("page-orphan, its default", (d) => !shown(d, ORPHAN).resettable);
     assert.equal(document.getText(), onDisk);

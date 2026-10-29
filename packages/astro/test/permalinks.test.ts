@@ -57,6 +57,36 @@ describe("forwardingPaths", () => {
     ]);
   });
 
+  it("names a permalink's section as Markdown and JSON when the help file has it", () => {
+    const root = siteRoot({
+      version: 1,
+      path: "/go/",
+      permalinks: {
+        "cli-check": { route: "/cli/", fragment: "cli-check", source: "cli.md" },
+        moved: { route: "/cli/", source: "cli.md", moved: "cli.md" },
+      },
+    });
+    writeFileSync(
+      path.join(root, "_ascribe", "help.json"),
+      JSON.stringify({
+        version: 1,
+        build: "site",
+        help: { "cli-check": { title: "Check", text: "Checks.", source: "cli.md" } },
+      }),
+    );
+    expect(forwardingPaths(root)).toEqual([
+      {
+        params: { id: "cli-check" },
+        props: {
+          to: "/cli/#cli-check",
+          dimensions: {},
+          alternates: { markdown: "/go/cli-check.md", json: "/go/cli-check.json" },
+        },
+      },
+      { params: { id: "moved" }, props: { to: "/cli/", dimensions: {} } },
+    ]);
+  });
+
   it("takes no parameters from a list that names no dimensions", () => {
     const root = siteRoot({
       version: 1,
@@ -68,7 +98,7 @@ describe("forwardingPaths", () => {
     ]);
   });
 
-  it("leads an alias and a retired permalink like any other, and says why one was removed", () => {
+  it("leads a moved permalink like any other, and says why one was removed", () => {
     const root = siteRoot({
       version: 1,
       path: "/go/",
@@ -79,7 +109,7 @@ describe("forwardingPaths", () => {
           route: "/security/",
           fragment: "keys",
           source: "security.md",
-          retired: "Merged into the security guide",
+          moved: "security.md#keys",
         },
       },
       removed: { "legacy-sync": { reason: "The sync agent was removed in <b>4.0</b>" } },

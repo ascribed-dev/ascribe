@@ -25,8 +25,10 @@ In Claude Code, [the plugin](claude-code.md) has the stop hook too: use the plug
 
 ## What the agent hears
 
-- **After an edit,** the errors in the files the agent wrote, in the editor's build, and the advice in them that has a safe fix, with what to change and where. The hook makes no fix, so the agent makes the edit itself and sees every change. It says nothing when there's neither. The advice a project put off in [`ascribe.baseline`](../checks/baseline.md#for-agents) isn't the agent's to fix: it's left out, and counted.
+- **After an edit,** the errors in the files the agent wrote, in the editor's build, the advice in them that has a safe fix, with what to change and where, and the placeholders their template left to fill in, so the agent writes them while the page is still its own. The hook makes no fix, so the agent makes the edit itself and sees every change. It says nothing when there's none of these. The advice a project put off in [`ascribe.baseline`](../checks/baseline.md#for-agents) isn't the agent's to fix: it's left out, and counted.
 - **Before the agent finishes,** the errors in every build of each project the working tree changes. While there are any, it keeps the agent working, once. Changes the agent has committed before it stops aren't in the working tree, so they aren't checked; check them in CI.
+
+The commands it names, such as `ascribe check`, are run as each project runs Ascribe, as [`sync` works it out](instructions.md#the-command-they-name): `npx ascribe check` in a project that installs `@ascribed/cli` with npm, for example. When you gave `sync` a `--command`, the entries pass it to the hook.
 
 Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. [`ascribe agents hook`](commands.md#cli-agents-hook) says exactly what each reports, and how the check server it starts keeps a check after an edit to milliseconds.
 

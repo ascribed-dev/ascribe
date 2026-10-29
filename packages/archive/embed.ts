@@ -29,7 +29,7 @@ export async function bundle(): Promise<string> {
     logLevel: "silent",
   });
   const js = result.outputFiles[0]?.text ?? "";
-  return `/* The search script of an archive written by \`ascribe versions archive\`, generated from\n   packages/archive by \`pnpm --filter @ascribed/archive embed\`. Don't edit it. */\n${js}`;
+  return `/* The search script of an archive written by \`ascribe versions export\`, generated from\n   packages/archive by \`pnpm --filter @ascribed/archive embed\`. Don't edit it. */\n${js}`;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -1,11 +1,11 @@
 ## Addresses file
-@memo: Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
+@memo: Generated from crates/ascribe-core/data/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
 
 ### ASC254 `addresses-file-invalid`
 @id {permalink=true}: ASC254
 @summary: `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it.
 
@@ -19,7 +19,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC255
 @summary: A page's address, or its Markdown version's, that the base published and nothing accounts for.
 
-Warning · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A page's address, or its Markdown version's, that the base published and nothing accounts for.
 
@@ -33,7 +33,7 @@ Warning · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC
 @id {permalink=true}: ASC256
 @summary: A heading's explicit id that the base published on a page still published, and nothing accounts for.
 
-Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A heading's explicit id that the base published on a page still published, and nothing accounts for.
 
@@ -45,43 +45,43 @@ Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.
 
 ### ASC258 `addresses-build-gone`
 @id {permalink=true}: ASC258
-@summary: A build the base has and the working tree doesn't.
+@summary: A build the base has and the working tree doesn't, other than a line archived now.
 
-Advice · file level · next step: outside · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** A build the base has and the working tree doesn't.
+**When:** A build the base has and the working tree doesn't, other than a line archived now.
 
 **Message:** the base has the build `{build}`, and ascribe.toml doesn't now, so its \{count} addresses aren't compared
 
-**Fix:** Nothing to do when the build was retired on purpose, as an older line is when it leaves the window: its addresses aren't compared, since builds are matched by name. When the build was renamed, its addresses are compared under its new name once the base has it.
+**Fix:** Nothing to do when the build was removed on purpose: its addresses aren't compared, since builds are matched by name. A line `[releases]` archives isn't reported: `ascribe versions retire` records where its addresses go. When the build was renamed, its addresses are compared under its new name once the base has it.
 
 **Read more:** [What the check reports](../publishing/redirects.md#what-the-check-reports) in the guide to keeping addresses.
 
 ### ASC265 `addresses-entry-not-a-page`
 @id {permalink=true}: ASC265
-@summary: A `[moved]` value that isn't a page, or a heading on one, in every build that published its key.
+@summary: A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares.
 
-Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** A `[moved]` value that isn't a page, or a heading on one, in every build that published its key.
+**When:** A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares.
 
 **Message:** `{key}` is forwarded to `{value}`, which isn't a page of the project, so no build writes its redirect
 
-**Fix:** Forward it to a page every build that published it publishes: `ascribe addresses move <old> <new>` replaces the entry. When nothing replaces it, retire it instead: `ascribe addresses retire <old> --reason "…"`. A fragment, a path outside the content root, or a page a build leaves out would send a reader to nothing.
+**Fix:** Forward it to a page every build that published it publishes: `ascribe addresses move <old> <new>` replaces the entry. A permalink, `go:<name>`, can also be forwarded to another permalink, `go:<other>`, that a heading's `@id {permalink=true}` or a page's `permalink` declares. When nothing replaces it, retire it instead: `ascribe addresses retire <old> --reason "…"`. A fragment, a path outside the content root, or a page a build leaves out would send a reader to nothing.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
 ### ASC266 `addresses-entry-live`
 @id {permalink=true}: ASC266
-@summary: A key of `[moved]` or `[retired]` whose source is back.
+@summary: A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares.
 
-Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** A key of `[moved]` or `[retired]` whose source is back.
+**When:** A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares.
 
 **Message:** `{key}` is a source of the project again, so its entry in [\{table}] does nothing; remove it
 
-**Fix:** Remove the entry: the page, or the heading's `@id`, is back where its addresses lead, as after restoring a deleted page or a merge. The quick fix and `ascribe check --fix` remove it. When the source came back by mistake, move it away again.
+**Fix:** Remove the entry: the page, the heading's `@id`, or the permalink is back where its addresses lead, as after restoring a deleted page or a merge, and what the content declares wins. The quick fix and `ascribe check --fix` remove it. When the source came back by mistake, move it away again: for a permalink, remove the `@id {permalink=true}` or the page's `permalink` that declares it.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 
@@ -89,7 +89,7 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC267
 @summary: A key of `[moved]` or `[retired]` whose address another source publishes now.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A key of `[moved]` or `[retired]` whose address another source publishes now.
 
@@ -103,7 +103,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC268
 @summary: An entry the base's `ascribe.addresses` doesn't have, whose key the base never published.
 
-Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** An entry the base's `ascribe.addresses` doesn't have, whose key the base never published.
 
@@ -117,7 +117,7 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC269
 @summary: A key written twice in a table, or in both `[moved]` and `[retired]`.
 
-Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A key written twice in a table, or in both `[moved]` and `[retired]`.
 
@@ -131,7 +131,7 @@ Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC270
 @summary: A `[moved]` value that's another entry's key.
 
-Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A `[moved]` value that's another entry's key.
 
@@ -145,7 +145,7 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC271
 @summary: An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to.
 
@@ -159,7 +159,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC272
 @summary: `ascribe.addresses` deleted while the base has it.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** `ascribe.addresses` deleted while the base has it.
 
@@ -173,7 +173,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC273
 @summary: Many addresses forwarded to one index page or the home page.
 
-Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** Many addresses forwarded to one index page or the home page.
 
@@ -189,7 +189,7 @@ Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC261
 @summary: A declared spec that doesn't exist, can't be read, or isn't YAML or JSON.
 
-Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A declared spec that doesn't exist, can't be read, or isn't YAML or JSON.
 
@@ -197,13 +197,13 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix `spec`, which is relative to the folder ascribe.toml is in, or fix the file. A spec generated from code has to be on disk when Ascribe runs, as it does for the renderer: generate it first. Ascribe reads one file, in YAML or JSON, as the renderer is given it: for a spec split across files, point `spec` at the bundled one.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ### ASC262 `api-spec-empty`
 @id {permalink=true}: ASC262
 @summary: A declared spec with no operations.
 
-Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A declared spec with no operations.
 
@@ -211,4 +211,62 @@ Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPE
 
 **Fix:** Check that `spec` names the spec you mean, and that it has a `paths` object with operations in it. A path item that's a `$ref` isn't followed: point `spec` at the bundled spec your renderer is given.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
+
+## Examples
+
+### ASC277 `api-example-schema-mismatch`
+@id {permalink=true}: ASC277
+@summary: A marked example that disagrees with its body's schema.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example that disagrees with its body's schema.
+
+**Message:** \{found}; \{body} says \{expected}
+
+**Fix:** Change the example to agree with the schema, or, when the API changed and the example is right, change the spec, or the code it's generated from. Each disagreement is reported at its place: the value, a property the schema doesn't allow, or the opening brace of an object missing a required property.
+
+**Read more:** [What's checked](../openapi/examples.md#whats-checked) in the guide to checked examples.
+
+### ASC278 `api-example-not-json`
+@id {permalink=true}: ASC278
+@summary: A marked example that isn't JSON, or isn't a `json` block.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example that isn't JSON, or isn't a `json` block.
+
+**Message:** the example of \{body} isn't JSON: \{reason}
+
+**Fix:** Fix the JSON where reading it stopped: a trailing comma, a comment, a key without quotes, and text after the value are all errors in JSON. An example in another language, YAML or JSON with comments, isn't checked: take its marker off.
+
+**Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
+
+### ASC279 `api-example-body-missing`
+@id {permalink=true}: ASC279
+@summary: A marked example whose operation has no body it names.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example whose operation has no body it names.
+
+**Message:** `{operation}` has no request body in `{path}`
+
+**Fix:** Name a body the operation has: for a request, an operation that takes one; for a response, its status as the spec writes it (`201`, `2XX`, `default`). When the body has more than one JSON media type, write the one meant after the status, or after the link for a request: `response="openapi.yaml#getUser 200 application/problem+json"`.
+
+**Read more:** [Mark an example](../openapi/examples.md#mark-an-example) in the guide to checked examples.
+
+### ASC280 `api-example-schema-unsupported`
+@id {permalink=true}: ASC280
+@summary: A marked example whose schema can't all be checked.
+
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+
+**When:** A marked example whose schema can't all be checked.
+
+**Message:** the schema of \{body} has a pattern the validator can't read, `{pattern}`, so it's left out, and the rest of the schema is checked
+
+**Fix:** A pattern is read as a Rust regular expression, which has no lookaround or backreferences: write one it can read, or leave it, and the rest of the schema is still checked. A spec split across files is declared by its bundled file, the one its renderer is given.
+
+**Read more:** [What isn't checked](../openapi/examples.md#what-isnt-checked) in the guide to checked examples.

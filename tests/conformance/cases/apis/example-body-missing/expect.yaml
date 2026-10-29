@@ -1,0 +1,20 @@
+description: >-
+  A marker that names a body its operation doesn't have is an error at the
+  marker: a request body it doesn't take, a response with no status, a status
+  it has no response for or whose response has no body, a media type it
+  doesn't have, no JSON media type, or more than one when the marker names
+  none. A marker whose link isn't to an operation names no body. One whose
+  operation the spec doesn't have is the link's error alone.
+spec: ["7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: api-example-body-missing, file: index.md, line: 5, column: 9}
+  - {slug: api-example-body-missing, file: index.md, line: 9, column: 9}
+  - {slug: api-example-body-missing, file: index.md, line: 13, column: 9}
+  - {slug: api-example-body-missing, file: index.md, line: 17, column: 9}
+  - {slug: api-example-body-missing, file: index.md, line: 21, column: 9}
+  - {slug: api-example-body-missing, file: index.md, line: 25, column: 9}
+  - {slug: api-example-body-missing, file: index.md, line: 29, column: 9}
+  - {slug: api-example-body-missing, file: index.md, line: 33, column: 9}
+  - {slug: link-operation-missing, file: index.md, line: 41, column: 19}

@@ -26,7 +26,7 @@ template = "templates/guide.md"
 [types.guide.frontmatter]
 title = "string"
 description = { type = "string?", role = "description" }
-review-by = { type = "date?", role = "review-date" }
+review-by = { type = "date?", role = "recheck-date" }
 
 [dimensions.deployment]
 label = "Deployment"
@@ -123,7 +123,7 @@ fn about_says_whether_the_page_is_described_due_published_listed_and_unfinished(
         json!({ "field": "description", "length": 15, "limit": 300, "reported": false, "range": line(3, 0, 30) })
     );
     assert_eq!(
-        about["review"],
+        about["recheck"],
         json!({ "field": "review-by", "date": "2026-10-03", "days": -14, "overdue": true, "reported": true, "range": line(4, 0, 21) })
     );
     assert_eq!(about["availability"], "self-managed");
@@ -186,16 +186,16 @@ fn a_permalinks_summary_is_the_one_help_json_writes() {
 }
 
 #[test]
-fn review_warns_where_review_overdue_reports_the_page() {
+fn recheck_warns_where_recheck_overdue_reports_the_page() {
     let f = project();
     let mut client = started(&f.root());
     let path = f.path("docs/internal/rotate.md");
     assert_eq!(
-        page(&mut client, &path)["about"]["review"]["reported"],
+        page(&mut client, &path)["about"]["recheck"]["reported"],
         true
     );
     assert!(
-        client.codes(&path).contains(&"review-overdue".to_owned()),
+        client.codes(&path).contains(&"recheck-overdue".to_owned()),
         "{:?}",
         client.codes(&path)
     );
@@ -208,7 +208,7 @@ fn a_row_with_nothing_to_say_is_left_out() {
     let about = page(&mut client, &f.path("docs/plain.md"))["about"].clone();
     // A description is shown missing: `page-description-missing` reports it.
     assert_eq!(about["description"]["length"], Value::Null);
-    assert_eq!(about["review"], Value::Null);
+    assert_eq!(about["recheck"], Value::Null);
     assert_eq!(about["availability"], Value::Null);
     assert_eq!(about["permalinks"], json!([]));
     // Its type has a template, and nothing of it is left on the page.
@@ -291,7 +291,7 @@ fn an_edit_to_the_page_is_in_the_rows_before_its_saved() {
     let f = project();
     let mut client = started(&f.root());
     let path = f.path("docs/plain.md");
-    assert_eq!(page(&mut client, &path)["about"]["review"], Value::Null);
+    assert_eq!(page(&mut client, &path)["about"]["recheck"], Value::Null);
     client.open(&path, 1, PLAIN);
     client.replace(
         &path,
@@ -299,9 +299,9 @@ fn an_edit_to_the_page_is_in_the_rows_before_its_saved() {
         &PLAIN.replace("title: Plain\n", "title: Plain\nreview-by: 2026-10-29\n"),
     );
     client.settle();
-    let review = &page(&mut client, &path)["about"]["review"];
-    assert_eq!(review["days"], 12);
-    assert_eq!(review["overdue"], false);
+    let recheck = &page(&mut client, &path)["about"]["recheck"];
+    assert_eq!(recheck["days"], 12);
+    assert_eq!(recheck["overdue"], false);
 }
 
 fn copy_dir(from: &Path, to: &Path) {

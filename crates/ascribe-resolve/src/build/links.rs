@@ -11,17 +11,23 @@
 //! assets the
 //! surviving content references.
 
-use ascribe_core::{Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::{Build, Segment, is_absolute_address};
-use ascribe_syntax::{Inline, InlineKind};
+use std::sync::Arc;
+
+use ascribe_core::{Builtin, Issue, Location, RelPath, Span, diagnostics};
+use ascribe_model::{Build, Segment};
+use ascribe_syntax::{BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
 
 use super::BuildResolver;
 use super::inlines::{find_mut, own_lists_mut, own_ranges};
 use super::lines::Landing;
-use super::tree::{LinkTarget, ResolvedBlock, ResolvedLink, ResolvedPage};
+use super::tree::{
+    DropReason, EmbeddedOperation, LinkTarget, ResolvedBlock, ResolvedKind, ResolvedLink,
+    ResolvedPage,
+};
 use crate::expand::PageProblem;
 use crate::index::{FileIndex, RefKind, Reference, Target};
 use crate::project::{PageAsset, Resolution};
+use crate::references::{operation_target, reference_target};
 
 /// Resolves every link and image of a page, and collects its assets.
 pub(crate) fn resolve(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) {
@@ -59,6 +65,13 @@ impl<'p> Links<'_, 'p> {
         let Some(index) = project.file_by_id(block.file) else {
             return;
         };
+        if let ResolvedKind::Leaf(leaf) = &block.kind
+            && let BlockKind::Directive(line) = &leaf.kind
+            && line.name == Builtin::Operation.name()
+        {
+            block.operation = self.embedded(index, line).map(Arc::new);
+            return;
+        }
         let ranges = own_ranges(block);
         if ranges.is_empty() {
             return;
@@ -66,7 +79,8 @@ impl<'p> Links<'_, 'p> {
         let resolutions = project.resolutions(&index.path);
         let mut links = Vec::new();
         for (at, reference) in index.references.iter().enumerate() {
-            if !ranges.iter().any(|r| r.contains_span(reference.span)) {
+            // An example's marker links nothing in the built page.
+            if reference.example || !ranges.iter().any(|r| r.contains_span(reference.span)) {
                 continue;
             }
             let Some(resolution) = resolutions.get(at) else {
@@ -126,42 +140,48 @@ impl<'p> Links<'_, 'p> {
             } => {
                 return self.page_link(index, reference, block, target, id.as_deref(), *fragment);
             }
-            Resolution::Operation { api, id } => self.operation(api, id),
+            Resolution::Operation { api, id } => self.resolver.operation_link(api, id),
             // The file-level problem is the source index's.
             _ => LinkTarget::Unresolved,
         };
         (target, None)
     }
 
-    /// A link to an operation: its address in the API's reference, when the
-    /// spec has it. When it doesn't, or the spec can't be read, the file-level
-    /// problem is the source index's.
-    fn operation(&self, api: &str, id: &str) -> LinkTarget {
+    /// What an `@operation` puts in the page (SPEC §4.13): the operation its
+    /// link names, as a link to it is resolved. `None` when the link names
+    /// no operation the spec has, which the file's problems say.
+    fn embedded(&self, index: &FileIndex, line: &DirectiveLine) -> Option<EmbeddedOperation> {
+        let Some(PrimaryValue::Identifier(primary)) = &line.primary else {
+            return None;
+        };
         let project = self.resolver.project();
         let model = project.model();
-        let (Some(declared), Some(operation)) = (
-            model.api(api),
-            project.apis().spec(api).and_then(|s| s.operation(id)),
-        ) else {
-            return LinkTarget::Unresolved;
+        let target = reference_target(RefKind::Link, &primary.text, &[], &index.path, model);
+        let Some(Resolution::Operation { api, id }) =
+            operation_target(&target, model, project.layout())
+        else {
+            return None;
         };
-        let address = declared.reference.address(id, operation.tag.as_deref());
-        // The reference is the site's, not a line's: an older line's link
-        // goes to the same address.
-        let address = if is_absolute_address(&address) {
-            address
-        } else {
-            format!(
-                "{}/{}",
-                self.resolver.site_base().trim_end_matches('/'),
-                address.trim_start_matches('/')
-            )
-        };
-        LinkTarget::Operation {
-            api: api.to_owned(),
-            operation_id: id.to_owned(),
+        let LinkTarget::Operation {
+            operation_id,
+            method,
+            path,
             address,
-        }
+            ..
+        } = self.resolver.operation_link(&api, &id)
+        else {
+            return None;
+        };
+        let operation = project.apis().spec(&api)?.named(&id)?.operation();
+        Some(EmbeddedOperation {
+            api,
+            operation_id,
+            method,
+            path,
+            summary: operation.summary.clone(),
+            deprecated: operation.deprecated,
+            address,
+        })
     }
 
     fn page_link(
@@ -219,12 +239,16 @@ impl<'p> Links<'_, 'p> {
                     self.landed(block, here, target, id, Some(line), text_empty)
                 }
                 None => {
-                    self.problem(
-                        Issue::new(diagnostics::LINK_PAGE_DROPPED, here)
-                            .with_arg("build", self.resolver.build_name())
-                            .with_arg("path", target.to_string()),
-                        block,
-                    );
+                    let issue = Issue::new(diagnostics::LINK_PAGE_DROPPED, here);
+                    // No build publishes a draft, so the message names none.
+                    let draft = project.dropped(target, self.resolver.build_def())
+                        == Some(DropReason::Draft);
+                    let issue = if draft {
+                        issue.with_variant("draft")
+                    } else {
+                        issue.with_arg("build", self.resolver.build_name())
+                    };
+                    self.problem(issue.with_arg("path", target.to_string()), block);
                     (LinkTarget::Unresolved, None)
                 }
             };

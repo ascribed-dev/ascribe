@@ -11,7 +11,7 @@ use ascribe_emit::{PlainEmitter, SiteEmitter};
 use ascribe_resolve::Project;
 use serde_json::{Value, json};
 
-use crate::support::{emit_build, memory_project, site};
+use crate::support::{emit_build, memory_project, memory_project_with_files, site};
 
 const MODEL: &str = "spec = \"0.1\"\n\
     [types.page]\n\
@@ -499,20 +499,30 @@ fn without_markdown_versions_the_headers_are_an_empty_list() {
 }
 
 #[test]
-fn the_headers_let_any_origin_read_each_help_entry() {
+fn the_headers_let_any_origin_read_each_help_entry_as_json_and_markdown() {
     let model = "spec = \"0.1\"\n\
         [releases.self-managed]\nlive = [\"3.4\", \"3.5\"]\n\
         [builds.site]\nversions = \"self-managed\"\n\
-        [permalinks.aliases]\nlink = \"connect\"\n\
         [consumer]\nbase-path = \"/docs/\"\n";
-    let project = memory_project(
+    let project = memory_project_with_files(
         model,
         &[(
             "a.md",
             "---\ntitle: A\nlisting: unlisted\n---\n\n## Connect\n@id {permalink=true}: connect\n\nConnect it.\n",
         )],
+        &[(
+            "ascribe.addresses",
+            "version = 1\n\n[moved]\n\"go:link\" = \"go:connect\"\n",
+        )],
     );
     let any = json!({ "Access-Control-Allow-Origin": "*" });
+    // The JSON names the Markdown beside it as its alternate.
+    let json = |markdown: String| {
+        json!({
+            "Access-Control-Allow-Origin": "*",
+            "Link": format!("<{markdown}>; rel=\"alternate\"; type=\"text/markdown\""),
+        })
+    };
     // The current line's at the permalinks' path; an older line's under its own base path.
     for (build, folder) in [("site", "/docs/go/"), ("site@3.4", "/docs/3.4/go/")] {
         assert_eq!(
@@ -520,8 +530,10 @@ fn the_headers_let_any_origin_read_each_help_entry() {
             json!({
                 "version": 1,
                 "headers": [
-                    { "path": format!("{folder}connect.json"), "headers": any },
-                    { "path": format!("{folder}link.json"), "headers": any },
+                    { "path": format!("{folder}connect.json"), "headers": json(format!("{folder}connect.md")) },
+                    { "path": format!("{folder}connect.md"), "headers": any },
+                    { "path": format!("{folder}link.json"), "headers": json(format!("{folder}link.md")) },
+                    { "path": format!("{folder}link.md"), "headers": any },
                 ],
             }),
             "{build}"
@@ -540,7 +552,16 @@ fn the_headers_find_the_help_entries_under_the_permalink_path() {
     );
     assert_eq!(
         headers(&project)["headers"],
-        json!([{ "path": "/go/a.json", "headers": { "Access-Control-Allow-Origin": "*" } }])
+        json!([
+            {
+                "path": "/go/a.json",
+                "headers": {
+                    "Access-Control-Allow-Origin": "*",
+                    "Link": "</go/a.md>; rel=\"alternate\"; type=\"text/markdown\"",
+                },
+            },
+            { "path": "/go/a.md", "headers": { "Access-Control-Allow-Origin": "*" } },
+        ])
     );
 }
 
@@ -582,5 +603,35 @@ fn the_headers_agree_with_the_records() {
             other => panic!("{route}: listing {other:?}"),
         };
         assert_eq!(rule["headers"]["X-Robots-Tag"], robots, "{route}");
+    }
+}
+
+#[test]
+fn a_draft_is_in_no_output_of_any_kind() {
+    // SPEC §2.1: no build publishes a draft, so nothing that lists a build's
+    // pages lists it: not the records, the navigation, `llms.txt`, the
+    // permalinks, or the plain and JSON outputs.
+    let mut files = FILES.to_vec();
+    files.push((
+        "guides/upcoming.md",
+        "---\ntype: page\ntitle: Upcoming release\npermalink: upcoming-release\ndraft: true\n---\n\nNot yet.\n",
+    ));
+    let project = memory_project(MODEL, &files);
+    let emitters: [&dyn ascribe_emit::Emitter; 3] = [
+        &SiteEmitter::new(project.model()),
+        &PlainEmitter::default(),
+        &ascribe_emit::JsonEmitter,
+    ];
+    for emitter in emitters {
+        let outputs = emit_build(Path::new("/nowhere"), &project, "site", emitter);
+        assert!(!outputs.is_empty(), "{} wrote nothing", emitter.name());
+        for (path, text) in &outputs {
+            assert!(!path.contains("upcoming"), "{}: {path}", emitter.name());
+            assert!(
+                !text.contains("upcoming") && !text.contains("Upcoming"),
+                "{}: {path} names the draft:\n{text}",
+                emitter.name()
+            );
+        }
     }
 }

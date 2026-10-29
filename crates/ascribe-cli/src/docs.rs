@@ -27,9 +27,9 @@ const HEADER: &str = "@memo: Generated from the help text in crates/ascribe-cli/
 
 /// Options newer than their command, as `(command, option, availability)`:
 /// the reference marks each with `@available: <availability>`. An option no
-/// release has yet is `ascribe planned`; when a release ships it, name the
-/// release, as `ascribe 0.2.0`. Remove an entry when the option's command section says
-/// the same, or when every live line has the option.
+/// release has yet is `ascribe planned`. Remove an entry when a release ships
+/// it, since before 1.0 the docs don't say which release a feature arrived in
+/// (decision #973), or when the option's command section says the same.
 const AVAILABLE: &[(&str, &str, &str)] = &[];
 
 fn repo() -> PathBuf {
@@ -53,13 +53,14 @@ fn docs_permalinks(base: &str) -> Vec<ascribe_resolve::Permalink> {
 /// Every address of the docs the binary builds, each with the page and the
 /// heading, as written, it must lead to: each command's help, each
 /// diagnostic's entry (in `check`'s JSON, `explain`, and the editor), the
-/// agents' rules, and the plugin's homepage. A page with a folder of the same
-/// name, as `checks/diagnostics.md` has `checks/diagnostics/`, stands for
-/// itself and the pages in that folder, and the command reference for its
-/// pages wherever they are.
+/// agents' rules, the plugin's homepage, and the JSON report contract the
+/// MCP tools name. A page with a folder of the same name, as
+/// `checks/diagnostics.md` has `checks/diagnostics/`, stands for itself and
+/// the pages in that folder, and the command reference for its pages
+/// wherever they are.
 fn addresses() -> Vec<(String, &'static str, Option<String>)> {
     let mut helps = Vec::new();
-    let mut cli = Cli::command();
+    let mut cli = crate::cli::command();
     helps.push((cli.render_long_help().to_string(), None));
     // Rendering builds the command, which adds clap's own `help` subcommand.
     for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
@@ -105,6 +106,11 @@ fn addresses() -> Vec<(String, &'static str, Option<String>)> {
     out.push((
         crate::agents::plugin::HOMEPAGE.to_owned(),
         "agents/index.md",
+        None,
+    ));
+    out.push((
+        crate::mcp::CONTRACT.to_owned(),
+        "contracts/json-reports.md",
         None,
     ));
     out
@@ -328,9 +334,10 @@ fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
 /// them, so a permalink they add is in it, and so is every one they had.
 #[test]
 fn the_docs_list_of_permalinks_is_current() {
-    let project = ascribe_check::Project::load(&repo().join("docs/ascribe.toml")).unwrap();
+    let workspace = ascribe_check::load(&repo().join("docs/ascribe.toml")).unwrap();
+    let project = ascribe_check::Project::new(workspace.snapshot());
     let synced = ascribe_query::permalinks::sync(
-        &project.index(),
+        project.index(),
         project.permalinks(),
         project.permalinks_text(),
     )
@@ -496,7 +503,8 @@ fn documented(arg: &Arg) -> bool {
     !arg.is_hide_set() && !matches!(arg.get_id().as_str(), "help" | "version")
 }
 
-/// The synopsis: a line for each command, with its options in order.
+/// The synopsis: a line for each command, with its options in order, and a
+/// blank line between the groups `--help` lists them in.
 fn synopsis(commands: &[(String, &Command)]) -> String {
     let width = commands
         .iter()
@@ -504,7 +512,16 @@ fn synopsis(commands: &[(String, &Command)]) -> String {
         .max()
         .unwrap_or(0);
     let mut out = format!("{HEADER}```text\n");
+    let mut group = None;
     for (name, command) in commands {
+        let top = name.split(' ').next().unwrap_or_default();
+        let this = crate::cli::GROUPS
+            .iter()
+            .position(|(_, names)| names.contains(&top));
+        if group.is_some() && group != this {
+            out.push('\n');
+        }
+        group = this;
         let usage: Vec<String> = command
             .get_arguments()
             .filter(|a| documented(a) && !a.is_global_set())
@@ -518,8 +535,9 @@ fn synopsis(commands: &[(String, &Command)]) -> String {
 }
 
 /// How an argument is written in the synopsis: `[--build <NAME>]...`,
-/// `[--format text|json]`, `[--check]`, `[PATHS]...`, and without brackets
-/// when it's required: `TARGET --from <PAGE>`.
+/// `[--format text|json]`, `[--exit-code[=error|warning]]`, `[--check]`,
+/// `[PATHS]...`, and without brackets when it's required: `TARGET --from
+/// <PAGE>`.
 fn usage(arg: &Arg) -> String {
     let values: Vec<String> = arg
         .get_possible_values()
@@ -535,6 +553,12 @@ fn usage(arg: &Arg) -> String {
     };
     let repeated = matches!(arg.get_action(), ArgAction::Append) && !delimited;
     let written = match arg.get_long() {
+        // A value that may be left out is given with `=`.
+        Some(long)
+            if takes_value(arg) && arg.get_num_args().is_some_and(|n| n.min_values() == 0) =>
+        {
+            format!("[--{long}[={value}]]")
+        }
         Some(long) if takes_value(arg) => format!("[--{long} {value}]"),
         Some(long) => format!("[--{long}]"),
         None => format!("[{}]", value_name(arg)),

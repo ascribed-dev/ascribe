@@ -4,17 +4,18 @@
 //!
 //! - **problems**: what `ascribe check` reports, and the problems
 //!   acknowledged as intended;
-//! - **inventory**: the pages by type and by owner, and the overdue reviews,
-//!   orphan pages, and unused entries the checks find, as lists;
+//! - **inventory**: the pages by type and by owner, how many of each
+//!   declared API's operations a link names, and the overdue rechecks, orphan
+//!   pages, and unused entries the checks find, as lists;
 //! - **builds**: the pages and the content each build leaves out that
 //!   another keeps;
 //! - **pages**: each build's page records ([`ascribe_resolve::pages`]),
 //!   what every reader that isn't a person is told about each page, sorted
 //!   by address;
 //! - **links**: the external links a link checker finds broken or moved
-//!   ([`ascribe_check::links`]);
-//! - **agents**: the delivery spec's checks on a built site
-//!   ([`ascribe_check::site`]).
+//!   ([`ascribe_report::links`]);
+//! - **delivery**: the delivery spec's checks on a built site
+//!   ([`ascribe_report::site`]).
 //!
 //! The first four need nothing outside the project. Each section is
 //! independent: one that can't run says why ([`NotRun`]), and the others
@@ -25,26 +26,26 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
 use ascribe_check::identity::{self, Identity};
-use ascribe_check::links::{self, LinkChecker};
-use ascribe_check::report_history::{self, ReportHistory, SiteChecks};
-use ascribe_check::site::{self, CheckResult, SiteChecker};
-use ascribe_check::tool::ToolError;
 use ascribe_check::{
-    Acknowledged, Acknowledgements, Diagnostic, Project, UnknownBuild, apply_levels, diagnose,
-    select_builds,
+    Acknowledged, Acknowledgements, DiagnoseError, Diagnostic, Project, Request, apply_levels,
+    diagnose_with, select_builds,
 };
 use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
 use ascribe_model::{FieldRole, Listing};
+use ascribe_report::links::{self, LinkChecker};
+use ascribe_report::report_history::{self, ReportHistory, SiteChecks};
+use ascribe_report::site::{self, CheckResult, SiteChecker};
+use ascribe_report::tool::ToolError;
 use ascribe_resolve::pages::{self, PageRecord};
-use ascribe_resolve::{AstroRouter, ExampleStatus, FileKind, Removal};
+use ascribe_resolve::{AstroRouter, DropReason, ExampleStatus, FileKind, Removal, Scope};
 
 /// A section of the report.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Section {
     /// What `ascribe check` reports, and what's acknowledged.
     Problems,
-    /// Pages by type and owner, overdue reviews, orphans, unused entries.
+    /// Pages by type and owner, overdue rechecks, orphans, unused entries.
     Inventory,
     /// What each build leaves out that another keeps.
     Builds,
@@ -53,7 +54,7 @@ pub enum Section {
     /// External links that fail, redirect, or time out.
     Links,
     /// The delivery spec's checks on a built site.
-    Agents,
+    Delivery,
 }
 
 impl Section {
@@ -64,7 +65,7 @@ impl Section {
         Section::Builds,
         Section::Pages,
         Section::Links,
-        Section::Agents,
+        Section::Delivery,
     ];
 
     /// The sections the report runs when none is named: those that need
@@ -80,7 +81,7 @@ impl Section {
             Section::Builds => "builds",
             Section::Pages => "pages",
             Section::Links => "links",
-            Section::Agents => "agents",
+            Section::Delivery => "delivery",
         }
     }
 }
@@ -121,9 +122,12 @@ pub struct Options<'a> {
     /// The builds `problems` checks and `builds` reports on; every build
     /// when empty.
     pub builds: &'a [String],
+    /// Whether `ascribe.baseline` holds back the advice it lists from
+    /// `problems` and `inventory`, as it does from `ascribe check`.
+    pub baseline: bool,
     /// For `pages`, only the pages that aren't `listed`.
     pub not_listed: bool,
-    /// The built site `agents` checks.
+    /// The built site `delivery` checks.
     pub site: Option<&'a str>,
     /// The programs to run.
     pub tools: &'a Tools<'a>,
@@ -174,6 +178,9 @@ pub struct Problems {
     pub diagnostics: Vec<Diagnostic>,
     /// The problems acknowledged as intended, with their reasons.
     pub acknowledged: Vec<Acknowledged>,
+    /// How many advice `ascribe.baseline` holds back, which aren't in
+    /// `diagnostics`: the backlog the project has put off.
+    pub baselined: usize,
     /// The day of the run the history is from, when there's one to go by.
     pub previous_run: Option<ascribe_core::Date>,
     /// The diagnostics the previous run didn't report, in the order of
@@ -196,7 +203,7 @@ pub struct Inventory {
     /// the page's type marks `role = "owner"`; `None` for pages without
     /// one.
     pub by_owner: Vec<(Option<String>, usize)>,
-    /// The pages whose review date has passed (`review-overdue`).
+    /// The pages whose recheck date has passed (`recheck-overdue`).
     pub overdue: Vec<Diagnostic>,
     /// The pages nothing links to (`page-orphan`).
     pub orphans: Vec<Diagnostic>,
@@ -207,6 +214,23 @@ pub struct Inventory {
     /// repository with an `ascribe.examples.toml`, in the content model's
     /// order; `None` when no source has one.
     pub examples: Option<Vec<SourceExamples>>,
+    /// How much of each declared API whose spec was read the pages cover, in
+    /// the content model's order; `None` when the project declares none.
+    pub apis: Option<Vec<ApiOperations>>,
+}
+
+/// How many of one API's operations the pages cover.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ApiOperations {
+    /// The API's name.
+    pub api: String,
+    /// How many operations its spec has.
+    pub operations: usize,
+    /// How many of them a link names, by id or by method and path.
+    pub linked: usize,
+    /// How many of them a checked example claims as its request or
+    /// response.
+    pub examples: usize,
 }
 
 /// How many snippets of one source show a tested example, by status.
@@ -257,23 +281,36 @@ pub struct LeftOut {
 pub struct LeftPage {
     /// The page's content path.
     pub path: RelPath,
-    /// Why, as the end of a sentence: `its variant frontmatter names …`.
-    pub why: String,
+    /// `variant` for its `variant` frontmatter, or `availability` for its
+    /// `available` frontmatter.
+    pub kind: &'static str,
+    /// The frontmatter that leaves it out, as written: `self-managed 3.5`
+    /// for `available`, `deployment=cloud` for `variant`.
+    pub mark: String,
     /// The builds that publish it.
     pub kept_by: Vec<String>,
 }
 
-/// Content a build takes out of a page.
+/// Content a build takes out of a page, once for each mark that takes it
+/// out: an `@available` (a section's, a block's, or a table row's), or a
+/// variant arm.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LeftContent {
-    /// Where it's written: a block, a variant arm, or a table row, in the
-    /// page or a fragment it includes.
+    /// Where the mark is written: the `@available` line, the table row, or
+    /// the variant arm, in the page or a fragment it includes.
     pub location: Location,
+    /// Whether the mark is written in the page itself, not a fragment.
+    pub in_page: bool,
     /// The page it's taken out of: the first, when it's in a fragment
     /// several pages include.
     pub page: RelPath,
+    /// The text of the heading the mark is under, if any: the section's own,
+    /// for a section's `@available`.
+    pub heading: Option<String>,
     /// `variant` or `availability`.
     pub kind: &'static str,
+    /// What the mark takes out: `section`, `block`, `row`, or `arm`.
+    pub scope: &'static str,
     /// Why, with the content model's labels: `Shows only os=linux`.
     pub why: String,
     /// The builds that keep it.
@@ -338,9 +375,9 @@ pub struct Links {
     pub resolved: Option<usize>,
 }
 
-/// `agents`: the delivery spec's checks on a built site.
+/// `delivery`: the delivery spec's checks on a built site.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Agents {
+pub struct Delivery {
     /// The site's address.
     pub site: String,
     /// Each check's result, in the checker's order.
@@ -376,8 +413,8 @@ pub struct Report {
     pub pages: Option<Pages>,
     /// `links`, when asked for.
     pub links: Option<Ran<Links>>,
-    /// `agents`, when asked for.
-    pub agents: Option<Ran<Agents>>,
+    /// `delivery`, when asked for.
+    pub delivery: Option<Ran<Delivery>>,
 }
 
 impl Report {
@@ -387,14 +424,14 @@ impl Report {
         if let Some(Ran::NotRun(why)) = &self.links {
             out.push((Section::Links, why));
         }
-        if let Some(Ran::NotRun(why)) = &self.agents {
-            out.push((Section::Agents, why));
+        if let Some(Ran::NotRun(why)) = &self.delivery {
+            out.push((Section::Delivery, why));
         }
         out
     }
 
     /// Every problem the report found: the diagnostics of `problems`,
-    /// `links`, and `agents`.
+    /// `links`, and `delivery`.
     pub fn all_problems(&self) -> impl Iterator<Item = &Diagnostic> {
         let problems = self.problems.iter().flat_map(|p| &p.diagnostics);
         let links = self
@@ -402,12 +439,12 @@ impl Report {
             .iter()
             .filter_map(Ran::done)
             .flat_map(|l| &l.diagnostics);
-        let agents = self
-            .agents
+        let delivery = self
+            .delivery
             .iter()
             .filter_map(Ran::done)
             .flat_map(|a| &a.diagnostics);
-        problems.chain(links).chain(agents)
+        problems.chain(links).chain(delivery)
     }
 }
 
@@ -415,8 +452,9 @@ impl Report {
 ///
 /// # Errors
 ///
-/// A build named isn't the content model's.
-pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, UnknownBuild> {
+/// A build named isn't the content model's, or, with
+/// [`Options::baseline`], `ascribe.baseline` can't be read.
+pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, DiagnoseError> {
     let asked = |s: Section| options.sections.contains(&s);
     let selected = select_builds(project, options.builds)?;
     let mut out = Report {
@@ -426,17 +464,24 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
     // What this run found, for the history to keep.
     let mut kept = report_history::Found::default();
     if asked(Section::Problems) || asked(Section::Inventory) {
-        let diagnosed = diagnose(project, options.builds)?;
+        let mut checked = diagnose_with(
+            project,
+            &Request {
+                builds: options.builds,
+                baseline: options.baseline,
+                ..Request::default()
+            },
+        )?;
+        let baselined = checked.baselined.len();
+        let acknowledged = std::mem::take(&mut checked.acknowledged);
+        let diagnostics = checked.into_diagnostics();
         if asked(Section::Inventory) {
-            out.inventory = Some(inventory(project, &diagnosed.diagnostics));
+            out.inventory = Some(inventory(project, &diagnostics));
         }
         if asked(Section::Problems) {
-            let (problems, found) = problems(
-                project,
-                diagnosed.diagnostics,
-                diagnosed.acknowledged,
-                options.history,
-            );
+            let (mut problems, found) =
+                problems(project, diagnostics, acknowledged, options.history);
+            problems.baselined = baselined;
             out.problems = Some(problems);
             kept.problems = found;
         }
@@ -454,15 +499,15 @@ pub fn report(project: &Project, options: &Options<'_>) -> Result<Report, Unknow
     if asked(Section::Links) {
         out.links = Some(links(project, options));
     }
-    if asked(Section::Agents) {
-        let mut ran = agents(project, options.site, options.tools);
-        if let (Ran::Done(agents), Some(history)) = (&mut ran, options.history) {
-            kept.agents = Some(agents_since(agents, history));
+    if asked(Section::Delivery) {
+        let mut ran = delivery(project, options.site, options.tools);
+        if let (Ran::Done(delivery), Some(history)) = (&mut ran, options.history) {
+            kept.delivery = Some(delivery_since(delivery, history));
         }
-        out.agents = Some(ran);
+        out.delivery = Some(ran);
     }
     if let Some(history) = options.history
-        && (kept.problems.is_some() || kept.agents.is_some())
+        && (kept.problems.is_some() || kept.delivery.is_some())
     {
         history.save(kept);
     }
@@ -503,32 +548,32 @@ fn problems(
     (out, Some(found.into_iter().collect()))
 }
 
-/// Which of `agents`' checks are failing since the last run on its site,
+/// Which of `delivery`'s checks are failing since the last run on its site,
 /// and how many failing then aren't now, from the history; and what this
 /// run found, for the history to keep. A check's identity is the site's
 /// address and its id. Failing is failed or warned; one that was skipped
 /// or couldn't run, then or now, counts as neither new nor resolved.
-fn agents_since(agents: &mut Agents, history: &ReportHistory) -> SiteChecks {
+fn delivery_since(delivery: &mut Delivery, history: &ReportHistory) -> SiteChecks {
     let found = SiteChecks {
-        site: agents.site.clone(),
-        checks: agents
+        site: delivery.site.clone(),
+        checks: delivery
             .results
             .iter()
             .map(|r| (r.id.clone(), r.status))
             .collect(),
     };
-    if let Some((run, before)) = history.agents_before(&agents.site) {
+    if let Some((run, before)) = history.delivery_before(&delivery.site) {
         let passing = |id: &str| before.get(id).is_none_or(|s| *s == site::Status::Pass);
-        agents.previous_run = Some(run);
-        agents.new = Some(
-            agents
+        delivery.previous_run = Some(run);
+        delivery.new = Some(
+            delivery
                 .results
                 .iter()
                 .filter(|r| r.status.is_finding() && passing(&r.id))
                 .map(|r| r.id.clone())
                 .collect(),
         );
-        agents.resolved = Some(
+        delivery.resolved = Some(
             before
                 .iter()
                 .filter(|(id, status)| {
@@ -547,7 +592,7 @@ fn agents_since(agents: &mut Agents, history: &ReportHistory) -> SiteChecks {
 /// `inventory`, from the project's pages and what `ascribe check` found.
 fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let mut by_type: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut by_owner: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut pages = 0;
@@ -577,11 +622,31 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         pages,
         by_type: most_first(by_type),
         by_owner: most_first(by_owner),
-        overdue: listed(&[diagnostics::REVIEW_OVERDUE]),
+        overdue: listed(&[diagnostics::RECHECK_OVERDUE]),
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
-        examples: examples(project, &index),
+        examples: examples(project, index),
+        apis: apis(index),
     }
+}
+
+/// How many of each declared API's operations the links name: `None` when
+/// the project declares no API.
+fn apis(index: &ascribe_resolve::Project) -> Option<Vec<ApiOperations>> {
+    if index.model().apis.is_empty() {
+        return None;
+    }
+    let counts = index
+        .api_coverage()
+        .into_iter()
+        .map(|c| ApiOperations {
+            operations: c.operations(),
+            linked: c.linked(),
+            examples: c.examples,
+            api: c.api,
+        })
+        .collect();
+    Some(counts)
 }
 
 /// The tested examples each source's snippets show, counted once for each
@@ -645,7 +710,7 @@ fn most_first(counts: BTreeMap<Option<String>, usize>) -> Vec<(Option<String>, u
 /// content it takes out that another build of the project keeps.
 fn builds(project: &Project, names: &[String]) -> Builds {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let all = &model.builds;
     let pages: Vec<&RelPath> = index
         .files()
@@ -665,6 +730,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
             build: build.name.clone(),
             ..LeftOut::default()
         };
+        // The marks already listed, by where each is written.
         let mut seen: Vec<Location> = Vec::new();
         for page in &pages {
             if let Some(reason) = index.dropped(page, build) {
@@ -674,9 +740,11 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                     .map(|b| b.name.clone())
                     .collect();
                 if !kept_by.is_empty() {
+                    let (kind, mark) = page_mark(index.file(page), &reason);
                     left.pages.push(LeftPage {
                         path: (*page).clone(),
-                        why: reason.explanation().to_owned(),
+                        kind,
+                        mark,
                         kept_by,
                     });
                 }
@@ -685,19 +753,13 @@ fn builds(project: &Project, names: &[String]) -> Builds {
             let Some(removed) = index.removed(page, build) else {
                 continue;
             };
+            let page_file = index.file(page).map(|f| f.file);
             // What each other build that publishes the page removes from it.
             let elsewhere: Vec<(&str, Vec<ascribe_resolve::Removed>)> = others
                 .iter()
                 .filter_map(|b| Some((b.name.as_str(), index.removed(page, b)?)))
                 .collect();
             for r in &removed {
-                let Some(file) = id(r.file) else {
-                    continue;
-                };
-                let location = Location::new(file, r.span);
-                if seen.contains(&location) {
-                    continue;
-                }
                 let overlaps = |o: &ascribe_resolve::Removed| {
                     o.file == r.file
                         && o.span.start() < r.span.end()
@@ -711,24 +773,144 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                 if kept_by.is_empty() {
                     continue;
                 }
+                // The mark that takes it out: one entry for all it takes.
+                let (mark_file, mark_span, kind, scope) = match &r.cause {
+                    Removal::Variant { .. } => (r.file, r.span, "variant", "arm"),
+                    Removal::Availability(spec) => (
+                        spec.written_at.file,
+                        spec.written_at.span,
+                        "availability",
+                        match spec.scope {
+                            Scope::Block => "block",
+                            Scope::Row => "row",
+                            Scope::Section | Scope::Page => "section",
+                        },
+                    ),
+                };
+                let Some(file) = id(mark_file) else {
+                    continue;
+                };
+                let location = Location::new(file, mark_span);
+                if let Some(at) = seen.iter().position(|l| *l == location) {
+                    // Another piece of what the same mark takes out: the
+                    // builds that keep any of it keep the mark's content.
+                    if let Some(entry) = left.content.get_mut(at) {
+                        for name in kept_by {
+                            if !entry.kept_by.contains(&name) {
+                                entry.kept_by.push(name);
+                            }
+                        }
+                        entry
+                            .kept_by
+                            .sort_by_key(|n| all.iter().position(|b| &b.name == n));
+                    }
+                    continue;
+                }
+                let mut heading = heading_over(index, mark_file, mark_span.start());
+                if heading.is_none() && mark_file == r.file {
+                    // A mark in a fragment, above its headings: the heading
+                    // of the place it's included.
+                    heading = r
+                        .via
+                        .iter()
+                        .rev()
+                        .find_map(|site| heading_over(index, site.file, site.span.start()));
+                }
                 seen.push(location);
                 left.content.push(LeftContent {
                     location,
+                    in_page: Some(mark_file) == page_file,
                     page: (*page).clone(),
-                    kind: match r.cause {
-                        Removal::Variant { .. } => "variant",
-                        Removal::Availability(_) => "availability",
-                    },
+                    heading,
+                    kind,
+                    scope,
                     why: removal_detail(model, build, r),
                     kept_by,
                 });
             }
         }
-        left.content
-            .sort_by_key(|c| (c.location.file, c.location.span.start()));
+        // A page's own marks come before those of the fragments it includes.
+        left.content.sort_by(|a, b| {
+            (
+                &a.page,
+                !a.in_page,
+                a.location.file,
+                a.location.span.start(),
+            )
+                .cmp(&(
+                    &b.page,
+                    !b.in_page,
+                    b.location.file,
+                    b.location.span.start(),
+                ))
+        });
         out.builds.push(left);
     }
     out
+}
+
+/// The kind of mark a page's frontmatter makes, and its value as written:
+/// `self-managed 3.5` for `available`, `deployment=cloud` for `variant`.
+fn page_mark(
+    file: Option<&ascribe_resolve::FileIndex>,
+    reason: &DropReason,
+) -> (&'static str, String) {
+    let front = file.and_then(|f| f.frontmatter.as_ref());
+    match reason {
+        // No build publishes a draft, so no other build keeps one and the
+        // report never lists it.
+        DropReason::Draft => ("draft", "true".to_owned()),
+        DropReason::Unavailable => (
+            "availability",
+            front
+                .and_then(|f| f.get("available"))
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_owned(),
+        ),
+        DropReason::Variant => {
+            let pairs = front
+                .and_then(|f| f.get("variant"))
+                .and_then(|v| v.as_mapping())
+                .map(|m| {
+                    m.iter()
+                        .filter_map(|(k, v)| {
+                            let values = match v {
+                                serde_yaml_ng::Value::Sequence(list) => {
+                                    list.iter().filter_map(scalar).collect::<Vec<_>>().join("|")
+                                }
+                                v => scalar(v)?,
+                            };
+                            Some(format!("{}={values}", scalar(k)?))
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default();
+            ("variant", pairs)
+        }
+    }
+}
+
+/// A YAML scalar as its text.
+fn scalar(value: &serde_yaml_ng::Value) -> Option<String> {
+    match value {
+        serde_yaml_ng::Value::String(s) => Some(s.clone()),
+        serde_yaml_ng::Value::Number(n) => Some(n.to_string()),
+        serde_yaml_ng::Value::Bool(b) => Some(b.to_string()),
+        _ => None,
+    }
+}
+
+/// The text of the innermost heading whose section holds `at` in `file`.
+fn heading_over(index: &ascribe_resolve::Project, file: FileId, at: usize) -> Option<String> {
+    index
+        .file_by_id(file)?
+        .headings
+        .iter()
+        .filter(|h| h.section.start() <= at && at < h.section.end())
+        .max_by_key(|h| h.span.start())
+        .map(|h| h.text.clone())
 }
 
 /// `pages`: the records of each build in `names`, sorted by address, as the
@@ -736,7 +918,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
 /// the pages that aren't `listed`.
 fn page_records(project: &Project, names: &[String], not_listed: bool) -> Pages {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let router = AstroRouter::from_consumer(&model.consumer);
     let builds = model
         .builds
@@ -849,8 +1031,8 @@ fn links(project: &Project, options: &Options<'_>) -> Ran<Links> {
 /// What gets the link checker: installing it, or saying where it is.
 const LYCHEE_HOW: &str = "Install lychee (`cargo install lychee`, or a release from https://github.com/lycheeverse/lychee/releases), or set `[checks.links] command` to where it is";
 
-/// `agents`: runs the site checker on `site`, and applies `[checks]` levels.
-fn agents(project: &Project, site: Option<&str>, tools: &Tools<'_>) -> Ran<Agents> {
+/// `delivery`: runs the site checker on `site`, and applies `[checks]` levels.
+fn delivery(project: &Project, site: Option<&str>, tools: &Tools<'_>) -> Ran<Delivery> {
     let Some(site) = site else {
         let how = match &project.model().consumer.site {
             Some(published) => format!(
@@ -864,11 +1046,11 @@ fn agents(project: &Project, site: Option<&str>, tools: &Tools<'_>) -> Ran<Agent
         });
     };
     match site::check(project, tools.site, site, tools.site_timeout) {
-        Ok(found) => Ran::Done(Agents {
+        Ok(found) => Ran::Done(Delivery {
             site: site.to_owned(),
             results: found.results,
             diagnostics: apply_levels(&project.model().checks, found.diagnostics),
-            ..Agents::default()
+            ..Delivery::default()
         }),
         Err(e) => {
             let how = format!(

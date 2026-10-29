@@ -1,0 +1,11 @@
+description: >-
+  In a page that publishes, one without `draft: true`, a placeholder of the
+  template the page still has, or a frontmatter field with the template's
+  value, is an error: its readers would read the template's words. The same
+  page as a draft has advice (`template-placeholder-left`).
+spec: ["2.1", "7.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: template-placeholder-published, file: how-to/rotate-keys.md, line: 3, severity: error}
+  - {slug: template-placeholder-published, file: how-to/rotate-keys.md, line: 9, severity: error}

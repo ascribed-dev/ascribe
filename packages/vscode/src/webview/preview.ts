@@ -15,7 +15,7 @@
 // The page's HTML is untrusted text: the author's own files, or, in review,
 // the change under review. It is parsed into an inert `<template>`, disarmed
 // there (scripts, event handlers, and `javascript:` URLs taken out, as the
-// review report does), its asset references are rewritten there (so no
+// HTML preview does), its asset references are rewritten there (so no
 // request is made for a reference before it is rewritten), and only then moved
 // into the document. Nothing here evaluates it: the content security policy
 // (`html.ts`) doesn't allow inline scripts, and none is created.
@@ -59,7 +59,6 @@ const role = <T extends HTMLElement>(name: string): T => {
 };
 
 const buildSelect = role<HTMLSelectElement>("build");
-const buildDescription = role("build-description");
 const problemList = role("problems");
 const page = role("page");
 const title = role("title");
@@ -155,7 +154,9 @@ function showBuilds(next: PreviewBuild[], current: string): void {
   );
   buildSelect.disabled = next.length === 0;
   buildSelect.value = current;
-  buildDescription.textContent = builds.find((b) => b.name === current)?.description ?? "";
+  // The build's settings, as ascribe.toml writes them, are for whoever
+  // asks: they sit in the picker's tooltip, not in the toolbar.
+  buildSelect.title = builds.find((b) => b.name === current)?.description ?? "";
 }
 
 function showProblems(problems: ShownProblem[]): void {

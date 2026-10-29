@@ -1,0 +1,6 @@
+spec = "0.1"
+
+# A date field named `review-date`, the role's old name, still has the role
+# without `role`, for a release.
+[types.page.frontmatter]
+review-date = "date?"

@@ -4,8 +4,8 @@
 
 use std::collections::BTreeSet;
 
-use ascribe_core::{Applicability, FileId, Fix, RelPath, Span, TextEdit};
-use ascribe_model::{edit_distance, edit_distance_within};
+use ascribe_core::{Applicability, Arg, FileId, Fix, Issue, RelPath, Span, TextEdit, diagnostics};
+use ascribe_model::{ApiReference, edit_distance, edit_distance_within};
 
 use crate::index::{FileKind, Target};
 use crate::links::{encode_destination, link_path};
@@ -33,31 +33,66 @@ pub struct Closest {
 ///   with a heading of the link's `#id`, wherever they are and whatever
 ///   they're called (a page that was renamed or moved keeps its headings),
 ///   then pages within a few edits of the path or of its file name.
-/// - A heading the page lacks: the page's headings, closest id first.
+/// - A heading the page lacks: the page's headings, those the id was cut
+///   down from first, then those cut down to it, then the rest, each
+///   closest id first (see [`closest_headings`]).
 /// - A fragment: the pages that include it.
 /// - A file that isn't a page, named with the wrong case: the file.
-/// - An operation the spec lacks: the spec's operations, closest id first.
+/// - An operation the spec lacks: the one it was renamed to, then the spec's
+///   operations, closest first, by id, or by method and path for one with
+///   no id.
 pub fn closest_targets(
     project: &Project,
     from: &RelPath,
     target: &Target,
     resolution: &Resolution,
 ) -> Vec<Closest> {
+    ranked(project, from, target, resolution).targets
+}
+
+/// [`closest_targets`], and whether the first clearly wins: it's the only
+/// one of the best kind there is, such as the only heading whose id the
+/// written one was cut down from.
+struct Ranked {
+    targets: Vec<Closest>,
+    clear: bool,
+}
+
+impl Ranked {
+    fn none() -> Ranked {
+        Ranked {
+            targets: Vec::new(),
+            clear: false,
+        }
+    }
+
+    /// Targets where the first wins when it's the only one.
+    fn alone(targets: Vec<Closest>) -> Ranked {
+        Ranked {
+            clear: targets.len() == 1,
+            targets,
+        }
+    }
+}
+
+fn ranked(project: &Project, from: &RelPath, target: &Target, resolution: &Resolution) -> Ranked {
     let (written, fragment) = match target {
         Target::Local(local) => (local.written.as_str(), local.fragment.as_deref()),
-        Target::External => return Vec::new(),
+        Target::External => return Ranked::none(),
     };
     match resolution {
         Resolution::Source {
             target: path,
             fragment: true,
             ..
-        } => project
-            .including_pages(path)
-            .iter()
-            .take(CLOSEST)
-            .map(|page| closest(from, page, None))
-            .collect(),
+        } => Ranked::alone(
+            project
+                .including_pages(path)
+                .iter()
+                .take(CLOSEST)
+                .map(|page| closest(from, page, None))
+                .collect(),
+        ),
         Resolution::Source {
             target: path,
             id: Some(id),
@@ -68,27 +103,35 @@ pub fn closest_targets(
         }
         Resolution::Operation { api, id } => {
             let (Some(spec), Target::Local(local)) = (project.apis().spec(api), target) else {
-                return Vec::new();
+                return Ranked::none();
             };
-            if spec.operation(id).is_some() {
-                return Vec::new();
+            if spec.named(id).is_some() {
+                return Ranked::none();
             }
+            let by_path = project
+                .model()
+                .api(api)
+                .is_some_and(|a| !matches!(a.reference, ApiReference::Template(_)));
             let path = local.path.clone().unwrap_or_default();
-            crate::openapi::closest_ids(spec, id)
-                .into_iter()
-                .map(|closest| Closest {
-                    path: path.clone(),
-                    id: Some(closest.to_owned()),
-                    href: format!("{written}#{}", encode_destination(closest)),
-                })
-                .collect()
+            // The operation check names its own closest.
+            Ranked {
+                targets: crate::openapi::closest_operations(project.apis(), api, id, by_path)
+                    .into_iter()
+                    .map(|closest| Closest {
+                        path: path.clone(),
+                        href: format!("{written}#{}", encode_destination(&closest)),
+                        id: Some(closest),
+                    })
+                    .collect(),
+                clear: false,
+            }
         }
-        Resolution::AssetMissing(Missing::Case(actual)) => vec![Closest {
+        Resolution::AssetMissing(Missing::Case(actual)) => Ranked::alone(vec![Closest {
             path: actual.clone(),
             id: None,
             href: encode_destination(&link_path(actual, from)),
-        }],
-        _ => Vec::new(),
+        }]),
+        _ => Ranked::none(),
     }
 }
 
@@ -109,15 +152,59 @@ pub fn closest_fixes(
     };
     closest_targets(project, from, target, resolution)
         .into_iter()
-        .map(|closest| Fix {
-            title: format!("Link to `{}`", closest.href),
-            file,
-            edits: vec![TextEdit::replace(span, closest.href)],
-            // A guess at what the link meant, which only the author can
-            // confirm.
-            applicability: Applicability::Unsafe,
-        })
+        .map(|closest| link_fix(closest, file, span))
         .collect()
+}
+
+/// Offers a broken link's [`closest_fixes`] on `issue`, and, when one target
+/// clearly wins, names it in the message of a `link-id-missing` or a
+/// `link-target-missing` that has no other variant: "did you mean
+/// `keys.md#rotate-keys`?". The concise output and the edit hook show only
+/// the message, so the guess is there without asking for the fixes.
+pub fn offer_closest(
+    issue: &mut Issue,
+    project: &Project,
+    from: &RelPath,
+    target: &Target,
+    resolution: &Resolution,
+    file: FileId,
+    destination: Option<Span>,
+) {
+    let ranked = ranked(project, from, target, resolution);
+    let named = [
+        diagnostics::LINK_ID_MISSING,
+        diagnostics::LINK_TARGET_MISSING,
+    ];
+    if ranked.clear
+        && issue.variant.is_none()
+        && named.contains(&issue.slug)
+        && let Some(first) = ranked.targets.first()
+    {
+        issue.variant = Some("closest");
+        issue.args.push(Arg {
+            name: "closest",
+            value: first.href.clone(),
+        });
+    }
+    if let Some(span) = destination {
+        issue.fixes = ranked
+            .targets
+            .into_iter()
+            .map(|closest| link_fix(closest, file, span))
+            .collect();
+    }
+}
+
+/// The fix that replaces the destination at `span` with `closest`'s.
+fn link_fix(closest: Closest, file: FileId, span: Span) -> Fix {
+    Fix {
+        title: format!("Link to `{}`", closest.href),
+        file,
+        edits: vec![TextEdit::replace(span, closest.href)],
+        // A guess at what the link meant, which only the author can
+        // confirm.
+        applicability: Applicability::Unsafe,
+    }
 }
 
 /// The destination of a link from `from` to `path`, and the heading `id` on
@@ -144,21 +231,90 @@ fn closest(from: &RelPath, path: &RelPath, id: Option<&str>) -> Closest {
 
 /// The headings of the page at `path` whose ids are closest to `id`: the
 /// page exists, so its headings are the likely targets, however far.
-fn closest_headings(project: &Project, from: &RelPath, path: &RelPath, id: &str) -> Vec<Closest> {
+///
+/// An id is often a guess from a heading's first words, so the headings
+/// come in three kinds, each closest id first:
+///
+/// 1. those `id` was cut down from: each of its words starts one of theirs,
+///    in order (`ask-instead` for `ask-instead-of-guessing`);
+/// 2. those cut down to `id` (`sign-webhook-events` for `sign-webhooks`);
+/// 3. the rest.
+///
+/// The first clearly wins when it's the only one of the first kind there
+/// is, or, with none of the first two, the only one within a few edits and
+/// [`near_enough`] to be the one meant.
+fn closest_headings(project: &Project, from: &RelPath, path: &RelPath, id: &str) -> Ranked {
     let Some(file) = project.file(path) else {
-        return Vec::new();
+        return Ranked::none();
     };
-    let mut scored: Vec<(usize, String)> = project
+    let mut scored: Vec<(u8, usize, String)> = project
         .link_headings(file)
         .into_iter()
-        .map(|(_, h)| (edit_distance(id, &h.source_id), h.source_id.clone()))
+        .map(|(_, h)| {
+            let candidate = &h.source_id;
+            let kind = if shares_words(id, candidate) {
+                0
+            } else if shares_words(candidate, id) {
+                1
+            } else {
+                2
+            };
+            (kind, edit_distance(id, candidate), candidate.clone())
+        })
         .collect();
     scored.sort();
-    scored
-        .into_iter()
-        .take(CLOSEST)
-        .map(|(_, id)| closest(from, path, Some(&id)))
-        .collect()
+    let clear = match scored.as_slice() {
+        [] => false,
+        [(kind @ (0 | 1), ..), rest @ ..] => rest.first().is_none_or(|(k, ..)| k != kind),
+        [(_, distance, _), rest @ ..] => {
+            let limit = (id.chars().count() / 3).max(3);
+            near_enough(*distance, id) && rest.first().is_none_or(|(_, d, _)| *d > limit)
+        }
+    };
+    Ranked {
+        targets: scored
+            .into_iter()
+            .take(CLOSEST)
+            .map(|(_, _, id)| closest(from, path, Some(&id)))
+            .collect(),
+        clear,
+    }
+}
+
+/// Whether a target `distance` edits from `written` is near enough to name
+/// as the one meant: a third of its length at most, so `keys.md` is for
+/// `key.md`, and `index.md` isn't for `new.md`.
+fn near_enough(distance: usize, written: &str) -> bool {
+    distance * 3 <= written.chars().count()
+}
+
+/// Whether each of `short`'s words starts one of `long`'s, in order, or one
+/// of `long`'s starts it: `ask-instead` and `ask-instead-of-guessing`,
+/// `sign-webhook` and `sign-webhooks-now`.
+fn shares_words(short: &str, long: &str) -> bool {
+    let words = |id: &str| -> Vec<String> {
+        id.split(|c: char| !c.is_alphanumeric())
+            .filter(|w| !w.is_empty())
+            .map(str::to_owned)
+            .collect()
+    };
+    let short = words(short);
+    let mut long = words(long).into_iter();
+    !short.is_empty()
+        && short
+            .iter()
+            .all(|word| long.any(|other| word_matches(word, &other)))
+}
+
+/// Whether `word`, from the shorter id, stands for `other`: the same word,
+/// its first three letters or more (`inst` for `install`), or a word that
+/// starts it and is most of it (`webhook` for `webhooks`). A short word
+/// such as `a` or `in` starts too many to stand for any of them.
+fn word_matches(word: &str, other: &str) -> bool {
+    let length = |w: &str| w.chars().count();
+    word == other
+        || (other.starts_with(word) && length(word) >= 3)
+        || (word.starts_with(other) && length(other) >= 3 && length(other) * 3 >= length(word) * 2)
 }
 
 /// The pages a link to the missing page `written`, with the heading `id`,
@@ -172,7 +328,7 @@ fn closest_pages(
     written: &str,
     id: Option<&str>,
     actual: Option<&RelPath>,
-) -> Vec<Closest> {
+) -> Ranked {
     let written = written.trim_start_matches("./");
     let name = |path: &str| path.rsplit('/').next().unwrap_or(path).to_owned();
     let limit = (written.chars().count() / 3).max(3);
@@ -214,13 +370,24 @@ fn closest_pages(
         .iter()
         .filter(|(distance, path)| *distance <= limit && !has_heading(path))
         .map(|(_, path)| *path);
-    actual
+    // The first clearly wins when it's the case twin, the only page with the
+    // heading, or, with none, the only page near, and near enough.
+    let clear = actual.is_some()
+        || match with_heading.clone().count() {
+            0 => match scored.as_slice() {
+                [(distance, _)] => near_enough(*distance, &written_name),
+                _ => false,
+            },
+            count => count == 1,
+        };
+    let targets = actual
         .into_iter()
         .chain(with_heading)
         .chain(near)
         .take(CLOSEST)
         .map(|path| closest(from, path, id.filter(|_| has_heading(path))))
-        .collect()
+        .collect();
+    Ranked { targets, clear }
 }
 
 /// The pages with a heading whose id is `id`, their own or from a fragment

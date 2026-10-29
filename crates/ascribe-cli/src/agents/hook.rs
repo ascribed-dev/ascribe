@@ -3,9 +3,10 @@
 //! decides how the hook's input is read and how the answer reaches the
 //! model.
 //!
-//! After an edit, the answer is the errors in the files the tool wrote, and
-//! the advice in them with a safe fix, naming the fix, which the hook
-//! doesn't make (decision #578), as `additionalContext`: Claude Code's and
+//! After an edit, the answer is the errors in the files the tool wrote, the
+//! advice in them with a safe fix, naming the fix, which the hook doesn't
+//! make (decision #578), and what their template left to fill in (#1005),
+//! as `additionalContext`: Claude Code's and
 //! Codex's `hookSpecificOutput`, and Copilot's top-level field, each added
 //! to what the model sees beside the tool's result. Before the agent
 //! finishes, it's `decision: "block"` with a `reason`, which every harness
@@ -18,13 +19,13 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
-use ascribe_check::Project;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_diff::Repository;
 use clap::ValueEnum;
 use serde_json::{Value, json};
 
 use super::checker::{self, Ask, Found, LIMIT};
+use super::command;
 use crate::answer::FromDisk;
 use crate::exit;
 
@@ -100,10 +101,18 @@ impl Answer {
     }
 }
 
-/// Runs the hook on its input. Exit codes: 0 whatever was found, and when
-/// the check takes too long; 1 when the input can't be read, which every
-/// harness shows its user and not the model.
-pub fn run(harness: Harness, event: Event, input: io::Result<String>, limits: Limits) -> Answer {
+/// Runs the hook on its input. The commands it names are run with
+/// `command`, or when it's `None` with each project's, as `sync` works it
+/// out. Exit codes: 0 whatever was found, and when the check takes too
+/// long; 1 when the input can't be read, which every harness shows its
+/// user and not the model.
+pub fn run(
+    harness: Harness,
+    event: Event,
+    input: io::Result<String>,
+    command: Option<&str>,
+    limits: Limits,
+) -> Answer {
     let input = match input
         .map_err(|e| e.to_string())
         .and_then(|text| serde_json::from_str::<Value>(&text).map_err(|e| e.to_string()))
@@ -120,9 +129,22 @@ pub fn run(harness: Harness, event: Event, input: io::Result<String>, limits: Li
         .map(|dir| normalize(&std::path::absolute(&dir).unwrap_or(dir)))
         .unwrap_or_default();
     match event {
-        Event::Edit => edit(harness, &input, &cwd, limits.edit, limits.server),
-        Event::Stop => stop(harness, &input, &cwd, limits.stop, limits.server),
+        Event::Edit => edit(harness, &input, &cwd, command, limits),
+        Event::Stop => stop(harness, &input, &cwd, command, limits),
     }
+}
+
+/// The command the project of `config` runs Ascribe with: `given`, or the
+/// one `sync` works out.
+fn runs(config: &Path, given: Option<&str>) -> String {
+    if let Some(given) = given {
+        return given.to_owned();
+    }
+    let here = config.parent().unwrap_or(config);
+    let root = Repository::discover(here)
+        .map(|repository| PathBuf::from(&repository.root))
+        .unwrap_or_else(|_| here.to_owned());
+    command::detect(here, &root)
 }
 
 fn unreadable(why: &str) -> Answer {
@@ -133,8 +155,14 @@ fn unreadable(why: &str) -> Answer {
     }
 }
 
-fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bool) -> Answer {
-    let deadline = Instant::now() + limit;
+fn edit(
+    harness: Harness,
+    input: &Value,
+    cwd: &Path,
+    command: Option<&str>,
+    limits: Limits,
+) -> Answer {
+    let deadline = Instant::now() + limits.edit;
     let quiet = Answer::quiet(harness, Event::Edit);
     let written: Vec<PathBuf> = written_files(harness, input)
         .into_iter()
@@ -148,9 +176,14 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
             continue;
         }
         let shown: Vec<String> = files.iter().map(|f| from(cwd, f)).collect();
-        match check_by(&config, Ask::Files(files), deadline, server) {
-            Some(Ok(f)) if f.errors > 0 || f.fixable > 0 || f.baseline_problem.is_some() => {
-                found.push((shown, f));
+        match check_by(&config, Ask::Files(files), deadline, limits.server) {
+            Some(Ok(f))
+                if f.errors > 0
+                    || f.fixable > 0
+                    || f.unfilled > 0
+                    || f.baseline_problem.is_some() =>
+            {
+                found.push((shown, f, runs(&config, command)));
             }
             // Nothing to report, a project that can't be checked (the stop
             // hook says why), or out of time: nothing to say.
@@ -162,7 +195,7 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
     }
     let text = found
         .iter()
-        .map(|(files, f)| edit_text(files, f))
+        .map(|(files, f, runs)| command::with_command(&edit_text(files, f), runs))
         .collect::<Vec<_>>()
         .join("\n");
     let stdout = match harness {
@@ -181,7 +214,8 @@ fn edit(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
 }
 
 /// What the model reads after an edit: the errors, the advice with a safe
-/// fix and each one's fix, then which build was checked.
+/// fix and each one's fix, what the template left to fill in, then which
+/// build was checked.
 fn edit_text(files: &[String], found: &Found) -> String {
     let files = files.join(" ");
     let mut lines = Vec::new();
@@ -215,6 +249,19 @@ fn edit_text(files: &[String], found: &Found) -> String {
             ));
         }
     }
+    if found.unfilled > 0 {
+        lines.push(format!(
+            "`ascribe check {files}` reports {} of what the page's template left to fill in, which you write now, while the page is yours:",
+            found.unfilled
+        ));
+        lines.extend(found.unfilled_lines.iter().cloned());
+        if found.unfilled > LIMIT {
+            lines.push(format!(
+                "and {} more: `ascribe check {files} --format concise`",
+                found.unfilled - LIMIT
+            ));
+        }
+    }
     lines.extend(baselined_text(found.baselined));
     if let Some(problem) = &found.baseline_problem {
         lines.push(format!(
@@ -229,8 +276,14 @@ fn edit_text(files: &[String], found: &Found) -> String {
     lines.join("\n") + "\n"
 }
 
-fn stop(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bool) -> Answer {
-    let deadline = Instant::now() + limit;
+fn stop(
+    harness: Harness,
+    input: &Value,
+    cwd: &Path,
+    command: Option<&str>,
+    limits: Limits,
+) -> Answer {
+    let deadline = Instant::now() + limits.stop;
     let quiet = Answer::quiet(harness, Event::Stop);
     // Every harness names it this way, Copilot too.
     if input
@@ -246,11 +299,12 @@ fn stop(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
         let dir = config.parent().map(|d| from(cwd, d)).unwrap_or_default();
         // Out of time, the agent goes on; a project that can't be checked
         // at all, as `ascribe check` would refuse it, holds it.
-        match check_by(&config, Ask::Project, deadline, server) {
-            Some(Ok(found)) if found.errors > 0 => reasons.push(stop_text(&dir, &found)),
-            Some(Err(why)) => reasons.push(unchecked_text(&dir, &why)),
-            Some(Ok(_)) | None => {}
-        }
+        let reason = match check_by(&config, Ask::Project, deadline, limits.server) {
+            Some(Ok(found)) if found.errors > 0 => stop_text(&dir, &found),
+            Some(Err(why)) => unchecked_text(&dir, &why),
+            Some(Ok(_)) | None => continue,
+        };
+        reasons.push(command::with_command(&reason, &runs(&config, command)));
     }
     if reasons.is_empty() {
         return quiet;
@@ -384,7 +438,7 @@ fn patched_files(command: &Value) -> Vec<String> {
 fn by_project(files: &[PathBuf]) -> Vec<(PathBuf, Vec<PathBuf>)> {
     let mut groups: Vec<(PathBuf, Vec<PathBuf>)> = Vec::new();
     for file in files {
-        let Some(config) = file.parent().and_then(Project::find_config) else {
+        let Some(config) = file.parent().and_then(ascribe_workspace::find_config) else {
             continue;
         };
         let config = normalize(&config);
@@ -403,7 +457,7 @@ fn changed_projects(cwd: &Path) -> Vec<PathBuf> {
     let repository = match Repository::discover(cwd) {
         Ok(repository) => repository,
         Err(_) => {
-            return Project::find_config(cwd)
+            return ascribe_workspace::find_config(cwd)
                 .map(|c| normalize(&c))
                 .into_iter()
                 .collect();
@@ -422,7 +476,7 @@ fn changed_projects(cwd: &Path) -> Vec<PathBuf> {
         if !model && path.extension() != Some("md") {
             continue;
         }
-        let Some(config) = file.parent().and_then(Project::find_config) else {
+        let Some(config) = file.parent().and_then(ascribe_workspace::find_config) else {
             continue;
         };
         let config = normalize(&config);
@@ -514,16 +568,22 @@ mod tests {
             "tool_input": { "file_path": dir.path().join("docs").join("a.md") },
         })
         .to_string();
-        let answer = run(Harness::ClaudeCode, Event::Edit, Ok(input.clone()), limits);
+        let answer = run(
+            Harness::ClaudeCode,
+            Event::Edit,
+            Ok(input.clone()),
+            None,
+            limits,
+        );
         assert_eq!(answer, Answer::default());
-        let answer = run(Harness::Codex, Event::Stop, Ok(input.clone()), limits);
+        let answer = run(Harness::Codex, Event::Stop, Ok(input.clone()), None, limits);
         assert_eq!(answer.stdout, "{}\n");
         // With time, the same input reports the error.
         let limits = Limits {
             edit: Duration::from_secs(60),
             ..limits
         };
-        let answer = run(Harness::ClaudeCode, Event::Edit, Ok(input), limits);
+        let answer = run(Harness::ClaudeCode, Event::Edit, Ok(input), None, limits);
         assert!(answer.stdout.contains("[ASC036]"), "{answer:?}");
     }
 

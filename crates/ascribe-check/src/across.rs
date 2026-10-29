@@ -13,11 +13,15 @@
 //!   `availability-left-behind` compares each feature's versions with each
 //!   target's current line in `[releases]`; `release-line-ended` compares
 //!   each live line's `ends` with the day the check runs as;
+//!   `build-filter-line-undeclared` places each build's filter in
+//!   `[releases]`;
 //!   `crawlers-disallowed` reads `[crawlers]`; and `description-too-long`
 //!   measures a description field's `default`, once, where `ascribe.toml`
 //!   writes it, since every page that leaves the field to it shares it;
 //!   and `frontmatter-field-repeated` compares each type's own fields with
-//!   `[frontmatter]`'s.
+//!   `[frontmatter]`'s; `api-operation-unreferenced` counts the links that
+//!   name each operation of a declared spec
+//!   (`ascribe_resolve::Project::api_coverage`).
 //! - **Per build**, from the build's resolved pages, so they're page level:
 //!   `page-orphan`, a page no other page the build publishes links to or
 //!   includes, which only the sidebar reaches, or nothing for one that's
@@ -39,8 +43,8 @@ use ascribe_core::{
     diagnostics,
 };
 use ascribe_model::{
-    AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, Listing, Permission, Purpose,
-    in_line,
+    AvailabilityMode, CheckLevel, Checks, ContentModel, FieldRole, Listing, Permission, Placement,
+    Purpose, in_line,
 };
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
@@ -76,6 +80,8 @@ const FILE_LEVEL: &[DiagnosticSlug] = &[
     diagnostics::CRAWLERS_DISALLOWED,
     diagnostics::DESCRIPTION_TOO_LONG,
     diagnostics::FRONTMATTER_FIELD_REPEATED,
+    diagnostics::API_OPERATION_UNREFERENCED,
+    diagnostics::BUILD_FILTER_LINE_UNDECLARED,
 ];
 
 /// The checks of this module the editor doesn't report: an image isn't a
@@ -98,13 +104,12 @@ fn runs(checks: &Checks, slug: DiagnosticSlug, errors_only: bool) -> bool {
 /// What the checks that run for every build found, by file: the content
 /// model's entries under its id, each unused fragment under its own, and the
 /// image files' under theirs, each list in source order. `index` is the
-/// project's source index; `file` gives the project's id of one of its files.
+/// project's source index.
 /// The image checks run only when `images` is set, and with `errors_only`
 /// only the checks `[checks]` raises to an error run.
 pub(crate) fn for_every_build(
     project: &Project,
     index: &ascribe_resolve::Project,
-    file: &dyn Fn(FileId) -> FileId,
     images: bool,
     errors_only: bool,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
@@ -117,7 +122,7 @@ pub(crate) fn for_every_build(
     if on(diagnostics::FRAGMENT_UNUSED) {
         for fragment in index.fragments() {
             if index.includers(&fragment.path).is_empty() {
-                let at = Location::new(file(fragment.file), first_line(&fragment.source));
+                let at = Location::new(fragment.file, first_line(&fragment.source));
                 issues.push(Issue::new(diagnostics::FRAGMENT_UNUSED, at));
             }
         }
@@ -163,7 +168,7 @@ pub(crate) fn for_every_build(
                     issues.push(
                         Issue::new(
                             diagnostics::GLOSSARY_TERM_UNUSED,
-                            Location::new(file(t.file), t.heading),
+                            Location::new(t.file, t.heading),
                         )
                         .with_arg("term", t.term.clone()),
                     );
@@ -203,6 +208,10 @@ pub(crate) fn for_every_build(
         placement(project.model(), &mut issues);
     }
 
+    if on(diagnostics::BUILD_FILTER_LINE_UNDECLARED) {
+        filters_before(project.model(), &mut issues);
+    }
+
     if on(diagnostics::RELEASE_LINE_ENDED)
         && let Some(today) = project.today()
     {
@@ -219,6 +228,10 @@ pub(crate) fn for_every_build(
 
     if on(diagnostics::FRONTMATTER_FIELD_REPEATED) {
         repeated_fields(project, &mut issues);
+    }
+
+    if on(diagnostics::API_OPERATION_UNREFERENCED) {
+        unreferenced_operations(project, index, &mut issues);
     }
 
     if on(diagnostics::IMAGE_UNUSED) || on(diagnostics::IMAGE_LARGE) {
@@ -270,6 +283,32 @@ fn placement(model: &ContentModel, issues: &mut Vec<Issue>) {
     }
 }
 
+/// `build-filter-line-undeclared`: a build filtered for a version older
+/// than every line its target's `[releases]` declares, which no list holds,
+/// so `ascribe versions` can't tell what the build publishes. Reported at the
+/// filter's version.
+fn filters_before(model: &ContentModel, issues: &mut Vec<Issue>) {
+    for build in &model.builds {
+        if let AvailabilityMode::Filter {
+            target,
+            version: Some(version),
+        } = &build.availability
+            && let Some(list) = model.releases_of(target)
+            && matches!(list.place(version), Some(Placement::Before))
+        {
+            issues.push(
+                Issue::new(
+                    diagnostics::BUILD_FILTER_LINE_UNDECLARED,
+                    Location::new(FileId::new(0), version.span),
+                )
+                .with_arg("build", build.name.clone())
+                .with_arg("target", target.clone())
+                .with_arg("version", version.text.clone()),
+            );
+        }
+    }
+}
+
 /// `release-line-ended`: a live line whose `ends` date is before `today`,
 /// at its key in `[releases.<target>.ends]`.
 fn line_ended(model: &ContentModel, today: Date, issues: &mut Vec<Issue>) {
@@ -284,6 +323,40 @@ fn line_ended(model: &ContentModel, today: Date, issues: &mut Vec<Issue>) {
                 .with_arg("line", end.line.text.clone())
                 .with_arg("date", end.date.to_string()),
             );
+        }
+    }
+}
+
+/// `api-operation-unreferenced`: each operation of a declared spec that no
+/// link names, by its id or by its method and path, at the API's `spec` in
+/// `ascribe.toml`, in the spec's order. A `deprecated` one is left out, since
+/// it's on its way out.
+fn unreferenced_operations(
+    project: &Project,
+    index: &ascribe_resolve::Project,
+    issues: &mut Vec<Issue>,
+) {
+    let model = project.model();
+    for coverage in index.api_coverage() {
+        let (Some(api), Some(spec)) = (model.api(&coverage.api), index.apis().spec(&coverage.api))
+        else {
+            continue;
+        };
+        let at = Location::new(FileId::new(0), api.spec_span);
+        for (operation, links) in spec.operations.iter().zip(&coverage.links) {
+            if *links > 0 || operation.deprecated {
+                continue;
+            }
+            let issue = Issue::new(diagnostics::API_OPERATION_UNREFERENCED, at)
+                .with_arg("method", operation.method.to_uppercase())
+                .with_arg("route", operation.path.clone())
+                .with_arg("path", api.spec.clone());
+            issues.push(match &operation.operation_id {
+                Some(id) => issue.with_arg("operation", id.clone()),
+                None => issue
+                    .with_variant("no-id")
+                    .with_arg("operation", operation.method_and_path()),
+            });
         }
     }
 }

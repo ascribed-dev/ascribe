@@ -114,7 +114,7 @@ describe("the full content model's schema", () => {
 
   it("accepts every field type and applies defaults", () => {
     const parsed = full.guideSchema.parse(guide);
-    expect(parsed.draft).toBe(false);
+    expect(parsed.pinned).toBe(false);
     expect(parsed.status).toBe("published");
     expect(parsed.updated).toBeInstanceOf(Date);
     expect(full.guideSchema.safeParse({ ...guide, available: [] }).success).toBe(true);

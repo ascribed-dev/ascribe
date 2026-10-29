@@ -10,7 +10,7 @@ The commands that look after the code a project's pages show: the copies it keep
 @id {permalink=true}: cli-sources
 @summary: Copies code from sources in other repositories into the project, and moves their pins. They're the only commands that reach another repository, with `git`'s own credentials.
 
-Copies code from [sources in other repositories](../content-model/output.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so `ascribe sources fetch` and `ascribe sources update` are the only commands that reach another repository. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
+Copies code from [sources in other repositories](../content-model/sources.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so `ascribe sources fetch` and `ascribe sources update` are the only commands that reach another repository. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
 
 Fetched repositories are kept in a cache outside the project, one per URL, so a second run fetches only what's new: `ascribe` in your cache folder (`$XDG_CACHE_HOME`, `~/.cache`, `~/Library/Caches`, or `%LOCALAPPDATA%`), or `ASCRIBE_CACHE_DIR`. Nothing needs the cache but these commands; deleting it costs only a slower next run.
 
@@ -26,15 +26,18 @@ Beside the files snippets name, it copies the repository's [tested examples](tes
 
 @include: ../_generated/cli-sources-fetch-options.md
 
-It lists each copy it wrote or removed. The first time a source's files are copied, it says so, on standard error: the copies are committed with the docs, so everyone who can read the docs repository can read them. In a new project with one snippet from `api`:
+It lists each copy it wrote or removed. It changes a copy or `ascribe.lock` only when git could put it back, as every [command that writes](../command/index.md#commands-that-write) does: one with changes not committed is refused, and named, unless you pass `--force`. `update` does the same. With `--dry-run`, each says what it would write and remove, and writes nothing; `update` then doesn't compare the pages. The first time a source's files are copied, it says so, on standard error: the copies are committed with the docs, so everyone who can read the docs repository can read them. In a new project with one snippet from `api`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/sources-fetch.txt
+
+@available: ascribe planned
+With `--format json`, it writes what it did for each source, the files it couldn't copy among them, in the document its [schema](../contracts/json-reports/sources.md#ascribe-sources-fetch) describes. The note about a first copy still goes to standard error.
 
 | Code | Meaning |
 |---|---|
 | `0` | The copies match the lock |
 | `1` | A file a snippet names couldn't be copied: it isn't in the repository at the pin, it's over 1 MB, or it isn't text. The reason goes to standard error, and `ascribe check` reports the snippet. |
-| `2` | It couldn't run: no `ascribe.toml`, a content model with errors, an `ascribe.lock` it can't read, a name that isn't a source in another repository, or `git` failing (no network, no access), with the source named and `git`'s own message |
+| `2` | It couldn't run: no `ascribe.toml`, a content model with errors, an `ascribe.lock` it can't read, a name that isn't a source in another repository, without `--force`, a file git couldn't put back, or `git` failing (no network, no access), with the source named and `git`'s own message |
 
 ### `ascribe sources update`
 @id {permalink=true}: cli-sources-update
@@ -92,7 +95,9 @@ Runs the test of a folder of [tested examples](tested.md), and when it passes, w
 
 @include: ../_generated/cli-observe-options.md
 
-It prints the config's path and every command it will run. When its standard input is a terminal, it then asks **Run them? [y/N]**, on standard error, and runs nothing unless the answer is `y` or `yes`; with `--format json`, the list goes to standard error too, so standard output holds the JSON alone. `--yes` skips the question, and where standard input isn't a terminal, as in CI or a hook, it doesn't ask. Then it runs each `[environment]` command, then `test`, through the platform's shell (`sh`, or `cmd` on Windows), in the folder, with your environment and standard input closed. The test's output goes to the terminal as it comes, and there's no time limit: you started it, and you can stop it. Last, it names the observation it wrote, with how many files and what it recorded of the environment.
+It prints the config's path and every command it will run. When its standard input is a terminal, it then asks **Run them? [y/N]**, on standard error, and runs nothing unless the answer is `y` or `yes`; with `--format json`, the list goes to standard error too, so standard output holds the JSON alone. `--yes` skips the question. Where standard input isn't a terminal, as in CI, a hook, or an agent's shell, nobody is there to answer, so it lists the commands, runs nothing, and exits 2 unless given `--yes`.
+
+Then it runs each `[environment]` command, then `test`, through the platform's shell (`sh`, or `cmd` on Windows), in the folder, with your environment and standard input closed. The test's output goes to the terminal as it comes, and there's no time limit: you started it, and you can stop it. Last, it names the observation it wrote, with how many files and what it recorded of the environment.
 
 When `test` exits 0, it hashes every example and writes the observation whole, to a file beside it that it then renames, so a run that's stopped part way leaves the old one. When it doesn't, it writes nothing. A file that changes while the test runs is hashed as it is at the end, so run it on a clean tree. When the observation replaces one, it says what changed since: the files added, removed, and changed, and the environment values that differ. An observation of another name is never touched.
 
@@ -104,7 +109,7 @@ With `--check`, it runs nothing: not `test`, not the `[environment]` commands. I
 |---|---|
 | `0` | The test passed, and the observation is written |
 | `1` | The test failed. Nothing was written, and the old observation is as it was. |
-| `2` | It couldn't run: a `--name` that isn't one; the current folder is a source's copies (`sources/<name>/` of a project whose `ascribe.lock` pins it), whose config is never run; no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, the question answered with anything but yes, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
+| `2` | It couldn't run: a `--name` that isn't one; the current folder is a source's copies (`sources/<name>/` of a project whose `ascribe.lock` pins it), whose config is never run; no `ascribe.examples.toml` in the current folder, one with errors or with no `test`, the question answered with anything but yes, no terminal to ask at and no `--yes`, an `[environment]` command that failed or printed nothing, no shell, or an observation it couldn't write |
 
 With `--check`, `0` means the observation is current, `1` that it's stale or missing, and `2` that the config, the examples, or the observation can't be read.
 

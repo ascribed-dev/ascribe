@@ -58,11 +58,9 @@ fn a_clean_project_exits_0() {
     let dir = project(&[("index.md", CLEAN)]);
     let out = ascribe(dir.path(), &["check"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
-    assert!(
-        stdout(&out).contains(
-            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice"
-        )
-    );
+    assert!(stdout(&out).contains(
+        "checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice"
+    ));
 }
 
 #[test]
@@ -78,6 +76,44 @@ fn errors_exit_1_and_show_the_source() {
     assert!(text.contains("1 error"), "{text}");
 }
 
+/// Three broken links: two whose help is the registry's, the same text, and
+/// one whose help names the page it likely meant.
+const REPEATED_HELP: &str =
+    "---\ntitle: Home\n---\n\n[Gone](gone.md) [Also](also.md) [Guide](guide.md)\n";
+
+#[test]
+fn text_prints_a_codes_shared_help_once_and_points_back_to_it_after() {
+    let dir = project(&[("index.md", REPEATED_HELP), ("guides.md", CLEAN)]);
+    let text = stdout(&ascribe(dir.path(), &["check"]));
+    let helps: Vec<&str> = text
+        .lines()
+        .filter_map(|line| line.split_once("Help: ").map(|(_, help)| help))
+        .collect();
+    let [first, second, third] = helps[..] else {
+        panic!("three helps: {text}");
+    };
+    assert!(
+        !first.contains("as for ASC036"),
+        "the first in full: {text}"
+    );
+    assert_eq!(
+        second, "as for ASC036 above (ascribe explain ASC036)",
+        "{text}"
+    );
+    assert!(
+        third.contains("guides.md"),
+        "help naming the occurrence stays: {text}"
+    );
+}
+
+#[test]
+fn json_keeps_every_diagnostics_help_in_full() {
+    let dir = project(&[("index.md", REPEATED_HELP), ("guides.md", CLEAN)]);
+    let text = stdout(&ascribe(dir.path(), &["check", "--format", "json"]));
+    assert!(text.contains("\"help\""), "{text}");
+    assert!(!text.contains("as for ASC036"), "{text}");
+}
+
 #[test]
 fn warnings_exit_0_unless_denied() {
     let dir = project(&[("index.md", WITH_WARNING)]);
@@ -86,6 +122,30 @@ fn warnings_exit_0_unless_denied() {
     assert!(stdout(&out).contains("1 warning"));
     let out = ascribe(dir.path(), &["check", "--deny-warnings"]);
     assert_eq!(code(&out), 1);
+}
+
+#[test]
+fn exit_code_names_the_level_that_fails_and_deny_warnings_is_its_alias() {
+    let dir = project(&[("index.md", WITH_WARNING)]);
+    for (args, expected) in [
+        (&["check", "--exit-code"][..], 0),
+        (&["check", "--exit-code=error"][..], 0),
+        (&["check", "--exit-code=warning"][..], 1),
+        // The last one given wins, as an alias's would.
+        (&["check", "--exit-code=error", "--deny-warnings"][..], 1),
+        (&["check", "--deny-warnings", "--exit-code=error"][..], 0),
+    ] {
+        let out = ascribe(dir.path(), args);
+        assert_eq!(code(&out), expected, "{args:?}: {}", stdout(&out));
+    }
+    // A level is given with `=`, so a path after `--exit-code` is a path.
+    let out = ascribe(dir.path(), &["check", "--exit-code", "docs/index.md"]);
+    assert_eq!(code(&out), 0, "{}", stdout(&out));
+    let out = ascribe(dir.path(), &["check", "--exit-code=advice"]);
+    assert_eq!(code(&out), 2, "advice never fails the check");
+    let dir = project(&[("index.md", WITH_ERROR)]);
+    let out = ascribe(dir.path(), &["check", "--exit-code"]);
+    assert_eq!(code(&out), 1, "{}", stdout(&out));
 }
 
 #[test]
@@ -188,7 +248,7 @@ fn a_project_nested_in_the_content_root_is_left_to_its_own_check() {
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     assert!(
         stdout(&out).contains(
-            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice"
         ),
         "{}",
         stdout(&out)
@@ -220,7 +280,7 @@ fn a_content_root_above_the_project_keeps_the_projects_own_folder() {
     assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
     let text = stdout(&out);
     assert!(
-        text.contains("checked 2 files for every build, reported on 2: 1 error"),
+        text.contains("checked 2 files for every build, 1 with problems: 1 error"),
         "{text}"
     );
     assert!(text.contains("own.md"), "{text}");
@@ -716,7 +776,7 @@ fn a_problem_in_a_fragment_is_shown_once_with_how_many_more_includes_have_it() {
     assert!(text.contains("(also at 2 other includes)"), "{text}");
     assert!(
         text.contains(
-            "checked 4 files for every build, reported on 1: 1 error, 0 warnings, 0 advice"
+            "checked 4 files for every build, reported on 1 file in the paths, 1 with problems: 1 error, 0 warnings, 0 advice"
         ),
         "{text}"
     );
@@ -1026,7 +1086,7 @@ fn concise_output_is_a_line_per_diagnostic_grouped_by_file_and_cut_at_50() {
             "docs/guides/b.md:7: [ASC044] `{nope}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{` to keep it literal\n",
             "docs/index.md:5: [ASC037] `index.md` has no heading with the id `gone`\n",
             "docs/index.md:7: [ASC036] `gone.md` doesn't exist\n",
-            "checked 4 files for every build, reported on 4: 4 errors, 1 warning, 0 advice\n",
+            "checked 4 files for every build, 3 with problems: 4 errors, 1 warning, 0 advice\n",
         )
     );
 
@@ -1059,7 +1119,7 @@ title: Many
     );
     assert_eq!(
         lines[51],
-        "checked 2 files for every build, reported on 2: 0 errors, 60 warnings, 0 advice"
+        "checked 2 files for every build, 2 with problems: 0 errors, 60 warnings, 0 advice"
     );
     // The command it names lists them all: the 50 shown, then exactly the
     // 10 left out, and nothing more.
@@ -1096,7 +1156,7 @@ fn limit_sets_how_many_problems_the_concise_list_shows() {
             &["check", "--format", "concise", "--limit", limit],
         ))
     };
-    let summary = "checked 1 file for every build, reported on 1: 0 errors, 8 warnings, 0 advice";
+    let summary = "checked 1 file for every build, 1 with problems: 0 errors, 8 warnings, 0 advice";
 
     let three = concise("3");
     let lines: Vec<&str> = three.lines().collect();
@@ -1165,7 +1225,7 @@ fn summary_counts_by_code_and_by_file_instead_of_listing() {
             "  2  docs/index.md (2 errors, 0 warnings)\n",
             "  1  docs/guides/a.md (1 error, 0 warnings)\n",
             "To work through the first code: ascribe check --code ASC037\n",
-            "checked 4 files for every build, reported on 4: 4 errors, 1 warning, 0 advice\n",
+            "checked 4 files for every build, 3 with problems: 4 errors, 1 warning, 0 advice\n",
         )
     );
 
@@ -1212,7 +1272,7 @@ fn code_shows_only_the_problems_with_that_code() {
         stdout(&by_name),
         concat!(
             "docs/guides/b.md:7: [ASC044] `{nope}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{` to keep it literal\n",
-            "checked 4 files for every build, reported on 4 for code `ASC044`: 0 errors, 1 warning, 0 advice\n",
+            "checked 4 files for every build, 1 with problems for code `ASC044`: 0 errors, 1 warning, 0 advice\n",
         )
     );
     // The exit code is about what's shown: a warning alone doesn't fail.
@@ -1441,7 +1501,10 @@ const KEYS: &str = "---\ntitle: Keys\n---\n";
 #[test]
 fn fix_applies_the_safe_fixes_and_reports_whats_left() {
     let dir = project(&[("index.md", ROUTE_LINKS), ("keys.md", KEYS)]);
-    let out = ascribe(dir.path(), &["check", "--fix", "--deny-warnings"]);
+    let out = ascribe(
+        dir.path(),
+        &["check", "--fix", "--force", "--deny-warnings"],
+    );
     let text = stdout(&out);
     assert!(
         text.starts_with("fixed 2 problems in docs/index.md\n"),
@@ -1458,7 +1521,10 @@ fn fix_applies_the_safe_fixes_and_reports_whats_left() {
         "the unsafe fix isn't applied"
     );
 
-    let again = ascribe(dir.path(), &["check", "--fix", "--format", "concise"]);
+    let again = ascribe(
+        dir.path(),
+        &["check", "--fix", "--force", "--format", "concise"],
+    );
     assert!(
         !stdout(&again).contains("fixed"),
         "nothing is left to fix: {}",
@@ -1481,7 +1547,7 @@ fn fix_leaves_a_term_off_its_glossary_page_and_its_fix_lists_the_page() {
     fs::write(&model, &with_comment).expect("write the model");
 
     // Listing a page links its terms everywhere, so `--fix` doesn't.
-    let out = ascribe(dir.path(), &["check", "--fix"]);
+    let out = ascribe(dir.path(), &["check", "--fix", "--force"]);
     assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
     assert!(!stdout(&out).contains("fixed"), "{}", stdout(&out));
     assert_eq!(fs::read_to_string(&model).expect("the model"), with_comment);
@@ -1522,7 +1588,7 @@ fn fix_lists_what_it_applied_in_the_json() {
     let dir = project(&[("index.md", ROUTE_LINKS), ("keys.md", KEYS)]);
     let report = json_of(&ascribe(
         dir.path(),
-        &["check", "--fix", "--format", "json"],
+        &["check", "--fix", "--force", "--format", "json"],
     ));
     let fixed = report["fixed"].as_array().expect("a list");
     assert_eq!(fixed.len(), 2);
@@ -1545,7 +1611,7 @@ fn fix_with_paths_fixes_only_what_counts_for_them() {
         ("other.md", ROUTE_LINKS),
         ("keys.md", KEYS),
     ]);
-    let out = ascribe(dir.path(), &["check", "docs/other.md", "--fix"]);
+    let out = ascribe(dir.path(), &["check", "docs/other.md", "--fix", "--force"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     assert!(stdout(&out).starts_with("fixed 2 problems in docs/other.md\n"));
     let page = |name: &str| fs::read_to_string(dir.path().join("docs").join(name)).expect("a page");
@@ -1563,7 +1629,10 @@ fn fix_removes_an_unused_acknowledgement_from_the_content_model_it_was_given() {
     fs::remove_file(dir.path().join("ascribe.toml")).expect("remove the model");
     let config = dir.path().join("site.toml");
     write(&config, &model);
-    let out = ascribe(dir.path(), &["check", "--config", "site.toml", "--fix"]);
+    let out = ascribe(
+        dir.path(),
+        &["check", "--config", "site.toml", "--fix", "--force"],
+    );
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     assert!(
         stdout(&out).starts_with("fixed 1 problem in ascribe.toml\n"),
@@ -1580,7 +1649,14 @@ fn fix_cannot_be_used_with_standard_input() {
     let dir = project(&[("index.md", CLEAN)]);
     let out = ascribe(
         dir.path(),
-        &["check", "--fix", "--stdin", "--path", "docs/index.md"],
+        &[
+            "check",
+            "--fix",
+            "--force",
+            "--stdin",
+            "--path",
+            "docs/index.md",
+        ],
     );
     assert_eq!(code(&out), 2);
 }
@@ -1673,7 +1749,7 @@ fn a_problem_in_a_generated_file_names_its_memo_and_has_no_fix() {
     );
 
     // `--fix` leaves the file as its generator wrote it.
-    ascribe(dir.path(), &["check", "--fix"]);
+    ascribe(dir.path(), &["check", "--fix", "--force"]);
     assert_eq!(
         fs::read_to_string(dir.path().join("docs/gen.md")).expect("read the page"),
         GENERATED

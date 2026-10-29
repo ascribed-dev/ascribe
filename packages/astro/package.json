@@ -1,6 +1,6 @@
 {
   "name": "@ascribed/astro",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "A toolchain for documentation written as code. This package is its Astro integration, which publishes a project's pages as a site.",
   "type": "module",
   "license": "MPL-2.0",

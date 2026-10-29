@@ -3,7 +3,7 @@ name: ascribe
 description: "Write and fix Markdown docs in an Ascribe project: pages with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against the content model in `ascribe.toml`. Use when adding or editing pages in a folder with an `ascribe.toml`, fixing what `ascribe check` reports, or finding which frontmatter, directives, and phrases the project allows."
 license: MPL-2.0
 metadata:
-  ascribe-version: "0.4.3"
+  ascribe-version: "0.4.4"
 ---
 
 # Ascribe
@@ -33,9 +33,9 @@ Each changes nothing, and each takes `--format json`.
 - `ascribe model`: what the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, builds, and sources.
 - `ascribe outline <page>`: a page's title, type, and headings, with the ids links use.
 - `ascribe link <target> --from <page>`: whether a link works from a page, and what to write.
-- `ascribe resolve <page> --build <name>`: a page as one build's readers see it.
+- `ascribe resolve <page> --build <name>`: a page as one build's readers see it. Add `--emit site` to see what a reader of the site gets: the page as the site output gives it to the site, with Ascribe's elements, which [reading the site output](https://ascribed-dev.com/go/reading-site-output/) explains.
 - `ascribe refs <target>`: where a page, a heading (`guides/install.md#configure`), a phrase (`phrase:product`), or another entry is used.
-- `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it.
+- `ascribe search "<words>"`: where the pages say something, as their readers read them, with the line to edit for each. It finds what `grep` over the source can't: words a phrase, a fragment, or a snippet puts on a page. Run it before writing a page about a subject, and link to what's there or extend it. Common words such as `how` and `the` needn't match. When no block has every word, it lists partial matches, the blocks with the most of them and the words each lacks: read them before deciding the subject is new, and search again with its other words.
 - `ascribe check --summary`: the problems counted by code and by file, for a project with many; `ascribe check --code <code>` then shows one code's, to fix one rule at a time.
 - `ascribe diff`: which pages changed since the default branch, as readers see them, block by block; `ascribe diff <page>` shows one page's. To show that a change, such as a rename or a refactor, changed nothing for readers, run `ascribe diff --exit-code`: it exits with 0 when no page changed.
 - `ascribe drift`: the pages whose code examples changed since the default branch while their words didn't. Reread each one it lists.
@@ -44,7 +44,7 @@ Use the commands when you have a shell. Without one, use the `ascribe_*` tools o
 
 ## Renaming
 
-`ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use.
+`ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use. Without a shell, the MCP server's `ascribe_rename` gives the same changes, each file's text and the file to move, for you to write.
 
 In a project with an `ascribe.addresses`, which keeps the addresses the docs have published, a page's old address must still lead somewhere. `ascribe rename` records a page's move there. After moving pages with `git mv`, run `ascribe addresses move --from-git` to record the moves git sees. For a page deleted on purpose, forward its address to the page that covers it now, with `ascribe addresses move <old> <page>`, or retire it, with `ascribe addresses retire <old> --reason "<why>"`. `ascribe check` reports `address-lost` for a page that's gone without either, with these as its fixes. Without a shell, the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire` give the edit to `ascribe.addresses` to apply.
 
@@ -54,7 +54,7 @@ A CI job runs two commands: `ascribe check --deny-warnings`, which fails on an e
 
 ## Fixes
 
-In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given: `ascribe check <file> --fix` applies every safe fix, then reports what's left. Read an `unsafe` one and decide before applying it.
+In `ascribe check --format json`, a diagnostic's `fixes` are edits that would fix it. A fix whose `applicability` is `safe` can be applied as given: `ascribe check <file> --fix` applies every safe fix, then reports what's left. It won't change a page git couldn't put back, one with changes not committed: add `--force` to fix the pages you're editing. Read an `unsafe` one and decide before applying it.
 
 ## Other people's text
 
@@ -66,7 +66,7 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 - Where the content model has a phrase for a name or a value, write the phrase (`{product}`), not the text.
 - Link to the source file with a relative path (`../guides/install.md#configure`), not to the site's address.
 - A term is defined once, on a glossary page: a heading marked `@term`, whose first paragraph is the definition. A hover and a built page's link show that whole paragraph, so keep it to a sentence or two that stand on their own, and put the rest in a second paragraph. Don't define a term again where it's used; Ascribe links it.
-- A heading with a permalink, `@id {permalink=true}: <name>`, needs a summary: the sentence or two a product shows with its help. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once, or write `@summary: <text>` under the heading and its `@id` when nothing on the page does, as for a lead-in to a list. Keep it under 300 characters. `ascribe check --format prompt` lists the sections without one, each with its text.
+- When `ascribe.toml`'s `[checks]` turns on `summary-missing`, as a project that shows its docs in a product does, a heading with a permalink, `@id {permalink=true}: <name>`, needs a summary: the sentence or two a product shows with its help. Put `@summary` on the line above a paragraph of the section that reads well alone, so it's written once, or write `@summary: <text>` under the heading and its `@id` when nothing on the page does, as for a lead-in to a list. Keep it under 300 characters. `ascribe check --format prompt` lists the sections without one, each with its text. Otherwise, don't write summaries.
 - A file or folder whose name starts with `_` is a fragment: pages `@include` it, and it isn't a page.
 - Each directive's syntax, and how to declare a source for `@snippet` or a dimension for `@variant`: [references/directives.md](references/directives.md).
 - Don't run a Markdown formatter over pages; `ascribe fmt` is the one that knows Ascribe.

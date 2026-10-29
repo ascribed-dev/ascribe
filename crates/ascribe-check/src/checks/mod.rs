@@ -11,25 +11,30 @@
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
-//! | `content` | A page's description and review date, code blocks' languages |
+//! | `alert` | GitHub's alert syntax, which `@note` replaces |
+//! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
+//! | `phrase_text` | A phrase's value written out where the phrase could be |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
 //! | `template` | What a page still has of its type's template, never filled in |
 
 mod acknowledge;
+mod alert;
 mod attrs;
 mod avail;
 mod comment;
 mod content;
 mod frontmatter;
 mod memo;
+mod phrase_text;
 mod refs;
 mod sources;
 pub(crate) mod template;
 pub(crate) mod text;
 
+use ascribe_core::info_string::InfoString;
 use ascribe_core::{
     Applicability, DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics,
 };
@@ -37,10 +42,13 @@ use ascribe_model::{ContentModel, ContentType};
 use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Heading, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
 };
+use ascribe_workspace::SourceFile;
 
-use crate::{Diagnostic, Project, SourceFile};
+use crate::{Diagnostic, Project};
 
-pub(crate) use sources::{check_examples, check_sources};
+pub use phrase_text::with_phrases;
+pub use sources::unread_config_issue;
+pub(crate) use sources::{check_examples, check_sources, check_unread_configs};
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {
@@ -55,12 +63,24 @@ struct Ctx<'a> {
     /// The text of the file's first paragraph, for a prompt about its
     /// description.
     first_paragraph: Option<String>,
+    /// Whether the page is a draft, `draft: true` (SPEC §2.1), once the
+    /// frontmatter is checked: no build publishes it.
+    draft: bool,
     /// The page's content type, once the frontmatter is checked: `None` for
     /// a fragment, and for a page whose type is missing or unknown.
     page_type: Option<&'a ContentType>,
     /// Each mark in the file that says something, with where it applies:
     /// the whole file for the page's `available` key.
     mark_scopes: Vec<(Span, Span)>,
+    /// Whether a code block's info string looks marked as an example of an
+    /// operation's body, so the file's examples are checked once its blocks
+    /// are walked.
+    marked_examples: bool,
+    /// The phrases' values `phrase-text-written` looks for, longest first,
+    /// each with its key; empty when the check is off.
+    phrase_values: Vec<(String, String)>,
+    /// What the text being walked is, for `phrase-text-written`.
+    written: phrase_text::Written,
     issues: Vec<Issue>,
 }
 
@@ -113,13 +133,21 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
         first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
+        draft: false,
         page_type: None,
         mark_scopes: Vec::new(),
+        marked_examples: false,
+        phrase_values: phrase_text::values(model),
+        written: phrase_text::Written::Prose,
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
+    cx.title_from_heading(doc.frontmatter.as_ref(), &doc.blocks);
     cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
+    if cx.marked_examples {
+        cx.check_marked_examples();
+    }
     cx.check_template_body(&doc.blocks);
     cx.parser_fixes();
     // A stable sort keeps the parser's issues before a check's at one place.
@@ -130,8 +158,9 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
 
 impl Ctx<'_> {
     /// Fixes for the parser's issues whose replacement is certain: a
-    /// misspelled directive (the suggested one) and text that doesn't belong
-    /// on a directive line (remove it).
+    /// misspelled directive (the suggested one), attributes written without
+    /// their braces (add them), and other text that doesn't belong on a
+    /// directive line (remove it).
     fn parser_fixes(&mut self) {
         let text = self.file.text.clone();
         let id = self.id;
@@ -159,6 +188,30 @@ impl Ctx<'_> {
                     // The nearest name, which may not be the one meant.
                     applicability: Applicability::Unsafe,
                 }
+            } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT
+                && issue.variant == Some("braces")
+            {
+                let (Some(pairs), Some(attributes)) = (issue.arg("pairs"), issue.arg("attributes"))
+                else {
+                    continue;
+                };
+                let pairs = Span::new(span.start(), span.start() + pairs.len());
+                // `type=warning: text` has its meaning certain once braced;
+                // without a primary, the line might have been meant otherwise.
+                let after = text[pairs.end()..span.end()].trim_start_matches([' ', '\t']);
+                let primary = after
+                    .strip_prefix(':')
+                    .is_some_and(|p| !p.trim_matches([' ', '\t']).is_empty());
+                Fix {
+                    title: format!("Put `{}` in braces", &text[pairs.range()]),
+                    file: id,
+                    edits: vec![TextEdit::replace(pairs, format!("{{{attributes}}}"))],
+                    applicability: if primary {
+                        Applicability::Safe
+                    } else {
+                        Applicability::Unsafe
+                    },
+                }
             } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT {
                 let before = &text[..span.start()];
                 let start = before.trim_end_matches([' ', '\t']).len();
@@ -180,11 +233,23 @@ impl Ctx<'_> {
         for (i, block) in blocks.iter().enumerate() {
             match &block.kind {
                 BlockKind::Heading(h) => {
+                    let marks = heading_marks(blocks, i);
+                    self.written = if marks.contains(&"term") {
+                        phrase_text::Written::Not
+                    } else if marks.contains(&"id") {
+                        phrase_text::Written::Prose
+                    } else {
+                        phrase_text::Written::Heading
+                    };
                     self.inlines(&h.inlines);
-                    self.heading(blocks, i, block.span, h);
+                    self.written = phrase_text::Written::Prose;
+                    self.heading(marks.contains(&"id"), block.span, h);
                 }
                 BlockKind::Paragraph(p) => self.inlines(&p.inlines),
-                BlockKind::BlockQuote(q) => self.blocks(&q.children),
+                BlockKind::BlockQuote(q) => {
+                    self.check_alert(block, q);
+                    self.blocks(&q.children);
+                }
                 BlockKind::List(l) => {
                     for item in &l.items {
                         self.blocks(&item.children);
@@ -212,7 +277,13 @@ impl Ctx<'_> {
                         self.blocks(&arm.children);
                     }
                 }
-                BlockKind::CodeBlock(code) => self.check_code_language(block, code),
+                BlockKind::CodeBlock(code) => {
+                    self.check_code_language(block, code);
+                    self.check_info_pairs(code);
+                    let info = InfoString::parse(&code.info);
+                    self.marked_examples |=
+                        info.get("request").is_some() || info.get("response").is_some();
+                }
                 BlockKind::HtmlBlock(html) => self.check_html_block(blocks, i, html),
                 BlockKind::ThematicBreak | BlockKind::End(_) | BlockKind::Title(_) => {}
             }
@@ -243,34 +314,38 @@ impl Ctx<'_> {
                 }
                 InlineKind::Link(link) => {
                     self.check_link(inline.span, link);
-                    self.inlines(&link.children);
+                    self.label_inlines(link.form, &link.children);
                 }
                 InlineKind::Image(image) => {
                     self.check_image(inline.span, image);
-                    self.inlines(&image.children);
+                    self.label_inlines(image.form, &image.children);
                 }
-                InlineKind::Text(_)
-                | InlineKind::Code(_)
-                | InlineKind::SoftBreak
-                | InlineKind::HardBreak => {}
+                InlineKind::Text(_) => self.check_phrase_text(inline.span),
+                InlineKind::Code(_) | InlineKind::SoftBreak | InlineKind::HardBreak => {}
                 InlineKind::Html(_) => self.check_html_inline(inline.span),
             }
         }
     }
 
+    /// A link's or an image's text. The text of a reference form that's
+    /// also its label (`[Quill]`, `[Quill][]`), and an autolink's, which is
+    /// its destination, aren't looked in for a phrase's value.
+    fn label_inlines(&mut self, form: ascribe_syntax::LinkForm, children: &[Inline]) {
+        use ascribe_syntax::LinkForm;
+        let outer = self.written;
+        if matches!(
+            form,
+            LinkForm::Collapsed | LinkForm::Shortcut | LinkForm::Autolink
+        ) {
+            self.written = phrase_text::Written::Not;
+        }
+        self.inlines(children);
+        self.written = outer;
+    }
+
     /// A heading with no `@id` (SPEC §5.5) whose slug changes whenever a
     /// phrase's value does, or whose slug is empty.
-    fn heading(&mut self, siblings: &[Block], index: usize, span: Span, h: &Heading) {
-        let has_id = siblings[index + 1..]
-            .iter()
-            .take_while(|b| !matches!(b.kind, BlockKind::Heading(_)))
-            .any(|b| {
-                matches!(
-                    &b.kind,
-                    BlockKind::Directive(d)
-                        if d.name == "id" && d.binding == Some(ascribe_syntax::Bound::Heading)
-                )
-            });
+    fn heading(&mut self, has_id: bool, span: Span, h: &Heading) {
         if has_id {
             return;
         }
@@ -314,6 +389,7 @@ impl Ctx<'_> {
             &schema,
             d.attributes.as_ref(),
             d.attributes_closed,
+            d.unexpected.is_none(),
             d.name_span,
         );
         // An unclosed attribute block hides the rest of the line (SPEC §3.3).
@@ -332,6 +408,9 @@ impl Ctx<'_> {
                 self.check_availability_text(&p.text, p.span.start(), p.span, true, removal);
             }
             ("snippet", Some(PrimaryValue::Identifier(_))) => self.check_snippet(d),
+            ("operation", Some(PrimaryValue::Identifier(p))) => {
+                self.check_operation(&p.text, p.span)
+            }
             ("intended", _) => self.check_intended_directive(d),
             _ => {}
         }
@@ -399,4 +478,19 @@ impl Ctx<'_> {
             self.report(issue);
         }
     }
+}
+
+/// The names of the directives bound to the heading at `index` (SPEC §3.8):
+/// those between it and the next heading, bound to the heading.
+fn heading_marks(siblings: &[Block], index: usize) -> Vec<&str> {
+    siblings[index + 1..]
+        .iter()
+        .take_while(|b| !matches!(b.kind, BlockKind::Heading(_)))
+        .filter_map(|b| match &b.kind {
+            BlockKind::Directive(d) if d.binding == Some(ascribe_syntax::Bound::Heading) => {
+                Some(d.name.as_str())
+            }
+            _ => None,
+        })
+        .collect()
 }

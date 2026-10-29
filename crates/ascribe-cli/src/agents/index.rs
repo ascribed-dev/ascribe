@@ -12,6 +12,7 @@ use ascribe_resolve::is_source_path;
 
 use super::markers::{Comment, Markers};
 use super::sync::{SyncError, read};
+use crate::guard;
 
 /// The index's markers.
 pub const MARKERS: Markers<'static> = Markers {
@@ -48,17 +49,19 @@ pub fn folder_address(from: &Path, folder: &Path) -> String {
 /// Places `index` between its markers in `file`, and writes its pages into
 /// `folder`. Both paths are absolute and normalized; `content` is the
 /// project's content root, likewise. Every file is checked and read before
-/// any is written.
+/// any is written, and `guard` is asked about the ones that change: with
+/// `--dry-run`, nothing is written, and what's returned is what would be.
 ///
 /// # Errors
 ///
 /// A file would be one of the project's pages, `file`'s markers are
-/// damaged, or a file can't be read or written.
+/// damaged, the guard refuses a file, or a file can't be read or written.
 pub fn write(
     index: &AgentsIndex,
     file: Option<&Path>,
     folder: Option<&Path>,
     content: &Path,
+    guard: guard::Options,
 ) -> Result<Written, SyncError> {
     // Each file: where, its text now, its text after, and whether it's the
     // file the index is placed in.
@@ -83,15 +86,18 @@ pub fn write(
             planned.push((path, old, page.text.clone(), false));
         }
     }
+    planned.retain(|(_, old, new, _)| old.as_deref() != Some(new.as_str()));
+    let changing: Vec<&Path> = planned.iter().map(|(path, ..)| path.as_path()).collect();
+    guard.allow(&changing)?;
     let mut written = Written::default();
-    for (path, old, new, is_file) in &planned {
-        if old.as_deref() == Some(new.as_str()) {
-            continue;
-        }
+    for (path, _, new, is_file) in &planned {
         if *is_file {
             written.changed = true;
         } else {
             written.pages_changed += 1;
+        }
+        if guard.dry_run {
+            continue;
         }
         let failed = |source| SyncError::Write {
             path: path.display().to_string(),

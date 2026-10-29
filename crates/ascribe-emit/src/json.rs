@@ -329,6 +329,19 @@ enum BlockBody {
         binding: Option<&'static str>,
         annotation: Option<AnnotationJson>,
     },
+    /// An `@operation` that names an operation the spec has (SPEC §4.13).
+    #[serde(rename_all = "camelCase")]
+    Operation {
+        api: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        operation_id: Option<String>,
+        method: String,
+        path: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        summary: Option<String>,
+        deprecated: bool,
+        address: String,
+    },
     Container {
         name: String,
         attributes: Vec<AttrJson>,
@@ -434,7 +447,13 @@ enum TargetJson {
     #[serde(rename_all = "camelCase")]
     Operation {
         api: String,
-        operation_id: String,
+        // An operation's id, or, when it has none, its method and path.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        operation_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        method: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        path: Option<String>,
         address: String,
     },
     Unresolved,
@@ -507,7 +526,7 @@ enum InlineBody {
 
 /// A piece of a formatted value, as the JSON output writes it:
 /// `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
-/// formatted title, such as the review report's, writes it the same way.
+/// formatted title, such as the HTML preview's, writes it the same way.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct FormattedPiece {
@@ -787,6 +806,17 @@ impl Writer<'_, '_> {
                         })
                         .collect(),
                 },
+                BlockKind::Directive(_) if let Some(o) = block.operation.as_deref() => {
+                    BlockBody::Operation {
+                        api: o.api.clone(),
+                        operation_id: o.operation_id.clone(),
+                        method: o.method.clone(),
+                        path: o.path.clone(),
+                        summary: o.summary.clone(),
+                        deprecated: o.deprecated,
+                        address: o.address.clone(),
+                    }
+                }
                 BlockKind::Directive(line) => self.directive(block, line),
                 // Never leaves, and end lines and titles aren't blocks of the
                 // resolved tree; they are written out as an empty paragraph
@@ -984,12 +1014,19 @@ impl Writer<'_, '_> {
             LinkTarget::Operation {
                 api,
                 operation_id,
+                method,
+                path,
                 address,
-            } => TargetJson::Operation {
-                api: api.clone(),
-                operation_id: operation_id.clone(),
-                address: address.clone(),
-            },
+            } => {
+                let by_path = operation_id.is_none();
+                TargetJson::Operation {
+                    api: api.clone(),
+                    operation_id: operation_id.clone(),
+                    method: by_path.then(|| method.clone()),
+                    path: by_path.then(|| path.clone()),
+                    address: address.clone(),
+                }
+            }
             LinkTarget::Unresolved => TargetJson::Unresolved,
         }
     }

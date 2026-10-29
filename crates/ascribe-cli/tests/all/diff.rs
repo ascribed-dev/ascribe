@@ -269,6 +269,27 @@ fn failures_exit_with_2() {
 }
 
 #[test]
+fn a_revision_given_as_the_page_names_the_base_option() {
+    let dir = repo();
+    for rev in ["main", "HEAD"] {
+        let out = ascribe(&site(&dir), &["diff", rev]);
+        assert_eq!(code(&out), 2);
+        assert_eq!(
+            stderr(&out),
+            format!(
+                "error: {rev} isn't a file of the project, now or at the base; to compare with `{rev}`, use `--base {rev}`\n"
+            )
+        );
+    }
+    // A name git doesn't know is only not a file.
+    let out = ascribe(&site(&dir), &["diff", "nope"]);
+    assert_eq!(
+        stderr(&out),
+        "error: nope isn't a file of the project, now or at the base\n"
+    );
+}
+
+#[test]
 fn a_base_model_with_errors_exits_with_2() {
     let dir = repo();
     write(
@@ -636,7 +657,7 @@ other: about.md: 1 changed, 1 added
         assert_eq!(pages[0]["changes"].as_array().map(Vec::len), Some(2));
     }
 
-    // The HTML report: that page alone.
+    // The HTML preview: that page alone.
     let out = ascribe(&site(&dir), &["diff", "docs/about.md", "--format", "html"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
     let data = report_data(&stdout(&out), &[]);
@@ -710,4 +731,159 @@ fn diff_runs_no_command_a_committed_folder_shaped_like_a_repository_names() {
         let _ = ascribe(&planted.project(), args);
     }
     assert!(!planted.ran(), "`ascribe diff` ran the planted command");
+}
+
+/// Three builds, one of them of every deployment and one of each.
+const VARIANTS: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+
+[builds.site]
+variants = "switch"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+
+[builds.server]
+variants = { deployment = "self-managed" }
+"#;
+
+#[test]
+fn a_change_the_same_in_every_build_is_said_once() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let root = dir.path();
+    git(root, &["init", "-q", "-b", "main"]);
+    write(root, "site/ascribe.toml", VARIANTS);
+    write(root, "site/docs/keys.md", "# Keys\n\nKeys sign requests.\n");
+    write(
+        root,
+        "site/docs/backups.md",
+        "---\ntitle: Backups\nvariant:\n  deployment: self-managed\n---\n\nBack up the disk.\n",
+    );
+    let setup = "# Set up\n\n@variant {deployment=cloud}:\nSign in to the console.\n@variant {deployment=self-managed}:\nStart it.\n@end\n";
+    write(root, "site/docs/setup.md", setup);
+    commit(root, "first");
+    write(
+        root,
+        "site/docs/keys.md",
+        "# Keys\n\nKeys sign every request.\n",
+    );
+    write(
+        root,
+        "site/docs/backups.md",
+        "---\ntitle: Backups\nvariant:\n  deployment: self-managed\n---\n\nBack up the whole disk.\n",
+    );
+    write(
+        root,
+        "site/docs/setup.md",
+        &setup.replace("the console", "the web console"),
+    );
+    let out = ascribe(&site(&dir), &["diff", "--base", "main"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert_eq!(
+        stdout(&out).split_once('\n').map(|(_, rest)| rest),
+        Some(
+            "backups.md: 1 changed, in every build that publishes it\n\
+             keys.md: 1 changed, in every build\n\
+             site: 1 more page changed\n  setup.md: 1 changed\n\
+             cloud: 1 more page changed\n  setup.md: 1 changed\n"
+        ),
+    );
+    // One build is listed as it was.
+    let out = ascribe(&site(&dir), &["diff", "--base", "main", "--build", "cloud"]);
+    assert_eq!(
+        stdout(&out).split_once('\n').map(|(_, rest)| rest),
+        Some("cloud: 2 pages changed\n  keys.md: 1 changed\n  setup.md: 1 changed\n"),
+    );
+}
+
+/// A spec with the one operation `createWidget`, with this summary.
+fn widgets_spec(summary: &str) -> String {
+    format!(
+        "openapi: 3.1.0\ninfo: {{ title: Widgets, version: \"1\" }}\npaths:\n  /widgets:\n    post:\n      operationId: createWidget\n      summary: {summary}\n"
+    )
+}
+
+#[test]
+fn a_change_through_an_api_spec_names_the_operation() {
+    // One spec in the project's folder, one outside it.
+    for (spec, at, cause) in [
+        (
+            "api/openapi.yaml",
+            "site/api/openapi.yaml",
+            "api/openapi.yaml#createWidget",
+        ),
+        (
+            "../api/openapi.yaml",
+            "api/openapi.yaml",
+            "../api/openapi.yaml#createWidget",
+        ),
+    ] {
+        let dir = repo();
+        let model = format!(
+            "{MODEL}\n[apis.widgets]\nspec = \"{spec}\"\nreference = {{ renderer = \"redoc\", at = \"/api/\" }}\n"
+        );
+        write(dir.path(), "site/ascribe.toml", &model);
+        write(dir.path(), at, &widgets_spec("Make a widget"));
+        let link = format!("../../{spec}#createWidget");
+        write(
+            dir.path(),
+            "site/docs/guides/api.md",
+            &format!("# Widgets\n\n@operation: {link}\n"),
+        );
+        commit(dir.path(), "an API");
+        let out = ascribe(&site(&dir), &["diff", "--base", "HEAD"]);
+        assert!(
+            stdout(&out).contains("site: no changes\n"),
+            "{}",
+            stdout(&out)
+        );
+
+        write(dir.path(), at, &widgets_spec("Create a widget"));
+        // Listed with the build's pages, or alone when it's named.
+        let said = format!("guides/api.md: 1 changed (through {cause})\n");
+        for args in [
+            &["diff", "--base", "HEAD", "--build", "site"][..],
+            &[
+                "diff",
+                "--base",
+                "HEAD",
+                "--build",
+                "site",
+                "docs/guides/api.md",
+            ],
+        ] {
+            let out = ascribe(&site(&dir), args);
+            assert_eq!(code(&out), 0, "{}", stderr(&out));
+            assert!(stdout(&out).contains(&said), "{}", stdout(&out));
+        }
+        let out = ascribe(
+            &site(&dir),
+            &[
+                "diff", "--base", "HEAD", "--build", "site", "--format", "json",
+            ],
+        );
+        let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
+        let page = &json["builds"][0]["pages"][0];
+        assert_eq!(page["path"], "guides/api.md");
+        assert_eq!(page["own_file_changed"], false);
+        assert_eq!(page["because"], serde_json::json!([cause]));
+        let out = ascribe(
+            &site(&dir),
+            &[
+                "diff", "--base", "HEAD", "--build", "site", "--format", "prompt",
+            ],
+        );
+        let text = stdout(&out);
+        assert!(
+            text.contains(&format!(
+                "- docs/guides/api.md: 1 changed (through {cause})\n"
+            )),
+            "{text}"
+        );
+    }
 }

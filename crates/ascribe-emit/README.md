@@ -57,7 +57,7 @@ Markdown plus web components, for a consumer that renders CommonMark with raw HT
 | Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults |
 | `@note` | `<ascribe-note type label heading>` wrapping the content |
 | `@steps` | `<ascribe-steps>` wrapping the list |
-| `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>` per surviving arm (a group reduced to one arm is its content) |
+| `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>` per surviving arm, each starting with its label as `<p class="ascribe-tab-label">` (a group reduced to one arm is its content) |
 | `@details` | `<details>` with `<summary>` holding the title as HTML |
 | `@available` | `<ascribe-availability scope="section|block">` of `<ascribe-availability-target target dimension states versions>` |
 | Project widget | An element named after the widget, `<ascribe-group widget>` around a group's arms |
@@ -124,10 +124,13 @@ A snippet's `tested` is present only when its source's `ascribe.examples.toml` m
 | `thematicBreak` | |
 | `table` | `alignments`: each column's `none`, `left`, `center`, or `right`; `rows`: each `{header, cells}`, a cell being `{inlines}` |
 | `directive` | A line-form directive that survived: `name`, `attributes`, `title`, `primary`, `binding` (`own`, `heading`, `followingBlock`, `unbound`), `annotation` |
+| `operation` | An `@operation` that names an operation the spec has (SPEC §4.13): `api`, `operationId` when it has one, `method`, `path`, `summary` when it has one, `deprecated`, and `address`, the operation's in the published reference. Its `source` is the `@operation` line |
 | `container` | `name`, `attributes`, `title`, `children` |
 | `group` | `name`, `arms`: each `{label, attributes, title, span, children}` |
 
 An `@available` that survived the build is a `directive` with an `annotation`: `text` (the spec as shown; for a feature key, the spec it stands for), `display` (with the content model's labels), and `feature`. `attributes` is a list of `{key, values}` (a set has several values, a bare key none). A `title` and a text `primary` are inline lists. A `primary` is `{kind: "text", inlines}`, `{kind: "identifier", text}`, or `{kind: "line", text}`.
+
+An `@operation` whose link names no operation the spec has, which `ascribe check` reports, stays a `directive` block, with its link as its `identifier` primary.
 
 A heading's `summary` is its section's (SPEC §4.12): `form`, `text` for `@summary: text` and `paragraph` for `@summary` above a paragraph; `inlines`, the summary's text; and `source`, the `@summary` line for the text form and the paragraph for the other. The `@summary` line is a `directive` block too, where it's written, and the paragraph a `paragraph`.
 
@@ -146,7 +149,7 @@ A `target` has a `type`:
 | `external` | |
 | `page` | `page` (its source path), `id` (a page id, or null), `url`, `textFilled` (the link had no text and took the page's title), and, for a link out of a line of a versioned build, `line` (the line it leads to) |
 | `asset` | `source`, `path` (the copy), `reference` (as written on this page), `url`, `fragment` |
-| `operation` | `api` (its `[apis.<name>]`), `operationId`, and `address`, the operation's in the published reference |
+| `operation` | `api` (its `[apis.<name>]`), `operationId`, or `method` and `path` for an operation with no id, and `address`, the operation's in the published reference |
 | `unresolved` | The build couldn't resolve it; the checks report why |
 
 ### Example

@@ -1,0 +1,9 @@
+description: >-
+  A link to a declared spec whose fragment is a method in lowercase, then the
+  path as the spec writes it, is a link to the operation with that method and
+  path, which may have no id. A fragment that's an operation's id names that
+  operation, even when it's another's method and path too.
+spec: ["5.2", "7.11"]
+tags: [check]
+
+diagnostics: []

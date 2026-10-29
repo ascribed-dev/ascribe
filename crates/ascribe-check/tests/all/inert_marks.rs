@@ -20,7 +20,9 @@ fn fixed(case: &str, safe: bool) -> Vec<(String, String, Vec<String>)> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/conformance/cases/checks")
         .join(case);
-    let project = Project::load(&root.join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::load(&root.join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
     let diagnostics: Vec<_> = check_files(&project)
         .into_iter()
         .filter(|d| d.slug.as_str() == "available-same-in-every-line")

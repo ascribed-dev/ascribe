@@ -21,4 +21,4 @@ Each answer wraps something the checks or the language server already compute, s
 ## Rules
 
 - **An answer is a contract.** Every field has a doc comment, the `json-schema` feature derives the schema `crates/ascribe-cli/src/shapes.rs` writes to `schemas/`, and `schema_version` rises only when a field is removed or changes meaning.
-- **Every example is checked.** A diagnostic's `example` in `tests/conformance/diagnostics.toml` is checked against `tests/conformance/explain-model.toml`, or its own `example.model` laid over it: the wrong page reports that diagnostic and nothing else, and the right page reports nothing.
+- **Every example is checked.** A diagnostic's `example` in `crates/ascribe-core/data/diagnostics.toml` is checked against `tests/conformance/explain-model.toml`, or its own `example.model` laid over it: the wrong page reports that diagnostic and nothing else, and the right page reports nothing.

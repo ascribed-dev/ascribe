@@ -8,6 +8,8 @@
 //! doesn't follow, such as a quoted string over several lines, is read one
 //! line at a time.
 
+use crate::tree::split_lines;
+
 /// A line of frontmatter that isn't blank or a comment.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrontmatterLine<'a> {
@@ -35,11 +37,9 @@ pub fn frontmatter_lines(text: &str) -> Vec<FrontmatterLine<'_>> {
     let mut out = Vec::new();
     // The indentation of the key whose block scalar the next lines may be in.
     let mut scalar: Option<usize> = None;
-    let mut at = 0;
-    for raw in text.split_inclusive('\n') {
-        let start = at;
-        at += raw.len();
-        let line = raw.trim_end_matches(['\n', '\r']);
+    // A lone `\r` ends a line, as it does in YAML and in the parser.
+    for line in split_lines(text) {
+        let start = offset_in(text, line);
         let rest = line.trim_start();
         let indent = line.len() - rest.len();
         if let Some(owner) = scalar {
@@ -181,6 +181,21 @@ mod tests {
                 (Some("keywords"), "", 0, false),
                 (None, "one", 4, false),
                 (None, "\"two # not a comment\"", 4, false),
+            ]
+        );
+    }
+
+    #[test]
+    fn every_line_ending() {
+        assert_eq!(
+            read("a: 1\r\nb: 2\rc: |\r  x\r  y\nd: 4"),
+            [
+                (Some("a"), "1", 0, false),
+                (Some("b"), "2", 0, false),
+                (Some("c"), "|", 0, false),
+                (None, "x", 2, true),
+                (None, "y", 2, true),
+                (Some("d"), "4", 0, false),
             ]
         );
     }

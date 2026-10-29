@@ -64,12 +64,17 @@
 //               Rename Label…, moving a page, revealing the open one, and
 //               ascribe.nav's problems and completion as it's typed, against
 //               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   addresses   a copy of examples/astro-site made into a git repository on
+//               `main`, without ascribe.addresses: Keep the addresses you've
+//               published offered after a move, an address lost between
+//               checks in the Problems panel and Health, This page's "Also
+//               answers at", and a move's entry undone with it, against the
+//               real `ascribe lsp`. Needs ASCRIBE_BIN and `git`.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { execFileSync } from "node:child_process";
 import {
-  appendFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -196,7 +201,14 @@ const suites: Suite[] = [
         { recursive: true },
       );
       // Nothing links to broken.md, and its tests count every diagnostic.
-      appendFileSync(path.join(workspace, "ascribe.toml"), '\n[checks]\npage-orphan = "off"\n');
+      const model = path.join(workspace, "ascribe.toml");
+      const text = readFileSync(model, "utf8");
+      writeFileSync(
+        model,
+        text.includes("\n[checks]\n")
+          ? text.replace("\n[checks]\n", '\n[checks]\npage-orphan = "off"\n')
+          : `${text}\n[checks]\npage-orphan = "off"\n`,
+      );
       return { "ascribe.path": realServer, ...startAll };
     },
   },
@@ -374,6 +386,24 @@ const suites: Suite[] = [
     },
   },
   {
+    name: "addresses",
+    keepLogs: true,
+    fixture: path.join(repositoryRoot, "examples/astro-site"),
+    prepare: (workspace) => {
+      rmSync(path.join(workspace, "node_modules"), { recursive: true, force: true });
+      // The suite starts without the file, so the editor offers to make it.
+      // The example's own entries are its permalinks', which the suite doesn't
+      // test.
+      rmSync(path.join(workspace, "ascribe.addresses"), { force: true });
+      // The base the server compares with: what's committed on `main`.
+      const git = gitIn(workspace);
+      git("init", "-q", "-b", "main");
+      git("add", "-A");
+      git("commit", "-q", "-m", "The Astro site example");
+      return { "ascribe.path": realServer, ...startAll };
+    },
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The file watcher's trace, to see why it missed a file if it does (#56).
@@ -411,6 +441,7 @@ const needsServer = new Set([
   "tested",
   "shared",
   "navigation",
+  "addresses",
   "monorepo",
 ]);
 

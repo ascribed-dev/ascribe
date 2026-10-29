@@ -1,0 +1,8 @@
+description: >-
+  A build the base has for a line `[releases]` archives now isn't
+  `addresses-build-gone`, and its addresses aren't lost: the line left the
+  window on purpose.
+spec: ["7.10"]
+tags: [addresses]
+
+diagnostics: []

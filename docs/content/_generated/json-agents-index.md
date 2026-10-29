@@ -40,7 +40,7 @@
       "type": "integer"
     },
     "changed": {
-      "description": "Whether that file changed.",
+      "description": "Whether that file changed: with `--dry-run`, whether it would.",
       "type": "boolean"
     },
     "file": {
@@ -103,6 +103,10 @@
         "type": "string"
       },
       "type": "array"
+    },
+    "written": {
+      "description": "Whether the file and the pages were written: false when the index\nwas printed, or with `--dry-run`.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -117,6 +121,7 @@
     "without_description",
     "file",
     "changed",
+    "written",
     "folder",
     "pages",
     "text"

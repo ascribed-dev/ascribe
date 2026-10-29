@@ -2,6 +2,7 @@
   "schema_version": 1,
   "ascribe_version": "{version}",
   "changed": true,
+  "written": true,
   "sources": [
     {
       "name": "api",

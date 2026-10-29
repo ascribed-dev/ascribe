@@ -124,3 +124,8 @@ description = "A code block whose info string has `tested=\"…\"` is put in a f
 name = "widget-empty"
 covers = ["widget-empty"]
 description = "An empty widget, after its heading, in a list item, and alone, is its opening tag on one line and its closing tag on the next: an HTML block of its own, with no paragraph around it."
+
+[[fixture]]
+name = "operation"
+covers = ["operation"]
+description = "An operation, with an id and a summary, and one deprecated with neither, is an HTML block holding its link, which passes through as written, with no paragraph around it."

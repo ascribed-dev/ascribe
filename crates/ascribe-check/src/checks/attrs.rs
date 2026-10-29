@@ -25,12 +25,16 @@ pub(super) enum Owner<'a> {
 }
 
 impl Ctx<'_> {
-    /// Checks a directive's attribute block, or lack of one.
+    /// Checks a directive's attribute block, or lack of one. `whole` is
+    /// false when the line has text that fits no part of it, which may be
+    /// the attributes without their braces (`directive-extra-text`), so an
+    /// attribute that seems missing isn't reported.
     pub(super) fn check_directive_attributes(
         &mut self,
         schema: &DirectiveSchema,
         block: Option<&AttributeBlock>,
         closed: bool,
+        whole: bool,
         name_span: Span,
     ) {
         // An unclosed block can't be read, so nothing more is said about
@@ -48,7 +52,12 @@ impl Ctx<'_> {
                 if let Some(block) = block {
                     self.check_block(block, declared, Owner::Directive(schema));
                 }
-                for missing in required_missing(declared, block) {
+                let missing = if whole {
+                    required_missing(declared, block)
+                } else {
+                    Vec::new()
+                };
+                for missing in missing {
                     let issue = Issue::new(
                         diagnostics::WIDGET_SCHEMA,
                         Location::new(self.id, name_span),
@@ -236,8 +245,26 @@ impl Ctx<'_> {
                 diagnostics::VARIANT_UNKNOWN,
                 Location::new(self.id, key_span),
             )
-            .with_arg("dimension", name.to_owned())
-            .with_arg("dimensions", quoted_list(&names));
+            .with_arg("dimension", name.to_owned());
+            // With none declared, the message gives the table to add, with
+            // the values the pages give the dimension.
+            let issue = if names.is_empty() {
+                let mut used: Vec<String> = self.project.variant_values(name).to_vec();
+                for (value, _) in values {
+                    if !used.contains(value) {
+                        used.push(value.clone());
+                    }
+                }
+                if used.is_empty() {
+                    used.push("<value>".to_owned());
+                }
+                let listed: Vec<String> = used.iter().map(|v| format!("\"{v}\"")).collect();
+                issue
+                    .with_variant("none")
+                    .with_arg("values", listed.join(", "))
+            } else {
+                issue.with_arg("dimensions", quoted_list(&names))
+            };
             self.report(issue);
             return;
         };

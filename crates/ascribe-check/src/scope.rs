@@ -18,8 +18,9 @@ use std::path::{Path, PathBuf};
 
 use ascribe_core::path::relative_path;
 use ascribe_core::{FileId, Location, RelPath};
+use ascribe_workspace::{LocateError, SourceFile, find_config, locate};
 
-use crate::{Diagnostic, LocateError, MODEL_FILE, Project, SourceFile};
+use crate::{Diagnostic, MODEL_FILE, Project};
 
 /// Why paths named on the command line can't be checked.
 #[derive(Debug, thiserror::Error)]
@@ -93,13 +94,13 @@ impl ascribe_core::Coded for ScopeError {
 }
 
 /// The content model to check `paths` (relative to the current directory)
-/// with: `config` when given ([`Project::locate`]), or else the nearest
+/// with: `config` when given ([`locate`]), or else the nearest
 /// `ascribe.toml` at or above the first path, or else at or above the
 /// current directory.
 ///
 /// # Errors
 ///
-/// What [`Project::locate`] returns, and [`ScopeError::NoProject`] when the
+/// What [`locate`] returns, and [`ScopeError::NoProject`] when the
 /// first path has no `ascribe.toml` at or above it.
 pub fn locate_for(config: Option<&Path>, paths: &[PathBuf]) -> Result<PathBuf, ScopeError> {
     match (config, paths.first()) {
@@ -107,11 +108,11 @@ pub fn locate_for(config: Option<&Path>, paths: &[PathBuf]) -> Result<PathBuf, S
             // Made absolute, not canonical: the project's paths are joined to
             // its root, and a canonical path on Windows takes no `/`.
             let first_absolute = std::path::absolute(first).unwrap_or_else(|_| first.clone());
-            Project::find_config(&first_absolute).ok_or_else(|| ScopeError::NoProject {
+            find_config(&first_absolute).ok_or_else(|| ScopeError::NoProject {
                 path: first.clone(),
             })
         }
-        _ => Ok(Project::locate(config)?),
+        _ => Ok(locate(config)?),
     }
 }
 
@@ -119,7 +120,7 @@ pub fn locate_for(config: Option<&Path>, paths: &[PathBuf]) -> Result<PathBuf, S
 /// `.` and `..` resolved, so two spellings of one place compare equal. What
 /// doesn't exist yet is kept as written, after the part that does. For
 /// comparing only: on Windows it's a `\\?\` path.
-pub(crate) fn real(path: &Path) -> PathBuf {
+pub fn real(path: &Path) -> PathBuf {
     let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_owned());
     let mut existing = absolute.as_path();
     let mut rest = Vec::new();
@@ -194,7 +195,7 @@ impl Scope {
             if exist && !at.try_exists().unwrap_or(false) {
                 return Err(ScopeError::Missing { path: path.clone() });
             }
-            if let Some(its) = Project::find_config(&at)
+            if let Some(its) = find_config(&at)
                 && real(&its) != config_real
             {
                 return Err(ScopeError::OtherProject {

@@ -26,14 +26,16 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::identity::Identity;
+use ascribe_check::side_files::SIDE_FILES;
 use ascribe_check::{
-    Acknowledgements, Diagnostic, NAV_FILE_ID, PERMALINKS_FILE_ID, PageChecker, Project,
-    ReadFailure, Registry, Severity, SourceFile, apply_levels, check_file,
+    Acknowledgements, Diagnostic, PageChecker, Project, Registry, Severity, apply_levels,
+    check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
+use ascribe_workspace::WorkspaceSnapshot;
 use lsp_types::{
     CodeDescription, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString,
 };
@@ -46,13 +48,15 @@ use crate::uri::path_to_uri;
 /// What one round of diagnostics has to do.
 pub(crate) struct Job {
     pub epoch: u64,
+    /// The source index, at the version the round computes.
     pub snapshot: Snapshot,
+    /// The project at the same version, as the checks read it.
+    pub workspace: WorkspaceSnapshot,
     /// The files to compute.
     pub files: BTreeSet<RelPath>,
     pub root: PathBuf,
     pub model: Arc<ContentModel>,
     pub model_text: String,
-    pub fs: Arc<LayerFs>,
     pub encoding: Encoding,
     /// The version of each open document among `files`, when the job was
     /// taken: what the results are for.
@@ -79,10 +83,13 @@ pub(crate) struct Across {
     pub sources: BTreeMap<RelPath, (Arc<str>, Vec<lsp_types::Diagnostic>)>,
     /// The content model's, and its text.
     pub model: (String, Vec<Diagnostic>),
-    /// The permalinks list's, `ascribe.permalinks`, which isn't a source.
-    pub list: Vec<lsp_types::Diagnostic>,
-    /// The navigation file's, `ascribe.nav`, which isn't a source either.
-    pub nav: Vec<lsp_types::Diagnostic>,
+    /// What they found at each side file they report on (those whose
+    /// `Stale::across` is set), by its path from the project root, when
+    /// they found anything: `ascribe.permalinks`' and `ascribe.nav`'s
+    /// problems, and at `ascribe.addresses` an entry the permalinks list is
+    /// behind on. That file's own checks, and the addresses compared with
+    /// the base, are sent apart ([`crate::addresses`]).
+    pub side: BTreeMap<&'static str, Vec<lsp_types::Diagnostic>>,
     /// Each memo file's, committed and personal (SPEC §7.7), by its path
     /// from the project root, levels applied: every memo file the checks
     /// read, with nothing for one that has no problem.
@@ -95,7 +102,20 @@ pub(crate) struct Across {
     pub matched: Vec<Identity>,
 }
 
+/// The side files the checks across the project report on, in the order of
+/// `ascribe_check::side_files::SIDE_FILES`.
+fn across_side_files() -> impl Iterator<Item = &'static ascribe_resolve::side_file::Entry> {
+    ascribe_check::side_files::SIDE_FILES
+        .iter()
+        .filter(|entry| entry.stale.across)
+}
+
 impl Across {
+    /// What they found at the side file at `path`.
+    fn side_found(&self, path: &str) -> &[lsp_types::Diagnostic] {
+        self.side.get(path).map_or(&[], Vec::as_slice)
+    }
+
     /// What's kept for a source file whose text is now `text`: nothing once
     /// it's been edited since the checks ran.
     fn of_source(&self, path: &RelPath, text: &str) -> &[lsp_types::Diagnostic] {
@@ -162,7 +182,8 @@ impl Core {
         if loaded.dirty.is_empty() && !loaded.across_dirty {
             return None;
         }
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
+        let workspace = loaded.workspace.snapshot();
         let files = with_included(
             &snapshot,
             &mut loaded.direct_includes,
@@ -178,11 +199,11 @@ impl Core {
         Some(Job {
             epoch: loaded.epoch,
             snapshot,
+            workspace,
             files,
             root: loaded.root.clone(),
-            model: loaded.model.clone(),
-            model_text: loaded.model_text.clone(),
-            fs: loaded.fs.clone(),
+            model: loaded.model().clone(),
+            model_text: loaded.model_text().to_owned(),
             encoding,
             versions,
             cache: loaded.cache.clone(),
@@ -218,8 +239,7 @@ impl Core {
         // they found before; a file whose share changed and that this round
         // didn't compute is computed again, and `ascribe.toml` is published.
         let mut model_changed = false;
-        let mut list_changed = false;
-        let mut nav_changed = false;
+        let mut side_changed: Vec<&'static str> = Vec::new();
         let mut memos_changed: Vec<(RelPath, Vec<lsp_types::Diagnostic>)> = Vec::new();
         if let Some(across) = across
             && *across != *loaded.across
@@ -237,8 +257,10 @@ impl Core {
                 }
             }
             model_changed = across.model != loaded.across.model;
-            list_changed = across.list != loaded.across.list;
-            nav_changed = across.nav != loaded.across.nav;
+            side_changed = across_side_files()
+                .map(|entry| entry.path)
+                .filter(|path| across.side_found(path) != loaded.across.side_found(path))
+                .collect();
             // A memo file that's gone is published empty, once.
             for path in loaded.across.memos.keys() {
                 if !across.memos.contains_key(path) {
@@ -255,7 +277,7 @@ impl Core {
         let mut ready = Vec::new();
         for (path, diagnostics, shown, held, matched) in results {
             let abs = loaded.source_path(&path);
-            let current = loaded.inc.is_file_current(&job.snapshot, &path);
+            let current = loaded.workspace.is_file_current(&job.snapshot, &path);
             let version = self.docs.get(&abs).map(|d| d.version);
             if current && version == job.versions.get(&path).copied() {
                 loaded.matched.insert(path, matched);
@@ -278,15 +300,12 @@ impl Core {
                 self.publish(&normalize(&root.join(path.as_str())), found);
             }
         }
-        if list_changed && let Some(loaded) = self.loaded.as_ref() {
-            let path = loaded.root.join(ascribe_model::PERMALINKS_FILE);
-            let found = loaded.across.list.clone();
-            self.publish(&path, found);
-        }
-        if nav_changed && let Some(loaded) = self.loaded.as_ref() {
-            let path = loaded.root.join(ascribe_model::NAV_FILE);
-            let found = loaded.across.nav.clone();
-            self.publish(&path, found);
+        for side in side_changed {
+            if let Some(loaded) = self.loaded.as_ref() {
+                let path = loaded.root.join(side);
+                let found = loaded.across.side_found(side).to_vec();
+                self.publish(&path, found);
+            }
         }
         self.publish_baseline();
     }
@@ -637,19 +656,19 @@ fn run_across(
         ),
         ..Across::default()
     };
-    // The permalinks list's own, and the navigation file's, at the levels
-    // `[checks]` sets (none of them is configurable, so as they are).
-    for (id, out) in [
-        (PERMALINKS_FILE_ID, &mut found.list),
-        (NAV_FILE_ID, &mut found.nav),
-    ] {
-        let list = hold(by_file.remove(&id).unwrap_or_default()).diagnostics;
-        if let Some(entry) = project.file(id) {
+    // What's at each side file they report on, at the levels `[checks]`
+    // sets (none of them is configurable, so as they are).
+    for side in across_side_files() {
+        let list = hold(by_file.remove(&side.id).unwrap_or_default()).diagnostics;
+        if let Some(entry) = project.file(side.id) {
             let index = LineIndex::new(entry.text);
-            *out = list
+            let list: Vec<_> = list
                 .iter()
                 .map(|d| to_lsp(d, &index, job.encoding, &|_| None))
                 .collect();
+            if !list.is_empty() {
+                found.side.insert(side.path, list);
+            }
         }
     }
     // Every memo file gets an entry, so one whose problems are fixed is
@@ -733,27 +752,39 @@ fn run_across(
     found
 }
 
-/// The checked project of a snapshot: its sources with the snapshot's ids, and
-/// the files the editor and the watcher reported over the disk.
+/// The checked project of a round: the project as it was when the round
+/// was taken, read through the files the editor and the watcher reported
+/// over the disk.
 fn check_project_of(job: &Job) -> Project {
-    checked_project(
-        &job.snapshot,
-        job.root.clone(),
-        &job.model,
-        &job.model_text,
-        &job.fs,
-        &[],
+    Project::new(job.workspace.clone())
+        .with_today(job.today)
+        .with_plain_markdown(ascribe_emit::plain_markdown)
+        // The editor reports a personal memo's problems as a team memo's.
+        .with_personal_memos()
+}
+
+/// The checks' snapshot of `snapshot`: its files and their ids, over `fs`,
+/// with `model`.
+fn snapshot_of(
+    snapshot: &Snapshot,
+    root: PathBuf,
+    model: &ContentModel,
+    model_text: &str,
+    fs: &Arc<LayerFs>,
+) -> WorkspaceSnapshot {
+    WorkspaceSnapshot::of_index(
+        root,
+        Arc::new(model.clone()),
+        model_text.to_owned(),
+        snapshot.shared_project(),
+        SIDE_FILES,
+        fs.clone(),
     )
-    .with_today(job.today)
-    // The editor reports a personal memo's problems as a team memo's.
-    .with_personal_memos()
-    // The snapshot's index is of the same files, with the same ids.
-    .with_link_index(job.snapshot.shared_project())
 }
 
 /// The checked project of `snapshot`, with each of `replaced`'s files holding
-/// the text given instead of its own: what `ascribe/edit` checks an edit's
-/// result in.
+/// the text given instead of its own, and indexed again: what `ascribe/edit`
+/// checks an edit's result in.
 pub(crate) fn checked_project(
     snapshot: &Snapshot,
     root: PathBuf,
@@ -762,45 +793,8 @@ pub(crate) fn checked_project(
     fs: &Arc<LayerFs>,
     replaced: &[(&RelPath, &str)],
 ) -> Project {
-    let mut sources: Vec<SourceFile> = snapshot
-        .files()
-        .map(|f| SourceFile {
-            id: f.file,
-            path: f.path.clone(),
-            text: match replaced.iter().find(|(path, _)| **path == f.path) {
-                Some((_, text)) => (*text).to_owned(),
-                None => f.source.to_string(),
-            },
-            unreadable: None,
-        })
-        .collect();
-    // Files the project couldn't read are still sources, reported and not
-    // checked, with ids past every other.
-    let first = snapshot
-        .files()
-        .map(|f| f.file.index())
-        .max()
-        .map_or(1, |max| max + 1);
-    for (id, unreadable) in (first..).zip(snapshot.unreadable()) {
-        sources.push(SourceFile {
-            id: FileId::new(id),
-            path: unreadable.path.clone(),
-            text: String::new(),
-            unreadable: Some(ReadFailure {
-                reason: unreadable.reason.clone(),
-                not_utf8: unreadable.reason.contains("valid UTF-8"),
-            }),
-        });
-    }
-    sources.sort_by(|a, b| a.path.cmp(&b.path));
-    Project::from_parts_with_fs(
-        root,
-        snapshot.layout().content_root.clone(),
-        model.clone(),
-        model_text.to_owned(),
-        sources,
-        fs.clone(),
-    )
+    Project::new(snapshot_of(snapshot, root, model, model_text, fs).with_texts(replaced))
+        .with_plain_markdown(ascribe_emit::plain_markdown)
 }
 
 /// Adds to `lsp`'s data the fixes of `d` that edit another file the project

@@ -37,7 +37,7 @@ Without `@id`, a heading's id is the slug of its text ([heading ids](inline.md#h
 
 - **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `checks/check.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
 - **A build publishes a permalink in one place only** (`permalink-duplicate`), and names that differ only in case, such as `Setup` and `setup`, are one name. So a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
-- **A permalink that's removed is a warning** (`permalink-removed`) once the project commits [its list](../contracts/permalinks-list.md); restore the name or [retire it](../permalinks/index.md#moving-aliasing-and-retiring). Moving the heading to another page isn't removing it.
+- **A permalink that's lost is a warning** (`permalink-lost`) once the project commits [its list](../contracts/permalinks-list.md); restore the name, or [move or retire it](../permalinks/index.md#moving-aliasing-and-retiring). Moving the heading to another page isn't removing it.
 - **A page has a permalink** in its frontmatter, from the same set of names: [a page's permalink](frontmatter.md#a-pages-permalink).
 
 ## `@include`
@@ -51,7 +51,7 @@ Includes another file, or one heading's section of it, in place.
 @include {heading=false}: guides/setup.md#install
 ```
 
-- **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included. A symbolic link is followed only to another source file, so no other file on disk ends up in a page.
+- **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included. A symbolic link is followed only to another source file, so no other file on disk ends up in a page. When the file isn't there, `ascribe check` offers the source files with its name, then those with names close to it, each as the path to write from the including file.
 - `#id` includes only the section of the heading with that id. `{heading=false}` leaves out that section's own heading; it has no effect without `#id`, and Ascribe warns.
 - Included content becomes part of the page: phrases and [builds](../glossary.md#build) apply to it, and its ids must not collide with the page's.
 - **Relative paths inside a fragment resolve from the fragment**, not the page including it, so a fragment's links and images work wherever it's included.
@@ -99,6 +99,7 @@ pnpm add -g @quill/agent
 - Each arm has attributes or a title, never both and never neither, and a group's arms are all one kind.
 - A value set (`{platform=cloud|on-prem}`) matches any of its values. Several keys on one arm (`{deployment=cloud, pm=npm}`) must all match.
 - The arms of a group share at least one dimension.
+- A dimension is declared before it's used. In a project that declares none, `ascribe check` gives the table to add to `ascribe.toml`, `[dimensions.<name>]` with the `values` the pages give it.
 - `@variant` varies whole blocks. For a single term that differs, use a [phrase](../glossary.md#phrase).
 
 Each build decides what happens to a group: `switch` keeps every arm, for readers to switch between (the site shows tabs), and a selection such as `{ deployment = "cloud" }` keeps only the matching arms. See [builds](../glossary.md#build). A whole page that differs by dimension is a page for each, with [`variant`](frontmatter.md#whole-page-variants) in its frontmatter.
@@ -118,8 +119,9 @@ Says where content applies and its lifecycle state. Unlike `@variant`, it doesn'
 - Several `@available` lines on one heading or block all apply: the content is available only where all of them allow it.
 
 ### Availability specs
+@id {permalink=true}: availability-specs
 
-A spec is a comma-separated list of **targets**, each with an optional lifecycle:
+A spec is a comma-separated list of [targets](../glossary.md#target), each with an optional lifecycle:
 
 | Spec | Meaning |
 |---|---|
@@ -147,7 +149,7 @@ Each build decides what happens to availability: `badge` keeps everything and ma
 
 ### The planned line
 
-Where a version goes, `planned` means the target's planned line in [`[releases]`](../content-model/content.md#71-releasestarget), so content for a release that hasn't shipped is marked without its number:
+Where a version goes, `planned` means the target's planned line in [`[releases]`](../content-model/variation.md#121-releasestarget), so content for a release that hasn't shipped is marked without its number:
 
 ```markdown
 @available: self-managed planned
@@ -175,6 +177,7 @@ A table row takes a spec from an attribute block at the end of its first cell, w
 - `available` is the only key a row takes. Its spec is checked like an `@available` line's, and can't go beyond the table's own availability.
 - A `badge` build marks the row at the end of its first cell, and a filter build removes the row where it isn't available.
 
+@intended {check=phrase-text-written}: An example of prose that says each release's value, which stays as written.
 There's no form for part of a sentence: a filter would break the sentence, and a badge in the middle of one gets in the way. Write a value that differs by release as prose, such as "glibc 2.28 or later (2.39 for 0.1.1 and earlier)".
 
 ## `@note`
@@ -201,6 +204,15 @@ Several blocks,
 - Without a colon, the note is the next block.
 - With a trailing colon, the note is a container.
 - A note may have a title.
+
+A page brought over from GitHub may write a callout as GitHub's alert, a block quote whose first line is `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, or `[!CAUTION]`. Ascribe shows that as a plain quote, so `ascribe check` warns about it (`github-alert`), and its fix, which `ascribe check --fix` applies, writes the `@note` of the same type, keeping the quote's content:
+
+```markdown
+> [!TIP]
+> Quill runs in the browser too.
+```
+
+becomes `@note {type=tip}: Quill runs in the browser too.` A quote of several blocks becomes the container, `@note {type=tip}:` through `@end`.
 
 ## `@steps`
 
@@ -243,10 +255,15 @@ Takes a code example from a file outside the content, and puts it in the page as
 @snippet {lang=shell, title="Install"}: code:scripts/install.sh
 ```
 
-- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a source declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/output.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/output.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
+- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a [source](../glossary.md#source) declared in `ascribe.toml` ([`[sources.<name>]`](../content-model/sources.md#20-sourcesname)), and `<path>` is the file's path relative to the source's folder (for a [source in another repository](../content-model/sources.md#a-source-in-another-repository), its path in that repository), with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
 - The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text. A symbolic link is followed, but only to a file in the source's folder that `include` and `ignore` take in.
+- **When the file isn't found,** the message says why, and when `ascribe check` can tell which file was meant, it offers that address:
+  - The path is relative to the source's folder, so it doesn't repeat it: with `path = "src"`, `src/config.js` is `code:config.js`.
+  - A file the source's patterns leave out needs a pattern in `include` that matches it, or to come out of `ignore`.
+  - A symbolic link that leads out of the source is named by the file it leads to, through a source that includes it.
+  - A file of a source in another repository is copied by `ascribe sources fetch`. When it isn't in the repository at the pinned commit, because it was moved or deleted there, name it where it is now, or change the code and move the pin with `ascribe sources update`.
 - Without `#<region>`, the snippet is the whole file.
-- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
+- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`), or for a file known by its name, the language of its name (`dockerfile` for `Dockerfile`, `makefile` for `Makefile`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
 - It's a block, allowed wherever a code block is: in a list item, a note, or a variant's arm. A `@note`, `@details`, or widget directly above it applies to it.
 
 A region is marked in the code with [Bluehawk](https://github.com/mongodb-university/Bluehawk)'s tags in comments, `:snippet-start: <name>` and `:snippet-end:`: [mark a region in the code](../examples/snippets.md#2-mark-a-region-in-the-code) has the tags and the comments they're read in.
@@ -256,17 +273,19 @@ Every problem is reported at the `@snippet` line ([source files](../checks/diagn
 In VS Code, a code file says which pages show it: see [code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
 ## `@intended`
+@id {permalink=true}: intended
 
 ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended))
 
 Says that a problem a check reports is intended: you've looked at it and are keeping it. Write the check's name and why.
 
 ```markdown
-@intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.
+@intended {check=link-external-broken}: help.example.com refuses link checkers; checked by hand.
 Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
-- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged.
+- **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#22-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
+- **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/sources.md#ASC143)).
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
   - **A heading:** `@intended` at the top of its section, among the directives under the heading. It covers the check's problems at the heading, and, when no blank line comes between, in the block directly under the `@intended` line, so a section's first block is acknowledged as any other block is. It covers nothing else in the section. An unused glossary term is acknowledged this way:
@@ -315,7 +334,7 @@ Revoke the old key once every agent uses the new one.
 
 - **What it's about** is decided as for `@available` ([binding](syntax.md#binding-what-a-directive-applies-to)). A container memo touches the block that starts on the line after its `@end`. Several memos stack, in either form, and `ascribe fmt` removes a blank line between a memo and its block.
 - **A line memo** is the rest of its line, and needs some text. **A container memo** is every line up to a line that's only `@end` at the memo's own indent, as written. It takes no attributes. A container memo with nothing in it, or only blank lines, is almost always a slip: `ascribe check` reports it as advice, [`memo-empty`](../checks/diagnostics/content-checks.md#ASC224), whose fix removes it.
-- **Nothing reads a memo,** nor a [memo file](memo-files.md)'s text, apart from the words that say a page is generated (below). A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
+- **Nothing resolves or publishes a memo,** nor a [memo file](memo-files.md)'s text. Ascribe reads only the words that say a page is generated (below), and a memo file's `quote`, which places it. A link in one isn't checked and isn't a use of the page it names, a `{key}` isn't a phrase, an `@include` isn't followed, a `#` line isn't a heading, and Vale isn't given the text. A code fence that doesn't close, or a line such as `@note:`, doesn't change the page around it. The one line a container memo can't hold is the `@end` that closes it.
 - **A memo can say its page is generated.** A memo among the page's top-level blocks whose text begins `Generated from` or `Generated by` says another program writes the file, and its text says what to change instead and the command that writes it again: `` @memo: Generated from options.toml by scripts/options.ts; edit the options, then run `node scripts/options.ts` to rewrite it. `` Each problem `ascribe check` and the editor report in the file names the memo as a related place, the [agent prompt](../agents/prompts.md) says to change what the file is generated from rather than the file, and no quick fix or `ascribe check --fix` edits it. Nothing else reads the memo's text.
 - **It changes no output.** No build, preview, or report shows a memo, in a page, a fragment, or a memo file, and a change to one alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
 - **An HTML comment isn't a memo:** [`html-comment`](../checks/diagnostics/content-checks.md#ASC223) says why, and how to rewrite one as a memo.
@@ -343,7 +362,6 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 To set up a glossary from the start, see [Set up a glossary](../content-model/glossary.md).
 
 ## `@summary`
-@available: ascribe 0.4.3
 
 ([SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary))
 
@@ -377,6 +395,24 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **In the outputs,** the text form writes nothing in the site and plain outputs, and the paragraph of the other form is written as it would be without it. The JSON output gives the section's heading its `summary`. A summary's text isn't searched for [glossary terms](inline.md#glossary-terms).
 - **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
 
+## `@operation`
+
+([SPEC §4.13]({repo}/blob/main/SPEC.md#413-operation))
+
+Puts an operation of an API that `ascribe.toml` declares in `[apis]` in the page: its method, its path, and its summary, as one line linked to the operation in the published reference.
+
+```markdown
+@operation: ../api/openapi.yaml#getUser
+```
+
+- **The primary** is a link to an operation, as a link's destination names one: the spec's path from the page (or from the content root, starting with `/`), `#`, and the operation's `operationId`, or, for an operation with no id, its method in lowercase and its path, `#delete/users/{id}` ([links to operations](inline.md#links)).
+- It's checked as that link is: an operation the spec doesn't have is `link-operation-missing`, and one named by its method and path that has an id is advice, `link-operation-by-path`. Anything that isn't a link to an operation of a declared API, a page, another file, the spec with no `#`, or a URL, is an error, `operation-link-not-operation`.
+- **What it shows:** `GET /users/{id}: Get a user`, with `(deprecated)` after it when the spec marks the operation deprecated. Never the operation's parameters, request, or responses.
+- It's a block, so a `@note`, `@available`, or widget directly above it applies to it.
+- **In the outputs,** the site output writes an `<ascribe-operation>` element holding the link, the plain output the line, and the JSON output a block of type `operation`.
+
+[Show an operation in a page](../openapi/operation.md) has the rest.
+
 ## Project widgets
 
 ([SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets))
@@ -387,5 +423,5 @@ A project widget is a directive a project declares in `ascribe.toml`, for needs 
 @quill-labspace {lab=first-sync}
 ```
 
-A declared widget works like a built-in directive, with the forms, primary, attributes, binding, title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#14-widgetsname).
+A declared widget works like a built-in directive, with the forms, primary, attributes, binding, title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#10-widgetsname).
 

@@ -40,8 +40,8 @@ pub struct Expect {
     #[serde(default)]
     pub builds: BTreeMap<String, BuildExpect>,
     /// The day the checks run on, `YYYY-MM-DD`, for a case whose
-    /// diagnostics depend on it (a review date). Without it, the checks have
-    /// no day, and no review is overdue.
+    /// diagnostics depend on it (a recheck date). Without it, the checks have
+    /// no day, and no recheck is overdue.
     #[serde(default)]
     pub today: Option<String>,
 }
@@ -50,7 +50,7 @@ pub struct Expect {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExpectedDiagnostic {
-    /// The diagnostic's slug from `tests/conformance/diagnostics.toml`.
+    /// The diagnostic's slug from `crates/ascribe-core/data/diagnostics.toml`.
     pub slug: String,
     /// The file, relative to the content root. Defaults to `input.md` in
     /// single-file cases; required in project cases.

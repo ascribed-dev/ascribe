@@ -1,0 +1,11 @@
+description: >-
+  A pattern the validator can't read is left out, with advice at the marker,
+  and the rest of the schema is still checked. A schema with a `$ref` into
+  another file isn't checked, with advice at the marker.
+spec: ["7.11", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: api-example-schema-unsupported, file: index.md, line: 7, column: 9}
+  - {slug: api-example-schema-mismatch, file: index.md, line: 8, column: 27}
+  - {slug: api-example-schema-unsupported, file: index.md, line: 13, column: 9}

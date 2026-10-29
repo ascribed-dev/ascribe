@@ -1,22 +1,23 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `[SECTION]...`: The sections to report, in any order. By default, those that need nothing outside the project: `problems`, `inventory`, and `builds`.
   - `problems`: What `ascribe check` finds, counted by check, by file, and by kind of next step; and every acknowledgement, with its reason.
-  - `inventory`: Pages by type and by owner; overdue reviews, orphan pages, and unused entries.
+  - `inventory`: Pages by type and by owner; overdue rechecks, orphan pages, and unused entries.
   - `builds`: What each build leaves out that another keeps.
   - `pages`: Every page's record, sorted by address: its title, description, canonical address, and listing, and where the listing comes from.
   - `links`: External links that fail, redirect, or time out. Needs a link checker, lychee, and the network.
-  - `agents`: The delivery spec's checks on a built site. Needs `afdocs`, the network, and `--site`.
+  - `delivery`: The delivery spec's checks on a built site. Needs `afdocs`, the network, and `--site`.
 - `--format <FORMAT>`: How to show the report.
   - `text` (the default): Each section, for people.
   - `markdown`: Markdown, for a CI job's summary or an issue's body.
   - `json`: One JSON document, for tools.
-  - `prompt`: A prompt for an agent that acts on one section's problems: only with one section, `problems`, `links`, or `agents`. Nothing when it finds nothing.
+  - `prompt`: A prompt for an agent that acts on one section's problems: only with one section, `problems`, `links`, or `delivery`. Nothing when it finds nothing.
 - `--build <NAME>`: Report only on this build: its problems, what it leaves out, and its pages. Repeat it for several. By default, every build in `ascribe.toml`. An unknown build name is a usage error, and the message lists the builds.
 - `--not-listed`: For `pages`: list only the pages that aren't `listed`, those `unquoted` and `unlisted`, with where each one's listing comes from.
-- `--site <URL>`: The address of a built site, for `agents`: the published site, or a preview of it.
+- `--site <URL>`: The address of a built site, for `delivery`: the published site, or a preview of it.
 - `--limit <N>`: List at most this many items in each list. By default, 20 in text and Markdown and 500 in JSON. What's left out is counted, with the command that lists it.
 - `--recheck`: For `links`: ask about every address, reusing no answer from an earlier run, and keep what this run gets. By default, an address that answered within `[checks.links] reuse-days` isn't asked about again.
-- `--no-history`: Report as a first run would: say nothing about what's new in `problems`, `links`, and `agents`, and report every failure of `links`. `problems` and `agents` keep nothing for the next report, and `links` still keeps what this run sees. By default, `problems` and `links` say which problems are new since the last report and how many it listed are gone, `agents` says which checks are failing since the last report, and a link that answered before and fails now is listed as unconfirmed until it has kept failing for `[checks.links] confirm-days`.
+- `--no-history`: Report as a first run would: say nothing about what's new in `problems`, `links`, and `delivery`, and report every failure of `links`. `problems` and `delivery` keep nothing for the next report, and `links` still keeps what this run sees. By default, `problems` and `links` say which problems are new since the last report and how many it listed are gone, `delivery` says which checks are failing since the last report, and a link that answered before and fails now is listed as unconfirmed until it has kept failing for `[checks.links] confirm-days`.
+- `--no-baseline`: Report the advice `ascribe.baseline` holds back too, without reading the file. By default, `problems` and `inventory` leave out what the baseline lists while it's advice, as `ascribe check` does, and `problems` counts it. A baseline that can't be read stops a report with either section, unless this is given.
 - `--exit-code[=<LEVEL>]`: Exit with 1 when a section finds something at this severity or above, and with 2 when a section asked for couldn't run: for a scheduled job that opens an issue. `--exit-code` alone is `--exit-code=advice`: any problem fails. Without it, the report exits with 0 whenever it ran.
   - `advice`: Any problem.
   - `warning`: Warnings and errors.

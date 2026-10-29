@@ -24,12 +24,17 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex, PoisonError};
 
-use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics, percent_decode};
+use ascribe_core::info_string::quote;
+use ascribe_core::{
+    Applicability, FileId, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics,
+    percent_decode,
+};
 use ascribe_model::{ContentModel, Source, suggest};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
 
 use crate::fs::{FileSystem, Probe};
-use tags::{CommentStyle, Extracted, TagProblem, Tags, comment_style, is_region_name};
+use crate::incremental::CodeFileIds;
+use tags::{CommentStyle, Extracted, TagProblem, Tags, file_comment_style, is_region_name};
 
 /// The file ids code files get, from this one up: past any source file's, so
 /// a diagnostic's related location can point into a code file.
@@ -181,22 +186,18 @@ impl SnippetUse {
         }
     }
 
-    /// The fenced code block's info string (SPEC §4.8): the language, then
+    /// The fenced code block's info string (SPEC §4.8, §3.3.1): the language, then
     /// `title="…"`, then `tested="…"` for an example with a current
     /// observation, then `phrases=true`. With no language but other words,
     /// it starts with `text`, so no word is read as the language.
     pub fn info(&self, file: &CodeFile, tested: Option<&str>) -> String {
-        let lang = self
-            .lang
-            .clone()
-            .or_else(|| file.path.extension().map(str::to_ascii_lowercase));
-        let quoted = |text: &str| text.replace('\\', "\\\\").replace('"', "\\\"");
+        let lang = self.lang.clone().or_else(|| tags::default_lang(&file.path));
         let mut words: Vec<String> = Vec::new();
         if let Some(title) = &self.title {
-            words.push(format!("title=\"{}\"", quoted(title)));
+            words.push(format!("title={}", quote(title)));
         }
         if let Some(tested) = tested {
-            words.push(format!("tested=\"{}\"", quoted(tested)));
+            words.push(format!("tested={}", quote(tested)));
         }
         if self.phrases {
             words.push("phrases=true".to_owned());
@@ -219,7 +220,7 @@ pub struct CodeFile {
     pub path: RelPath,
     /// Its text.
     pub text: Arc<str>,
-    /// Its comment syntax, by extension; `None` when it has no tags.
+    /// Its comment syntax, by name or extension; `None` when it has no tags.
     pub style: Option<CommentStyle>,
     /// Its tags.
     pub tags: Tags,
@@ -254,11 +255,13 @@ pub enum ReadError {
 }
 
 /// The code files read so far, by path from the project root, so each is
-/// read and scanned once however many snippets use it. Each new file gets
-/// the next id from [`CODE_FILE_IDS`].
+/// read and scanned once however many snippets use it. Each file gets its
+/// path's id from a table, and a path the table doesn't know gets the next
+/// one, from [`CODE_FILE_IDS`] up.
 #[derive(Debug, Default)]
 pub struct CodeFiles {
     files: Mutex<HashMap<RelPath, Result<Arc<CodeFile>, ReadError>>>,
+    ids: Mutex<CodeFileIds>,
     /// Each source folder's `ascribe.examples.toml` and observation, read
     /// once ([`CodeFiles::examples`]).
     examples: Mutex<HashMap<RelPath, Arc<examples::FolderExamples>>>,
@@ -270,6 +273,21 @@ impl CodeFiles {
         CodeFiles::default()
     }
 
+    /// No files read yet, with ids from `ids`.
+    pub(crate) fn with_ids(ids: CodeFileIds) -> CodeFiles {
+        CodeFiles {
+            ids: Mutex::new(ids),
+            ..CodeFiles::default()
+        }
+    }
+
+    /// The table of ids, with the paths read since given ids.
+    pub(crate) fn into_ids(self) -> CodeFileIds {
+        self.ids
+            .into_inner()
+            .unwrap_or_else(PoisonError::into_inner)
+    }
+
     /// The code file at `path`, from the project root, read through `fs` the
     /// first time it's asked for.
     pub fn read(&self, fs: &dyn FileSystem, path: &RelPath) -> Result<Arc<CodeFile>, ReadError> {
@@ -277,8 +295,12 @@ impl CodeFiles {
         if let Some(found) = files.get(path) {
             return found.clone();
         }
-        let next = files.values().filter(|f| f.is_ok()).count() as u32;
-        let read = read_code(fs, path, FileId::new(CODE_FILE_IDS + next));
+        let mut ids = self.ids.lock().unwrap_or_else(PoisonError::into_inner);
+        let read = read_code(fs, path, ids.peek(path));
+        // Only a file that reads takes an id.
+        if read.is_ok() {
+            ids.assign(path);
+        }
         files.insert(path.clone(), read.clone());
         read
     }
@@ -316,7 +338,7 @@ fn read_code(fs: &dyn FileSystem, path: &RelPath, id: FileId) -> Result<Arc<Code
     }
     let text =
         String::from_utf8(bytes).map_err(|_| ReadError::NotText("it isn't UTF-8".to_owned()))?;
-    let style = path.extension().and_then(comment_style);
+    let style = file_comment_style(path);
     let tags = style.map(|s| tags::scan(&text, s)).unwrap_or_default();
     Ok(Arc::new(CodeFile {
         id,
@@ -586,7 +608,10 @@ pub fn snippet_issues(
                 // A source in another repository is read through its copies
                 // (SPEC §7.4), which are made by a command of their own.
                 None if remote => issue.with_variant("no-copy"),
-                None => issue,
+                None => match moved(snippet, address, model, fs, code) {
+                    Some(found) => suggestion_issue(issue, snippet, found, file),
+                    None => issue,
+                },
             }]
         }
         SnippetError::NotIncluded => vec![
@@ -635,6 +660,94 @@ pub fn snippet_issues(
             vec![issue]
         }
     }
+}
+
+/// Where the file a snippet names most likely is, when it isn't where the
+/// address says.
+struct Moved {
+    /// Its path relative to the source's folder.
+    path: String,
+    /// The source's folder, when the address repeated it.
+    folder: Option<String>,
+}
+
+/// The file of `address`'s source that it most likely meant: the path with
+/// the source's folder, or the end of it, taken off the front (an address is
+/// relative to the folder, so it doesn't repeat it), else the one file of
+/// the source with the same name. Only a file the snippet could be taken
+/// from is offered.
+fn moved(
+    snippet: &SnippetUse,
+    address: &Address,
+    model: &ContentModel,
+    fs: &dyn FileSystem,
+    code: &CodeFiles,
+) -> Option<Moved> {
+    let source = model.source(&address.source)?;
+    let folder = RelPath::parse(&source.path).ok()?;
+    let found = |path: &str| {
+        let candidate = Address {
+            path: path.to_owned(),
+            ..address.clone()
+        };
+        !matches!(
+            resolve_snippet(snippet, &candidate, model, fs, code),
+            Err(SnippetError::UnknownSource
+                | SnippetError::Missing { .. }
+                | SnippetError::NotIncluded
+                | SnippetError::Link)
+        )
+    };
+    // `src/config.js` in a source whose folder is `src`, or `app/src`.
+    let segments: Vec<&str> = folder.segments().filter(|s| *s != "..").collect();
+    for start in 0..segments.len() {
+        let prefix = format!("{}/", segments[start..].join("/"));
+        if let Some(rest) = address.path.strip_prefix(&prefix)
+            && found(rest)
+        {
+            return Some(Moved {
+                path: rest.to_owned(),
+                folder: Some(folder.to_string()),
+            });
+        }
+    }
+    // `config.js` for the source's only `lib/config.js`.
+    let name = address.path.rsplit('/').next().unwrap_or(&address.path);
+    let mut same: Vec<String> = fs
+        .files_in(&folder)
+        .into_iter()
+        .filter(|p| p.file_name() == Some(name))
+        .filter_map(|p| p.relative_to(&folder).map(|rest| rest.as_str().to_owned()))
+        .filter(|rest| *rest != address.path && found(rest))
+        .collect();
+    if same.len() != 1 {
+        return None;
+    }
+    same.pop().map(|path| Moved { path, folder: None })
+}
+
+/// The issue for a file that isn't where its address says, naming the one
+/// that is, with a fix that rewrites the address to it.
+fn suggestion_issue(issue: Issue, snippet: &SnippetUse, found: Moved, file: FileId) -> Issue {
+    let written = snippet.written.as_str();
+    let source = written.split_once(':').map_or(written, |(s, _)| s);
+    let region = written.find('#').map_or("", |at| &written[at..]);
+    let suggestion = format!("{source}:{}", encode_address_path(&found.path));
+    let mut issue = match found.folder {
+        Some(folder) => issue.with_variant("folder").with_arg("folder", folder),
+        None => issue.with_variant("suggestion"),
+    }
+    .with_arg("suggestion", suggestion.clone());
+    if let Some(primary) = snippet.primary {
+        issue.fixes = vec![Fix {
+            title: format!("Use `{suggestion}{region}`"),
+            file,
+            edits: vec![TextEdit::replace(primary, format!("{suggestion}{region}"))],
+            // A guess at the file meant, which only the author can confirm.
+            applicability: Applicability::Unsafe,
+        }];
+    }
+    issue
 }
 
 fn tag_issue(problem: &TagProblem, file: &CodeFile, named: &str, at: Location) -> Issue {

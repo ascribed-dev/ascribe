@@ -1,0 +1,1 @@
+- **This page says each thing once, with every warning under Health.** About says what the page is, and the rows that can warn move to Health, whose header counts them. See [The sidebar](docs/content/editor/sidebar.md#this-page).

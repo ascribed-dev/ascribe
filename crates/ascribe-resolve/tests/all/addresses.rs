@@ -11,10 +11,11 @@ use crate::build_support::{path, project_with};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use ascribe_core::FileId;
 use ascribe_resolve::addresses::{
     AddressKind, BuildAddresses, Settings, build_addresses, every_build, rebase,
 };
-use ascribe_resolve::{DiskFs, Layout, Project};
+use ascribe_resolve::{DiskFs, Layout, MemoryFs, Project};
 
 const MODEL: &str = r#"
 spec = "0.1"
@@ -145,7 +146,7 @@ fn every_build_of_quill_is_listed_by_name() {
     let project = Project::load(Arc::new(model), layout, &fs);
     let builds = every_build(&project);
     let names: Vec<&str> = builds.iter().map(|b| b.build.as_str()).collect();
-    assert_eq!(names, ["site", "site@3.4", "cloud", "self-managed-3.3"]);
+    assert_eq!(names, ["site", "site@3.4", "cloud"]);
     let pages = |build: &BuildAddresses| -> Vec<String> {
         build
             .addresses
@@ -173,16 +174,18 @@ fn every_build_of_quill_is_listed_by_name() {
 
 #[test]
 fn each_name_a_build_answers_to_has_an_address_under_the_permalinks_path() {
-    let model = format!(
-        "{MODEL}\n[permalinks.retired]\nold-name = {{ reason = \"Gone.\" }}\n\n[permalinks.aliases]\nsetting-up = \"setup\"\n"
-    );
-    let project = project_with(
-        &model,
-        &[(
+    let model = Arc::new(ascribe_model::load_str(MODEL, FileId::new(0)).expect("loads"));
+    let layout = Layout::from_model(&model);
+    let fs = MemoryFs::new(&layout)
+        .with_source(
             "guides/setup.md",
             "---\ntype: page\ntitle: Page\npermalink: setup\n---\n\nText.\n",
-        )],
-    );
+        )
+        .with_file(
+            "ascribe.addresses",
+            "version = 1\n\n[moved]\n\"go:setting-up\" = \"go:setup\"\n\n[retired]\n\"go:old-name\" = \"Gone.\"\n",
+        );
+    let project = Project::load(model, layout, &fs);
     let permalinks: Vec<(String, String, String)> = site(&project)
         .addresses
         .into_iter()
@@ -252,4 +255,48 @@ fn an_address_is_rebased_from_one_path_to_another() {
     );
     assert_eq!(rebase("/docs", "/docs/", "/").as_deref(), Some("/"));
     assert_eq!(rebase("/other/a", "/docs/", "/handbook/"), None);
+}
+
+#[test]
+fn an_incremental_project_follows_ascribe_addresses_for_what_it_records_of_permalinks() {
+    let model = Arc::new(ascribe_model::load_str(MODEL, FileId::new(0)).expect("loads"));
+    let layout = Layout::from_model(&model);
+    let fs = MemoryFs::new(&layout).with_source(
+        "guides/setup.md",
+        "---\ntype: page\ntitle: Page\npermalink: setup\n---\n\nText.\n",
+    );
+    let mut project = ascribe_resolve::IncrementalProject::load(model, layout, fs);
+    let names = |p: &ascribe_resolve::IncrementalProject| -> Vec<String> {
+        p.snapshot()
+            .recorded_permalinks()
+            .names
+            .into_iter()
+            .map(|n| n.name)
+            .collect()
+    };
+    assert!(names(&project).is_empty());
+    let file = ascribe_model::AddressFile::parse(
+        "version = 1\n\n[moved]\n\"go:setting-up\" = \"go:setup\"\n",
+        FileId::new(0),
+    )
+    .expect("it reads");
+    let side = |addresses| {
+        ascribe_resolve::Change::SideFiles(ascribe_resolve::side_file::Indexed {
+            nav: None,
+            addresses,
+        })
+    };
+    let affected = project
+        .apply([side(Some(Arc::new(file.clone())))])
+        .expect("it applies");
+    assert!(!affected.is_empty(), "a new snapshot");
+    assert!(affected.recheck.is_empty() && affected.re_resolve.is_empty());
+    assert_eq!(names(&project), ["setting-up"]);
+    // The same file again changes nothing.
+    let again = project
+        .apply([side(Some(Arc::new(file)))])
+        .expect("it applies");
+    assert!(again.is_empty());
+    project.apply([side(None)]).expect("it applies");
+    assert!(names(&project).is_empty());
 }

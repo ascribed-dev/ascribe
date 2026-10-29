@@ -13,6 +13,7 @@ serde.workspace = true
 ascribe-core.workspace = true
 ascribe-model.workspace = true
 ascribe-resolve.workspace = true
+ascribe-workspace.workspace = true
 thiserror.workspace = true
 schemars = { workspace = true, optional = true }
 

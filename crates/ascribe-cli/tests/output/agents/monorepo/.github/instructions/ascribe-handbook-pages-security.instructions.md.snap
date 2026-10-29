@@ -8,7 +8,7 @@ applyTo: "handbook/pages/security/content/**/*.md"
 
 The Markdown pages under `handbook/pages/security/content/` are Ascribe documentation: pages with YAML frontmatter, `@` directives, and `{key}` phrases, checked against the content model in `handbook/pages/security/ascribe.toml`.
 
-Programmatic check: after editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check --config handbook/pages/security`. `ascribe explain <code>` says what a problem means and how to fix it.
+After editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check --config handbook/pages/security`. `ascribe explain <code>` says what a problem means and how to fix it.
 
 Before writing a page about a subject, run `ascribe search "<words>" --config handbook/pages/security` to find where the pages already say it, as readers read them, and link to what's there or extend it instead of saying it again.
 
@@ -41,5 +41,7 @@ Write the phrase (`{team}`), not the text it stands for.
 Link to the source file, with a relative path such as `../guides/install.md#configure`, not to the site's address. `ascribe outline <page>` lists a page's headings with their ids, and `ascribe link <target> --from <page>` says whether a link works and what to write.
 
 ### More
+
+To see what a reader of the site gets, not only a reader of the Markdown, run `ascribe resolve <page> --build <name> --emit site`, or call `ascribe_resolve` with `emit: "site"`: the page as the site output gives it to the site, with Ascribe's elements. How to read them: https://ascribed-dev.com/go/reading-site-output/
 
 `ascribe model handbook/pages/security` shows everything the content model allows. Every directive: https://ascribed-dev.com/go/directives/

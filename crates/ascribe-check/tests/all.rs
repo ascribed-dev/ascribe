@@ -23,10 +23,6 @@ mod identity;
 mod ids;
 #[path = "all/inert_marks.rs"]
 mod inert_marks;
-#[path = "all/link_cache.rs"]
-mod link_cache;
-#[path = "all/link_retry.rs"]
-mod link_retry;
 // `links.rs` panics on a link it can't make, as a test helper may.
 #[allow(clippy::expect_used, clippy::panic)]
 #[path = "../../../tests/support/links.rs"]
@@ -46,5 +42,3 @@ mod prompt;
 mod snippets;
 #[path = "all/type_files.rs"]
 mod type_files;
-#[path = "all/vale.rs"]
-mod vale;

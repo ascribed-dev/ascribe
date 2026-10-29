@@ -1,6 +1,6 @@
 # @ascribed/archive
 
-The search script of an archive that `ascribe versions archive` writes: the box at the top of each page's sidebar, which searches the archive's `search-index.js` from a folder opened from a disk, with nothing fetched from anywhere else. It's private, and isn't published: the binary carries a bundled copy, `crates/ascribe-emit/src/archive/search.js`, which every archive one version of Ascribe writes has.
+The search script of an archive that `ascribe versions export` writes: the box at the top of each page's sidebar, which searches the archive's `search-index.js` from a folder opened from a disk, with nothing fetched from anywhere else. It's private, and isn't published: the binary carries a bundled copy, `crates/ascribe-emit/src/archive/search.js`, which every archive one version of Ascribe writes has. `ascribe preview` writes the same script beside its pages, with `data-label` on the sidebar's `<script>` naming the build the box searches.
 
 - `src/search.ts`: which pages and headings a query finds, best first, and the words around each match.
 - `src/index.ts`: the box, drawn where the sidebar's `<script>` is, and the index, loaded the first time the box is used.

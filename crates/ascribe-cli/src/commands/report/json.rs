@@ -5,23 +5,23 @@
 
 use std::io::{self, Write};
 
-use ascribe_check::links::Answer;
 use ascribe_check::{Diagnostic, Next};
 use ascribe_model::{ListingFrom, ListingLevel};
 use ascribe_query::report::{
-    Agents, BuildPages, Builds, LeftContent, LeftPage, Links, NotRun, Pages, Problems, Ran, Report,
-    Section,
+    BuildPages, Builds, Delivery, LeftContent, LeftPage, Links, NotRun, Pages, Problems, Ran,
+    Report, Section,
 };
+use ascribe_report::links::Answer;
 use ascribe_resolve::pages::PageRecord;
 use serde::Serialize;
 
 use super::text::{by_check, by_file, by_next};
-use crate::report::json::{AcknowledgedEntry, Entry, Range, acknowledged, entry, range};
+use crate::report::json::{AcknowledgedEntry, Entry, Range, acknowledged, entry, is_zero, range};
 use crate::report::{Counts, FileTable};
 
 /// The version of the JSON schema. It changes only when a field is removed or
 /// changes meaning; fields may be added without a new version.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 3;
 
 /// What `ascribe report --format json` writes: one document, whatever the
 /// outcome. A reader ignores fields it doesn't know.
@@ -37,7 +37,7 @@ pub(crate) struct ReportJson {
     /// isn't `null`, no section is there.
     error: Option<String>,
     /// The sections asked for, in the order the report has them:
-    /// `problems`, `inventory`, `builds`, `pages`, `links`, `agents`.
+    /// `problems`, `inventory`, `builds`, `pages`, `links`, `delivery`.
     sections: Vec<&'static str>,
     /// The builds `problems` checked and `builds` and `pages` report on, in
     /// `ascribe.toml`'s order.
@@ -47,7 +47,7 @@ pub(crate) struct ReportJson {
     not_run: Vec<&'static str>,
     /// How many problems of each severity the sections that ran have, and
     /// of each kind of next step: the diagnostics of `problems`, `links`,
-    /// and `agents`.
+    /// and `delivery`.
     summary: Summary,
     /// The command that lists everything a list here leaves out, when one
     /// does; `null` otherwise.
@@ -67,9 +67,9 @@ pub(crate) struct ReportJson {
     /// `links`, when asked for.
     #[serde(skip_serializing_if = "Option::is_none")]
     links: Option<LinksJson>,
-    /// `agents`, when asked for.
+    /// `delivery`, when asked for.
     #[serde(skip_serializing_if = "Option::is_none")]
-    agents: Option<AgentsJson>,
+    delivery: Option<DeliveryJson>,
 }
 
 /// A list of at most `--limit` items.
@@ -128,6 +128,11 @@ struct ProblemsJson {
     /// The problems acknowledged as intended, with their reasons, in file
     /// order.
     acknowledged: Capped<AcknowledgedEntry>,
+    /// How many advice `ascribe.baseline` holds back, which the counts
+    /// leave out: the backlog the project has put off. Left out when there
+    /// are none, and with `--no-baseline`.
+    #[serde(skip_serializing_if = "is_zero")]
+    baselined: usize,
     /// The command that lists each problem: `ascribe check`, as JSON.
     list_command: String,
     /// The day of the last report, `YYYY-MM-DD`, or `null` on a first run,
@@ -187,7 +192,7 @@ struct InventoryJson {
     /// How many pages each owner has, most first: the value of the
     /// frontmatter field the page's type marks `role = "owner"`.
     by_owner: Vec<OwnerCount>,
-    /// The pages whose review date has passed (`review-overdue`).
+    /// The pages whose recheck date has passed (`recheck-overdue`).
     overdue: Capped<Entry>,
     /// The pages nothing links to (`page-orphan`).
     orphans: Capped<Entry>,
@@ -199,6 +204,27 @@ struct InventoryJson {
     /// order. Absent when no source has one.
     #[serde(skip_serializing_if = "Option::is_none")]
     examples: Option<Vec<ExamplesCount>>,
+    /// How many of each declared API's operations the pages cover, for each
+    /// API whose spec could be read, in the content model's order. Absent
+    /// when the project declares no API.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    apis: Option<Vec<ApiCount>>,
+}
+
+/// How many of one API's operations the pages cover.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct ApiCount {
+    /// The API's name, its key in `[apis]`.
+    api: String,
+    /// How many operations its spec has.
+    operations: usize,
+    /// How many of them a link names, by `operationId` or by method and
+    /// path.
+    linked: usize,
+    /// How many of them a checked example claims as its request or
+    /// response.
+    examples: usize,
 }
 
 /// How many snippets of one source show a tested example, by status.
@@ -240,7 +266,8 @@ struct OwnerCount {
     pages: usize,
 }
 
-/// What one build leaves out that another build keeps.
+/// What one build leaves out that another build keeps, once for each mark
+/// that leaves it out.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct BuildJson {
@@ -248,8 +275,9 @@ struct BuildJson {
     build: String,
     /// The pages it doesn't publish, in path order.
     pages: Capped<LeftPageJson>,
-    /// The content it takes out of the pages it publishes, in file and
-    /// source order.
+    /// The marks that take content out of the pages it publishes, in file
+    /// and source order: each `@available` and variant arm once, however
+    /// many blocks it takes out.
     content: Capped<LeftContentJson>,
 }
 
@@ -259,25 +287,37 @@ struct BuildJson {
 struct LeftPageJson {
     /// The page, relative to the project root, as a diagnostic's `file` is.
     file: String,
-    /// Why, as the end of a sentence: `its variant frontmatter names …`.
-    why: String,
+    /// `availability` when its `available` frontmatter leaves it out, or
+    /// `variant` when its `variant` frontmatter does.
+    kind: &'static str,
+    /// That frontmatter's value, as written: `self-managed 3.5`, or
+    /// `deployment=cloud` for `variant`, with a dimension's values joined by
+    /// `|`.
+    mark: String,
     /// The builds that publish it.
     kept_by: Vec<String>,
 }
 
-/// Content a build takes out of a page it publishes.
+/// A mark that takes content out of a page a build publishes.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct LeftContentJson {
-    /// The file it's written in: the page, or a fragment it includes.
+    /// The file the mark is written in: the page, or a fragment it includes.
     file: String,
-    /// Where in the file.
+    /// Where in the file: the `@available` line, the table row, or the
+    /// variant arm.
     range: Range,
     /// The page it's taken out of, as `file` is.
     page: String,
+    /// The text of the heading the mark is under, or `null`: the section's
+    /// own heading, for a section's `@available`.
+    heading: Option<String>,
     /// `variant` for a variant arm, or `availability` for content a
     /// feature's availability takes out.
     kind: &'static str,
+    /// What the mark takes out: `section`, `block`, `row` (a table row), or
+    /// `arm` (a variant arm).
+    scope: &'static str,
     /// Why, with the content model's labels: `Shows only os=linux`.
     why: String,
     /// The builds that keep it.
@@ -440,10 +480,10 @@ struct UnconfirmedEntry {
     reported_from: String,
 }
 
-/// `agents`: the delivery spec's checks on a built site.
+/// `delivery`: the delivery spec's checks on a built site.
 #[derive(Serialize, Default)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct AgentsJson {
+struct DeliveryJson {
     /// Why it couldn't run, or `null` when it ran. When it isn't `null`,
     /// the rest is empty.
     not_run: Option<NotRunJson>,
@@ -595,6 +635,16 @@ pub(crate) fn of(report: &Report, files: &FileTable, about: &About<'_>) -> Repor
                     })
                     .collect()
             }),
+            apis: i.apis.as_ref().map(|list| {
+                list.iter()
+                    .map(|a| ApiCount {
+                        api: a.api.clone(),
+                        operations: a.operations,
+                        linked: a.linked,
+                        examples: a.examples,
+                    })
+                    .collect()
+            }),
         }),
         builds: report.builds.as_ref().map(|b| builds(b, files, limit)),
         pages: report.pages.as_ref().map(|p| pages(p, limit)),
@@ -605,12 +655,12 @@ pub(crate) fn of(report: &Report, files: &FileTable, about: &About<'_>) -> Repor
             },
             Ran::Done(links) => links_json(links, files, limit),
         }),
-        agents: report.agents.as_ref().map(|a| match a {
-            Ran::NotRun(why) => AgentsJson {
+        delivery: report.delivery.as_ref().map(|a| match a {
+            Ran::NotRun(why) => DeliveryJson {
                 not_run: Some(not_run(why)),
-                ..AgentsJson::default()
+                ..DeliveryJson::default()
             },
-            Ran::Done(agents) => agents_json(agents, files, limit),
+            Ran::Done(delivery) => delivery_json(delivery, files, limit),
         }),
     }
 }
@@ -631,7 +681,7 @@ pub(crate) fn failed(error: &str, sections: &[Section]) -> ReportJson {
         builds: None,
         pages: None,
         links: None,
-        agents: None,
+        delivery: None,
     }
 }
 
@@ -654,6 +704,7 @@ fn problems(p: &Problems, files: &FileTable, limit: usize, list_command: &str) -
             advice: counts.advice,
         }),
         acknowledged: Capped::of(p.acknowledged.iter(), limit, |a| acknowledged(files, a)),
+        baselined: p.baselined,
         list_command: list_command.to_owned(),
         previous_run: p.previous_run.map(|d| d.to_string()),
         new: p.new.as_ref().map(Vec::len),
@@ -671,7 +722,8 @@ fn builds(b: &Builds, files: &FileTable, limit: usize) -> Vec<BuildJson> {
             build: left.build.clone(),
             pages: Capped::of(left.pages.iter(), limit, |p: &LeftPage| LeftPageJson {
                 file: p.path.to_string(),
-                why: p.why.clone(),
+                kind: p.kind,
+                mark: p.mark.clone(),
                 kept_by: p.kept_by.clone(),
             }),
             content: Capped::of(left.content.iter(), limit, |c: &LeftContent| {
@@ -679,7 +731,9 @@ fn builds(b: &Builds, files: &FileTable, limit: usize) -> Vec<BuildJson> {
                     file: files.path(c.location.file),
                     range: range(files, c.location),
                     page: c.page.to_string(),
+                    heading: c.heading.clone(),
                     kind: c.kind,
+                    scope: c.scope,
                     why: c.why.clone(),
                     kept_by: c.kept_by.clone(),
                 }
@@ -775,11 +829,11 @@ fn links_json(links: &Links, files: &FileTable, limit: usize) -> LinksJson {
     }
 }
 
-fn agents_json(agents: &Agents, files: &FileTable, limit: usize) -> AgentsJson {
-    AgentsJson {
+fn delivery_json(delivery: &Delivery, files: &FileTable, limit: usize) -> DeliveryJson {
+    DeliveryJson {
         not_run: None,
-        site: agents.site.clone(),
-        results: agents
+        site: delivery.site.clone(),
+        results: delivery
             .results
             .iter()
             .map(|r| CheckResultJson {
@@ -787,14 +841,14 @@ fn agents_json(agents: &Agents, files: &FileTable, limit: usize) -> AgentsJson {
                 category: r.category.clone(),
                 status: r.status.as_str(),
                 message: r.message.clone(),
-                owner: ascribe_check::site::owner(&r.id).as_str(),
+                owner: ascribe_report::site::owner(&r.id).as_str(),
             })
             .collect(),
-        diagnostics: Capped::of(agents.diagnostics.iter(), limit, |d| entry(files, d, 0)),
-        previous_run: agents.previous_run.map(|d| d.to_string()),
-        new: agents.new.as_ref().map(Vec::len),
-        resolved: agents.resolved,
-        new_checks: agents.new.clone().unwrap_or_default(),
+        diagnostics: Capped::of(delivery.diagnostics.iter(), limit, |d| entry(files, d, 0)),
+        previous_run: delivery.previous_run.map(|d| d.to_string()),
+        new: delivery.new.as_ref().map(Vec::len),
+        resolved: delivery.resolved,
+        new_checks: delivery.new.clone().unwrap_or_default(),
     }
 }
 
@@ -843,7 +897,7 @@ pub(crate) fn longest(report: &Report) -> usize {
         see(l.acknowledged.len());
         see(l.unconfirmed.len());
     }
-    if let Some(Ran::Done(a)) = &report.agents {
+    if let Some(Ran::Done(a)) = &report.delivery {
         see(a.diagnostics.len());
     }
     most

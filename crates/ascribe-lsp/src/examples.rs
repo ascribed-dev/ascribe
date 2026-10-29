@@ -106,7 +106,8 @@ pub(crate) fn snippet_hover(ctx: &Ctx, snippet: &SnippetUse) -> Option<String> {
         out.push_str("\n\n");
         out.push_str(&tested(ctx, address, example, &code)?);
     }
-    let lang = resolved.info.split(' ').next().unwrap_or_default();
+    let info = ascribe_core::info_string::InfoString::parse(&resolved.info);
+    let lang = info.language.unwrap_or_default();
     out.push_str(&format!("\n\n{}", code_block(lang, &resolved.code)));
     Some(out)
 }
@@ -263,6 +264,30 @@ pub(crate) fn config_source<'a>(model: &'a ContentModel, path: &RelPath) -> Opti
             .and_then(|folder| folder.join(EXAMPLES_FILE).ok())
             .is_some_and(|config| config == *path)
     })
+}
+
+/// The `examples-config-unread` of an `ascribe.examples.toml` at `path`,
+/// from the project root, that no source reads, as `ascribe check` reports
+/// it, at the level `[checks]` sets: none when a source reads it, or it isn't
+/// in a source's folder.
+pub(crate) fn unread_diagnostics(
+    model: &ContentModel,
+    fs: &dyn FileSystem,
+    path: &RelPath,
+    text: &str,
+    encoding: Encoding,
+) -> Vec<Diagnostic> {
+    let Some(unread) = ascribe_resolve::unread_config(model, fs, path) else {
+        return Vec::new();
+    };
+    let found = vec![ascribe_check::Diagnostic::from_issue(
+        &ascribe_check::unread_config_issue(&unread, FileId::new(0)),
+    )];
+    let index = LineIndex::new(text);
+    ascribe_check::apply_levels(&model.checks, found)
+        .iter()
+        .map(|d| crate::compute::to_lsp(d, &index, encoding, &|_| None))
+        .collect()
 }
 
 /// The problems of a source's `ascribe.examples.toml` whose text is `text`,

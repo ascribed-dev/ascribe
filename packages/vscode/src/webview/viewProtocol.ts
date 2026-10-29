@@ -185,9 +185,9 @@ export interface ProjectCheck {
  * aren't current, the action that brings them current.
  */
 export interface ProjectHealthGroup {
-  /** `everyBuild`, `asYouType`, or `lastSave`. */
+  /** `everyBuild`, `addresses`, `asYouType`, or `lastSave`. */
   key: string;
-  /** "Every build", "As you type", or "At the last save". */
+  /** "Every build", "Against the base", "As you type", or "At the last save". */
   label: string;
   /**
    * `current`: its counts are as the project is now. `outOfDate`: from a run
@@ -223,7 +223,7 @@ export interface ProjectCount {
   problems?: ProblemCounts;
   /**
    * Its own note, when it isn't current though its group is, as overdue
-   * reviews checked on another day; `null` when its group's says it.
+   * rechecks checked on another day; `null` when its group's says it.
    */
   note: string | null;
   /** Whether choosing the count opens its list, which only a current count above zero does. */
@@ -318,17 +318,23 @@ export interface ProjectReport {
   build: { shown: string; choices: string[] } | null;
   /** Each section as drawn: its key, its header's text, and whether it's open. */
   sections: { key: string; label: string; open: boolean }[];
-  /** Health's groups as drawn: each head's text, and the action at it. */
-  groups: { key: string; head: string; action: string | null }[];
+  /**
+   * Health's groups as drawn: each head's text, the action at it, and the
+   * line that shows its counts of none, "Nothing to do" or "Nothing else to
+   * do", or `null` when it has none.
+   */
+  groups: { key: string; head: string; action: string | null; none: string | null }[];
   /**
    * Each count as drawn: its value, its note (its own, or else its group's),
-   * its state, and whether its value is dimmed.
+   * its state, whether it's shown or hidden behind its group's line of none,
+   * and whether its value is dimmed.
    */
   health: {
     key: string;
     value: string;
     note: string;
     state: string;
+    shown: boolean;
     dimmed: boolean;
     /** The icons drawn in place of its value's text, each as its codicon and count: "error 2". */
     severities: string[];

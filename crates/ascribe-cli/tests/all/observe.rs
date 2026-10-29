@@ -2,8 +2,8 @@
 //! what it says before it runs anything, the observation it writes when the
 //! test passes, that a failing test writes nothing and leaves the old
 //! observation as it was, its JSON, and what it exits with when it can't
-//! run; and that, with no terminal on standard input, it doesn't ask before
-//! it runs. The commands are ones `sh` and `cmd` both run.
+//! run; and that, with no terminal on standard input, it doesn't ask, and
+//! runs nothing unless given `--yes`. The commands are ones `sh` and `cmd` both run.
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
@@ -15,9 +15,13 @@ use ascribe_model::examples::Observation;
 use serde_json::Value;
 
 fn ascribe(dir: &Path, args: &[&str]) -> Output {
+    // The folder isn't a repository, so a run that writes passes the git
+    // guard with `--force`; `guard.rs` tests the guard.
+    let writes = !args.iter().any(|a| matches!(*a, "--check" | "--dry-run"));
     Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
+        .args(writes.then_some("--force"))
         .env("NO_COLOR", "1")
         .output()
         .expect("run ascribe")
@@ -59,7 +63,7 @@ const OBSERVATION: &str = "examples.observations/default.toml";
 #[test]
 fn a_passing_test_writes_what_it_passed_and_where() {
     let dir = folder("exit 0");
-    let output = ascribe(dir.path(), &["observe"]);
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let os = match std::env::consts::OS {
         "linux" => "Linux",
@@ -87,30 +91,48 @@ fn a_passing_test_writes_what_it_passed_and_where() {
         ascribe_model::example_hash(b"a();\n")
     );
     // A second run writes the same file.
-    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe", "--yes"])), 0);
     assert_eq!(
         fs::read_to_string(dir.path().join(OBSERVATION)).unwrap(),
         text
     );
 }
 
-/// Standard input here isn't a terminal, as in CI or a hook: it runs the
-/// commands without asking, as it does with `--yes`. The question itself is
-/// tested in `src/commands/observe.rs`.
+/// Standard input here isn't a terminal, as in CI, a hook, or an agent's
+/// shell: nobody is there to answer, so it lists the commands and runs
+/// nothing without `--yes`, and with it runs them without asking. The
+/// question itself is tested in `src/commands/observe.rs`.
 #[test]
-fn without_a_terminal_or_with_yes_it_doesnt_ask() {
-    for args in [&["observe"][..], &["observe", "--yes"]] {
-        let dir = folder("exit 0");
-        let output = ascribe(dir.path(), args);
-        assert_eq!(code_of(&output), 0, "{args:?}: {}", stderr(&output));
-        assert!(
-            stdout(&output).starts_with("Running the commands in ascribe.examples.toml:\n"),
-            "{args:?}: {}",
-            stdout(&output)
-        );
-        assert!(!stderr(&output).contains("Run them?"), "{args:?}");
-        assert!(dir.path().join(OBSERVATION).exists(), "{args:?}");
-    }
+fn without_a_terminal_it_runs_nothing_unless_given_yes() {
+    let dir = folder("echo ran > ran");
+    let output = ascribe(dir.path(), &["observe"]);
+    assert_eq!(code_of(&output), 2, "{}", stderr(&output));
+    assert!(
+        stdout(&output).starts_with("The commands in ascribe.examples.toml:\n"),
+        "{}",
+        stdout(&output)
+    );
+    assert!(stderr(&output).contains("`--yes`"), "{}", stderr(&output));
+    assert!(!stderr(&output).contains("Run them?"));
+    assert!(!dir.path().join("ran").exists());
+    assert!(!dir.path().join(OBSERVATION).exists());
+
+    // `--check` runs nothing, so it needs no `--yes`, and gives none: the
+    // run after it still refuses.
+    let output = ascribe(dir.path(), &["observe", "--check"]);
+    assert_eq!(code_of(&output), 1, "{}", stderr(&output));
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 2);
+
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(
+        stdout(&output).starts_with("Running the commands in ascribe.examples.toml:\n"),
+        "{}",
+        stdout(&output)
+    );
+    assert!(!stderr(&output).contains("Run them?"));
+    assert!(dir.path().join("ran").exists());
+    assert!(dir.path().join(OBSERVATION).exists());
 }
 
 /// A link to a folder `include` matches, as pnpm's `node_modules` is full
@@ -123,7 +145,7 @@ fn a_link_to_a_folder_is_skipped() {
     fs::write(dir.path().join("other/c.ts"), "c\n").unwrap();
     std::os::unix::fs::symlink("../other", dir.path().join("examples/linked")).unwrap();
     std::os::unix::fs::symlink("../helper.ts", dir.path().join("examples/helper.ts")).unwrap();
-    let output = ascribe(dir.path(), &["observe"]);
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let text = fs::read_to_string(dir.path().join(OBSERVATION)).unwrap();
     let observation = Observation::parse(&text).unwrap();
@@ -141,7 +163,7 @@ fn a_link_to_a_folder_is_skipped() {
 #[test]
 fn a_failing_test_writes_nothing_and_exits_1() {
     let dir = folder("exit 0");
-    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe", "--yes"])), 0);
     let before = fs::read(dir.path().join(OBSERVATION)).unwrap();
     fs::write(dir.path().join("examples/a.ts"), "changed();\n").unwrap();
     let config = fs::read_to_string(dir.path().join("ascribe.examples.toml")).unwrap();
@@ -150,7 +172,7 @@ fn a_failing_test_writes_nothing_and_exits_1() {
         config.replace("exit 0", "exit 3"),
     )
     .unwrap();
-    let output = ascribe(dir.path(), &["observe"]);
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
     assert_eq!(code_of(&output), 1);
     assert!(
         stderr(&output).contains("exit 3 failed (exit code 3); nothing was written"),
@@ -167,7 +189,7 @@ fn a_failing_test_writes_nothing_and_exits_1() {
 #[test]
 fn json_has_the_commands_the_environment_and_the_files() {
     let dir = folder("exit 0");
-    let output = ascribe(dir.path(), &["observe", "--format", "json"]);
+    let output = ascribe(dir.path(), &["observe", "--yes", "--format", "json"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let json: Value = serde_json::from_str(&stdout(&output)).unwrap();
     assert_eq!(json["schema_version"], 1);
@@ -187,7 +209,7 @@ fn json_has_the_commands_the_environment_and_the_files() {
     );
 
     let failing = folder("exit 1");
-    let output = ascribe(failing.path(), &["observe", "--format", "json"]);
+    let output = ascribe(failing.path(), &["observe", "--yes", "--format", "json"]);
     assert_eq!(code_of(&output), 1);
     let json: Value = serde_json::from_str(&stdout(&output)).unwrap();
     assert_eq!(json["test"]["passed"], false);
@@ -197,7 +219,7 @@ fn json_has_the_commands_the_environment_and_the_files() {
 #[test]
 fn it_runs_only_the_config_in_its_own_folder() {
     let dir = folder("exit 0");
-    let output = ascribe(&dir.path().join("examples"), &["observe"]);
+    let output = ascribe(&dir.path().join("examples"), &["observe", "--yes"]);
     assert_eq!(code_of(&output), 2);
     assert!(
         stderr(&output).contains("there's no ascribe.examples.toml in this folder"),
@@ -208,6 +230,46 @@ fn it_runs_only_the_config_in_its_own_folder() {
 }
 
 #[test]
+fn it_warns_when_no_source_of_the_project_above_reads_the_config() {
+    let dir = tempfile::tempdir().unwrap();
+    let model =
+        "spec = \"0.1\"\n\n[sources.code]\npath = \".\"\ninclude = [\"src/**\", \"examples/**\"]\n";
+    fs::write(dir.path().join("ascribe.toml"), model).unwrap();
+    fs::create_dir_all(dir.path().join("docs")).unwrap();
+    let examples = dir.path().join("examples");
+    fs::create_dir_all(&examples).unwrap();
+    fs::write(
+        examples.join("ascribe.examples.toml"),
+        "include = [\"*.ts\"]\ntest = \"exit 0\"\n",
+    )
+    .unwrap();
+    fs::write(examples.join("a.ts"), "a();\n").unwrap();
+
+    // The observation is written, and the warning says why no page shows it.
+    let output = ascribe(&examples, &["observe", "--yes"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    assert!(examples.join(OBSERVATION).exists());
+    assert_eq!(
+        stderr(&output),
+        "warning: [ASC285] `examples/ascribe.examples.toml` is below the root of source `code`, `.`, and only the `ascribe.examples.toml` at a source's root is read, so no page says what its examples were tested with; declare a source with `path = \"examples\"`, or move the file to `.`\n"
+    );
+
+    // Not with the check turned off.
+    let off = format!("{model}\n[checks]\nexamples-config-unread = \"off\"\n");
+    fs::write(dir.path().join("ascribe.toml"), off).unwrap();
+    let output = ascribe(&examples, &["observe", "--yes"]);
+    assert_eq!(code_of(&output), 0);
+    assert_eq!(stderr(&output), "");
+
+    // Nor once a source's root is the folder.
+    let declared = format!("{model}\n[sources.ex]\npath = \"examples\"\n");
+    fs::write(dir.path().join("ascribe.toml"), declared).unwrap();
+    let output = ascribe(&examples, &["observe", "--yes"]);
+    assert_eq!(code_of(&output), 0);
+    assert_eq!(stderr(&output), "");
+}
+
+#[test]
 fn a_config_that_cant_be_read_or_an_environment_that_cant_be_noted_is_2() {
     let dir = folder("exit 0");
     fs::write(
@@ -215,7 +277,7 @@ fn a_config_that_cant_be_read_or_an_environment_that_cant_be_noted_is_2() {
         "include = []\ntest = \"exit 0\"\n",
     )
     .unwrap();
-    let output = ascribe(dir.path(), &["observe"]);
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
     assert_eq!(code_of(&output), 2);
     assert_eq!(
         stderr(&output),
@@ -227,7 +289,7 @@ fn a_config_that_cant_be_read_or_an_environment_that_cant_be_noted_is_2() {
         "include = [\"**\"]\ntest = \"exit 0\"\n[environment]\ntool = { command = \"exit 4\" }\n",
     )
     .unwrap();
-    let output = ascribe(dir.path(), &["observe"]);
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
     assert_eq!(code_of(&output), 2);
     assert!(stderr(&output).contains("`exit 4` failed (exit code 4)"));
     assert!(!dir.path().join(OBSERVATION).exists());
@@ -236,9 +298,9 @@ fn a_config_that_cant_be_read_or_an_environment_that_cant_be_noted_is_2() {
 #[test]
 fn a_name_writes_an_observation_of_its_own() {
     let dir = folder("exit 0");
-    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe", "--yes"])), 0);
     let default = fs::read(dir.path().join(OBSERVATION)).unwrap();
-    let output = ascribe(dir.path(), &["observe", "--name", "node-22"]);
+    let output = ascribe(dir.path(), &["observe", "--yes", "--name", "node-22"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert!(
         stdout(&output)
@@ -257,7 +319,7 @@ fn a_name_writes_an_observation_of_its_own() {
     );
 
     for name in ["Node", "node_22", "../x", "x-", ""] {
-        let output = ascribe(dir.path(), &["observe", "--name", name]);
+        let output = ascribe(dir.path(), &["observe", "--yes", "--name", name]);
         assert_eq!(code_of(&output), 2, "{name}");
         assert!(
             stderr(&output).contains("isn't an observation's name"),
@@ -270,8 +332,8 @@ fn a_name_writes_an_observation_of_its_own() {
 #[test]
 fn a_run_says_what_changed_since_the_observation_it_replaces() {
     let dir = folder("exit 0");
-    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
-    let output = ascribe(dir.path(), &["observe"]);
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe", "--yes"])), 0);
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
     assert!(
         stdout(&output).ends_with("Nothing changed since the observation it replaces.\n"),
         "{}",
@@ -287,7 +349,7 @@ fn a_run_says_what_changed_since_the_observation_it_replaces() {
         config.replace("echo v1.2.3", "echo v1.3.0"),
     )
     .unwrap();
-    let output = ascribe(dir.path(), &["observe"]);
+    let output = ascribe(dir.path(), &["observe", "--yes"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert!(
         stdout(&output).ends_with(
@@ -303,7 +365,7 @@ fn a_run_says_what_changed_since_the_observation_it_replaces() {
         config.replace("echo v1.3.0", "echo v1.4.0"),
     )
     .unwrap();
-    let output = ascribe(dir.path(), &["observe", "--format", "json"]);
+    let output = ascribe(dir.path(), &["observe", "--yes", "--format", "json"]);
     let json: Value = serde_json::from_str(&stdout(&output)).unwrap();
     assert_eq!(
         json["changes"],
@@ -328,7 +390,7 @@ fn check_runs_nothing_and_says_whether_the_observation_is_stale() {
         stdout(&output),
         "There's no examples.observations/default.toml, so no test run has covered the examples. Run `ascribe observe` here to test them.\n"
     );
-    assert_eq!(code_of(&ascribe(dir.path(), &["observe"])), 0);
+    assert_eq!(code_of(&ascribe(dir.path(), &["observe", "--yes"])), 0);
     fs::write(
         dir.path().join("ascribe.examples.toml"),
         "include = [\"examples/**\"]\nignore = [\"examples/skip.ts\"]\ntest = \"exit 7\"\n\n[environment]\ntool = { command = \"exit 8\" }\n",
@@ -350,9 +412,21 @@ fn check_runs_nothing_and_says_whether_the_observation_is_stale() {
     fs::write(dir.path().join("examples/a.ts"), "changed();\n").unwrap();
     let output = ascribe(dir.path(), &["observe", "--check"]);
     assert_eq!(code_of(&output), 1);
-    assert_eq!(
-        stdout(&output),
-        "examples.observations/default.toml is stale: changed examples/a.ts. Run `ascribe observe` here to test the examples again.\n"
+    // The observation's hashes as a unified diff, then what's stale.
+    let said = stdout(&output);
+    assert!(
+        said.starts_with(
+            "--- a/examples.observations/default.toml\n+++ b/examples.observations/default.toml\n@@ "
+        ),
+        "{said}"
+    );
+    assert!(said.contains("\n-\"examples/a.ts\" = "), "{said}");
+    assert!(said.contains("\n+\"examples/a.ts\" = "), "{said}");
+    assert!(
+        said.ends_with(
+            "examples.observations/default.toml is stale: changed examples/a.ts. Run `ascribe observe` here to test the examples again.\n"
+        ),
+        "{said}"
     );
     let output = ascribe(dir.path(), &["observe", "--check", "--format", "json"]);
     assert_eq!(code_of(&output), 1);

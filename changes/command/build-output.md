@@ -1,0 +1,1 @@
+- **Behavior change: `ascribe build` shows errors in full, counts the rest, and prints one line per build.** Warnings and advice are one summary line that points to `ascribe check`; `--format json` is unchanged. See [ascribe build](docs/content/checks/check.md#cli-build).

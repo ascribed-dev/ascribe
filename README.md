@@ -36,7 +36,7 @@ See [](keys.md#rotate-keys) to rotate your API key.
 
 - **The tools of a docs team.** Reusable content with `@include` and phrases, variants by platform or product shown as tabs, and a build for each release line from one source. A glossary, page types and templates from a content model in `ascribe.toml`, notes and steps, and a page and site preview in VS Code.
 - **Checked like code.** Broken links, missing headings, and undeclared names are errors, in the editor as you type and in CI. Code examples are read from the code's own files with `@snippet`, and a pull request is reviewed as rendered pages, with what changed marked.
-- **Built for agents, writing and reading.** AI agents that write pages get the project's rules from `ascribe agents sync`, the checks through the MCP server, and a hook that checks after each edit. Agents that read them get `llms.txt`, a Markdown version of every page, and JSON.
+- **Built for agents, writing and reading.** AI agents that write pages get the project's rules from `ascribe agents sync`, the checks through the MCP server, and a hook that checks after each edit. Agents that read a published site get `llms.txt`, a Markdown version of every page, and each permalink's help as JSON. The build's page JSON is for tools, and isn't served.
 - **Plain files you can leave.** A page reads as Markdown without Ascribe, and the plain output is CommonMark. Ascribe hosts nothing and calls no model, and it's open source under the MPL.
 
 ## Get started
@@ -69,7 +69,7 @@ The compiler is a Rust workspace; the npm packages and the extension are a pnpm 
 
 | Directory | Contents |
 |---|---|
-| `crates/` | The compiler: `ascribe-syntax` (parsing), `ascribe-model` (`ascribe.toml`), `ascribe-resolve` (includes, builds, links), `ascribe-check`, `ascribe-emit` (outputs), `ascribe-diff` (what changed since a git revision), `ascribe-sources` (sources in other repositories), `ascribe-fmt`, `ascribe-query` (answers about a project, for the commands agents use), `ascribe-lsp`, `ascribe-cli` (the `ascribe` binary), and `comrak-ascribe`, a fork of the CommonMark parser |
+| `crates/` | The compiler: `ascribe-syntax` (parsing), `ascribe-model` (`ascribe.toml`), `ascribe-resolve` (includes, builds, links), `ascribe-check`, `ascribe-emit` (outputs), `ascribe-diff` (what changed since a git revision), `ascribe-sources` (sources in other repositories), `ascribe-fmt`, `ascribe-query` (answers about a project, for the commands agents use), `ascribe-edit` (the edits the commands share with the language server), `ascribe-lsp`, `ascribe-cli` (the `ascribe` binary), and `comrak-ascribe`, a fork of the CommonMark parser |
 | `packages/` | `cli`, `astro`, `elements`, `review`, and `vscode` |
 | `tests/` | The conformance suite and its diagnostics registry, the CommonMark suite, real-world corpora, and cross-implementation fixtures |
 | `examples/` | Example projects and content models |

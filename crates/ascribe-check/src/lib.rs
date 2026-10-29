@@ -25,7 +25,7 @@
 //!   the content declares, when the project has one.
 //!
 //! Messages, codes, and severities come from the diagnostics registry
-//! (`tests/conformance/diagnostics.toml`), through [`Registry`].
+//! (`crates/ascribe-core/data/diagnostics.toml`), through [`Registry`].
 //!
 //! **Page-level checks** are in [`page`]: [`check_project`] is the one function
 //! every tool calls for a build (the file-level diagnostics, then the build's
@@ -46,21 +46,17 @@ mod glossary;
 pub mod identity;
 pub mod intended;
 mod levels;
-pub mod links;
 mod memos;
 mod nav;
 pub mod page;
 mod permalinks;
 mod project;
 pub mod prompt;
-pub mod prose;
 pub mod registry;
 mod releases;
-pub mod report_history;
 pub mod roles;
 mod scope;
-pub mod site;
-pub mod tool;
+pub mod side_files;
 pub mod type_files;
 mod yaml;
 
@@ -68,25 +64,22 @@ pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, image_file, size_
 use ascribe_core::FileId;
 pub use baseline::{BASELINE_FILE, BASELINE_FILE_ID, Baseline, BaselineError};
 pub use builds::{
-    Diagnosed, UnknownBuild, count_errors, count_errors_in, diagnose, diagnose_editor_build,
-    diagnose_editor_build_in, diagnose_every_build_in, select_builds,
+    Checked, DiagnoseError, Diagnosed, Found, Request, UnknownBuild, count_errors, count_errors_in,
+    diagnose, diagnose_editor_build, diagnose_every_build_in, diagnose_with, select_builds,
 };
-pub use checks::check_file;
-use checks::{check_examples, check_sources};
+use checks::{check_examples, check_sources, check_unread_configs};
+pub use checks::{check_file, unread_config_issue, with_phrases};
 pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
 pub use evidence::GATHERED as GATHERED_EVIDENCE;
 pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
 pub use levels::{apply_levels, default_limit};
-pub use page::{
-    PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
-};
+pub use page::{PageChecker, check_all_builds, check_builds, check_pages, check_project};
 pub use project::{
-    ADDRESSES_FILE_ID, FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError,
-    MEMO_FILE_IDS, MODEL_FILE, ModelFile, NAV_FILE_ID, PERMALINKS_FILE_ID, Project, ReadFailure,
-    SourceFile,
+    ADDRESSES_FILE_ID, FileEntry, IMAGE_FILE_IDS, LOADER, LOCK_FILE_ID, MEMO_FILE_IDS, MODEL_FILE,
+    NAV_FILE_ID, PERMALINKS_FILE_ID, Project, in_memory, in_memory_with, load, load_bounded,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
-pub use scope::{Reported, Scope, ScopeError, locate_for};
+pub use scope::{Reported, Scope, ScopeError, locate_for, real as real_path};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content
 /// model's warnings, then each source file's diagnostics, in file order and,
@@ -111,8 +104,7 @@ pub(crate) fn check_files_with(
         None if across::any_file_level(&project.model().checks)
             || memos::any(project)
             || project.permalinks().is_some()
-            || project.nav().is_some()
-            || !project.model().permalinks.is_empty() =>
+            || project.nav().is_some() =>
         {
             PageChecker::new(project).for_every_build(true)
         }
@@ -131,15 +123,17 @@ pub(crate) fn check_files_with(
     // snippets have been read.
     let mut sources = check_sources(project);
     sources.extend(check_examples(project));
+    sources.extend(check_unread_configs(project));
     sources.extend(across.remove(&PERMALINKS_FILE_ID).unwrap_or_default());
     sources.extend(across.remove(&NAV_FILE_ID).unwrap_or_default());
     if let Some(Err(problems)) = project.addresses() {
         sources.extend(problems.iter().map(Diagnostic::from_issue));
     }
+    sources.extend(across.remove(&ADDRESSES_FILE_ID).unwrap_or_default());
     // The specs are read with the source index, so they're asked of it only
     // when the content model declares one.
     if !project.model().apis.is_empty() {
-        let apis = project.link_index().apis();
+        let apis = project.index().apis();
         sources.extend(
             apis.problems(project.model(), FileId::new(0))
                 .iter()

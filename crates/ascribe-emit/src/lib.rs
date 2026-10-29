@@ -54,7 +54,7 @@ pub mod zod;
 
 pub use archive::{
     ARCHIVE_ALL, ARCHIVE_STYLESHEET, Archive, ArchiveOptions, Unlinked, archive,
-    page_file as archive_page_file,
+    page_file as archive_page_file, preview,
 };
 pub use assets::Placement;
 pub use emitter::{
@@ -65,7 +65,7 @@ pub use error::EmitError;
 pub use json::{
     FormattedPiece, JSON_SCHEMA_VERSION, JsonEmitter, PieceKind, formatted_pieces, formatted_title,
 };
-pub use plain::{PlainEmitter, section_summary};
+pub use plain::{PlainEmitter, plain_markdown, section_summary};
 pub use render::render_site_html;
 pub use site::{AstroProfile, Help, HelpEntry, SiteEmitter, help, help_header, split_frontmatter};
 pub use store::{Contents, EmittedFile, FileKind, OutputDir, OutputOptions, Replaced, StoreError};

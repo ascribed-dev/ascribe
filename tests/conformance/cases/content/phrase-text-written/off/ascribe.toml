@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[phrases]
+product = "Quill"
+cloud = "Quill Cloud"
+version = "3.4.1"
+api = "https://api.quill.dev/v3/"
+node = "24"
+
+[checks]
+phrase-text-written = "off"
+phrase-unused = "off"

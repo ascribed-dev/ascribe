@@ -300,3 +300,48 @@ fn a_former_base_path_without_agents_forwards_only_what_was_published() {
         ]
     );
 }
+
+/// With Netlify as the host, each permalink's address leads to its section
+/// with a forced 301, after a rule for each dimension's query parameter
+/// that serves the forwarding page, which takes the reader's choice from
+/// it; an alias and a name moved to a page lead where they end; a retired
+/// name's page is served with a 410. `redirects.json` doesn't list them.
+#[test]
+fn with_netlify_each_permalink_leads_to_its_section() {
+    let model = MODEL
+        .replace("agents = true\n", "agents = true\nhost = \"netlify\"\n")
+        .replace("\"never\"", "\"always\"")
+        + "[dimensions.pm]\nvalues = [\"npm\", \"pnpm\"]\n";
+    let model = ascribe_model::load_str(&model, FileId::new(0)).expect("a model");
+    let layout = Layout::from_model(&model);
+    let fs = MemoryFs::new(&layout)
+        .with_source(
+            "guides/setup.md",
+            "---\ntype: page\ntitle: Setup\npermalink: setup\n---\n\n\
+             ## Install\n@id {permalink=true}: install\n\nText.\n",
+        )
+        .with_source("index.md", PAGE)
+        .with_file(
+            "ascribe.addresses",
+            "version = 1\n\n[moved]\n\"go:start\" = \"go:setup\"\n\
+             \"go:keys\" = \"guides/setup.md#install\"\n\n\
+             [retired]\n\"go:legacy\" = \"Removed in 4.0.\"\n",
+        );
+    let project = Project::load(Arc::new(model), layout, &fs);
+    let output = output(&project);
+    assert_eq!(
+        output.get(HOST_REDIRECTS_PATH).map(String::as_str),
+        Some(
+            "/docs/go/install/ pm=:pm /docs/go/install/ 200!\n\
+             /docs/go/install/ /docs/guides/setup/#install 301!\n\
+             /docs/go/keys/ pm=:pm /docs/go/keys/ 200!\n\
+             /docs/go/keys/ /docs/guides/setup/#install 301!\n\
+             /docs/go/legacy/ /docs/go/legacy/ 410!\n\
+             /docs/go/setup/ pm=:pm /docs/go/setup/ 200!\n\
+             /docs/go/setup/ /docs/guides/setup/ 301!\n\
+             /docs/go/start/ pm=:pm /docs/go/start/ 200!\n\
+             /docs/go/start/ /docs/guides/setup/ 301!\n"
+        )
+    );
+    assert_eq!(redirects(&project)["redirects"], json!([]));
+}

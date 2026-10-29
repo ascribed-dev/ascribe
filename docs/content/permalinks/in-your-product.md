@@ -3,7 +3,6 @@ type: how-to
 title: Show the docs in your product
 description: Show a section of the docs inside your product, in a tooltip, a side panel, or beside an error, by the permalink the product already links to.
 permalink: help-in-a-product
-available: ascribe 0.4.3
 ---
 
 A product that links to the docs by [permalink](index.md) can show the section the permalink names where its user is: the first paragraph in a tooltip, the whole section in a side panel, or the answer beside an error message, with a link to read more. The text is the docs' own, for the product's release line, so nothing is copied into the product's strings to drift from them.
@@ -26,7 +25,6 @@ A heading's section runs to the next heading at its level or above, or to the en
 
 ## Write the summaries
 @id: writing-summaries
-@available: ascribe 0.4.3
 
 A tooltip or a line beside an error has room for a sentence or two, so give each section a product shows a summary with [`@summary`](../writing/directives.md#summary). Write the summary's own text directly under the heading, which the page doesn't show:
 
@@ -52,20 +50,20 @@ Generate a new key in the dashboard, then …
 
 Nothing is guessed: a section without `@summary` has no `summary` in the file, whatever it opens with, and a product shows its title and "Read more" alone.
 
-`ascribe check` says where one is missing, and where one is too long, as advice:
+Two checks say where one is missing, and where one is too long. They're off unless the project names them in [`[checks]`](../content-model/checks.md), since a project that uses permalinks only for links that last doesn't need summaries:
 
 - [`summary-missing`](../checks/diagnostics/content-checks.md#ASC252): a heading's permalink with no `@summary`. A page's own permalink has its description, which [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) asks for.
 - [`summary-long`](../checks/diagnostics/content-checks.md#ASC253): a summary of 300 characters or more, counted as a description is. `limit` changes the number.
 
-To require a summary for every permalink, raise `summary-missing` to a warning in [`[checks]`](../content-model/checks.md):
+Turn them on in the project that ships `help.json`. As advice, `ascribe check` lists what's missing without failing; as a warning, `--deny-warnings` requires a summary for every permalink:
 
 ```toml
 [checks]
 summary-missing = "warning"
-
-[checks.summary-long]
-limit = 200
+summary-long = "advice"
 ```
+
+`[checks.summary-long]` with a `limit`, such as `limit = 200`, turns `summary-long` on too, at its default level, advice.
 
 ## Read it in the product
 @id: reading-the-file
@@ -84,7 +82,6 @@ node examples/quill/product/help.ts examples/quill/.ascribe/build/site/site/_asc
 
 A product renders `text` as Markdown its own way: it's CommonMark with no HTML.
 
-@available: ascribe 0.4.3
 To see an entry without building the site, run [`ascribe resolve go:<name>`](../command/questions.md#cli-resolve), with the build: it prints what the file has for the name, from the code that writes the file, and `--format json` prints the entry as the file writes it. An agent writing your product's message can read what it will show the same way, with the `ascribe_resolve` tool or the command, which the rules [`ascribe agents sync`](../agents/index.md) writes tell it about.
 
 ```sh
@@ -121,7 +118,7 @@ A site built with [`@ascribed/astro`](../astro/reference.md#help-entries) serves
 - **The current line's** beside the permalink's address: `https://docs.quill.dev/go/connect.json`.
 - **An older line's** under the line's number: `https://docs.quill.dev/3.4/go/connect.json`. A permalink's own address always leads to the current line, whose text may describe what a product on 3.4 doesn't do, so a product fetches from its own line's folder.
 
-Each answers with the file narrowed to that entry, so the product reads it as it reads its bundled file: `version`, `build`, `line`, and `help`, with the one entry under its name. The site lets any origin read it, so a web app on its own domain can fetch it too.
+Beside each, at `connect.md`, is the same section as Markdown, under its title, for an agent or a product that shows Markdown as it is. Each JSON answers with the file narrowed to that entry, so the product reads it as it reads its bundled file: `version`, `build`, `line`, and `help`, with the one entry under its name. The site lets any origin read it, so a web app on its own domain can fetch it too.
 
 The rule for a product:
 

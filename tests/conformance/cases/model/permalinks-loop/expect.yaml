@@ -1,9 +1,0 @@
-description: >-
-  Aliases that lead to each other and never to a permalink are an error at
-  each one's target.
-spec: ["7.6"]
-tags: [model]
-
-diagnostics:
-  - {slug: model-permalinks, file: ascribe.toml, line: 4}
-  - {slug: model-permalinks, file: ascribe.toml, line: 5}

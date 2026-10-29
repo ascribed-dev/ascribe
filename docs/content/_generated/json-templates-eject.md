@@ -163,6 +163,10 @@
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
+    "dry_run": {
+      "description": "Whether it ran with `--dry-run`, and wrote nothing.",
+      "type": "boolean"
+    },
     "kept": {
       "description": "The types `ascribe.toml` declared already and kept, with `--keep-type`,\nin the order they were named: each takes its template and guide from\n`templates/templates.lock`, or, written in another folder, was given\nits `template` and `guide`, and nothing else in it changed. Empty when\nanything was refused.",
       "items": {
@@ -194,7 +198,7 @@
       "type": "array"
     },
     "written": {
-      "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`, when it changed. Empty when anything was refused.",
+      "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`, when it changed. Empty when anything was refused.\nWith `dry_run`, the files it would write.",
       "items": {
         "type": "string"
       },
@@ -205,6 +209,7 @@
     "schema_version",
     "ascribe_version",
     "written",
+    "dry_run",
     "added",
     "kept",
     "refused",

@@ -1,0 +1,7 @@
+description: >-
+  A quote that mentions a marker, has it after its first line or with text
+  beside it, escapes it, or names a kind GitHub doesn't have isn't an alert.
+spec: ["4.5"]
+tags: [check]
+
+diagnostics: []

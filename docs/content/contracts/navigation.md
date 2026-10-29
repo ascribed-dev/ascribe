@@ -1,7 +1,7 @@
 ---
 type: reference
 title: The navigation contract
-description: What _ascribe/nav.json in a build's site output holds, the project's sections and pages in order with their labels, and how a site draws a sidebar from it.
+description: "What `_ascribe/nav.json` in a build's site output holds, the project's sections and pages in order with their labels, and how a site draws a sidebar from it."
 ---
 
 Each build's site output has its share of the project's [navigation](../navigation/index.md) (SPEC §7.8) as `_ascribe/nav.json`, beside the page records (output-layout contract §1.6). `@ascribed/astro`'s `sidebar()` and `neighbors()` read it; a site built another way can too. The JSON output has the same file at the same path, with each formatted label in that output's form. This contract says what the file holds and what a reader can rely on.

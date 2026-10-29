@@ -15,11 +15,12 @@ src/content.config.ts             the collection
 src/pages/[...slug].astro         the route: base + entry id, and `index` at the base
 src/pages/404.astro               the not-found page, which explains a permalink that isn't here
 src/layouts/Docs.astro            the page, the sidebar from the project's navigation, its availability badge, its versions, and a table of contents
+src/styles/docs.css               the layout's styles, which the 404 page imports too
 test/e2e/                         the end-to-end tests
 scripts/screenshot.ts             the docs' pictures of the site and the report, from copies of this example (../../site/README.md#screenshots)
 ```
 
-`src/content.config.ts`, the route, and the layout are what `npx @ascribed/astro init` writes for this project, from `packages/astro/starter/`: `packages/astro/test/init.test.ts` fails when they differ, and rewrites them with `ASCRIBE_BLESS=1`. Change the starter, not these. The layout's sidebar has no list of its own: `sidebar(await getCollection("docs"), { entry })` draws it from the project's navigation, the default order, since the project has no `ascribe.nav`.
+`src/content.config.ts`, the route, the layout, and its stylesheet are what `npx @ascribed/astro init` writes for this project, from `packages/astro/starter/`: `packages/astro/test/init.test.ts` fails when they differ, and rewrites them with `ASCRIBE_BLESS=1`. Change the starter, not these. The layout's sidebar has no list of its own: `sidebar(await getCollection("docs"), { entry })` draws it from the project's navigation, the default order, since the project has no `ascribe.nav`.
 
 | Risk | Where |
 |---|---|

@@ -1,0 +1,8 @@
+description: >-
+  A key the directive doesn't take is extra text all the same, reported
+  once, without the binding error that follows from it.
+spec: ["3.1", "3.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-extra-text, line: 5}

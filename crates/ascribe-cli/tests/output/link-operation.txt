@@ -1,0 +1,5 @@
+../../../api/openapi.yaml#getLoom exists: an operation of API `loom`, in its spec ../api/openapi.yaml.
+GET /looms/{id}: Get a loom
+Id: getLoom
+Address: /docs/api#operation/getLoom
+Write: [Get a loom](../../../api/openapi.yaml#getLoom)

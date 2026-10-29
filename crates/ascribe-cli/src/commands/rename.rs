@@ -1,7 +1,7 @@
 //! `ascribe rename`: what the editor's rename does, from the command line.
 //! A phrase, a dimension's value, a heading's id, or a page or fragment
 //! that moves, renamed everywhere it's used, through
-//! [`ascribe_lsp::rename`], which makes the editor's own edits.
+//! [`ascribe_edit::rename`], which makes the editor's own edits.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -9,13 +9,21 @@ use std::process::ExitCode;
 
 use ascribe_check::Project;
 use ascribe_core::path::normalize;
-use ascribe_core::{Coded, RelPath};
-use ascribe_lsp::{RenameError, Renamed, Renaming};
+use ascribe_core::{Coded, FileId, RelPath};
+use ascribe_edit::{RenameError, Renamed, Renaming};
+use ascribe_model::{ADDRESSES_FILE, AddressFile};
 use clap::Args as ClapArgs;
+use serde::Serialize;
 
-use crate::answer::{self, Projects};
+use crate::answer::{self, Format, Projects};
 use crate::cli::Global;
+use crate::commands::addresses::MoveJson;
 use crate::exit;
+use crate::guard;
+
+/// The version of the command's JSON. It changes only when a field is
+/// removed or changes meaning.
+const SCHEMA_VERSION: u32 = 1;
 
 /// Arguments of `ascribe rename`.
 #[derive(Debug, ClapArgs)]
@@ -33,6 +41,16 @@ pub struct Args {
     /// directory, or from the content root.
     #[arg(value_name = "NEW")]
     pub new: String,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
+    /// How to show what changed. `json` gives each changed file's whole
+    /// text, the file that moves, and the entries recorded in
+    /// ascribe.addresses.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// Why `ascribe rename` couldn't do its work.
@@ -79,6 +97,57 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn rename(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let answer = match answer(&answer::FromDisk, global, args, Some(args.guard)) {
+        Ok(answer) => answer,
+        Err(stopped) => {
+            let _ = writeln!(err, "error: {}", stopped.message);
+            return stopped.code;
+        }
+    };
+    let result = match args.format {
+        Format::Json => answer::write_json(out, &answer.json),
+        Format::Text => write_text(out, &answer.renamed, args.guard.dry_run),
+    };
+    answer::written(result, err).unwrap_or(exit::OK)
+}
+
+/// A rename made: what changes, and the JSON that says so.
+pub(crate) struct Answer {
+    /// Each file's text after, and the file that moves.
+    renamed: Renamed,
+    /// What `--format json` writes.
+    pub json: RenameJson,
+}
+
+/// Why a rename wasn't made: what the command writes after `error: `, and
+/// its exit code.
+pub(crate) struct Stopped {
+    /// The message.
+    pub message: String,
+    /// The exit code: 1 when what's named doesn't exist, 2 otherwise.
+    pub code: u8,
+}
+
+impl Stopped {
+    fn failed(error: &dyn Coded) -> Stopped {
+        Stopped {
+            message: error.to_string(),
+            code: exit::of(error),
+        }
+    }
+}
+
+/// Renames `args.target` to `args.new`, in the project `projects` loads,
+/// and writes the files and moves the one that moves when `write` gives the
+/// guard, which allows it, and it isn't a dry run: what `ascribe rename`
+/// does, and with `write` `None` what the MCP server's `ascribe_rename`
+/// gives.
+pub(crate) fn answer(
+    projects: &dyn Projects,
+    global: &Global,
+    args: &Args,
+    write: Option<guard::Options>,
+) -> Result<Answer, Stopped> {
     let entry = entry(&args.target, args.new.trim());
     let entry_given = entry.is_some();
     // A path target finds its project from the path; an entry from the
@@ -95,42 +164,162 @@ fn rename(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         // `--config docs` names it from the current directory; the project
         // and the editor's rename work from where it is.
         Ok(config) => std::path::absolute(&config).map_or(config, |c| normalize(&c)),
-        Err(e) => return answer::fail(err, &e),
+        Err(e) => return Err(Stopped::failed(&e)),
     };
     // Something of the project's that isn't there is an answer to act on,
     // not a failure to do the work: exit code 1. A path is named as it was
     // given.
-    let missing = |err: &mut dyn Write, message: &str| {
-        let _ = writeln!(err, "error: {message}");
-        exit::PROBLEMS
+    let missing = |message: String| Stopped {
+        message,
+        code: exit::PROBLEMS,
     };
-    let given = format!("`{}` doesn't exist.", args.target);
+    let load = || {
+        projects.load(&config).map_err(|e| {
+            let failure = crate::context::Failure::Load(e);
+            Stopped {
+                message: answer::Stop::Load(failure).message(),
+                code: exit::FAILURE,
+            }
+        })
+    };
     let renaming = match entry {
         Some(renaming) => renaming,
-        None => match answer::FromDisk.load(&config) {
-            Ok(loaded) => match path_renaming(&loaded.project, &args.target, &args.new) {
+        None => {
+            let loaded = load()?;
+            match path_renaming(&loaded.project, &args.target, &args.new) {
                 Ok(Some(renaming)) => Ok(renaming),
-                Ok(None) => return missing(err, &not_found(&loaded.project, &args.target)),
+                Ok(None) => return Err(missing(not_found(&loaded.project, &args.target))),
                 Err(e) => Err(e),
-            },
-            Err(e) => return answer::report_failure(err, &crate::context::Failure::Load(e)),
-        },
+            }
+        }
     };
-    let renaming = match renaming {
-        Ok(renaming) => renaming,
-        Err(e) => return answer::fail(err, &e),
-    };
-    let renamed = match ascribe_lsp::rename(&config, &renaming) {
+    let renaming = renaming.map_err(|e| Stopped::failed(&e))?;
+    let renamed = match ascribe_edit::rename(&config, &renaming) {
         Ok(renamed) => renamed,
         Err(RenameError::Missing(message)) => {
-            return missing(err, if entry_given { &message } else { &given });
+            return Err(missing(if entry_given {
+                message
+            } else {
+                format!("`{}` doesn't exist.", args.target)
+            }));
         }
-        Err(e) => return answer::fail(err, &e),
+        Err(e) => return Err(Stopped::failed(&e)),
     };
-    if let Err(e) = write(&renamed) {
-        return answer::fail(err, &e);
+    // The entries recorded are those of `ascribe.addresses` before and
+    // after that differ, read before anything is written.
+    let recorded = match renamed.files.iter().find(|f| is_addresses(&f.path)) {
+        Some(file) => recorded(
+            load()?.project.addresses_text().unwrap_or_default(),
+            &file.text,
+        ),
+        None => Vec::new(),
+    };
+    if let Some(guard) = write {
+        let changing: Vec<&Path> = renamed
+            .files
+            .iter()
+            .map(|f| f.path.as_path())
+            .chain(renamed.moved.as_ref().map(|(from, _)| from.as_path()))
+            .collect();
+        guard.allow(&changing).map_err(|e| Stopped::failed(&e))?;
+        if !guard.dry_run {
+            self::write(&renamed).map_err(|e| Stopped::failed(&e))?;
+        }
     }
-    answer::written(write_text(out, &renamed), err).unwrap_or(exit::OK)
+    let json = RenameJson {
+        schema_version: SCHEMA_VERSION,
+        ascribe_version: env!("CARGO_PKG_VERSION"),
+        files: renamed
+            .files
+            .iter()
+            .map(|file| FileJson {
+                file: answer::path_from_here(&file.path),
+                text: file.text.clone(),
+                edits: file.edits,
+            })
+            .collect(),
+        moved: renamed.moved.as_ref().map(|(from, to)| MovedJson {
+            from: answer::path_from_here(from),
+            to: answer::path_from_here(to),
+        }),
+        recorded,
+        written: write.is_some_and(|guard| !guard.dry_run),
+    };
+    Ok(Answer { renamed, json })
+}
+
+/// The entries of `[moved]` that `after`, an `ascribe.addresses`, has and
+/// `before` doesn't, or has with another value, in key order.
+fn recorded(before: &str, after: &str) -> Vec<MoveJson> {
+    let parse = |text: &str| AddressFile::parse(text, FileId::new(0)).ok();
+    let (Some(before), Some(after)) = (parse(before), parse(after)) else {
+        return Vec::new();
+    };
+    after
+        .moved
+        .into_iter()
+        .filter(|(key, entry)| before.moved.get(key).is_none_or(|e| e.value != entry.value))
+        .map(|(key, entry)| MoveJson {
+            key,
+            value: entry.value,
+        })
+        .collect()
+}
+
+/// Whether `path` is a project's `ascribe.addresses`.
+fn is_addresses(path: &Path) -> bool {
+    path.file_name() == Some(std::ffi::OsStr::new(ADDRESSES_FILE))
+}
+
+/// What `ascribe rename --format json` writes, and the MCP server's
+/// `ascribe_rename` gives.
+#[derive(Debug, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct RenameJson {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// Each file the rename changes, in path order, with its whole text
+    /// after. The file that moves is under where it was, and
+    /// `ascribe.addresses` is one of them when the rename records a move.
+    files: Vec<FileJson>,
+    /// The page or fragment that moves, when one does.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    moved: Option<MovedJson>,
+    /// The entries of `ascribe.addresses`'s `[moved]` the rename records, in
+    /// key order, so the build forwards the old addresses; none when it
+    /// records nothing, as for a phrase, a fragment, or a project with no
+    /// `ascribe.addresses`.
+    recorded: Vec<MoveJson>,
+    /// Whether the files were written and the file moved: `--dry-run`, and
+    /// the MCP server's `ascribe_rename`, write nothing, and give the
+    /// changes to make.
+    written: bool,
+}
+
+/// A file a rename changes.
+#[derive(Debug, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct FileJson {
+    /// The file, from the current directory.
+    file: String,
+    /// Its whole text after the rename.
+    text: String,
+    /// How many places in it change.
+    edits: usize,
+}
+
+/// The file a rename moves.
+#[derive(Debug, Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct MovedJson {
+    /// Where it is, from the current directory.
+    from: String,
+    /// Where it goes, from the current directory. Its folder is made when
+    /// it isn't there.
+    to: String,
 }
 
 /// The renaming `target` names when it's a content model entry,
@@ -256,11 +445,15 @@ fn write(renamed: &Renamed) -> Result<(), RenameCommandError> {
     Ok(())
 }
 
-/// What the rename changed, a line for each file, as the command writes it.
-fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
+/// What the rename changed, or with `--dry-run` would change, a line for
+/// each file, as the command writes it.
+fn write_text(out: &mut dyn Write, renamed: &Renamed, dry_run: bool) -> io::Result<()> {
+    let (changed, moved, record) = if dry_run {
+        ("would change", "would move", "would record")
+    } else {
+        ("changed", "moved", "recorded")
+    };
     // `ascribe.addresses` is said last: the move it records.
-    let is_addresses =
-        |path: &Path| path.file_name() == Some(std::ffi::OsStr::new(ascribe_model::ADDRESSES_FILE));
     let mut recorded = false;
     for file in &renamed.files {
         if is_addresses(&file.path) {
@@ -270,7 +463,7 @@ fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
         let places = if file.edits == 1 { "place" } else { "places" };
         writeln!(
             out,
-            "changed {} ({} {places})",
+            "{changed} {} ({} {places})",
             answer::path_from_here(&file.path),
             file.edits
         )?;
@@ -278,17 +471,13 @@ fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
     if let Some((from, to)) = &renamed.moved {
         writeln!(
             out,
-            "moved {} to {}",
+            "{moved} {} to {}",
             answer::path_from_here(from),
             answer::path_from_here(to)
         )?;
     }
     if recorded {
-        writeln!(
-            out,
-            "recorded the move in {}",
-            ascribe_model::ADDRESSES_FILE
-        )?;
+        writeln!(out, "{record} the move in {}", ADDRESSES_FILE)?;
     }
     Ok(())
 }

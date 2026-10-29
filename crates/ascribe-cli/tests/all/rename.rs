@@ -62,7 +62,10 @@ fn code_of(output: &Output) -> i32 {
 #[test]
 fn a_phrase_is_renamed_in_the_model_and_every_page_and_each_file_is_named() {
     let dir = project();
-    let output = ascribe(dir.path(), &["rename", "phrase:{cloud}", "hosted"]);
+    let output = ascribe(
+        dir.path(),
+        &["rename", "--force", "phrase:{cloud}", "hosted"],
+    );
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert_eq!(
         stdout(&output),
@@ -84,7 +87,10 @@ fn a_phrase_is_renamed_in_the_model_and_every_page_and_each_file_is_named() {
 fn a_heading_and_a_page_are_named_from_the_current_folder() {
     let dir = project();
     let docs = dir.path().join("docs");
-    let output = ascribe(&docs, &["rename", "keys.md#rotate-keys", "rotate"]);
+    let output = ascribe(
+        &docs,
+        &["rename", "--force", "keys.md#rotate-keys", "rotate"],
+    );
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert_eq!(
         stdout(&output),
@@ -92,7 +98,7 @@ fn a_heading_and_a_page_are_named_from_the_current_folder() {
     );
     assert!(read(dir.path(), "docs/keys.md").contains("## Rotate keys\n@id: rotate\n"));
 
-    let output = ascribe(&docs, &["rename", "keys.md", "guides/keys.md"]);
+    let output = ascribe(&docs, &["rename", "--force", "keys.md", "guides/keys.md"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert_eq!(
         stdout(&output),
@@ -111,13 +117,22 @@ fn a_heading_and_a_page_are_named_from_the_current_folder() {
 fn what_isnt_there_exits_1_and_what_cant_be_renamed_exits_2_changing_nothing() {
     let dir = project();
     for (args, code) in [
-        (&["rename", "phrase:product", "name"][..], 1),
-        (&["rename", "docs/nothing.md", "docs/new.md"][..], 1),
-        (&["rename", "docs/keys.md#nothing", "new"][..], 1),
-        (&["rename", "phrase:cloud", "Hosted"][..], 2),
-        (&["rename", "docs/keys.md", "docs/install.md"][..], 2),
-        (&["rename", "docs/keys.md", "elsewhere/keys.md"][..], 2),
-        (&["rename", "feature:sso", "login"][..], 2),
+        (&["rename", "--force", "phrase:product", "name"][..], 1),
+        (
+            &["rename", "--force", "docs/nothing.md", "docs/new.md"][..],
+            1,
+        ),
+        (&["rename", "--force", "docs/keys.md#nothing", "new"][..], 1),
+        (&["rename", "--force", "phrase:cloud", "Hosted"][..], 2),
+        (
+            &["rename", "--force", "docs/keys.md", "docs/install.md"][..],
+            2,
+        ),
+        (
+            &["rename", "--force", "docs/keys.md", "elsewhere/keys.md"][..],
+            2,
+        ),
+        (&["rename", "--force", "feature:sso", "login"][..], 2),
     ] {
         let output = ascribe(dir.path(), args);
         assert_eq!(code_of(&output), code, "{args:?}: {}", stderr(&output));
@@ -136,7 +151,7 @@ fn a_page_isnt_moved_through_a_folder_that_is_a_link() {
     crate::links::dir(outside.path(), dir.path().join("docs").join("guides"));
     let output = ascribe(
         dir.path(),
-        &["rename", "docs/keys.md", "docs/guides/keys.md"],
+        &["rename", "--force", "docs/keys.md", "docs/guides/keys.md"],
     );
     assert_eq!(code_of(&output), 2, "{}", stdout(&output));
     assert!(stderr(&output).contains("link"), "{}", stderr(&output));
@@ -161,7 +176,7 @@ fn each_target_is_renamed_from_the_folder_above_with_config() {
         &format!("{INSTALL}\n@variant {{platform=linux}}:\nOn Linux.\n@end\n"),
     );
     let rename = |args: &[&str]| {
-        let args = [&["rename"], args, &["--config", "site"]].concat();
+        let args = [&["rename", "--force"], args, &["--config", "site"]].concat();
         ascribe(above.path(), &args)
     };
     for (args, said) in [
@@ -235,7 +250,12 @@ fn a_memos_about_follows_its_heading_and_its_page_in_both_folders() {
 
     let output = ascribe(
         dir.path(),
-        &["rename", "install-agent.md#install-agent", "install"],
+        &[
+            "rename",
+            "--force",
+            "install-agent.md#install-agent",
+            "install",
+        ],
     );
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     let said = stdout(&output);
@@ -258,7 +278,7 @@ fn a_memos_about_follows_its_heading_and_its_page_in_both_folders() {
 
     let output = ascribe(
         dir.path(),
-        &["rename", "install-agent.md", "guides/agent.md"],
+        &["rename", "--force", "install-agent.md", "guides/agent.md"],
     );
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert!(
@@ -283,7 +303,7 @@ fn a_listed_page_that_moves_keeps_ascribe_nav_right() {
     let dir = project();
     let nav = "version = 1\n\n[[sections]]\nfolder = \"\" # the root\npages = [\"keys.md\", \"install.md\"]\n";
     write(dir.path(), "ascribe.nav", nav);
-    let output = ascribe(dir.path(), &["rename", "keys.md", "api-keys.md"]);
+    let output = ascribe(dir.path(), &["rename", "--force", "keys.md", "api-keys.md"]);
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert!(
         stdout(&output).contains("changed ascribe.nav (1 place)\n"),
@@ -324,7 +344,12 @@ fn a_glossary_terms_id_is_renamed_with_its_heading() {
     );
     let output = ascribe(
         dir.path(),
-        &["rename", "glossary.md#rollout", "rollouts-explained"],
+        &[
+            "rename",
+            "--force",
+            "glossary.md#rollout",
+            "rollouts-explained",
+        ],
     );
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert!(read(dir.path(), "docs/index.md").contains("(glossary.md#rollouts-explained)"));
@@ -345,7 +370,10 @@ fn a_phrases_memo_follows_its_key() {
     copy_dir(&quill, dir.path());
     let memo = read(dir.path(), "memos/product-name.md");
 
-    let output = ascribe(dir.path(), &["rename", "phrase:product", "brand"]);
+    let output = ascribe(
+        dir.path(),
+        &["rename", "--force", "phrase:product", "brand"],
+    );
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert!(
         stdout(&output).contains("changed memos/product-name.md (1 place)\n"),
@@ -390,7 +418,10 @@ fn a_page_and_a_fragment_are_renamed_by_their_case_alone() {
         &format!("{INSTALL}\n@include: _fragments/note.md\n"),
     );
 
-    let output = ascribe(dir.path(), &["rename", "docs/keys.md", "docs/Keys.md"]);
+    let output = ascribe(
+        dir.path(),
+        &["rename", "--force", "docs/keys.md", "docs/Keys.md"],
+    );
     assert_eq!(code_of(&output), 0, "{}", stderr(&output));
     assert_eq!(
         stdout(&output),
@@ -400,6 +431,7 @@ fn a_page_and_a_fragment_are_renamed_by_their_case_alone() {
         dir.path(),
         &[
             "rename",
+            "--force",
             "docs/_fragments/note.md",
             "docs/_fragments/Note.md",
         ],
@@ -429,7 +461,7 @@ fn a_page_isnt_moved_onto_another_whose_name_differs_only_in_case() {
         write(dir.path(), "docs/Keys.md", KEYS);
         ("docs/keys.md", "docs/Keys.md")
     };
-    let output = ascribe(dir.path(), &["rename", from, to]);
+    let output = ascribe(dir.path(), &["rename", "--force", from, to]);
     assert_eq!(code_of(&output), 2, "{}", stdout(&output));
     assert!(
         stderr(&output).contains("is there already"),

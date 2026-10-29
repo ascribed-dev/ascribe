@@ -1,0 +1,4 @@
+# :snippet-start: build
+/target
+# :snippet-end:
+.env

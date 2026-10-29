@@ -68,7 +68,7 @@ A term can choose for itself with `@term`'s own `match`, and with `case-sensitiv
 The programming language the agent is written in.
 ```
 
-An occurrence is a whole word in prose, matched ignoring case unless the glossary or the term says otherwise; a heading, a link's text, and code are never linked. Where two terms overlap, the longer wins, so `API key` is linked rather than `API`. The glossary page itself doesn't link the terms it defines. The [`[glossary]` reference](content.md#12-glossary) has every setting and rule.
+An occurrence is a whole word in prose, matched ignoring case unless the glossary or the term says otherwise; a heading, a link's text, and code are never linked. Where two terms overlap, the longer wins, so `API key` is linked rather than `API`. The glossary page itself doesn't link the terms it defines. The [`[glossary]` reference](content.md#8-glossary) has every setting and rule.
 
 ## A term that's also an ordinary word
 
@@ -137,7 +137,7 @@ A heading the fragment brings in is one term, wherever it's shown. Each build li
 
 ## Check the glossary
 
-Run `ascribe check`. The [rules for `[glossary]`](content.md#12-glossary) say what it reports, and each diagnostic is in [the diagnostics reference](../checks/diagnostics.md) with its fix.
+Run `ascribe check`. The [rules for `[glossary]`](content.md#8-glossary) say what it reports, and each diagnostic is in [the diagnostics reference](../checks/diagnostics.md) with its fix.
 
 A term you keep though no page uses it yet is acknowledged at its heading, with [`@intended`](../writing/directives.md#intended) among the directives under it:
 
@@ -157,6 +157,6 @@ In the editor, hovering over a term shows its definition ([Hover](../editor/writ
 
 ## See also
 
-- [`[glossary]`](content.md#12-glossary): the settings, terms, matching, and rules.
+- [`[glossary]`](content.md#8-glossary): the settings, terms, matching, and rules.
 - [`@term`](../writing/directives.md#term): the directive, in the directive reference.
 - [Glossary terms in the site output](../contracts/site-render.md): what the marker is, for a site that reads it.

@@ -114,6 +114,14 @@ export interface DiffReport {
   blocks_omitted?: boolean;
 }
 
+/** A page that moved: where it was, and where it is, by content path. */
+export interface MovedPage {
+  /** Where it was, in the base. */
+  from: string;
+  /** Where it is now. */
+  to: string;
+}
+
 /** What changed on one page of a build. */
 export interface PageDiff {
   /** The page's content path. */
@@ -131,14 +139,22 @@ export interface PageDiff {
    * The other changed files the page's change can come from: fragments it
    * includes and pages its links take a title or a heading from, in path
    * order; then the snippets whose code changed, by address
-   * (`code:app.py#main`); and `ascribe.toml` (last) when the content model
-   * is a cause.
+   * (`code:app.py#main`); then the operations of a declared API whose spec
+   * changed what the page writes for them, an `@operation`'s method, path,
+   * summary, or deprecation, or a link's address, each by its spec's path
+   * from the project root, `#`, and the fragment the page names it by
+   * (`api/openapi.yaml#createWidget`); and `ascribe.toml` (last) when the
+   * content model is a cause. The kinds are told apart by their form: a
+   * content file's path ends in `.md`, a snippet's address has its
+   * source's name and `:` before its path, and an operation's has a `#`
+   * and neither.
    */
   because: string[];
   /**
    * What changed about the page itself besides its blocks, in this
    * order: `title`, `frontmatter`, `availability` (the page-level one),
-   * and `route`. Empty for an added or removed page.
+   * and `route`. Empty for an added or removed page. A moved page's
+   * route moves with it, so it isn't listed for one.
    */
   page_changed: string[];
   /** How many changes of each kind. */
@@ -149,6 +165,21 @@ export interface PageDiff {
    * the report's `blocks_omitted` is `true`.
    */
   changes: Change[];
+  /**
+   * For a page that moved, the content path it was at: git sees its
+   * file renamed, or `ascribe.addresses` records the move. The page is
+   * listed once, at `path`, compared with the page as it was at
+   * `moved_from`; `status` is `changed`, and its `counts` and `changes`
+   * are what differs besides the move, none for a page that only moved.
+   * Absent for a page that didn't move.
+   */
+  moved_from?: string;
+  /**
+   * The pages among `because` whose only change is that they moved, each
+   * by where it was and where it is: a link on this page leads to its new
+   * address. Absent when there's none.
+   */
+  moved_links?: MovedPage[];
 }
 
 /** Whether a page is new, gone, or different. */

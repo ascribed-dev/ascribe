@@ -6,3 +6,4 @@
 - `--event <EVENT>`: When the hook runs: after the agent writes a file (`edit`), or when it's about to finish (`stop`).
   - `edit` (the default): After the agent writes a file: report the errors in it.
   - `stop`: When the agent is about to finish: check the whole project, and keep it working while there are errors.
+- `--command <COMMAND>`: The command the project runs Ascribe with, for the commands the hook's messages name. By default, each project's, as `ascribe agents sync` works it out.

@@ -4,8 +4,8 @@
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
 
-use ascribe_check::Project;
 use ascribe_model::ContentModel;
 use ascribe_query::{ModelReport, Section as QuerySection};
 use ascribe_resolve::{DiskFs, Layout};
@@ -42,14 +42,24 @@ pub struct Args {
 pub enum Section {
     /// Page types, with their files and frontmatter fields.
     Types,
+    /// Frontmatter every page type shares.
+    Frontmatter,
+    /// Fragments' files and frontmatter.
+    Fragments,
     /// Dimensions and their values.
     Dimensions,
+    /// Lifecycle states.
+    Lifecycle,
     /// Phrases, with their values.
     Phrases,
     /// Features, with their availability.
     Features,
+    /// Note types, with their labels.
+    Notes,
     /// Glossary terms.
     Glossary,
+    /// Image attributes.
+    Images,
     /// Project widgets, with their attributes.
     Widgets,
     /// Release lines, each target's with its status and the builds that are it.
@@ -58,8 +68,16 @@ pub enum Section {
     Builds,
     /// Sources, with their folders and the files they make readable.
     Sources,
+    /// APIs, with their specs and references.
+    Apis,
+    /// What `[from]` takes.
+    From,
+    /// Acknowledged problems.
+    Intended,
     /// Where the content is, and where builds go.
     Project,
+    /// How versions are compared.
+    Versions,
     /// The site the outputs are for.
     Consumer,
     /// The build the editor checks.
@@ -70,29 +88,35 @@ pub enum Section {
     Crawlers,
     /// What the site lists for search engines.
     Listing,
-    /// Retired permalinks and aliases.
-    Permalinks,
 }
 
 impl Section {
     fn query(self) -> QuerySection {
         match self {
             Section::Types => QuerySection::Types,
+            Section::Frontmatter => QuerySection::Frontmatter,
+            Section::Fragments => QuerySection::Fragments,
             Section::Dimensions => QuerySection::Dimensions,
+            Section::Lifecycle => QuerySection::Lifecycle,
             Section::Phrases => QuerySection::Phrases,
             Section::Features => QuerySection::Features,
+            Section::Notes => QuerySection::Notes,
             Section::Glossary => QuerySection::Glossary,
+            Section::Images => QuerySection::Images,
             Section::Widgets => QuerySection::Widgets,
             Section::Releases => QuerySection::Releases,
             Section::Builds => QuerySection::Builds,
             Section::Sources => QuerySection::Sources,
+            Section::Apis => QuerySection::Apis,
+            Section::From => QuerySection::From,
+            Section::Intended => QuerySection::Intended,
             Section::Project => QuerySection::Project,
+            Section::Versions => QuerySection::Versions,
             Section::Consumer => QuerySection::Consumer,
             Section::Editor => QuerySection::Editor,
             Section::Checks => QuerySection::Checks,
             Section::Crawlers => QuerySection::Crawlers,
             Section::Listing => QuerySection::Listing,
-            Section::Permalinks => QuerySection::Permalinks,
         }
     }
 }
@@ -115,10 +139,12 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// errors still has one to show.
 fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
     let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
-    let file = Project::load_model(&config).map_err(Failure::Load)?;
+    let file = ascribe_check::LOADER
+        .load_model(&config)
+        .map_err(Failure::Load)?;
     let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
-    let project = Project::load(&config).map_err(Failure::Load)?;
-    let index = project.index();
+    let workspace = ascribe_check::load(&config).map_err(Failure::Load)?;
+    let index = workspace.snapshot().index().clone();
     Ok(Loaded {
         model: file.model,
         config: file.text,
@@ -134,7 +160,7 @@ struct Loaded {
     config: String,
     fs: DiskFs,
     terms: Vec<ascribe_query::ModelTerm>,
-    index: ascribe_resolve::Project,
+    index: Arc<ascribe_resolve::Project>,
 }
 
 /// What `--format json` writes: without `--section`, with the project's

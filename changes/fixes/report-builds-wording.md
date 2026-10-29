@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe report` names the line a versioned build's content isn't available on. Content marked for a later line read "not ;"; it now reads "not self-managed 3.4", as the editor's build lens does.

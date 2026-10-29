@@ -4,9 +4,10 @@
 /*
  * @ascribed/elements: styles for the Ascribe site output (CONTRACT.md).
  *
- * Everything here works without the script; only <ascribe-tabs> adds
- * behavior. Theme it by setting the --ascribe-* custom properties (listed in
- * README.md) on :root or any ancestor.
+ * Everything here works without the script; only <ascribe-tabs>, and the copy
+ * button the script adds to code blocks, have behavior. Theme it by setting
+ * the --ascribe-* custom properties (listed in README.md) on :root or any
+ * ancestor.
  *
  * The colors are light or dark as the page is: dark where the page's
  * `color-scheme` is `dark`, or `light dark` with the reader's system in dark
@@ -66,6 +67,15 @@
   --ascribe-tab-hover-background: #e1ebf1;
   /* End of generated tabs. */
 
+  /* The copy button on code blocks: `none` leaves it out. */
+  --ascribe-copy-display: block;
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: copy, light. */
+  --ascribe-copy-color: #47606f;
+  --ascribe-copy-background: #ffffff;
+  --ascribe-copy-hover-background: #e1ebf1;
+  --ascribe-copy-focus-color: #b4530f;
+  /* End of generated copy. */
+
   /* Availability lifecycle states: an accent color and a background each. */
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light. */
   --ascribe-state-color: #47606f;
@@ -121,6 +131,13 @@
     --ascribe-tab-hover-background: light-dark(#e1ebf1, #1f303e);
     /* End of generated tabs. */
 
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: copy, light-dark. */
+    --ascribe-copy-color: light-dark(#47606f, #8aa6b8);
+    --ascribe-copy-background: light-dark(#ffffff, #112233);
+    --ascribe-copy-hover-background: light-dark(#e1ebf1, #1f303e);
+    --ascribe-copy-focus-color: light-dark(#b4530f, #f0a35e);
+    /* End of generated copy. */
+
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light-dark. */
     --ascribe-state-color: light-dark(#47606f, #8aa6b8);
     --ascribe-state-background: light-dark(#deeaf0, #1f303e);
@@ -139,12 +156,26 @@
 
   /* A page that says which it is. */
   :root[data-ascribe-scheme="light"]
-    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability) {
+    :is(
+      ascribe-note,
+      ascribe-steps,
+      ascribe-tabs,
+      ascribe-availability,
+      ascribe-operation,
+      .ascribe-copy
+    ) {
     color-scheme: light;
   }
 
   :root[data-ascribe-scheme="dark"]
-    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability) {
+    :is(
+      ascribe-note,
+      ascribe-steps,
+      ascribe-tabs,
+      ascribe-availability,
+      ascribe-operation,
+      .ascribe-copy
+    ) {
     color-scheme: dark;
   }
 }
@@ -271,18 +302,13 @@ ascribe-tab[hidden] {
   display: none;
 }
 
-/* Without the script: every tab shows, introduced by its label. */
-ascribe-tab::before {
-  content: attr(label);
-  display: block;
-  margin-top: var(--ascribe-space);
+/* Without the script: every tab shows, introduced by its label, which is
+   text in the page, its first paragraph. With it, the tab list carries the
+   labels, and the paragraph is out of sight (below). */
+.ascribe-tab-label {
+  margin-block: var(--ascribe-space) 0;
   color: var(--ascribe-muted-color);
   font-weight: var(--ascribe-font-weight-strong);
-}
-
-/* With the script: the tab list carries the labels. */
-ascribe-tab[role="tabpanel"]::before {
-  display: none;
 }
 
 ascribe-tab[role="tabpanel"] {
@@ -401,6 +427,26 @@ ascribe-availability-target[planned] {
   outline-offset: -1px;
 }
 
+/* <ascribe-operation> ----------------------------------------------------- */
+
+/* An operation of a declared API: a line linking to it in the reference. A
+   deprecated one's link is struck through, and its "(deprecated)" is in the
+   text, so it doesn't depend on color or on this stylesheet. */
+ascribe-operation {
+  display: block;
+  margin-block: var(--ascribe-space-small);
+  font-family: var(--ascribe-font-family);
+}
+
+ascribe-operation[deprecated] > a {
+  text-decoration-line: line-through;
+}
+
+.ascribe-operation-deprecated {
+  color: var(--ascribe-state-deprecated-color);
+  font-size: var(--ascribe-font-size-small);
+}
+
 /* <ascribe-group> --------------------------------------------------------- */
 
 ascribe-group {
@@ -422,14 +468,79 @@ ascribe-group {
   color: var(--ascribe-muted-color);
 }
 
+/* A code block's copy button (CONTRACT.md §12) -------------------------- */
+
+/* The script adds the button after a code block's <pre>, so with no script
+   there's none. Its words are generated content: a site restyles or
+   translates them here, and they're never in the page's text, nor in what a
+   reader copies. A site sets --ascribe-copy-display to `none` to leave the
+   button out. Where the browser can anchor it, it sits in the block's top
+   corner; elsewhere it's under the block, at its end. */
+.ascribe-copy {
+  display: var(--ascribe-copy-display);
+  inline-size: fit-content;
+  margin-inline-start: auto;
+  padding: 0.125rem var(--ascribe-space-small);
+  border: var(--ascribe-border-width) solid var(--ascribe-border-color);
+  border-radius: var(--ascribe-radius);
+  background: var(--ascribe-copy-background);
+  color: var(--ascribe-copy-color);
+  font-family: var(--ascribe-font-family);
+  font-size: var(--ascribe-font-size-small);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.ascribe-copy::before {
+  content: "Copy";
+}
+
+.ascribe-copy[data-ascribe-copy="copied"]::before {
+  content: "Copied";
+}
+
+.ascribe-copy[data-ascribe-copy="failed"]::before {
+  content: "Couldn't copy";
+}
+
+.ascribe-copy:hover {
+  background: var(--ascribe-copy-hover-background);
+}
+
+.ascribe-copy:focus-visible {
+  outline: 2px solid var(--ascribe-copy-focus-color);
+  outline-offset: 2px;
+}
+
+/* The script names each code block as an anchor, and its button's
+   `position-anchor` is that name. */
+@supports (anchor-name: --a) {
+  .ascribe-copy {
+    position: absolute;
+    inset-block-start: calc(anchor(start) + var(--ascribe-space-small) / 2);
+    inset-inline-end: calc(anchor(end) + var(--ascribe-space-small) / 2);
+    margin: 0;
+  }
+}
+
+@media print {
+  .ascribe-copy {
+    display: none;
+  }
+}
+
 /* <ascribe-for-agents> --------------------------------------------------- */
 
 /* The pointer to llms.txt: out of sight, but in the page for an agent (and a
    screen reader) to read. Not `display: none`, which some readers skip. A
    table row's "(Available: " and ")" around its badges are hidden the same
-   way, so a screen reader says what the badges are, as the Markdown does. */
+   way, so a screen reader says what the badges are, as the Markdown does,
+   and so is what a copy button says when it has copied, and a tab's label
+   once the tab list shows it, for a reader that takes the page's text. */
 ascribe-for-agents,
-.ascribe-availability-lead-in {
+ascribe-tab[role="tabpanel"] > .ascribe-tab-label,
+.ascribe-availability-lead-in,
+.ascribe-copy-status {
   position: absolute;
   width: 1px;
   height: 1px;

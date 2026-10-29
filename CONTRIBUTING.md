@@ -27,19 +27,17 @@ It builds the `ascribe` binary (`cargo build -p ascribe-cli`), stages it into `@
 CI runs all of these, and every check must pass:
 
 ```sh
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
-cargo deny check && cargo machete
-pnpm format:check && pnpm lint && pnpm exec knip && pnpm typecheck && pnpm test
+pnpm check:all
 ```
 
-- Behavior changes come with a conformance case in [tests/conformance](tests/conformance). Diagnostics are defined only in `tests/conformance/diagnostics.toml`; the diagnostics reference is generated from it.
+It runs each step of the Rust and JavaScript workflows (`rust.yml` and `js.yml`) that can run on your machine, one job after another, and stops at the first that fails. [scripts/check.ts](scripts/check.ts) lists them, with the reason for each it skips; `scripts/check.test.ts` fails when it and the workflows disagree. The VS Code integration tests and the Astro end-to-end run in CI only.
+
+- Behavior changes come with a conformance case in [tests/conformance](tests/conformance). Diagnostics are defined only in `crates/ascribe-core/data/diagnostics.toml`; the diagnostics reference is generated from it.
 - Changes to `crates/comrak-ascribe` follow [FORK.md](crates/comrak-ascribe/FORK.md): mark each one `// ASCRIBE:` and update the table.
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - The property tests run as many cases as `PROPTEST_CASES` says, set to 256 in [.cargo/config.toml](.cargo/config.toml); set it in the environment to raise it for a soak (`PROPTEST_CASES=5000 cargo test -p ascribe-syntax --test all agreement::`). The language server's differential test loops over seeds instead, with `ASCRIBE_LSP_SEEDS`.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions. A new Node or Rust version goes in every file that names it; `scripts/docs-site/facts.test.ts` finds each one, and fails until they agree. A new `playwright-core` version needs the same version of Playwright's container image in `.github/workflows/js.yml`; `scripts/ci/workflows.test.ts` fails until they agree, and says how to find the image's digest.
-- Dependencies are audited. `cargo deny` ([.cargo/deny.toml](.cargo/deny.toml)) allows the licenses listed there and crates.io only, and warns on a second version of a crate. It also reports security advisories, as a failed step that doesn't fail CI, since a new one can appear with no change here: file an issue for it, and fix it or ignore it in deny.toml with the issue as the reason. `cargo machete` and `knip` ([knip.jsonc](knip.jsonc)) fail on an unused dependency, and `knip` on an unused file or export too. Where one is wrong, ignore the name in its configuration with a comment saying why. Install the Rust tools with `cargo install --locked cargo-deny@0.20.2 cargo-machete@0.9.2`, the versions `rust.yml` pins.
+- Dependencies are audited. `cargo deny` ([.cargo/deny.toml](.cargo/deny.toml)) allows the licenses listed there and crates.io only, and warns on a second version of a crate. It also reports security advisories, as a failed step that doesn't fail CI, since a new one can appear with no change here: file an issue for it, and fix it or ignore it in deny.toml with the issue as the reason. `cargo machete` and `knip` ([knip.jsonc](knip.jsonc)) fail on an unused dependency, and `knip` on an unused file or export too. Where one is wrong, ignore the name in its configuration with a comment saying why. `pnpm check:all` says how to install the Rust tools when they're missing, at the versions `rust.yml` pins.
 - The published npm packages are checked as a consumer gets them. `pnpm check:packages` packs each JavaScript package `scripts/release/manifests.ts` lists and runs [publint](https://publint.dev) and [Are the Types Wrong](https://arethetypeswrong.github.io) on each, for ESM consumers: the packages don't support `require`. Build the packages first (`pnpm build:all`). A fix that would change what a consumer imports is a contract change.
 - A change to the language, a new command or option, or a change to the site output's markup goes through its list in [project-docs/checklists.md](project-docs/checklists.md): each line is done, or says why it doesn't apply.
 - A decision made in an issue, a review, or a conversation is added as a file of its own to [project-docs/decisions/](project-docs/decisions/README.md), numbered by its issue, in the pull request that acts on it. [project-docs/decisions.md](project-docs/decisions.md) keeps the numbered decisions made before and takes no new ones.
@@ -58,15 +56,63 @@ It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `d
 
 A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 
+### What CI checks a pull request records
+
+Some rules are about what a pull request records besides its code. On every pull request, CI's `change record` job ([scripts/ci/change-record.ts](scripts/ci/change-record.ts)) checks the two it can tell from the files the pull request changes, and writes what it finds to the run's summary:
+
+- **A contract changed with no decision fails.** When `SPEC.md`, a file in `docs/content/contracts/`, or `packages/elements/CONTRACT.md` changes, the pull request also adds or changes a decision in [project-docs/decisions/](project-docs/decisions/README.md) (the folder's README doesn't count). A contract changes only by a decision recorded with the change; undo the change, or record the decision.
+- **A change to the source with no changelog entry warns.** When a file in `crates/*/src/` or `packages/*/src/` changes and no entry is added in [changes/](changes/README.md), the summary says so. It's a warning, since plenty of changes to the source are nothing a user would notice. A change a user would notice adds the entry and updates its page under `docs/content/` ([Documenting a change](#documenting-a-change)). One they wouldn't says so in the description, in a line of its own that starts with `Not user-visible:` and says why, such as `Not user-visible: a rename inside ascribe-check.` The reviewer judges whether that's true.
+
+The job reads the description when it runs, so after editing the description, re-run the job to clear its warning. Two rules stay with the reviewer, because no script can tell them from the files: a behavior change comes with a conformance case, and a clean-up is labeled `optimization`, so CI compares its outputs.
+
+### Fuzzing
+
+`fuzz/` holds three [cargo-fuzz](https://rust-fuzz.github.io/book/cargo-fuzz.html) targets that feed arbitrary text to the entry points every keystroke and every agent's edit goes through:
+
+| Target | Calls | Fails when |
+|---|---|---|
+| `parse` | `ascribe_syntax::parse`, with the built-in directives | it panics, or a span in the tree is outside the input or off a character boundary |
+| `model` | `ascribe_model::load_str_in`, on TOML | it panics |
+| `format` | `ascribe_fmt::format`, under the conformance suite's shared model | it panics, its edits don't apply, or formatting its output changes it again |
+
+`fuzz/` is a crate of its own, outside the workspace, with its own `Cargo.lock`, so `libfuzzer-sys` never reaches the workspace's, and its own `rust-toolchain.toml`, which pins the dated nightly cargo-fuzz needs (decision [#1020](project-docs/decisions/1020-fuzzing-outside-the-workspace.md)). From `fuzz/`, which picks that nightly:
+
+```sh
+cargo install cargo-fuzz --locked
+./seed.sh                               # the conformance cases, as each target's first corpus
+cargo fuzz run parse -- -max_total_time=300 -max_len=4096
+cargo fuzz run parse artifacts/parse/crash-<hash>   # run one input again
+cargo fuzz tmin parse artifacts/parse/crash-<hash>  # make it smaller
+```
+
+A crash is written to `fuzz/artifacts/<target>/`, and the corpus grows in `fuzz/corpus/<target>/`; neither is committed. The Fuzz workflow (`.github/workflows/fuzz.yml`) runs each target for five minutes every night, keeps the corpus in its cache, and opens an issue for each distinct crash, named by its signature (`fuzz/signature.sh`), or comments on the one that's open. Pull requests don't run it. A fix comes with a test of the input in the crate's own tests, so it stays fixed without the nightly toolchain.
+
+## Command-line conventions
+
+The commands share their flags, so what one teaches holds for the rest (decision [#965](project-docs/decisions/965-cli-conventions.md)). A command *writes* when it changes a file you commit: a page, `ascribe.toml`, or a file [Files Ascribe writes](docs/content/command/project-files.md) says to commit. Writing a build's outputs, or a cache or history under `.ascribe/`, isn't writing.
+
+- **Every command that writes takes `--dry-run`**, which says what it would change and changes nothing, **and the git guard**: it refuses to change a file git can't put back as it was (one with changes not committed, or outside a repository), and says so, unless `--force`.
+- **`--check` is a dry run that exits `1` when something would change**, and prints each change as a unified diff, as `rustfmt --check` does. Only a command that writes takes it.
+- **`--exit-code` makes a command exit `1` on findings**, and `--exit-code=<level>` on findings at that level or above. `--deny-warnings` stays, as an alias of `--exit-code=warning`.
+- **Every command takes `--format json`**, unless it only prints a file (`agents rules`, `agents skill`) or speaks another program's protocol (`mcp`, `lsp`, `preview`, `agents hook`).
+- **`--format` takes the same words everywhere**, from those [the checklist](project-docs/checklists.md#a-new-command-or-option) lists, and a command that takes `text` takes `concise` too: its own one-line-a-problem form, or an alias of `text` where it has none.
+- **A revision to compare with is `--base <REV>`.** A revision given where a path goes is answered with the `--base` that compares with it, as `ascribe drift main` is.
+- **A renamed option keeps its old spelling** as a hidden alias for a release.
+- **A new project file is named for who writes it.** One you write, which Ascribe reads, is TOML named `ascribe.<name>.toml`, as `ascribe.examples.toml` is (the content model is `ascribe.toml` itself). A record Ascribe writes and you commit is `ascribe.<name>`, with no extension, as `ascribe.baseline` is: you change it through a command. What Ascribe can write again goes under `.ascribe/`, and a file another tool reads keeps that tool's name (`AGENTS.md`, `.vale.ini`). Existing files keep their names, since renaming one costs every project a migration: `ascribe.nav` is yours without `.toml`, and `templates.lock` is a record without the prefix.
+
+`crates/ascribe-cli/src/conventions.rs` holds these over the `clap` definitions, and the file rule over the rows of [Files Ascribe writes](docs/content/command/project-files.md). Every command is in its list of those that write or those that only read, so a new one says which. A command that broke a convention before #965 is in its `EXCEPTIONS`, and the test fails when an exception is no longer needed, so a pull request that brings a command into line removes its entry. A new command or option takes no new exception.
+
 ## Documenting a change
 
-The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: ascribe planned` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
+The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds its changelog entry as a file of its own in its area's folder of [changes/](changes/README.md), which says how to name and write one. An entry is one line: a bold headline and one or two sentences, 40 words at most, ending with a link to the page with the detail; a fix is **Fixed:** and a sentence or two. The detail goes on the page, not in the entry. It doesn't edit [CHANGELOG.md](CHANGELOG.md): a release gathers the entries into it, so two pull requests never conflict there. What no release has yet is marked `@available: ascribe planned` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
 
 ```sh
 cargo build -p ascribe-cli
 ./target/debug/ascribe check --deny-warnings --config docs
 ./target/debug/ascribe fmt --check --config docs
 ```
+
+An agent writing the docs reads `docs/AGENTS.md`, and the `ascribe` skill in `.agents/skills/ascribe/` and `.claude/skills/ascribe/`: the page types, the phrases, the directives the pages use, how to link, and the checks to run, which `ascribe agents sync` writes from `docs/ascribe.toml` and the binary, with a block at the end of the root's `AGENTS.md` that points to them. They name `cargo run -q -p ascribe-cli --` as the command, so it runs the checkout's Ascribe. After changing `docs/ascribe.toml` or the skill, or using a directive no page used before, run `pnpm bless`, or the `ascribe agents sync` that `scripts/bless.ts` gives alone, and commit what it writes; `rust.yml` runs it with `--check`, which fails until you do.
 
 Two pages that say the same thing say it once, in a fragment under `docs/content/_fragments/` that each includes. The `ascribe.toml` reference and its contract share theirs from `docs/content/_fragments/content-model/`, and `the_content_model_pages_share_text_only_through_fragments` in `tests/conformance/tests/docs.rs` fails on a paragraph, list, table, or example written in both; change the fragment, and both pages change.
 
@@ -83,7 +129,7 @@ content-root = "docs"
 @snippet: code:examples/content-models/full.toml#project
 ```
 
-A line ending in `# :remove:`, or the lines between `# :remove-start:` and `# :remove-end:`, are left out of the example; `.github/workflows/drift.yml` uses them for what this repository adds to the job its guide gives users. The command output in `crates/ascribe-cli/tests/output/` is written by `crates/ascribe-cli/tests/all/output.rs`, which fails when a command's output changes; run it with `ASCRIBE_BLESS=1 cargo test -p ascribe-cli --test all output::` to rewrite the files, and read the diff. Those files, and the example projects they're made from, are the repository's tested examples, which [`ascribe.examples.toml`](ascribe.examples.toml) lists, and a page that shows one says what it was tested with. After changing one, run `cargo run -p ascribe-cli -- observe` in the repository's root: it lists the commands `ascribe.examples.toml` names, asks before running them (answer `y`; `--yes` skips the question), runs the tests that prove them and, when they pass, rewrites `examples.observations/default.toml`, which you commit with the change. It asks only at a terminal: in CI, or a shell with no terminal, it runs them without asking. CI runs `ascribe observe --check`, which fails when an example changed and its observation didn't. An example with no file behind it, a few lines showing syntax, stays in the page as a code block.
+A line ending in `# :remove:`, or the lines between `# :remove-start:` and `# :remove-end:`, are left out of the example; `.github/workflows/drift.yml` uses them for what this repository adds to the job its guide gives users. The command output in `crates/ascribe-cli/tests/output/` is written by `crates/ascribe-cli/tests/all/output.rs`, which fails when a command's output changes; run it with `ASCRIBE_BLESS=1 cargo test -p ascribe-cli --test all output::` to rewrite the files, and read the diff. Those files, and the example projects they're made from, are the repository's tested examples, which [`ascribe.examples.toml`](ascribe.examples.toml) lists, and a page that shows one says what it was tested with. After changing one, run `cargo run -p ascribe-cli -- observe` in the repository's root: it lists the commands `ascribe.examples.toml` names, asks before running them (answer `y`; `--yes` skips the question), runs the tests that prove them and, when they pass, rewrites `examples.observations/default.toml`, which you commit with the change. It asks only at a terminal: in CI, or a shell with no terminal such as an agent's, it runs nothing unless given `--yes`, so read the commands it lists, then run `cargo run -p ascribe-cli -- observe --yes`. CI runs `ascribe observe --check`, which fails when an example changed and its observation didn't. An example with no file behind it, a few lines showing syntax, stays in the page as a code block.
 
 On a pull request, the **Drift** workflow's summary lists the pages whose examples the change touched: first those whose words around the example didn't change, which are the ones to reread, then those that changed along with it. It never fails and never comments. When it lists a page, read the sentences around the example against the new code, and fix the page in the same pull request if they no longer hold. An empty summary means no example changed.
 
@@ -102,7 +148,7 @@ npm test                 # navigation, links, and the site in Chromium
 
 For `astro dev`, which rebuilds as you edit pages, run `ASCRIBE_BIN=../target/debug/ascribe npm run dev` after `build:checkout`; without `ASCRIBE_BIN`, it runs the binary from npm. `npm ci` puts back the packages from npm. [site/README.md](site/README.md) has the rest.
 
-The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, Ascribe, or a file the docs take examples from gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/`, or a file its pages take examples from, gets a review report of its pages from the **Review** workflow.
+The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, Ascribe, or a file the docs take examples from gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/`, or a file its pages take examples from, gets an HTML preview of its pages from the **Review** workflow.
 
 Three checks run Ascribe from npm, the nightly canary `next`, not from the checkout: **Site from npm** on each push to `main`, and the **Drift** and **Review** reports on pull requests. A page documenting what you just changed can't pass them until a canary has the change. When one of them fails and the canary doesn't have what the commit ships yet, it doesn't fail: it passes with a warning, "Waiting for a canary that includes …", and its summary links to the **Canary** workflow, which a maintainer can start by hand rather than wait a night. On `main`, the run after the canary is the real check, and starts on its own; on a pull request, re-run the job once a canary has what it needs. A failure when the canary already has the commit stays red. `scripts/release/canary.ts` makes that call, and `node scripts/release/canary.ts paths` lists what counts as shipping.
 
@@ -122,7 +168,7 @@ In Rust, build an address with `ascribe_core::docs_permalink!("cli-check")`, nev
 
 ## Generated docs
 
-Parts of the user docs repeat what the code already says, so they're generated from it, as fragments in `docs/content/_generated/` that pages include: the diagnostics, from `tests/conformance/diagnostics.toml`; each command's options, from the `clap` help text in `crates/ascribe-cli/src/`; the extension's settings and commands, from `packages/vscode/package.json`; and the element library's custom properties, from `packages/elements/css/style.css`. Each fragment says at its top what generates it. A test beside each source fails when its fragments are stale; change the source, not the fragment, then run the test with `ASCRIBE_BLESS=1` to rewrite them (`ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`, `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`, `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`, or `ASCRIBE_BLESS=1 pnpm exec vitest run scripts/docs-site/elements.test.ts`). The phrases in `docs/ascribe.toml` whose values are in another file, such as `version`, are checked against it too.
+Parts of the user docs repeat what the code already says, so they're generated from it, as fragments in `docs/content/_generated/` that pages include: the diagnostics, from `crates/ascribe-core/data/diagnostics.toml`; each command's options, from the `clap` help text in `crates/ascribe-cli/src/`; the extension's settings and commands, from `packages/vscode/package.json`; and the element library's custom properties, from `packages/elements/css/style.css`. Each fragment says at its top what generates it. A test beside each source fails when its fragments are stale; change the source, not the fragment, then run the test with `ASCRIBE_BLESS=1` to rewrite them (`ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`, `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`, `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`, or `ASCRIBE_BLESS=1 pnpm exec vitest run scripts/docs-site/elements.test.ts`). The phrases in `docs/ascribe.toml` whose values are in another file, such as `version`, are checked against it too.
 
 ## If you move a checkout
 

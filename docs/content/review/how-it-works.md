@@ -4,11 +4,11 @@ title: How review works
 description: What review compares, what its marks mean, how its comments map to the pull request, what it needs from GitHub, and what reaches GitHub.
 ---
 
-Review is one comparison shown in three places: the **page preview** in VS Code, the **site preview** under `astro dev`, and the **HTML report** from CI. All three show the same changes with the same marks, and the two previews show the pull request's comments, with the same rules for where each lands. This page is what holds in all three. [Review](index.md) walks through reviewing a pull request; each place's own controls are on [Review in the preview](../editor/review.md), [Review in the site preview](site-preview.md), and [the HTML report](diff.md#the-html-report).
+Review is one comparison shown in three places: the **page preview** in VS Code, the **site preview** under `astro dev`, and the **HTML preview** from CI. All three show the same changes with the same marks, and the two previews show the pull request's comments, with the same rules for where each lands. This page is what holds in all three. [Review](index.md) walks through reviewing a pull request; each place's own controls are on [Review in the preview](../editor/review.md), [Review in the site preview](site-preview.md), and [the HTML preview](diff.md#the-html-report).
 
 ## What review compares
 
-Review compares the working tree with a **base**, as [`ascribe diff`](diff.md#cli-diff) does: the base of the branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit. It compares from the point where the branch left the base, as a pull request does.
+[Review](../glossary.md#review) compares the working tree with a **base**, as [`ascribe diff`](diff.md#cli-diff) does: the base of the branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit. It compares from the point where the branch left the base, as a pull request does.
 
 It compares **resolved pages**, not files. A change to a fragment shows on every page that includes it, a change to a [phrase](../glossary.md#phrase) on every page that uses it, and reformatting shows on none. A page that changed only through something it uses says what it changed through, such as `_fragments/requirements.md` or `ascribe.toml`.
 
@@ -29,7 +29,7 @@ A page's count of changes says where you are, "3 of 10 on this page", with arrow
 
 ## When the project has errors
 
-Review compares pages with errors as they are, since reviewing work in progress is useful, but a page with an error can render oddly, and that oddity isn't the change. So when the project has errors, each place says how many, beside the changes: the page preview's header, with **Show problems**; the site preview's panel; the HTML report; and `ascribe diff`, on standard error.
+Review compares pages with errors as they are, since reviewing work in progress is useful, but a page with an error can render oddly, and that oddity isn't the change. So when the project has errors, each place says how many, beside the changes: the page preview's header, with **Show problems**; the site preview's panel; the HTML preview; and `ascribe diff`, on standard error.
 
 The numbers can differ. The page preview counts what VS Code's Problems panel shows, which checks pages for the editor's build only; the others count what `ascribe check` finds for the builds compared.
 
@@ -43,7 +43,7 @@ Every comment is an ordinary GitHub review comment. Ascribe keeps none of its ow
 - **New comments are unsent until you submit,** and nobody else sees them. GitHub's API calls this your pending review. Submitting sends them as a comment, an approval, or a request for changes, with an optional summary; discarding deletes them.
 - **A reply can go at once, unless you have unsent comments.** While you do, GitHub adds every reply to your review, so **Reply now** is unavailable, and says why, until you submit or discard.
 - **Resolving and reopening act at once,** on GitHub, and aren't part of your review.
-- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away. A thread whose lines are gone from the page, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block.
+- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away. A thread whose lines are gone from the page, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block. A thread carries one of these labels, the most specific that fits: **On removed text**, then **Detached**, then **Outdated**. When the text a thread was on is empty or can't be read, the thread says so in words instead of quoting it.
 
 ### Your checkout and the pull request
 
@@ -56,7 +56,7 @@ Comments are placed on the pull request's latest commit, so a comment can go onl
 | See what changed, in either preview | `git` on the path, and a checkout of the branch |
 | See and write comments in VS Code | A GitHub sign-in in VS Code, or the GitHub CLI (`gh`), signed in |
 | See and write comments in the site preview | The GitHub CLI (`gh`) 2.0.0 or later, signed in, where `astro dev` runs |
-| Read the report from CI | Nothing: it opens in any browser |
+| Read the HTML preview from CI | Nothing: it opens in any browser |
 
 Review finds the pull request whose head is the branch you're on, in the repository the branch is pushed to, or in a remote named `upstream`, for a fork. So the branch has to track its remote branch, as `gh pr checkout` and `git switch` both set it up to.
 
@@ -71,7 +71,7 @@ Nothing needs a hosted service, and nothing but GitHub stores comments.
 - **Review is the only time Ascribe contacts GitHub,** and only once you start it. Nothing runs `git` for a comparison, and nothing talks to GitHub, before you choose **Start Review** in VS Code or open the **Ascribe review** app in the site preview. After that, in the same workspace, VS Code asks GitHub whether a branch has a pull request when you open one of its pages, to [offer review](../editor/review.md#the-offer). The `ascribe` binary itself never uses the network: it runs `git` on your machine.
 - **Ascribe stores no token.** In VS Code, comments go through VS Code's own GitHub sign-in, or through `gh`. A sign-in is sent only to the host it's for, never to another host a remote names. In the site preview, the dev server runs `gh` on your machine. Neither keeps a token of its own.
 - **No token reaches a page.** The previews draw the comments but never talk to GitHub: in VS Code the extension makes every request, and in the site preview the dev server does, over Vite's own connection, which only pages from the dev server can open.
-- **Pages and comments can't run code.** The previews and the report take scripts, event handlers, and `javascript:` links out of a page's HTML, and the report's content security policy lets only its own script run. Comment bodies are rendered from a safe subset of Markdown: no raw HTML, and an image shows as a link, so nothing loads until you click.
+- **Pages and comments can't run code.** The three previews take scripts, event handlers, and `javascript:` links out of a page's HTML, and the HTML preview's content security policy lets only its own script run. Comment bodies are rendered from a safe subset of Markdown: no raw HTML, and an image shows as a link, so nothing loads until you click.
 - **What's sent to GitHub** is what you write, and the file and lines it's on. A comment held in the summary also quotes the block's text and carries a hidden marker naming its block, `<!-- ascribe:anchor guides/install.md:12-14 build=site -->`, so that the previews can put it back on the block.
 
 ## Related resources

@@ -1,6 +1,6 @@
 # Proposal: redirects, the later steps
 
-A proposal, not a plan. It holds what [redirects](redirects.md) leaves for after it ships: each part widens that design, and none changes what it ships. Nothing here starts until the first proposal has shipped, and each part waits for the need that brings it back, named in its section. Both rest on the same research, spike, and host test, which the first proposal records.
+A proposal, not a plan. It holds what the [redirects proposal](https://github.com/ascribed-dev/ascribe/blob/9162c25a/project-docs/proposals/redirects.md) left for after it shipped, which it has ([Keep the addresses you've published](../../docs/content/publishing/redirects.md)): each part widens that design, and none changes what it shipped. Each part waits for the need that brings it back, named in its section. Both rest on the same research, spike, and host test, which the first proposal records.
 
 The parts are independent of each other, in the order they're likeliest to be needed.
 

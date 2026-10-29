@@ -8,12 +8,12 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
+use ascribe_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_loading};
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::commands::diff::{fail, fail_diff, failure_message};
-use crate::context::load_project;
+use crate::commands::diff::{base_hint, fail, fail_diff, failure_message};
+use crate::context::{checked, load_model, load_project, load_rest};
 use crate::exit;
 
 /// Arguments of `ascribe drift`.
@@ -44,6 +44,12 @@ pub struct Args {
     /// the page didn't.
     #[arg(long)]
     pub exit_code: bool,
+
+    /// Not an argument `drift` takes: taken only so that a revision given
+    /// as `git diff` takes one, `ascribe drift main`, is answered with the
+    /// `--base` that compares with it.
+    #[arg(hide = true, value_name = "REV")]
+    pub given: Option<String>,
 }
 
 /// The output format.
@@ -51,6 +57,7 @@ pub struct Args {
 pub enum Format {
     /// The groups of pages, with each example that broke or changed, for
     /// people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -74,8 +81,19 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let project = match load_project(global) {
-        Ok(project) => project,
+    if let Some(given) = &args.given {
+        let project = match load_project(global) {
+            Ok(workspace) => checked(&workspace),
+            Err(failure) => return fail(err, &failure_message(failure)),
+        };
+        let takes = format!("`ascribe drift` takes no argument, and was given `{given}`");
+        return match base_hint(&project, given) {
+            Some(hint) => fail(err, &format!("{takes}; {hint}")),
+            None => fail(err, &takes),
+        };
+    }
+    let (config, model) = match load_model(global) {
+        Ok(loaded) => loaded,
         Err(failure) => return fail(err, &failure_message(failure)),
     };
     let options = DriftOptions {
@@ -83,12 +101,19 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         base_exact: false,
         builds: &args.build,
     };
-    let report = match drift_project(&project, &options) {
-        Ok(report) => report,
-        Err(e) => return fail_drift(err, e),
+    // The base is found, and read when an example likely changed, while the
+    // working tree loads.
+    let (root, content_model) = (model.root.clone(), model.model.clone());
+    let loaded = drift_loading(&root, &content_model, &options, || {
+        load_rest(&config, model).map(|workspace| checked(&workspace))
+    });
+    let report = match loaded {
+        Ok(Ok(report)) => report,
+        Ok(Err(e)) => return fail_drift(err, e),
+        Err(failure) => return fail(err, &failure_message(failure)),
     };
 
-    let site = project.model().consumer.site.as_deref();
+    let site = content_model.consumer.site.as_deref();
     let written = match args.format {
         Format::Text => write_text(out, &report),
         Format::Json => serde_json::to_writer_pretty(&mut *out, &report)

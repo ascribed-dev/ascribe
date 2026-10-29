@@ -788,11 +788,12 @@ describe("the This page view", () => {
   /** What the server says beyond what the page is, when it has nothing to say. */
   const quiet = {
     description: null,
-    review: null,
+    recheck: null,
     availability: null,
     builds: [],
     listing: null,
     permalinks: [],
+    alsoAnswersAt: [],
     template: null,
   };
   const about: PageAbout = {
@@ -837,16 +838,14 @@ describe("the This page view", () => {
   it("says what the page is, then what links to the heading, by file in the server's order", () => {
     expect(flat(thisPageRoots(page))).toEqual([
       "About",
-      "  Title (API keys)",
-      "  Type (page)",
       "  Address (/keys/)",
       "  Markdown (/keys.md)",
       "Health",
       "Connections (to “Rotate keys”)",
       "  Linked from (3)",
-      "    a.md (a.md)",
+      "    a.md",
       "      - [Rotate](keys.md#rotate-keys) (line 8)",
-      "    b.md (b.md)",
+      "    b.md",
       "      See [rotate](keys.md#rotate-keys). (line 4)",
       "      Again: [a](keys.md#rotate-keys). (line 10)",
       "  Included by (0)",
@@ -876,15 +875,13 @@ describe("the This page view", () => {
     });
     expect(flat(whole)).toEqual([
       "About",
-      "  Title (API keys)",
-      "  Type (page)",
       "  Address (/keys/)",
       "  Markdown (not published)",
       "Health",
       "Connections (to the page)",
       "  Linked from (0)",
       "  Included by (1)",
-      "    guide.md (guide.md)",
+      "    guide.md",
       "      @include: keys.md (line 3)",
       "  Includes (0)",
       "Memos (none)",
@@ -935,12 +932,7 @@ describe("the This page view", () => {
       },
       heading: null,
     });
-    expect(flat([nth(fragment, 0)])).toEqual([
-      "About",
-      "  Title (_setup.md)",
-      "  Type (fragment)",
-      "  Address (only where it's included)",
-    ]);
+    expect(flat([nth(fragment, 0)])).toEqual(["About", "  Address (only where it's included)"]);
   });
 
   describe("on the published site", () => {
@@ -1059,8 +1051,6 @@ describe("the This page view", () => {
       const roots = thisPageRoots({ ...page, linkedFrom: [] }, review);
       expect(flat(roots)).toEqual([
         "About",
-        "  Title (API keys)",
-        "  Type (page)",
         "  Address (/keys/)",
         "  Markdown (/keys.md)",
         "Review (against main)",
@@ -1120,7 +1110,7 @@ describe("the This page view", () => {
         reported: true,
         range: range(3),
       },
-      review: {
+      recheck: {
         field: "review-by",
         date: "2026-10-03",
         days: -14,
@@ -1185,20 +1175,24 @@ describe("the This page view", () => {
       problems: { errors: 0, warnings: 1, advice: 2 },
     });
 
-    it("say whether the page is described, due, published, listed, and unfinished", () => {
-      expect(flat([nth(roots, 0)]).slice(5)).toEqual([
-        "  Description (too long, 312 of 300 characters)",
-        "  Review (overdue, since 3 October)",
+    it("say where the page is published and listed, and under Health what warns", () => {
+      expect(flat([nth(roots, 0)])).toEqual([
+        "About",
+        "  Address (/keys/)",
+        "  Markdown (/keys.md)",
         "  Availability (self-managed 3.5)",
         "  Builds (Published by site, agents; left out by cloud)",
         "  Listing (Unlisted, by `[listing.folders]`)",
         "  Permalink (keys)",
         "  Permalink (rotate-keys)",
-        "  Template (2 placeholders left, how-to template)",
       ]);
+      // Every row that can warn is Health's, and each one counted says why.
       expect(flat([nth(roots, 1)])).toEqual([
-        "Health (2 things to do)",
+        "Health (5 rows warn)",
         "  Problems (1 warning and advice on 2 lines)",
+        "  Description (too long, 312 of 300 characters)",
+        "  Recheck (overdue, since 3 October)",
+        "  Template (2 placeholders left, how-to template)",
         "  Size (31,200 of 50,000 characters, in site)",
         "  Example (tested, code:greet.ts#greet, with Node 22 on Linux, under “Greet”)",
         "  Example (changed since it was tested, code:old.ts)",
@@ -1225,9 +1219,10 @@ describe("the This page view", () => {
     it("open the place each is set, or run the command that acts on it", () => {
       const rows = (node: ThisPageNode) =>
         thisPageChildren(node).flatMap((n) => (n.kind === "row" ? [n.row] : []));
-      const about = rows(nth(roots, 0));
-      const opened = (label: string) => about.find((row) => row.label === label)?.opens;
+      const all = [...rows(nth(roots, 0)), ...rows(nth(roots, 1))];
+      const opened = (label: string) => all.find((row) => row.label === label)?.opens;
       expect(opened("Description")).toEqual({ kind: "place", uri, range: range(3) });
+      expect(opened("Recheck")).toEqual({ kind: "place", uri, range: range(4) });
       expect(opened("Listing")).toEqual({
         kind: "place",
         uri: "file:///p/ascribe.toml",
@@ -1236,7 +1231,9 @@ describe("the This page view", () => {
       expect(opened("Builds")).toMatchObject({ kind: "command", command: SWITCH_BUILD });
       expect(opened("Template")).toMatchObject({ kind: "command", command: NEXT_PLACEHOLDER });
       expect(opened("Availability")).toBeUndefined();
-      const health = rows(nth(roots, 1));
+      const health = rows(nth(roots, 1)).filter(
+        (row) => !["Description", "Recheck", "Template"].includes(row.label),
+      );
       expect(health[0]?.opens).toMatchObject({ kind: "command", command: SHOW_PROBLEMS });
       // Size goes nowhere: its tooltip says which build and the limit.
       expect(health[1]?.opens).toBeUndefined();
@@ -1261,18 +1258,19 @@ describe("the This page view", () => {
       const connections = nth(roots, 2);
       expect(flat([nth(thisPageChildren(connections), 2)])).toEqual([
         "Includes (2)",
-        "  _setup.md (_setup.md)",
+        // The path only where it says more than what the page wrote.
+        "  _setup.md",
         "  code:greet.ts#greet (code/greet.ts)",
       ]);
     });
 
-    it("warn of an overdue review only where review-overdue reports it", () => {
+    it("warn of an overdue recheck only where recheck-overdue reports it", () => {
       const warned = (reported: boolean) => {
         const roots = thisPageRoots({
           ...full,
           about: {
             ...fullAbout,
-            review: {
+            recheck: {
               field: "review-by",
               date: "2026-10-03",
               days: -14,
@@ -1282,9 +1280,9 @@ describe("the This page view", () => {
             },
           },
         });
-        return thisPageChildren(nth(roots, 0))
+        return thisPageChildren(nth(roots, 1))
           .flatMap((n) => (n.kind === "row" ? [n.row] : []))
-          .find((row) => row.label === "Review");
+          .find((row) => row.label === "Recheck");
       };
       const overdue = { state: "overdue", value: "since 3 October" };
       expect(warned(true)).toMatchObject({ ...overdue, warn: true });
@@ -1306,7 +1304,7 @@ describe("the This page view", () => {
             },
           },
         });
-        return thisPageChildren(nth(roots, 0))
+        return thisPageChildren(nth(roots, 1))
           .flatMap((n) => (n.kind === "row" ? [n.row] : []))
           .find((row) => row.label === "Description");
       };
@@ -1331,7 +1329,7 @@ describe("the This page view", () => {
             reported: false,
             range: range(3),
           },
-          review: {
+          recheck: {
             field: "review-by",
             date: "2027-01-03",
             days: 12,
@@ -1351,14 +1349,58 @@ describe("the This page view", () => {
           template: null,
         },
       });
-      expect(flat([nth(later, 0)]).slice(5, 9)).toEqual([
+      expect(flat([nth(later, 1)]).slice(1, 3)).toEqual([
         "  Description (120 characters)",
-        "  Review (due in 12 days)",
+        "  Recheck (due in 12 days)",
+      ]);
+      expect(flat([nth(later, 0)]).slice(3, 5)).toEqual([
         "  Availability (self-managed 3.5)",
         "  Builds (Published by site)",
       ]);
       expect(flat([nth(later, 0)])).toContain("  Listing (Listed (the default))");
     });
+  });
+
+  it("lists the old addresses that lead to the page after its own, each naming its entry", () => {
+    const roots = thisPageRoots({
+      about: {
+        path: "security/keys.md",
+        fragment: false,
+        title: "Keys",
+        formattedTitle: null,
+        type: "page",
+        address: "/docs/security/keys/",
+        markdownAddress: null,
+        site: null,
+        description: null,
+        recheck: null,
+        availability: null,
+        builds: [],
+        listing: null,
+        permalinks: [],
+        alsoAnswersAt: [
+          { address: "/docs/guides/keys/", entry: "guides/keys.md" },
+          { address: "/docs/keys/", entry: "keys.md" },
+        ],
+        template: null,
+      },
+      heading: null,
+      linkedFrom: [],
+      includedBy: [],
+      memos: [],
+      health,
+      includes: [],
+    });
+    const about = roots[0];
+    expect(about?.kind).toBe("about");
+    const rows = about?.kind === "about" ? about.rows : [];
+    expect(rows.map((row) => [row.label, row.value])).toEqual([
+      ["Address", "/docs/security/keys/"],
+      ["Markdown", "not published"],
+      ["Also answers at", "/docs/guides/keys/"],
+      ["Also answers at", "/docs/keys/"],
+    ]);
+    expect(rows[2]?.tooltip).toContain("guides/keys.md");
   });
 
   it("has nothing to show for a file that isn't a page", () => {
@@ -1388,11 +1430,12 @@ describe("This page's items, as its webview draws them", () => {
       markdownAddress: null,
       site: null,
       description: null,
-      review: null,
+      recheck: null,
       availability: null,
       builds: [{ name: "site", leftOut: null }],
       listing: null,
       permalinks: [],
+      alsoAnswersAt: [],
       template: null,
     },
     heading: null,
@@ -1425,8 +1468,6 @@ describe("This page's items, as its webview draws them", () => {
     expect(
       nth(items, 0).children.map((item) => `${item.kind} ${item.label}: ${item.description}`),
     ).toEqual([
-      "row Title: API keys",
-      "row Type: page",
       "row Address: /keys/",
       "row Markdown: not published",
       "row Builds: Published by site",
@@ -1440,7 +1481,7 @@ describe("This page's items, as its webview draws them", () => {
     );
     const acting = (list: typeof items): string[] =>
       list.flatMap((item) => [...(item.acts ? [item.key] : []), ...acting(item.children)]);
-    expect(acting(items)).toEqual(["about/4", "connections/0/0/0"]);
+    expect(acting(items)).toEqual(["about/2", "connections/0/0/0"]);
   });
 
   it("marks a row that says something needs doing, and dims a section with nothing in it", () => {
@@ -1455,7 +1496,7 @@ describe("This page's items, as its webview draws them", () => {
       () => false,
     );
     const health = nth(items, 1);
-    expect(health).toMatchObject({ description: "1 thing to do", dimmed: false });
+    expect(health).toMatchObject({ description: "1 row warns", dimmed: false });
     expect(nth(health.children, 0)).toMatchObject({ kind: "row", label: "Size", warn: true });
     expect(nth(items, 3)).toMatchObject({ label: "Memos", description: "none", dimmed: true });
   });
@@ -1475,11 +1516,12 @@ describe("This page's head, its notices, and its badge", () => {
     markdownAddress: null,
     site: null,
     description: null,
-    review: null,
+    recheck: null,
     availability: null,
     builds: [],
     listing: null,
     permalinks: [],
+    alsoAnswersAt: [],
     template: null,
   };
 
@@ -1532,7 +1574,7 @@ describe("This page's head, its notices, and its badge", () => {
     expect(thisPageNotice({ kind: "restricted" }).actions[0]?.key).toBe(NOTICE_ACTIONS.manageTrust);
   });
 
-  it("badges the view with Health's things to do, and nothing when there are none", () => {
+  it("badges the view with how many of Health's rows warn, and nothing when none do", () => {
     const page: PageResult = {
       about,
       heading: null,
@@ -1556,14 +1598,14 @@ describe("This page's head, its notices, and its badge", () => {
     const problems = { errors: 0, warnings: 0, advice: 3 };
     expect(healthBadge(thisPageRoots(page, undefined, { problems }))).toEqual({
       value: 2,
-      tooltip: "Health: 2 things to do on this page",
+      tooltip: "Health: 2 rows warn on this page",
     });
-    // Advice alone isn't a thing to do.
+    // Advice alone doesn't warn.
     const fine = { ...page, health: { size: null, examples: [] } };
     expect(healthBadge(thisPageRoots(fine, undefined, { problems }))).toBeUndefined();
     expect(
       healthBadge(thisPageRoots(fine, undefined, { problems: { ...problems, warnings: 1 } })),
-    ).toEqual({ value: 1, tooltip: "Health: 1 thing to do on this page" });
+    ).toEqual({ value: 1, tooltip: "Health: 1 row warns on this page" });
   });
 });
 

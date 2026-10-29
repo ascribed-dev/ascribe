@@ -64,19 +64,23 @@ fn project_with(text: &str, files: &[(&str, &str)], images: &[(&str, usize)]) ->
     for (path, size) in images {
         fs = fs.with_file(path, &"x".repeat(*size));
     }
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory_with(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            text.to_owned(),
+            sources,
+            Arc::new(fs),
         )
-    }));
-    Project::from_parts_with_fs(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        text.to_owned(),
-        sources,
-        Arc::new(fs),
+        .snapshot(),
     )
 }
 
@@ -272,7 +276,7 @@ fn what_is_unused_is_what_the_search_counts_no_use_of() {
         ("_steps.md", "The agent.\n"),
         ("_unused.md", "Text.\n"),
     ]);
-    let counts = p.held_index().use_counts();
+    let counts = p.index().use_counts();
     let all = check_all_builds(&p);
     let reported = |slug: &str| -> Vec<String> {
         all.iter()
@@ -303,7 +307,7 @@ fn what_is_unused_is_what_the_search_counts_no_use_of() {
         .collect();
     assert_eq!(reported("feature-unused"), features);
     let terms: Vec<String> = p
-        .held_index()
+        .index()
         .glossary()
         .terms
         .iter()

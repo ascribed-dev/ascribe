@@ -145,6 +145,16 @@ fn site_file(dir: &Path, rel: &str) -> String {
 const PAIRS: &str = "/docs/guides/my-setup /docs/guides/setup 301\n\
     /docs/guides/my-setup.md /docs/guides/setup.md 301\n";
 
+/// The project's permalinks' rules, after the pairs and the retired
+/// addresses: each dimension as a query parameter serves the forwarding
+/// page, and the address otherwise leads to its section with a 301.
+const PERMALINKS: &str = "/docs/go/options pm=:pm /docs/go/options 200!\n\
+    /docs/go/options deployment=:deployment /docs/go/options 200!\n\
+    /docs/go/options /docs/reference/options 301!\n\
+    /docs/go/weave-config pm=:pm /docs/go/weave-config 200!\n\
+    /docs/go/weave-config deployment=:deployment /docs/go/weave-config 200!\n\
+    /docs/go/weave-config /docs/guides/setup#weave-config 301!\n";
+
 #[test]
 fn a_recorded_move_passes_and_a_deleted_page_is_reported() {
     let dir = renamed();
@@ -193,7 +203,8 @@ fn a_recorded_move_passes_and_a_deleted_page_is_reported() {
         site_file(dir.path(), "_ascribe/host/_redirects"),
         format!(
             "{PAIRS}/docs/guides/teams/share-a-loom /docs/_ascribe/gone/guides/teams/share-a-loom 404\n\
-             /docs/guides/teams/share-a-loom.md /docs/_ascribe/gone/guides/teams/share-a-loom 404\n"
+             /docs/guides/teams/share-a-loom.md /docs/_ascribe/gone/guides/teams/share-a-loom 404\n\
+             {PERMALINKS}"
         )
     );
     let redirects = site_file(dir.path(), "_ascribe/redirects.json");
@@ -222,7 +233,10 @@ fn a_merged_move_keeps_its_redirect_once_the_base_moves_past_it() {
     assert_eq!(code(&out), 0, "{}", both(&out));
     let out = ascribe(dir.path(), &["build"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
-    assert_eq!(site_file(dir.path(), "_ascribe/host/_redirects"), PAIRS);
+    assert_eq!(
+        site_file(dir.path(), "_ascribe/host/_redirects"),
+        format!("{PAIRS}{PERMALINKS}")
+    );
 }
 
 #[test]
@@ -457,10 +471,16 @@ fn deleting_the_file_the_base_has_is_an_error() {
     assert_eq!(code(&out), 0, "{}", both(&out));
 }
 
-/// The project with `ascribe.addresses`, committed on `main`, and a branch
-/// `handbook` where `base-path` is `/handbook/` and that's committed.
+/// The project with the example's `ascribe.addresses`, which moves and
+/// retires permalinks, committed on `main`, and a branch `handbook` where
+/// `base-path` is `/handbook/` and that's committed.
 fn rebased() -> TempDir {
     let dir = repo();
+    fs::copy(
+        example().join("ascribe.addresses"),
+        dir.path().join("ascribe.addresses"),
+    )
+    .expect("copy the addresses");
     let out = ascribe(dir.path(), &["addresses", "init"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
     commit(dir.path(), "Keep the addresses we publish");
@@ -531,4 +551,128 @@ fn a_base_path_changed_is_recorded_and_every_address_under_it_forwarded() {
     let out = ascribe(dir.path(), &["check", "--base", "main", "--deny-warnings"]);
     assert_eq!(code(&out), 0, "{}", both(&out));
     assert_eq!(forwarded(dir.path()), before);
+}
+
+#[test]
+fn moving_permalinks_out_of_ascribe_toml_loses_no_address_of_the_base() {
+    let dir = repo();
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).expect("the model");
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        format!(
+            "{model}\n[permalinks.retired]\nlegacy-sync = {{ reason = \"Removed in 3.0\" }}\n\n[permalinks.aliases]\nconfig = \"weave-config\"\n"
+        ),
+    )
+    .expect("write the model");
+    commit(dir.path(), "Retire a permalink in ascribe.toml");
+    git(dir.path(), &["switch", "-q", "-c", "moved"]);
+    let out = ascribe(dir.path(), &["addresses", "init"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    commit(dir.path(), "Move the permalinks to ascribe.addresses");
+    // The base's `[permalinks]` is read as if it were moved too: nothing
+    // it published is lost, and the base reads.
+    let out = ascribe(dir.path(), &["check", "--base", "main"]);
+    let text = both(&out);
+    assert!(!text.contains("address-lost"), "{text}");
+    assert!(!text.contains("addresses-base-unreadable"), "{text}");
+    assert!(!text.contains("weren't compared"), "{text}");
+}
+
+#[test]
+fn a_name_moved_to_an_alias_keeps_the_alias_and_an_unknown_name_is_refused() {
+    let dir = repo();
+    fs::copy(
+        example().join("ascribe.addresses"),
+        dir.path().join("ascribe.addresses"),
+    )
+    .expect("copy the file");
+    // `go:config` is an alias of `go:weave-config`: moving another name to
+    // it keeps it.
+    let out = ascribe(
+        dir.path(),
+        &["addresses", "move", "go:another", "go:config", "--force"],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let file = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    assert!(file.contains("\"go:another\" = \"go:config\"\n"), "{file}");
+    assert!(
+        file.contains("\"go:config\" = \"go:weave-config\"\n"),
+        "{file}"
+    );
+
+    // A name the project neither declares nor records is refused, and the
+    // file stays as it was.
+    let before = fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file");
+    let out = ascribe(dir.path(), &["addresses", "move", "go:x", "go:typo"]);
+    assert_eq!(code(&out), 2, "{}", both(&out));
+    assert_eq!(
+        stderr(&out),
+        "error: `go:typo` isn't a permalink of the project: no page declares it, and ascribe.addresses doesn't record it\n"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("ascribe.addresses")).expect("the file"),
+        before
+    );
+}
+
+#[test]
+fn with_config_a_page_s_path_is_read_from_the_current_folder() {
+    // The project is `site/`, run from the folder above it: a path from
+    // here names the page, not a path of that name in the content root.
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let site = dir.path().join("site");
+    fs::create_dir(&site).expect("create the project's folder");
+    write_project(&site);
+    let out = ascribe(dir.path(), &["addresses", "init", "--config", "site"]);
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let content = site.join("content");
+    fs::rename(
+        content.join("Guides/My Setup.md"),
+        content.join("Guides/Setup.md"),
+    )
+    .expect("move the page");
+    fs::remove_file(content.join("Reference/Options.md")).expect("remove the page");
+
+    let out = ascribe(
+        dir.path(),
+        &[
+            "addresses",
+            "move",
+            "--force",
+            "--config",
+            "site",
+            "site/content/Guides/My Setup.md",
+            "site/content/Guides/Setup.md",
+        ],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    let out = ascribe(
+        dir.path(),
+        &[
+            "addresses",
+            "retire",
+            "--force",
+            "--config",
+            "site",
+            "site/content/Reference/Options.md",
+            "--reason",
+            "Merged into the guide",
+        ],
+    );
+    assert_eq!(code(&out), 0, "{}", both(&out));
+    assert_eq!(
+        stdout(&out),
+        "Recorded in ascribe.addresses: Reference/Options.md was retired.\n"
+    );
+
+    let file = fs::read_to_string(site.join("ascribe.addresses")).expect("the file");
+    assert!(
+        file.contains("\"Guides/My Setup.md\" = \"Guides/Setup.md\"\n"),
+        "{file}"
+    );
+    assert!(
+        file.contains("\"Reference/Options.md\" = \"Merged into the guide\"\n"),
+        "{file}"
+    );
+    assert!(!file.contains("site/content"), "{file}");
 }

@@ -1,9 +1,11 @@
 ---
-// A docs page: its title, availability, description, content, edit link, and
-// table of contents.
-import type { CollectionEntry } from "astro:content";
+// A docs page: its title, availability, description, content, edit link,
+// previous and next pages, and table of contents.
+import { getCollection, type CollectionEntry } from "astro:content";
 import Availability from "@ascribed/astro/Availability.astro";
+import { neighbors, type Formatted } from "@ascribed/astro/content";
 import Toc from "../components/Toc.astro";
+import { curlQuotes } from "../lead.ts";
 import { contentDir, repo } from "../site.ts";
 import Base from "./Base.astro";
 
@@ -18,8 +20,19 @@ const { entry, headings } = Astro.props;
 // `source` is the page's path from the content root.
 const { formatted, description, available, source } = entry.data;
 const edit = `${repo}/edit/main/${contentDir}/${source}`;
-// The description is in llms.txt and not in the page's Markdown, so it's
-// marked for the delivery spec's parity check (`data-markdown-ignore`).
+// The pages before and after this one in the sidebar's reading order, each
+// with its label, formatted (its code spans as <code>).
+const { previous, next } = neighbors(entry, await getCollection("docs"), { name: "docs" });
+const escape = (text: string) =>
+  text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+const labelHtml = (of: { label: string; formatted?: Formatted }) =>
+  of.formatted?.label ?? escape(of.label);
+// The page's Markdown has the description as plain text, after the page's
+// type, which isn't this text, so it's marked for the delivery spec's parity
+// check (`data-markdown-ignore`). Its formatted form, with its code spans as
+// <code> (`inline = "code"` too), is the lead under the title, with its
+// quotes curled as the body's are.
+const lead = formatted.description ?? (description && escape(description));
 ---
 
 <Base entry={entry} current={entry.id} docs>
@@ -27,12 +40,30 @@ const edit = `${repo}/edit/main/${contentDir}/${source}`;
     <article data-pagefind-body>
       <h1 set:html={formatted.title} />
       <Availability available={available} />
-      {description && <p class="description" data-markdown-ignore>{description}</p>}
+      {lead && <p class="description" data-markdown-ignore set:html={curlQuotes(lead)} />}
       <slot />
     </article>
+    {
+      (previous || next) && (
+        <nav class="neighbors" aria-label="Previous and next">
+          {previous && (
+            <a rel="prev" href={previous.href}>
+              <span class="neighbor-label">Previous</span>
+              <span set:html={labelHtml(previous)} />
+            </a>
+          )}
+          {next && (
+            <a rel="next" href={next.href}>
+              <span class="neighbor-label">Next</span>
+              <span set:html={labelHtml(next)} />
+            </a>
+          )}
+        </nav>
+      )
+    }
     <footer class="page-footer">
       <a href={edit}>Edit this page on GitHub</a>
     </footer>
   </main>
-  <Toc headings={headings} />
+  <Toc headings={headings} rendered={entry.rendered?.html} />
 </Base>

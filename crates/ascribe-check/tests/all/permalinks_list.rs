@@ -40,19 +40,23 @@ fn project(files: &[(&str, &str)], list: Option<&str>) -> Project {
     if let Some(list) = list {
         fs = fs.with_file("ascribe.permalinks", list);
     }
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory_with(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            MODEL.to_owned(),
+            sources,
+            Arc::new(fs),
         )
-    }));
-    Project::from_parts_with_fs(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        MODEL.to_owned(),
-        sources,
-        Arc::new(fs),
+        .snapshot(),
     )
 }
 
@@ -143,7 +147,7 @@ fn every_entry_point_reports_the_list_the_same() {
     let p = project(&files, Some(&format!("{LIST_HEAD}gone = \"b.md\"\n")));
     let expected = [
         (
-            "permalink-removed".to_owned(),
+            "permalink-lost".to_owned(),
             "ascribe.permalinks".to_owned(),
             3,
         ),

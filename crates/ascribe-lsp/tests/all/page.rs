@@ -106,7 +106,7 @@ fn a_page_outside_any_heading_says_what_it_is_and_what_links_to_it() {
             "markdownAddress": null,
             "site": null,
             "description": null,
-            "review": null,
+            "recheck": null,
             "availability": null,
             "builds": [{ "name": "site", "leftOut": null }],
             "listing": {
@@ -118,6 +118,7 @@ fn a_page_outside_any_heading_says_what_it_is_and_what_links_to_it() {
                 "range": null,
             },
             "permalinks": [],
+            "alsoAnswersAt": [],
             "template": null,
         })
     );
@@ -181,11 +182,12 @@ fn a_fragment_has_no_address_and_its_headings_are_linked_through_its_includers()
             "markdownAddress": null,
             "site": null,
             "description": null,
-            "review": null,
+            "recheck": null,
             "availability": null,
             "builds": [],
             "listing": null,
             "permalinks": [],
+            "alsoAnswersAt": [],
             "template": null,
         })
     );

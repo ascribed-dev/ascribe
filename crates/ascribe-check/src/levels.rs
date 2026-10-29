@@ -20,19 +20,19 @@ pub fn default_limit(slug: DiagnosticSlug) -> Option<u64> {
 }
 
 /// The diagnostics with the levels of `[checks]` applied: one whose check is
-/// set to `off` is left out, and one set to another level is reported at it.
-/// Every other diagnostic keeps its registry severity. Only configurable
-/// checks can be set, so a diagnostic about validity is never changed.
+/// off ([`Checks::is_off`]: set to `off`, or off by default and not named) is
+/// left out, and one set to another level is reported at it. Every other
+/// diagnostic keeps its registry severity. Only configurable checks can be
+/// set, so a diagnostic about validity is never changed.
 pub fn apply_levels(checks: &Checks, diagnostics: Vec<Diagnostic>) -> Vec<Diagnostic> {
-    if checks.settings.is_empty() {
-        return diagnostics;
-    }
     diagnostics
         .into_iter()
         .filter_map(|mut d| {
+            if checks.is_off(d.slug) {
+                return None;
+            }
             d.severity = match checks.level(d.slug) {
-                None => d.severity,
-                Some(CheckLevel::Off) => return None,
+                None | Some(CheckLevel::Off) => d.severity,
                 Some(CheckLevel::Advice) => Severity::Advice,
                 Some(CheckLevel::Warning) => Severity::Warning,
                 Some(CheckLevel::Error) => Severity::Error,
@@ -91,6 +91,19 @@ mod tests {
                 (diagnostics::BINDING_BLANK_LINE, Severity::Advice),
                 (diagnostics::TITLE_NOT_ACCEPTED, Severity::Warning),
             ]
+        );
+    }
+
+    #[test]
+    fn a_check_off_by_default_is_reported_only_when_named() {
+        let found = || vec![diagnostic(diagnostics::SUMMARY_MISSING)];
+        assert!(apply_levels(&Checks::default(), found()).is_empty());
+        let named = apply_levels(&checks(&[(diagnostics::SUMMARY_MISSING, None)]), found());
+        assert_eq!(named[0].severity, Severity::Advice);
+        let raised = checks(&[(diagnostics::SUMMARY_MISSING, Some(CheckLevel::Warning))]);
+        assert_eq!(
+            apply_levels(&raised, found())[0].severity,
+            Severity::Warning
         );
     }
 

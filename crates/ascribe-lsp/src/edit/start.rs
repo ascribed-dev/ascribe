@@ -41,7 +41,7 @@ pub(crate) fn new_page(ctx: &Ctx, args: &Map<String, Value>) -> Result<EditResul
         Some(_) => return Err("`folder` must be a folder's URI.".to_owned()),
     };
     let project = project(ctx);
-    let page = ascribe_templates::start(&project, &type_name, &title, folder.as_ref())
+    let page = ascribe_templates::start(&project, &type_name, Some(&title), folder.as_ref())
         .map_err(|e| sentence(&e.to_string()))?;
     let uri = ctx
         .uri_of(&page.path)
@@ -126,14 +126,16 @@ pub(crate) fn project(ctx: &Ctx) -> ascribe_check::Project {
         .parent()
         .map(std::path::Path::to_path_buf)
         .unwrap_or_default();
-    ascribe_check::Project::from_parts_with_fs(
+    let workspace = ascribe_check::in_memory_with(
         root,
         ctx.snapshot.layout().content_root.clone(),
         (*ctx.model).clone(),
         ctx.model_text.clone(),
         Vec::new(),
         ctx.fs.clone(),
-    )
+    );
+    ascribe_check::Project::new(workspace.snapshot())
+        .with_plain_markdown(ascribe_emit::plain_markdown)
 }
 
 /// An error's message as a sentence: its first letter a capital, with a

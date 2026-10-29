@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml` reference"
-description: "The content model: content types, dimensions, availability, phrases, widgets, and builds."
+description: "The content model: what pages are and hold, how content varies, where pages are published, what they draw from, and the checks."
 permalink: content-model
 ---
 
@@ -19,29 +19,48 @@ In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a p
 
 ## Contents
 
+The sections are grouped by what they're for, a page each.
+
+What pages are, on this page:
+
 1. [Conventions](index.md#1-conventions)
 2. [Top level: `spec`](index.md#2-top-level-spec), and [taking from another project](index.md#21-taking-from-another-project)
 3. [`[project]`](index.md#3-project)
 4. [`[types.<name>]` and `[fragments]`](index.md#4-typesname-and-fragments)
 5. [Field and attribute types](index.md#5-field-and-attribute-types)
-6. [`[dimensions.<name>]`](content.md#dimensions)
-7. [`[versions]`](content.md#7-versions)
-8. [`[lifecycle.<state>]`](content.md#8-lifecyclestate)
-9. [`[features.<key>]`](content.md#9-featureskey)
-10. [`[notes.<type>]`](content.md#10-notestype)
-11. [`[phrases]`](content.md#phrases)
-12. [`[glossary]`](content.md#12-glossary)
-13. [`[images]`](content.md#13-images)
-14. [`[widgets.<name>]`](content.md#14-widgetsname)
+
+[What pages hold](content.md):
+
+6. [`[notes.<type>]`](content.md#6-notestype)
+7. [`[phrases]`](content.md#phrases)
+8. [`[glossary]`](content.md#8-glossary)
+9. [`[images]`](content.md#9-images)
+10. [`[widgets.<name>]`](content.md#10-widgetsname)
+
+[How content varies](variation.md):
+
+11. [`[dimensions.<name>]`](variation.md#dimensions)
+12. [`[versions]`](variation.md#12-versions), and [`[releases.<target>]`](variation.md#121-releasestarget)
+13. [`[lifecycle.<state>]`](variation.md#13-lifecyclestate)
+14. [`[features.<key>]`](variation.md#14-featureskey)
+
+[Where pages are published](output.md):
+
 15. [`[consumer]`](output.md#consumer)
 16. [`[builds.<name>]`](output.md#16-buildsname)
-17. [`[editor]`](output.md#17-editor)
-18. [`[sources.<name>]`](output.md#18-sourcesname)
-19. [`[checks]`](checks.md#19-checks)
-20. [`[permalinks]`](checks.md#20-permalinks)
-21. [`[crawlers]`](checks.md#21-crawlers)
-22. [`[listing]`](checks.md#22-listing)
-23. [`[apis.<name>]`](checks.md#23-apisname)
+17. [`[listing]`](output.md#17-listing)
+18. [`[crawlers]`](output.md#18-crawlers)
+19. [`[permalinks]`](output.md#19-permalinks)
+
+[What pages draw from](sources.md):
+
+20. [`[sources.<name>]`](sources.md#20-sourcesname)
+21. [`[apis.<name>]`](sources.md#21-apisname)
+
+[Checks and the editor](checks.md):
+
+22. [`[checks]`](checks.md#22-checks)
+23. [`[editor]`](checks.md#23-editor)
 24. [Defaults: what an absent section means](checks.md#24-defaults-what-an-absent-section-means)
 25. [Validation](checks.md#25-validation)
 
@@ -67,7 +86,12 @@ Two projects beside each other, such as a product's docs and its landing site, o
 
 **Rules.** The file must be there and be TOML (`model-from-file`), inside the git repository the project is in, as a source's folder must, and what `take` names must be in it (`model-from-take`). With no repository, the editor and `ascribe mcp` read it only inside the folder they were opened on.
 
-**Editing.** A taken key is changed in the file that writes it, wherever the edit starts. The editor's actions, Project Settings, a rename, and `ascribe permalinks retire` write a taken key in the other file, at the same path, and say which file they changed; renaming a key `take` names, such as a phrase, renames it in `take` too. A rename of a phrase or a value the other file writes is made in that project's pages as well, so both projects stay as they were with the new name; when it can't be made there, as when that project has the new name already, the rename is refused, naming the file. `ascribe versions release` and `ascribe versions retire` run in a project that takes the releases are made in the project that writes them: its `ascribe.toml` and its pages' marks change, and the text says so. One release moves the lines of every project that takes them. `ascribe templates eject` and `ascribe vale eject` refuse a taken table, naming its file, since the files they write beside this `ascribe.toml` couldn't be named from there; run them in the other project, or stop taking the table and eject then. In the editor, the hover on a name in `take` says where it's written, Go to Definition opens it there, and a change to the file reaches the project at once.
+**Editing.** A taken key is changed in the file that writes it, wherever the edit starts:
+
+- The editor's actions, Project Settings, and a rename write a taken key in the other file, at the same path, and say which file they changed; renaming a key `take` names, such as a phrase, renames it in `take` too. A rename of a phrase or a value the other file writes is made in that project's pages as well, so both projects stay as they were with the new name; when it can't be made there, as when that project has the new name already, the rename is refused, naming the file.
+- `ascribe versions release` and `ascribe versions retire` run in a project that takes the releases are made in the project that writes them: its `ascribe.toml` and its pages' marks change, and the text says so. One release moves the lines of every project that takes them.
+- `ascribe templates eject` and `ascribe vale eject` refuse a taken table, naming its file, since the files they write beside this `ascribe.toml` couldn't be named from there; run them in the other project, or stop taking the table and eject then.
+- In the editor, the hover on a name in `take` says where it's written, Go to Definition opens it there, and a change to the file reaches the project at once.
 
 ---
 
@@ -89,7 +113,19 @@ Two projects beside each other, such as a product's docs and its landing site, o
 
 **The page title.** Every page type has `title`, a required `string` field, whether it declares it or not. It's the page's title everywhere Ascribe needs one: an empty link to the page shows it as its text, for one ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). Declaring it, in `[frontmatter]` or in a type's own `frontmatter`, changes only how it's read: it can accept phrases (§11), and code spans (§5.3). A declared `title` that's optional, has a default, or isn't a string is an error at the field (`model-field-reserved`).
 
-**Reserved keys.** `type` (the page's [content type](#4-typesname-and-fragments)), `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](../writing/frontmatter.md#a-pages-permalink)), `listing` (below), `replaces` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), the page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another)), and `nav-label` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's name in the sidebar and the previous and next links) are reserved frontmatter keys. Any page can use them, whatever its type says, and they mean what SPEC says; a type, or `[frontmatter]`, that declares one is an error (`model-field-reserved`). Generated consumer schemas include them automatically, except `listing`, which reaches a site in the page's record (output-layout contract §1.3), `replaces`, which reaches it in the versions file (output-layout contract §1.5), and `nav-label`, which reaches it in the navigation (output-layout contract §1.6). `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, generated consumer schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
+**Reserved keys.** These are reserved frontmatter keys. Any page can use them, whatever its type says, and they mean what SPEC says; a type, or `[frontmatter]`, that declares one is an error (`model-field-reserved`). Generated consumer schemas include them automatically, except the three that reach a site another way.
+
+| Key | What it is | In generated consumer schemas |
+|---|---|---|
+| `type` | The page's [content type](#4-typesname-and-fragments) | Included |
+| `available` | [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available) | Included |
+| `variant` | [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant) | Included |
+| `permalink` | [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](../writing/frontmatter.md#a-pages-permalink) | Included |
+| `listing` | [Listing a page](#listing-a-page), below | Left out: it reaches a site in the page's record (output-layout contract §1.3) |
+| `replaces` | [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), the page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another) | Left out: it reaches a site in the versions file (output-layout contract §1.5) |
+| `nav-label` | [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's name in the sidebar and the previous and next links | Left out: it reaches a site in the navigation (output-layout contract §1.6) |
+
+`intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, generated consumer schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
 
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 
@@ -108,7 +144,7 @@ listing: unlisted
 
 Each build writes every page's record, with its `listing`, to `_ascribe/pages.json` in the site output. The site output's frontmatter doesn't carry `listing`, since the record does.
 
-A project can set `listing` for the whole site, a folder, or a content type, in [`[listing]`](checks.md#22-listing). A page under a rule can set the same value or a stricter one, never a looser one (`listing-loosened`).
+A project can set `listing` for the whole site, a folder, or a content type, in [`[listing]`](output.md#17-listing). A page under a rule can set the same value or a stricter one, never a looser one (`listing-loosened`).
 
 @include: ../_fragments/content-model/types-frontmatter-and-fragments.md
 
@@ -146,20 +182,20 @@ Each output has the title both ways: as plain text, `ascribe.toml reference`, an
 - **Empty link text** and the plain-markdown output's heading keep the code spans: ``[`ascribe.toml` reference](…)``.
 - **The site output** writes the field as plain text, for a layout's `<title>`, search, and sorting, and its formatted form as HTML under `formatted`, for the page's heading and navigation. The generated schema types both, so a layout uses `entry.data.formatted.title` with `set:html`. See [Astro](../astro/index.md#the-layout).
 - **The JSON output** has the plain text in `title` and `frontmatter`, and the formatted form in `formatted.title`, a list of text and code pieces.
-- **Review** shows the formatted title where a page's title is a heading or a list entry: the heading of VS Code's page preview, the HTML report's list of pages and its page headings, and the list of comments in the editor and the site preview. **Ascribe: Changed Pages**, which can show only text, writes the code spans between backticks. Tooltips, buttons, and search keep the plain text.
+- **Review** shows the formatted title where a page's title is a heading or a list entry: the heading of VS Code's page preview, the HTML preview's list of pages and its page headings, and the list of comments in the editor and the site preview. **Ascribe: Changed Pages**, which can show only text, writes the code spans between backticks. Tooltips, buttons, and search keep the plain text.
 
 Only a page type's top-level `string` fields can set it, its own or `[frontmatter]`'s, not fields in objects or the fragment schema, and `"code"` is its only value (`model-inline-field`).
 
 ### 5.4 Field roles
 
-A check that needs a page's description or the date it's due for review, or a report that counts pages by owner, reads the field with that role.
+A check that needs a page's description or the date it's next due to be checked, or a report that counts pages by owner, reads the field with that role.
 
 A field named for a role has it, when its type is one the role takes:
 
 ```toml
 [frontmatter]
 description = "string?"
-review-date = "date?"
+recheck-date = "date?"
 owner = "enum(docs, platform)"
 ```
 
@@ -168,18 +204,18 @@ A field's name is yours to choose, so a field of another name takes a role with 
 ```toml
 [types.guide.frontmatter]
 summary = { type = "string?", role = "description" }
-review-by = { type = "date?", role = "review-date" }
+review-by = { type = "date?", role = "recheck-date" }
 team = { type = "enum(docs, platform)", role = "owner" }
 ```
 
 | Role | The field's type | What reads it |
 |---|---|---|
 | `description` | `string`, optional or not | [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report: a page that leaves a field with a default out, or empty, has the default as its description, in `llms.txt` and the page records too. [`description-link`](../checks/diagnostics/content-checks.md#ASC198) reports a Markdown link in one: a description is plain text, so the link is shown as written. |
-| `review-date` | `date`, optional or not | [`review-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. |
+| `recheck-date` | `date`, optional or not | [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) reports a page whose date has passed. `review-date`, the role's old name, still works, as a value of `role` and as a field's name, and so does the check's, `review-overdue`, in `[checks]` and in an acknowledgement, until the next release. |
 | `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](../checks/report-command.md#cli-report) counts pages by owner. |
 
 Without a field with the role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 
-In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's description against its limit, and when it's due for review, from the fields with these roles.
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's description against its limit, and when it's due for a recheck, from the fields with these roles.
 
 **Rules.** A role is one of the three (`model-field-role`), on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s: not a field in an object, nor in the fragment schema. Two fields of one table can't have the same role. A role a type gives one of its own fields with `role` is that field's, and not a field's in `[frontmatter]`. A field named for a role has it only when no other field of the type is given it, and its type is one the role takes: a `description` that's a number is a field like any other.

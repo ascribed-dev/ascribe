@@ -33,7 +33,7 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 - **Sends each Markdown version's response headers** in `astro dev`, and with `[consumer] host = "netlify"` writes them into the built site's `_headers`, or fails the build when the site's own `public/_headers` lacks them ([response headers](../publishing/site.md#response-headers)).
 - **Writes the redirects** with `[consumer] host = "netlify"`: each project's `_redirects`, from the moves [`ascribe.addresses`](../publishing/redirects.md) records, merged into the built site's, ahead of the site's own `public/_redirects`, and fails the build when a redirect's address is a page the site publishes ([the host's files](../publishing/site.md#the-hosts-files)).
 - **Serves every line of a versioned build** from one collection, builds every line in `astro build` and `astro dev`, and serves each line's linked files at its base path ([versions](reference.md#versions)). Each entry's data has `line`, the line it's from, and `current`; the generated schema doesn't type them. A permalink forwards to the current line, and each line's outputs for agents are published at its base path, with its headers.
-- **Shows code block titles** and tested lines, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)).
+- **Shows code block titles** and tested lines, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](reference.md#code-block-titles)), and gives each highlighted block's `<code>` its language as a class ([code block languages](reference.md#code-block-languages)).
 - **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([the collection](index.md#the-collection)).
 
 ### In `astro dev`
@@ -97,9 +97,9 @@ Each build lists its [permalinks](../permalinks/index.md) in the site output, `_
 - links to the same place, for a browser that doesn't follow;
 - is marked `noindex`, with a canonical link to where it leads, so search engines list the page and not the address.
 
-So it works on any static host. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents. A retired permalink's page says what was there was removed from the docs, gives the reason, and links to the docs' home page, unless it was retired `--to` another page, where it forwards.
+So it works on any static host. With `[consumer] host = "netlify"`, the host [forwards each address with a `301`](../publishing/redirects.md#permalinks-on-netlify) instead, and serves the page only for an address with a dimension's parameter. The page names its section's [Markdown and JSON](reference.md#help-entries) as its alternates, `<link rel="alternate">`, for an agent that reads it. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents. A retired permalink's page says what was there was removed from the docs, gives the reason, and links to the docs' home page, unless it was retired `--to` another page, where it forwards.
 
-The parameters are named for the content model's [dimensions](../content-model/content.md#dimensions), as a product [links to a permalink](../permalinks/index.md#linking-from-a-product):
+The parameters are named for the content model's [dimensions](../content-model/variation.md#dimensions), as a product [links to a permalink](../permalinks/index.md#linking-from-a-product):
 
 - **A parameter that names a dimension, with one of its values,** sets the reader's choice for that dimension, as if they'd picked the tab, and the choice holds on the pages they read next.
 - **Anything else is ignored:** a name that isn't a dimension, or a value the dimension doesn't have. A link with only unknown parameters works as one with none.
@@ -112,7 +112,6 @@ Another generator reads the same list and publishes a page like these at `path` 
 
 ### Help entries
 @id: help-entries
-@available: ascribe 0.4.3
 
 Each build writes each permalink's section to `_ascribe/help.json` ([output-layout contract §1.7](../contracts/output-layout.md#17-the-help-file)), for a product to [show in itself](../permalinks/in-your-product.md). The integration serves each entry at an address of its own, in `astro build` and in `astro dev`, so a product can fetch its line's:
 
@@ -121,7 +120,9 @@ Each build writes each permalink's section to `_ascribe/help.json` ([output-layo
 
 Each answers with the file narrowed to that one entry: `version`, `build`, and `line` as the line's file has them, and `help` with the entry under its name, so a product reads a fetched entry and its bundled file the same way. A line that has left the window has no address, and an alias has its own. `astro dev` answers with `Access-Control-Allow-Origin: *`, and with `[consumer] host = "netlify"` the build's `_headers` gives each address the same, since the build's [headers list](../publishing/site.md#response-headers) has a rule for each.
 
-Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, at `<path><name>.json` for the current line, where `path` is `_ascribe/permalinks.json`'s, and at `<base>go/<name>.json` for an older line, where `base` is the line's in `_ascribe/versions.json`.
+Beside each, with `.md` in place of `.json`, `/docs/go/connect.md`, the integration serves the entry's section as Markdown: its title as a heading, then its `text`, the section as the plain output writes it. An agent reads the section a permalink names in one fetch, and a host that [answers content negotiation](serve-markdown.md#3-answer-content-negotiation) by trying the address with `.md` finds it for the permalink's address too. The JSON names it as its alternate, with a `Link` header in `astro dev` and in the build's headers list.
+
+Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, at `<path><name>.json` for the current line, where `path` is `_ascribe/permalinks.json`'s, and at `<base>go/<name>.json` for an older line, where `base` is the line's in `_ascribe/versions.json`, and the section as Markdown at each with `.md`.
 
 ### A permalink that isn't here
 @id: a-permalink-that-isnt-here
@@ -138,7 +139,7 @@ import MissingPermalink from "@ascribed/astro/MissingPermalink.astro";
 <MissingPermalink />
 ```
 
-On an address under the permalinks' path, it says the link came from a product that expected a section of the docs there, names it, and offers the docs' home page and search. Anywhere else, and without a script, it shows nothing. `home` sets where it sends the reader, the docs' base path by default; children replace its last paragraph, such as to point at your search:
+On an address under the permalinks' path, it says the link came from a product that expected a section of the docs there, names it, and offers the docs' home page. Anywhere else, and without a script, it shows nothing. `home` sets where it sends the reader, the docs' base path by default; children replace its last paragraph, such as to point at your search:
 
 ```astro
 <MissingPermalink>
@@ -212,6 +213,10 @@ A code block's title, such as a [`@snippet`](../writing/directives.md#snippet)'s
 ```
 
 The figure has your browser's default margins, and the caption no style of its own; style `figure.code-title` and its `figcaption` to suit your site. Titles need Astro's default highlighting, Shiki; with `syntaxHighlight: "prism"` or `false`, they aren't shown.
+
+### Code block languages
+
+Astro's highlighting marks a block's language only as the `<pre>`'s `data-language`. A tool that converts a page's HTML to text or Markdown, as many AI agents do before they read it, looks for a `language-…` class on the `<code>`, as Markdown renders it before highlighting, and without one writes the block with no language. So the integration adds a second Shiki transformer, whatever `codeTitles` is, that gives the `<code>` that class: `<code class="language-sh">`. A block with no language, or one in a language Shiki doesn't know, which Astro highlights as `plaintext`, gets none.
 
 ## Other Markdown processors
 

@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 
 use ascribe_check::{
-    Diagnostic, Project, SourceFile, check_all_builds, check_builds, check_files, check_project,
+    Diagnostic, Project, check_all_builds, check_builds, check_files, check_project,
 };
 use ascribe_core::{FileId, RelPath};
 
@@ -70,18 +70,22 @@ build = "cloud"
 "#;
 
 fn project_with(model: &str, files: &[(&str, &str)]) -> Project {
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
+            model.to_owned(),
+            sources,
         )
-    }));
-    Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
-        model.to_owned(),
-        sources,
+        .snapshot(),
     )
 }
 
@@ -151,6 +155,102 @@ fn a_link_to_a_missing_heading_is_offered_the_closest_headings() {
         .collect();
     assert_eq!(hrefs, ["other.md#install", "other.md#upgrade"]);
     assert_eq!(found[0].fixes[0].file, found[0].location.file);
+}
+
+/// An id guessed from a heading's first words ranks the heading it was cut
+/// down from first, above one fewer edits away, and the message names it.
+#[test]
+fn a_link_to_a_shortened_id_is_offered_the_heading_it_starts_first() {
+    let p = project(&[
+        ("index.md", &page("See [it](loop.md#ask-instead).")),
+        (
+            "loop.md",
+            &page(
+                "## Run the loop
+
+## Ask instead of guessing
+
+## Fix it or say it's intended",
+            ),
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("link-id-missing", "index.md", 5)]);
+    let hrefs: Vec<&str> = found[0]
+        .fixes
+        .iter()
+        .map(|f| f.edits[0].new_text.as_str())
+        .collect();
+    assert_eq!(hrefs[0], "loop.md#ask-instead-of-guessing");
+    assert_eq!(
+        found[0].message,
+        "`loop.md` has no heading with the id `ask-instead`; did you mean `loop.md#ask-instead-of-guessing`?"
+    );
+}
+
+/// The Quill cases: an id cut down, and one written longer than the
+/// heading's, each rank the heading they share words with first.
+#[test]
+fn a_link_to_a_longer_or_shorter_id_is_offered_the_heading_it_shares_words_with() {
+    let keys = "## Create a key\n@id: create-key\n\n## Rotate keys\n@id: rotate-keys\n\n## Sign webhook events\n@id: sign-webhooks";
+    let p = project(&[
+        ("a.md", &page("See [it](keys.md#rotate).")),
+        ("b.md", &page("See [it](keys.md#sign-webhook-events).")),
+        ("keys.md", &page(keys)),
+    ]);
+    let found = page_level(&p);
+    let first: Vec<&str> = found
+        .iter()
+        .map(|d| d.fixes[0].edits[0].new_text.as_str())
+        .collect();
+    assert_eq!(first, ["keys.md#rotate-keys", "keys.md#sign-webhooks"]);
+    assert!(
+        found[0]
+            .message
+            .ends_with("did you mean `keys.md#rotate-keys`?"),
+        "{}",
+        found[0].message
+    );
+}
+
+/// A short word in a heading, such as `a`, starts too many words to stand
+/// for the id's, so it doesn't rank that heading first or name it.
+#[test]
+fn a_short_heading_word_does_not_stand_for_the_id() {
+    let p = project(&[
+        ("index.md", &page("See [it](other.md#authentication).")),
+        (
+            "other.md",
+            &page("## A quick start\n\n## Authenticate users"),
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(
+        found[0].fixes[0].edits[0].new_text,
+        "other.md#authenticate-users"
+    );
+    assert_eq!(
+        found[0].message,
+        "`other.md` has no heading with the id `authentication`"
+    );
+}
+
+/// With two headings equally likely, the message names neither.
+#[test]
+fn a_link_with_no_clear_closest_heading_names_none() {
+    let p = project(&[
+        ("index.md", &page("See [it](other.md#install).")),
+        (
+            "other.md",
+            &page("## Install on Linux\n\n## Install on macOS"),
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(found[0].fixes.len(), 2);
+    assert_eq!(
+        found[0].message,
+        "`other.md` has no heading with the id `install`"
+    );
 }
 
 #[test]
@@ -363,6 +463,41 @@ fn a_page_every_build_drops_is_checked_as_unpublished() {
 }
 
 #[test]
+fn a_draft_is_checked_as_unpublished_even_beside_a_build_that_keeps_everything() {
+    // `site` keeps every arm, but no build publishes a draft.
+    let p = project(&[
+        ("index.md", &page("Text.")),
+        (
+            "upcoming.md",
+            "---\ntitle: T\ndraft: true\n---\n\n## A\n@id: same\n\n## B\n@id: same\n",
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("id-duplicate", "upcoming.md", 10)]);
+    assert!(found[0].unpublished);
+    assert!(found[0].builds.is_empty());
+}
+
+#[test]
+fn a_link_to_a_draft_says_it_is_one_once_for_every_build() {
+    let p = project(&[
+        ("index.md", &page("See [what's next](upcoming.md).")),
+        (
+            "upcoming.md",
+            "---\ntitle: T\ndraft: true\n---\n\nNot yet.\n",
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("link-page-dropped", "index.md", 5)]);
+    assert_eq!(found[0].builds, ["site", "cloud", "self-managed"]);
+    assert_eq!(
+        found[0].message,
+        "`upcoming.md` is a draft, which no build publishes, so this link would be broken; \
+         take the link out until the page is published, or publish it by removing its `draft: true`"
+    );
+}
+
+#[test]
 fn a_build_that_keeps_everything_needs_no_extra_pass() {
     // `site` is a switch with badges: nothing is unpublished, so nothing is
     // marked so, even in an arm no selecting build keeps.
@@ -381,27 +516,26 @@ fn a_build_that_keeps_everything_needs_no_extra_pass() {
 
 #[test]
 fn locations_use_the_projects_file_ids_whatever_order_the_sources_came_in() {
-    // Sources given in reverse path order, numbered as given.
+    // Sources given in reverse path order.
     let sources = vec![
-        SourceFile {
-            id: FileId::new(1),
-            path: RelPath::parse("index.md").expect("a path"),
-            text: page("@include: _f.md"),
-            unreadable: None,
-        },
-        SourceFile {
-            id: FileId::new(2),
-            path: RelPath::parse("_f.md").expect("a path"),
-            text: "See [it](index.md#gone).\n".to_owned(),
-            unreadable: None,
-        },
+        (
+            RelPath::parse("index.md").expect("a path"),
+            page("@include: _f.md"),
+        ),
+        (
+            RelPath::parse("_f.md").expect("a path"),
+            "See [it](index.md#gone).\n".to_owned(),
+        ),
     ];
-    let p = Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads"),
-        MODEL.to_owned(),
-        sources,
+    let p = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads"),
+            MODEL.to_owned(),
+            sources,
+        )
+        .snapshot(),
     );
     let found = page_level(&p);
     assert_eq!(at(&p, &found), [row("link-id-missing", "index.md", 5)]);
@@ -490,7 +624,6 @@ fn a_permalink_that_differs_only_in_case_names_both_spellings() {
             "---\ntitle: B\npermalink: setup\n---\n\n@include: _f.md\n",
         ),
     ]);
-    // The permalinks have no summaries, which `summary-missing` reports.
     let found: Vec<_> = page_level(&p)
         .into_iter()
         .filter(|d| d.slug.as_str() == "permalink-duplicate")

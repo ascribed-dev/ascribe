@@ -28,9 +28,10 @@ const WIDTH: usize = 80;
 /// Arguments of `ascribe search`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// What to find: words, which must all be in one block in any order, or
-    /// a phrase in double quotes, matched as written. Quote several words
-    /// together: `ascribe search "rate limit"`, and a phrase inside them:
+    /// What to find: words, which must all be in one block in any order,
+    /// apart from common words such as `how` and `the`, or a phrase in
+    /// double quotes, matched as written. Quote several words together:
+    /// `ascribe search "rate limit"`, and a phrase inside them:
     /// `ascribe search '"rate limit"'`.
     ///
     /// Case is ignored unless `--case`, and a word matches inside a longer
@@ -245,7 +246,7 @@ fn is_plain_word(arg: &str) -> bool {
 /// reads it, cut around the match, then where a reader meets it.
 pub fn write_text(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
     if let Some(nothing) = &s.nothing {
-        return write_nothing(out, nothing);
+        return write_nothing(out, nothing, s);
     }
     for place in &s.places {
         writeln!(out, "{}:{}: {}", place.file, place.line, excerpt(place))?;
@@ -267,7 +268,7 @@ pub fn write_text(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
 /// what `--summary` shows.
 pub fn write_summary(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
     if let Some(nothing) = &s.nothing {
-        return write_nothing(out, nothing);
+        return write_nothing(out, nothing, s);
     }
     let pages = s.pages.as_deref().unwrap_or_default();
     let width = pages.first().map_or(1, |p| p.places.to_string().len());
@@ -296,13 +297,59 @@ fn write_total(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
     } else {
         "pages"
     };
-    writeln!(out, "{} {places}, on {} {pages}.", s.total, s.pages_matched)
+    writeln!(out, "{} {places}, on {} {pages}.", s.total, s.pages_matched)?;
+    write_stop_words(out, s)
 }
 
-/// Writes that no place matches, and what the source says about the words.
-fn write_nothing(out: &mut dyn Write, nothing: &Nothing) -> io::Result<()> {
+/// `A place needn't have the common words how, do, I.`, when the query
+/// has some.
+fn write_stop_words(out: &mut dyn Write, s: &Searched) -> io::Result<()> {
+    if s.stop_words.is_empty() {
+        return Ok(());
+    }
+    writeln!(
+        out,
+        "A place needn't have the common words {}.",
+        s.stop_words.join(", ")
+    )
+}
+
+/// Writes that no place matches, what the source says about the words,
+/// and the places that have some of them: when the source doesn't have
+/// them all together either, those places say so in its place.
+fn write_nothing(out: &mut dyn Write, nothing: &Nothing, s: &Searched) -> io::Result<()> {
     writeln!(out, "No place matches.")?;
-    writeln!(out, "{}", nothing.said())
+    let Some(first) = s.partial_places.first() else {
+        writeln!(out, "{}", nothing.said())?;
+        return write_stop_words(out, s);
+    };
+    if *nothing != Nothing::Unwritten {
+        writeln!(out, "{}", nothing.said())?;
+    }
+    let words = first.has + first.lacks.len();
+    let all = if words == 2 {
+        "both words".to_owned()
+    } else {
+        format!("all {words} words")
+    };
+    let fewer = if s.partial_places.iter().all(|p| p.has == first.has) {
+        ""
+    } else {
+        "at most "
+    };
+    writeln!(
+        out,
+        "No block has {all}. These have {fewer}{} of {words}:",
+        first.has
+    )?;
+    for partial in &s.partial_places {
+        let place = &partial.place;
+        writeln!(out, "{}:{}: {}", place.file, place.line, excerpt(place))?;
+        let mut about = about(place, &s.builds);
+        about.push(format!("lacks {}", partial.lacks.join(", ")));
+        writeln!(out, "    {}", about.join(" · "))?;
+    }
+    write_stop_words(out, s)
 }
 
 /// Where a reader meets a place: the heading it's under, its arm, what it
@@ -413,29 +460,8 @@ fn page(place: &SearchPlace, shown: &SearchPage, searched: &[String]) -> String 
     text
 }
 
-/// The block's text, cut to about [`WIDTH`] characters around the match at
-/// word boundaries, with `…` where it's cut.
+/// The block's text, cut to about [`WIDTH`] characters around the match's
+/// first character at word boundaries, with `…` where it's cut.
 fn excerpt(place: &SearchPlace) -> String {
-    let chars: Vec<char> = place.text.chars().collect();
-    if chars.len() <= WIDTH {
-        return place.text.clone();
-    }
-    let [first, last] = place.matched;
-    let mut start = first.saturating_sub(WIDTH / 4);
-    if last > start + WIDTH {
-        start = first;
-    }
-    // Start at a word, and end before one that doesn't fit.
-    while start > 0 && start < first && chars.get(start - 1).is_some_and(|c| !c.is_whitespace()) {
-        start += 1;
-    }
-    let mut end = (start + WIDTH).min(chars.len()).max(last.min(chars.len()));
-    while end < chars.len() && end > last && chars.get(end).is_some_and(|c| !c.is_whitespace()) {
-        end -= 1;
-    }
-    let text: String = chars[start..end].iter().collect();
-    let text = text.trim();
-    let before = if start > 0 { "…" } else { "" };
-    let after = if end < chars.len() { "…" } else { "" };
-    format!("{before}{text}{after}")
+    ascribe_query::excerpt(&place.text, place.matched, WIDTH).0
 }

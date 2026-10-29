@@ -18,10 +18,11 @@ use ascribe_model::{CheckLevel, ContentModel};
 use ascribe_syntax::{
     Block, BlockKind, Bound, ParseOptions, PrimaryValue, bound_block, bound_heading, parse,
 };
+use ascribe_workspace::SourceFile;
 use serde_yaml_ng::Value;
 
 use crate::yaml::YamlIndex;
-use crate::{Diagnostic, Project, SourceFile};
+use crate::{Diagnostic, Project};
 
 /// The key a page's acknowledgements are under in its frontmatter.
 pub const FRONTMATTER_KEY: &str = "intended";
@@ -521,17 +522,20 @@ mod tests {
 
     fn project(files: &[(&str, &str)]) -> Project {
         let model = ascribe_model::load_str(MODEL, FileId::new(0)).unwrap();
-        let sources = Project::from_sources(
+        let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter(
             files
                 .iter()
                 .map(|(p, t)| (RelPath::parse(p).unwrap(), (*t).to_owned())),
         );
-        Project::from_parts(
-            PathBuf::from("/p"),
-            RelPath::parse("content").unwrap(),
-            model,
-            MODEL.to_owned(),
-            sources,
+        crate::Project::new(
+            crate::in_memory(
+                PathBuf::from("/p"),
+                RelPath::parse("content").unwrap(),
+                model,
+                MODEL.to_owned(),
+                sources,
+            )
+            .snapshot(),
         )
     }
 
@@ -640,7 +644,7 @@ mod tests {
             .flat_map(|d| d.fixes[0].edits.clone())
             .collect();
         edits.sort_by_key(|e| std::cmp::Reverse(e.span.start()));
-        let mut fixed = text.clone();
+        let mut fixed = text.to_string();
         for e in edits {
             fixed.replace_range(e.span.range(), &e.new_text);
         }

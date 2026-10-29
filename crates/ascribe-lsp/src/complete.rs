@@ -15,13 +15,14 @@ use ascribe_core::intended::Place;
 use ascribe_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, SetMember};
 use ascribe_core::{LineIndex, RelPath, percent_decode};
 use ascribe_model::Listing;
-use ascribe_resolve::references::{include_target, reference_target};
+use ascribe_resolve::openapi::Operation;
+use ascribe_resolve::references::{declared_spec, include_target, reference_target};
 use ascribe_resolve::{FileIndex, RefKind, Target, Usable, UseKind};
 use ascribe_syntax::{Block, BlockKind, CodeBlock, Inline, InlineKind};
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionList,
-    CompletionResponse, CompletionTextEdit, Documentation, MarkupContent, MarkupKind, Position,
-    Range, TextEdit,
+    CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
+    CompletionList, CompletionResponse, CompletionTextEdit, Documentation, MarkupContent,
+    MarkupKind, Position, Range, TextEdit,
 };
 
 use crate::hover::{attribute_line, describe_directive, type_name};
@@ -221,6 +222,7 @@ impl Cx<'_> {
             }
             Head::Primary(primary) => match name {
                 "include" => Some(self.include(primary)),
+                "operation" => Some(self.operation(primary)),
                 "available" => Some(list(self.availability(primary), false)),
                 _ => {
                     let schemas = self.ctx.model.directive_schemas();
@@ -638,10 +640,43 @@ impl Cx<'_> {
                 Target::Local(local) => local.path,
                 Target::External => None,
             };
+            if let Some(api) = target
+                .as_ref()
+                .and_then(|path| declared_spec(&self.ctx.model, self.ctx.snapshot.layout(), path))
+            {
+                let (items, incomplete) = self.operations_of(&api.name, id, angle);
+                return list(items, incomplete);
+            }
             let (items, incomplete) = self.headings_of(target.as_ref(), id, false, angle);
             return list(items, incomplete);
         }
         self.search(&percent_decode(raw), raw.len(), angle)
+    }
+
+    /// The primary of an `@operation` (SPEC §4.13): after a declared spec's
+    /// `#`, its operations, as a link's destination offers them.
+    fn operation(&self, typed: &str) -> CompletionResponse {
+        let Some((path_part, id)) = typed.split_once('#') else {
+            return list(Vec::new(), false);
+        };
+        let api = match reference_target(
+            RefKind::Link,
+            path_part,
+            &[],
+            &self.ctx.path,
+            &self.ctx.model,
+        ) {
+            Target::Local(local) => local.path.and_then(|path| {
+                declared_spec(&self.ctx.model, self.ctx.snapshot.layout(), &path)
+                    .map(|api| api.name.clone())
+            }),
+            Target::External => None,
+        };
+        let Some(api) = api else {
+            return list(Vec::new(), false);
+        };
+        let (items, incomplete) = self.operations_of(&api, id, false);
+        list(items, incomplete)
     }
 
     /// The headings of a file, by the id being typed: for `file.md#…` and
@@ -696,6 +731,53 @@ impl Cx<'_> {
                 item.detail = Some(format!("#{}", h.source_id));
                 item.filter_text = Some(format!("{} {}", h.text, h.source_id));
                 item.sort_text = Some(format!("{i:03}"));
+                item
+            })
+            .collect();
+        (items, incomplete)
+    }
+
+    /// The operations of a declared API's spec, for `openapi.yaml#…`: each
+    /// by its id, or its method and path when it has none, matched on
+    /// either, on its method and path, and on its summary.
+    fn operations_of(&self, api: &str, typed: &str, raw: bool) -> (Vec<CompletionItem>, bool) {
+        let Some(spec) = self.ctx.snapshot.project().apis().spec(api) else {
+            return (Vec::new(), false);
+        };
+        let wanted = percent_decode(typed).to_lowercase();
+        let mut matches: Vec<_> = spec
+            .operations
+            .iter()
+            .filter(|o| wanted.is_empty() || operation_words(o).to_lowercase().contains(&wanted))
+            .take(LIMIT + 1)
+            .collect();
+        let incomplete = matches.len() > LIMIT;
+        matches.truncate(LIMIT);
+        let items = matches
+            .into_iter()
+            .enumerate()
+            .map(|(i, o)| {
+                let name = o
+                    .operation_id
+                    .clone()
+                    .unwrap_or_else(|| o.method_and_path());
+                let insert = if raw {
+                    name.clone()
+                } else {
+                    encode_destination(&name)
+                };
+                let mut item = self.item(&name, CompletionItemKind::METHOD, typed.len(), &insert);
+                item.detail = Some(crate::hover::method_and_path(o));
+                item.label_details = o.summary.clone().map(|summary| CompletionItemLabelDetails {
+                    detail: None,
+                    description: Some(summary),
+                });
+                item.documentation = Some(markdown(crate::hover::operation_markdown(api, o)));
+                item.filter_text = Some(operation_words(o));
+                item.sort_text = Some(format!("{i:03}"));
+                if o.deprecated {
+                    item.tags = Some(vec![CompletionItemTag::DEPRECATED]);
+                }
                 item
             })
             .collect();
@@ -893,6 +975,18 @@ struct Match<'a> {
     heading: Option<usize>,
     /// The page's title.
     title: &'a str,
+}
+
+/// What an operation is matched on: its id, its method and path as a link
+/// names them and as a reference shows them, and its summary.
+fn operation_words(operation: &Operation) -> String {
+    [
+        operation.operation_id.clone().unwrap_or_default(),
+        operation.method_and_path(),
+        crate::hover::method_and_path(operation),
+        operation.summary.clone().unwrap_or_default(),
+    ]
+    .join(" ")
 }
 
 /// How well `haystack` matches the lowercase `wanted`: 0 starts with it, 1 has

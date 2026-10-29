@@ -77,7 +77,7 @@ jobs:
         id: report
         continue-on-error: true
         run: >
-          ascribe report links agents --config docs
+          ascribe report links delivery --config docs
           --site https://ascribed-dev.com/docs/ --format markdown --exit-code
           > report.md
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -8,7 +8,7 @@
 # stylesheet.
 #
 # [color]: what a color is for, with a light and a dark value, each a
-# palette name. The element library, review, the HTML report, the Astro
+# palette name. The element library, review, the HTML preview, the Astro
 # toolbar, and the docs site share the top-level ones (`color.text`,
 # `color.note`); a color only one surface uses is under its name
 # (`color.preview.error`). The mark's colors are under `color.brand`: the
@@ -314,7 +314,7 @@ dark = "deep.a40"
 [font]
 ui = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-# Headings on the docs site and in the HTML report's frame: the system's
+# Headings on the docs site and in the HTML preview's frame: the system's
 # serif, which is New York on Apple's systems, then Charter, the brand's
 # reading face, and the serifs Windows and Linux have. No font ships
 # (decision 48).
@@ -336,7 +336,7 @@ base = "0.375rem"
 
 # The type scale: weight, size, and line height, for the `font` shorthand
 # with a family after it. A compact scale, about 1.2 from step to step, with
-# heavier headings. The docs site and the HTML report's frame set their text
+# heavier headings. The docs site and the HTML preview's frame set their text
 # with it; the element library takes the site's type.
 [type]
 caption = "600 0.75rem/1.4"
@@ -385,6 +385,12 @@ section = "700 2.125rem/1.15"
 "--ascribe-tab-active-color" = "color.accent"
 "--ascribe-tab-focus-color" = "color.focus"
 "--ascribe-tab-hover-background" = "color.panel"
+
+[emit."packages/elements/css/style.css".copy]
+"--ascribe-copy-color" = "color.muted"
+"--ascribe-copy-background" = "color.surface"
+"--ascribe-copy-hover-background" = "color.panel"
+"--ascribe-copy-focus-color" = "color.focus"
 
 [emit."packages/elements/css/style.css".states]
 "--ascribe-state-color" = "color.state"
@@ -558,6 +564,7 @@ section = "700 2.125rem/1.15"
 "--type-hero" = "type.hero"
 "--type-display" = "type.display"
 "--type-section" = "type.section"
+"--scrim" = "color.scrim"
 
 [emit."site/src/styles/site.css".backdrop]
 "background" = "color.scrim"

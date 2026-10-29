@@ -368,12 +368,12 @@ impl Core {
         let content_root = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
         let content_path = relative_path(&content_root, &document).filter(RelPath::is_inside);
         Ok(Target {
-            snapshot: loaded.inc.snapshot(),
-            model: loaded.model.clone(),
+            snapshot: loaded.workspace.index_snapshot(),
+            model: loaded.model().clone(),
             routes: self.preview_routes.clone(),
             root: loaded.root.clone(),
             content_root,
-            output_dir: normalize(&loaded.root.join(&loaded.model.project.output_dir)),
+            output_dir: normalize(&loaded.root.join(&loaded.model().project.output_dir)),
             document_version: self.docs.get(&document).map(|d| d.version),
             document,
             content_path,
@@ -381,7 +381,7 @@ impl Core {
                 "ascribe.toml currently has errors; this is the last version of the project that loaded."
                     .to_owned()
             }),
-            model_text: loaded.model_text.clone(),
+            model_text: loaded.model_text().to_owned(),
             review: self.review.clone(),
         })
     }
@@ -634,11 +634,18 @@ fn review_of(target: &Target, base: &ReviewBase, build: &str, path: &RelPath) ->
         project: target.snapshot.project(),
         model_text: &target.model_text,
     };
-    let changes = ascribe_diff::compare_page_in(base.side(), now, build, path);
+    let changes = ascribe_diff::compare_page_in(base.side(), now, build, path, &base.renames);
+    // A page that moved was where it moved from.
     let was = changes
         .as_ref()
         .filter(|c| c.status != PageStatus::Added)
-        .and_then(|_| base.page(build, path));
+        .and_then(|c| {
+            let was_path = match &c.moved_from {
+                Some(from) => RelPath::parse(from).ok()?,
+                None => path.clone(),
+            };
+            base.page(build, &was_path)
+        });
     let (was_html, was_title, was_formatted_title) = match was {
         Some((html, title)) => (Some(html), title.plain, title.formatted),
         None => (None, None, None),

@@ -1,0 +1,1 @@
+- **Help printed in a terminal has no Markdown links.** `ascribe check` and `ascribe explain` write a link in a diagnostic's help as its text; JSON keeps the Markdown. See [`ascribe explain`](docs/content/command/questions.md).

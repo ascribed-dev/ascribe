@@ -11,6 +11,10 @@
         "label": "Getting started"
       },
       {
+        "href": "/docs/existing-docs/",
+        "label": "Bring existing docs to Ascribe"
+      },
+      {
         "href": "/docs/install/",
         "label": "Install"
       },
@@ -61,16 +65,24 @@
         "label": "ascribe.toml reference"
       },
       {
-        "href": "/docs/content-model/checks/",
-        "label": "ascribe.toml: checks, permalinks, and listing"
+        "href": "/docs/content-model/content/",
+        "label": "ascribe.toml: what pages hold"
+      },
+      {
+        "href": "/docs/content-model/variation/",
+        "label": "ascribe.toml: how content varies"
       },
       {
         "href": "/docs/content-model/output/",
-        "label": "ascribe.toml: consumer, builds, and sources"
+        "label": "ascribe.toml: where pages are published"
       },
       {
-        "href": "/docs/content-model/content/",
-        "label": "ascribe.toml: dimensions, phrases, and widgets"
+        "href": "/docs/content-model/sources/",
+        "label": "ascribe.toml: what pages draw from"
+      },
+      {
+        "href": "/docs/content-model/checks/",
+        "label": "ascribe.toml: checks and the editor"
       },
       {
         "href": "/docs/content-model/glossary/",
@@ -83,7 +95,7 @@
     "pages": [
       {
         "href": "/docs/checks/check/",
-        "label": "ascribe check, build, and fmt"
+        "label": "ascribe check, build, preview, and fmt"
       },
       {
         "href": "/docs/checks/report-command/",
@@ -99,6 +111,11 @@
         "nested": true
       },
       {
+        "href": "/docs/checks/diagnostics/project-checks/",
+        "label": "Diagnostics: content checks across the project",
+        "nested": true
+      },
+      {
         "href": "/docs/checks/diagnostics/output-checks/",
         "label": "Diagnostics: content checks of outputs and the site",
         "nested": true
@@ -110,7 +127,12 @@
       },
       {
         "href": "/docs/checks/diagnostics/pages/",
-        "label": "Diagnostics: links, pages, and sources",
+        "label": "Diagnostics: links and pages",
+        "nested": true
+      },
+      {
+        "href": "/docs/checks/diagnostics/sources/",
+        "label": "Diagnostics: sources, memo files, and navigation",
         "nested": true
       },
       {
@@ -167,7 +189,7 @@
       },
       {
         "href": "/docs/review/ci-report/",
-        "label": "Attach the review report to every pull request"
+        "label": "Attach the HTML preview to every pull request"
       },
       {
         "href": "/docs/review/diff/",
@@ -312,6 +334,26 @@
       {
         "href": "/docs/openapi/",
         "label": "Link to your API reference"
+      },
+      {
+        "href": "/docs/openapi/examples/",
+        "label": "Check a JSON example against its schema"
+      },
+      {
+        "href": "/docs/openapi/coverage/",
+        "label": "Find the operations no guide links to"
+      },
+      {
+        "href": "/docs/openapi/no-id/",
+        "label": "Link to an operation with no id"
+      },
+      {
+        "href": "/docs/openapi/editor/",
+        "label": "Link to operations in the editor"
+      },
+      {
+        "href": "/docs/openapi/operation/",
+        "label": "Show an operation in a page"
       }
     ]
   },
@@ -404,7 +446,7 @@
       },
       {
         "href": "/docs/versions/archive/",
-        "label": "Archive and retire a line"
+        "label": "Export and retire a line"
       },
       {
         "href": "/docs/versions/lines/",
@@ -451,7 +493,7 @@
     ]
   },
   {
-    "label": "Contracts",
+    "label": "For implementers",
     "pages": [
       {
         "href": "/docs/contracts/content-model/",
@@ -459,22 +501,32 @@
       },
       {
         "href": "/docs/contracts/content-model/content/",
-        "label": "ascribe.toml format contract: dimensions, phrases, and widgets",
+        "label": "What pages hold",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/content-model/variation/",
+        "label": "How content varies",
         "nested": true
       },
       {
         "href": "/docs/contracts/content-model/output/",
-        "label": "ascribe.toml format contract: consumer, builds, and sources",
+        "label": "Where pages are published",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/content-model/sources/",
+        "label": "What pages draw from",
         "nested": true
       },
       {
         "href": "/docs/contracts/content-model/checks/",
-        "label": "ascribe.toml format contract: checks, permalinks, and listing",
+        "label": "Checks and the editor",
         "nested": true
       },
       {
         "href": "/docs/contracts/content-model/validation/",
-        "label": "ascribe.toml format contract: validation rules",
+        "label": "Validation rules",
         "nested": true
       },
       {
@@ -502,43 +554,48 @@
         "label": "JSON report contract"
       },
       {
-        "href": "/docs/contracts/json-reports/diff/",
-        "label": "JSON reports: ascribe diff and ascribe drift",
-        "nested": true
-      },
-      {
-        "href": "/docs/contracts/json-reports/report/",
-        "label": "JSON reports: ascribe report",
-        "nested": true
-      },
-      {
-        "href": "/docs/contracts/json-reports/sources/",
-        "label": "JSON reports: ascribe init, ascribe sources, ascribe observe, and ascribe permalinks",
-        "nested": true
-      },
-      {
-        "href": "/docs/contracts/json-reports/addresses/",
-        "label": "JSON reports: ascribe addresses",
+        "href": "/docs/contracts/json-reports/model/",
+        "label": "ascribe init and ascribe model",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/templates/",
-        "label": "JSON reports: ascribe templates",
-        "nested": true
-      },
-      {
-        "href": "/docs/contracts/json-reports/model/",
-        "label": "JSON reports: ascribe model",
-        "nested": true
-      },
-      {
-        "href": "/docs/contracts/json-reports/questions/",
-        "label": "JSON reports: the commands that answer questions",
+        "label": "ascribe templates",
         "nested": true
       },
       {
         "href": "/docs/contracts/json-reports/versions/",
-        "label": "JSON reports: ascribe versions",
+        "label": "ascribe versions",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/addresses/",
+        "label": "ascribe permalinks and ascribe addresses",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/sources/",
+        "label": "ascribe sources and ascribe observe",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/report/",
+        "label": "ascribe report",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/diff/",
+        "label": "ascribe diff and ascribe drift",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/questions/",
+        "label": "The commands that answer questions",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-reports/agents/",
+        "label": "ascribe agents",
         "nested": true
       },
       {

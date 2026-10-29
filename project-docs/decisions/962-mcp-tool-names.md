@@ -1,0 +1,5 @@
+---
+section: The binary
+---
+
+**Each of `ascribe mcp`'s tools is named `ascribe_` and its command's words, and `ascribe_rename` gives what `ascribe rename` changes without writing it.** `ascribe_format` is `ascribe_fmt` and `ascribe_changes` is `ascribe_diff`; the old names are listed after the tools, each the tool it names with a sentence saying so first, and call it, for one release, then go. `ascribe rename` gains `--format json` (`schema_version` 1): each changed file's whole text, the file that moves, the `[moved]` entries recorded in `ascribe.addresses`, and `written`, which the tool gives as false, as `ascribe_addresses_move` does. A rename changes the project, but the tool only says what would change, as `ascribe_fmt` does, so it stays read-only under decision 56. _Why:_ an agent with no shell had to move a page, fix each link, and record the move itself, where a person runs one command; and a tool whose name differs from its command's is one more thing to learn and to get wrong. _From:_ [#962](https://github.com/ascribed-dev/ascribe/issues/962), from the coherence review's finding 8, 26 October 2026.

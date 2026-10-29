@@ -57,6 +57,17 @@ impl Base {
     pub fn compared(&self) -> &str {
         self.merge_base.as_deref().unwrap_or(&self.commit)
     }
+
+    /// The base as a message names it: the revision asked for, and its
+    /// commit when that's something else.
+    pub fn named(&self) -> String {
+        let short = &self.commit[..self.commit.len().min(12)];
+        if self.requested.starts_with(short) {
+            format!("`{}`", self.requested)
+        } else {
+            format!("`{}` ({short})", self.requested)
+        }
+    }
 }
 
 impl Repository {
@@ -90,6 +101,12 @@ impl Repository {
             root,
             prefix,
         })
+    }
+
+    /// Whether `HEAD` is a commit: false in a repository with no commit
+    /// yet.
+    pub fn has_commit(&self) -> bool {
+        self.commit_of("HEAD").is_some()
     }
 
     /// The project's folder inside the repository.
@@ -151,6 +168,12 @@ impl Repository {
             }
             Err(e) => Err(e),
         }
+    }
+
+    /// Whether `rev` names a commit git knows, such as a branch, a tag, or
+    /// `HEAD`.
+    pub fn knows(&self, rev: &str) -> bool {
+        self.commit_of(rev).is_some()
     }
 
     /// The commit a revision names, or `None`.

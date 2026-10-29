@@ -1243,6 +1243,44 @@ fn a_change_to_a_file_a_snippet_shows_reads_it_again_for_every_page_that_shows_i
     assert_eq!(shown_code(&inc, "guide.md").as_deref(), Some("print(4)\n"));
 }
 
+/// The code file id of each of a file's snippets that shows one.
+fn code_ids(project: &Project, file: &str) -> Vec<FileId> {
+    let index = project.file(&path(file)).expect("a file");
+    index
+        .snippets
+        .iter()
+        .filter_map(|s| project.snippet_at(&index.path, s.span))
+        .map(|snippet| snippet.file)
+        .collect()
+}
+
+#[test]
+fn a_code_file_first_read_by_an_update_gets_its_own_id() {
+    let (mut inc, _) = code_project();
+    let app = code_ids(&inc.snapshot(), "index.md");
+    let other = code_ids(&inc.snapshot(), "other.md");
+    assert_eq!(app.len(), 1);
+    assert_ne!(app, other);
+
+    inc.apply([edited(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: code:unshown.py\n",
+    )])
+    .unwrap();
+    let snapshot = inc.snapshot();
+    let unshown = code_ids(&snapshot, "index.md");
+    assert_eq!(unshown.len(), 1);
+    assert_ne!(unshown, app);
+    assert_ne!(unshown, other);
+    // The others keep theirs.
+    assert_eq!(code_ids(&snapshot, "_shown.md"), app);
+    assert_eq!(code_ids(&snapshot, "other.md"), other);
+    assert_eq!(
+        inc.ids().code(&path("code/unshown.py")),
+        unshown.first().copied()
+    );
+}
+
 #[test]
 fn deleting_the_folder_a_snippets_file_is_in_reads_it_again() {
     let (mut inc, fs) = code_project();
@@ -1295,4 +1333,46 @@ fn a_change_to_a_sources_observations_reads_its_snippets_again() {
         affected.recheck,
         set(&["index.md", "_shown.md", "guide.md", "other.md"])
     );
+}
+
+// -- A load that defers what only an update needs -----------------------------------
+
+#[test]
+fn a_deferred_load_updated_equals_a_full_load_updated_the_same_way() {
+    let sources = [
+        (
+            "index.md",
+            "---\ntitle: H\n---\n\n[a](a.md) [g](guide.md#start)\n",
+        ),
+        ("a.md", "---\ntitle: A\n---\n\n@include: _f.md\n"),
+        (
+            "guide.md",
+            "---\ntitle: G\n---\n\n# Start\n\n@include: _f.md\n",
+        ),
+        ("_f.md", "Some prose.\n"),
+    ];
+    let spec = ModelSpec::base();
+    let (mut full, world) = load(&spec, &sources);
+    let model = spec.model();
+    let layout = Layout::from_model(&model);
+    let mut deferred = IncrementalProject::load_deferred(model, layout.clone(), world.fs(&layout));
+    let dump = |inc: &IncrementalProject| incremental_support::dump(inc.snapshot().project());
+    assert_eq!(dump(&deferred), dump(&full));
+    assert_eq!(deferred.ids(), full.ids());
+    let batches = [
+        vec![edited("_f.md", "Different prose.\n")],
+        vec![edited("guide.md", "---\ntitle: G\n---\n\n# Begin\n")],
+        vec![created(
+            "b.md",
+            "---\ntitle: B\n---\n\n[g](guide.md#begin)\n",
+        )],
+        vec![deleted("a.md")],
+    ];
+    for batch in batches {
+        let from_full = full.apply(batch.clone()).unwrap();
+        let from_deferred = deferred.apply(batch).unwrap();
+        assert_eq!(from_deferred, from_full);
+        assert_eq!(dump(&deferred), dump(&full));
+        assert_eq!(deferred.stats(), full.stats());
+    }
 }

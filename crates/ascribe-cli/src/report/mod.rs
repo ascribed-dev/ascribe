@@ -1,5 +1,5 @@
 //! Showing diagnostics: readable text with source snippets, one line each,
-//! and JSON.
+//! GitHub Actions' workflow commands, and JSON.
 //!
 //! The renderers read a [`FileTable`], which holds what a diagnostic's
 //! locations point into (the path to show and the text), and turn a
@@ -7,7 +7,9 @@
 //! and JSON always agree.
 
 pub mod concise;
+pub mod github;
 pub mod json;
+pub mod links;
 pub mod text;
 
 use ascribe_check::{Diagnostic, Project, Reported, Severity};
@@ -37,19 +39,17 @@ pub struct Position {
 }
 
 impl FileTable {
-    /// The files of a loaded project: the content model, the lock, the
-    /// permalinks list, the navigation file, the baseline, every source, every memo file, and every code file
-    /// the checks read for a snippet. Made after the checks, so the code
-    /// files are there.
+    /// The files of a loaded project: the content model, the side files
+    /// (`ascribe_check::side_files`), every source, every memo file, and
+    /// every code file the checks read for a snippet. Made after the checks,
+    /// so the code files are there.
     pub fn of_project(project: &Project) -> FileTable {
-        let mut ids = vec![
-            FileId::new(0),
-            ascribe_check::LOCK_FILE_ID,
-            ascribe_check::PERMALINKS_FILE_ID,
-            ascribe_check::NAV_FILE_ID,
-            ascribe_check::ADDRESSES_FILE_ID,
-            ascribe_check::BASELINE_FILE_ID,
-        ];
+        let mut ids = vec![FileId::new(0)];
+        ids.extend(
+            ascribe_check::side_files::SIDE_FILES
+                .iter()
+                .map(|entry| entry.id),
+        );
         ids.extend(project.sources().iter().map(|s| s.id));
         ids.extend(project.memo_ids());
         let mut entries: Vec<Entry> = ids

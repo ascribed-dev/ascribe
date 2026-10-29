@@ -12,9 +12,16 @@
 //! another project names. It says which file and which commands before it
 //! runs them, and adds nothing to a command and substitutes nothing into it.
 //! When standard input is a terminal, it asks before running them, and runs
-//! nothing unless the answer is yes; `--yes` skips the question, and where
-//! standard input isn't a terminal, as in CI or a hook, it doesn't ask.
+//! nothing unless the answer is yes; `--yes` skips the question. Where
+//! standard input isn't a terminal, as in CI, a hook, or an agent's shell,
+//! nobody is there to answer, so it runs nothing unless given `--yes`.
 //! The config, the observation, and the hash are `ascribe_model::examples`'s.
+//!
+//! Once it has written the observation, it looks for the nearest
+//! `ascribe.toml` in the folder or one above it, and when that project's
+//! sources don't read the config, because it's below a source's root, it
+//! says so, with the warning `ascribe check` gives (`examples-config-unread`).
+//! Nothing there is run.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -22,17 +29,20 @@ use std::io::{self, BufRead, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 
+use ascribe_check::{Diagnostic, apply_levels, unread_config_issue};
+use ascribe_core::path::relative_path;
 use ascribe_core::{FileId, LineIndex};
 use ascribe_model::examples::{
     DEFAULT_OBSERVATION, EXAMPLES_FILE, ExamplesConfig, OBSERVATIONS_FOLDER, Observation, Problem,
     is_observation_name, kept_line, observation_path,
 };
 use ascribe_model::{COPIES_FOLDER, LOCK_FILE, Lock, example_hash};
+use ascribe_resolve::{DiskFs, Layout, unread_config};
 use clap::{Args as ClapArgs, ValueEnum};
 use serde::Serialize;
 
 use crate::cli::Global;
-use crate::exit;
+use crate::{answer, exit, guard};
 
 /// The version of `ascribe observe --format json`'s schema.
 const SCHEMA_VERSION: u32 = 1;
@@ -53,14 +63,21 @@ pub struct Args {
     /// folder as it stands: for a pre-commit hook.
     ///
     /// It reads the config and the examples, and starts no program, the
-    /// config's commands included.
+    /// config's commands included. A stale observation's hashes are printed
+    /// as a unified diff of the file.
     #[arg(long)]
     pub check: bool,
 
+    /// `--dry-run`, which runs the test and writes no observation, and
+    /// `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// Run the commands without asking first.
     ///
-    /// It asks only when standard input is a terminal: in CI or a hook, it
-    /// runs them without asking, as with `--yes`.
+    /// It asks only when standard input is a terminal. Without one, as in CI,
+    /// a hook, or an agent's shell, it lists the commands and runs nothing
+    /// unless given `--yes`.
     #[arg(long)]
     pub yes: bool,
 
@@ -76,6 +93,7 @@ pub struct Args {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// What it runs and what it wrote, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -103,8 +121,12 @@ pub(crate) struct ObserveReport {
     /// The test command, and how it ended. Absent with `--check`.
     test: Option<TestRun>,
     /// The observation it wrote, from the current folder: none when the test
-    /// failed. With `--check`, the one it compared.
+    /// failed. With `--check`, the one it compared; with `--dry-run`, the
+    /// one it would write.
     observation: Option<String>,
+    /// Whether it wrote the observation: false with `--check` or
+    /// `--dry-run`, or when the test failed.
+    written: bool,
     /// With `--check`, whether the observation is current: it lists every
     /// example in the folder, with the hash it has now, and nothing else.
     /// Absent without `--check`.
@@ -258,7 +280,8 @@ struct TestRun {
 /// is written, 1 when the test failed and nothing was written, 2 when it
 /// couldn't run: a name that isn't one, a folder that's a source's copies,
 /// no config in the current folder, a config that can't be read, the
-/// question answered with anything but yes, no shell, an environment command
+/// question answered with anything but yes, no terminal to ask at and no
+/// `--yes`, no shell, an environment command
 /// that failed or printed nothing, or an observation that can't be written. With `--check`: 0 when the observation is current,
 /// 1 when it's stale or missing, 2 when the config, the examples, or the
 /// observation can't be read.
@@ -268,7 +291,8 @@ pub fn run(_global: &Global, args: Args) -> ExitCode {
     let stderr = io::stderr();
     let mut err = stderr.lock();
     // The question is asked only of a person at a terminal, and never with
-    // `--check`, which runs nothing.
+    // `--check`, which runs nothing. Without a terminal or `--yes`, `observe`
+    // runs nothing.
     let stdin = io::stdin();
     let mut answers = (!args.yes && !args.check && stdin.is_terminal()).then(|| stdin.lock());
     let ask = answers.as_mut().map(|a| a as &mut dyn BufRead);
@@ -285,7 +309,8 @@ pub fn run(_global: &Global, args: Args) -> ExitCode {
 
 /// Runs the config in `folder`, writing the report to `out` and what went
 /// wrong to `err`, and returns the exit code. With `ask`, it asks on `err`
-/// before running anything, and reads the answer from `ask`.
+/// before running anything, and reads the answer from `ask`; without it, it
+/// runs the commands only with `--yes`.
 fn observe(
     folder: &Path,
     args: &Args,
@@ -327,25 +352,13 @@ fn observe(
     // read: what changed is said against it.
     let previous = read_observation(folder, &path).and_then(Result::ok);
 
-    // Say what will run, before running anything: with `--format json`,
-    // only to a person asked, and on standard error, so standard output
-    // holds the JSON alone.
+    // Before anything runs, so a refusal costs no test run.
+    if let Err(e) = args.guard.allow(&[folder.join(&path)]) {
+        return answer::fail(err, &e);
+    }
     let json = args.format == Format::Json;
-    match ask {
-        Some(answers) => {
-            let shown: &mut dyn Write = if json { &mut *err } else { &mut *out };
-            list_commands(shown, "The commands in", &config, &test);
-            let _ = shown.flush();
-            if !agreed(answers, err) {
-                let _ = writeln!(err, "Nothing ran, and nothing was written.");
-                return exit::FAILURE;
-            }
-        }
-        None if !json => {
-            list_commands(out, "Running the commands in", &config, &test);
-            let _ = out.flush();
-        }
-        None => {}
+    if !consented(&config, &test, args, ask, out, err) {
+        return exit::FAILURE;
     }
 
     let environment = match run_environment(&config, folder, err) {
@@ -375,6 +388,7 @@ fn observe(
             exit_code: status.code(),
         }),
         observation: None,
+        written: false,
         current: None,
         changes: None,
         recorded: BTreeMap::new(),
@@ -417,7 +431,8 @@ fn observe(
         environment: recorded,
         files,
     };
-    if let Err(e) = write_observation(folder, &args.name, &observation.to_toml()) {
+    let dry_run = args.guard.dry_run;
+    if !dry_run && let Err(e) = write_observation(folder, &args.name, &observation.to_toml()) {
         let _ = writeln!(err, "error: can't write {path}: {e}");
         return exit::FAILURE;
     }
@@ -425,6 +440,7 @@ fn observe(
     let changes = previous.map(|was| Changes::between(&was, &observation));
     if json {
         report.observation = Some(path);
+        report.written = !dry_run;
         report.changes = changes;
         report.recorded = observation.environment.into_iter().collect();
         report.files = observation.files;
@@ -435,25 +451,108 @@ fn observe(
         let _ = writeln!(out, "{} passed.", terminal(&test));
         let _ = writeln!(
             out,
-            "Wrote {path}: {count} {}, {}.",
+            "{} {path}: {count} {}, {}.",
+            if dry_run { "Would write" } else { "Wrote" },
             if count == 1 { "file" } else { "files" },
             terminal(&tested),
         );
-        match changes {
-            None => {}
-            Some(changes) if changes.is_empty() => {
-                let _ = writeln!(out, "Nothing changed since the observation it replaces.");
-            }
-            Some(changes) => {
-                let _ = writeln!(
-                    out,
-                    "Since the observation it replaces: {}.",
-                    changes.clauses().join("; ")
-                );
-            }
-        }
+        say_changes(out, changes);
+    }
+    if let Some(warning) = unread_warning(folder) {
+        let _ = out.flush();
+        let _ = writeln!(err, "{warning}");
     }
     exit::OK
+}
+
+/// Says what will run, before running anything, and whether it may: with
+/// `ask`, the answer; without it, `--yes`. With `--format json`, the list
+/// goes only to a person asked, or told why nothing ran, and on standard
+/// error, so standard output holds the JSON alone.
+fn consented(
+    config: &ExamplesConfig,
+    test: &str,
+    args: &Args,
+    ask: Option<&mut dyn BufRead>,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> bool {
+    let json = args.format == Format::Json;
+    match ask {
+        Some(answers) => {
+            let shown: &mut dyn Write = if json { &mut *err } else { &mut *out };
+            list_commands(shown, "The commands in", config, test);
+            let _ = shown.flush();
+            if !agreed(answers, err) {
+                let _ = writeln!(err, "Nothing ran, and nothing was written.");
+                return false;
+            }
+            true
+        }
+        None if args.yes => {
+            if !json {
+                list_commands(out, "Running the commands in", config, test);
+                let _ = out.flush();
+            }
+            true
+        }
+        None => {
+            let shown: &mut dyn Write = if json { &mut *err } else { &mut *out };
+            list_commands(shown, "The commands in", config, test);
+            let _ = shown.flush();
+            let _ = writeln!(
+                err,
+                "error: standard input isn't a terminal, so nobody was asked before running them. Read them, then run `ascribe observe` again with `--yes` to run them. Nothing ran, and nothing was written."
+            );
+            false
+        }
+    }
+}
+
+/// What changed since the observation a run replaces, when it replaced one.
+fn say_changes(out: &mut dyn Write, changes: Option<Changes>) {
+    match changes {
+        None => {}
+        Some(changes) if changes.is_empty() => {
+            let _ = writeln!(out, "Nothing changed since the observation it replaces.");
+        }
+        Some(changes) => {
+            let _ = writeln!(
+                out,
+                "Since the observation it replaces: {}.",
+                changes.clauses().join("; ")
+            );
+        }
+    }
+}
+
+/// The warning `ascribe check` gives the config in `folder` when the project
+/// of the nearest `ascribe.toml`, in the folder or one above it, has it in a
+/// source's folder but no source reads it: `None` when there's no such
+/// project, it can't be loaded, a source reads the config, or `[checks]`
+/// turns the check off.
+fn unread_warning(folder: &Path) -> Option<String> {
+    let config = ascribe_workspace::find_config(folder)?;
+    let file = ascribe_check::LOADER.load_model(&config).ok()?;
+    // Outside FileSystem: the folder `ascribe observe` is run in, and the
+    // project's, made comparable before the project's file system exists.
+    let root = fs::canonicalize(&file.root).ok()?;
+    let here = fs::canonicalize(folder).ok()?;
+    let path = relative_path(&root, &here)?.join(EXAMPLES_FILE).ok()?;
+    let layout = Layout::from_model(&file.model);
+    let disk = DiskFs::new(&root, &layout);
+    let unread = unread_config(&file.model, &disk, &path)?;
+    let found = vec![Diagnostic::from_issue(&unread_config_issue(
+        &unread,
+        FileId::new(0),
+    ))];
+    let warning = apply_levels(&file.model.checks, found).into_iter().next()?;
+    Some(format!(
+        "{}: [{}] {}",
+        warning.severity.as_str(),
+        warning.code,
+        terminal(&warning.message),
+    ))
 }
 
 /// The config's commands, under `heading` and the config's name: the test,
@@ -527,6 +626,7 @@ fn check(folder: &Path, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -
             environment: Vec::new(),
             test: None,
             observation: Some(path),
+            written: false,
             current: Some(current),
             changes: previous.is_some().then_some(changes),
             recorded: BTreeMap::new(),
@@ -547,6 +647,13 @@ fn check(folder: &Path, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -
             if count == 1 { "file" } else { "files" },
         );
     } else {
+        if let Some(was) = &previous {
+            let now = Observation {
+                files: files.clone(),
+                ..was.clone()
+            };
+            let _ = answer::write_unified_diff(out, &path, &was.to_toml(), &now.to_toml());
+        }
         let _ = writeln!(
             out,
             "{path} is stale: {}. Run {again} here to test the examples again.",
@@ -830,7 +937,8 @@ mod tests {
 
     // The question, by `observe` with the answer given as text: a test of
     // the binary can't give it a terminal on every platform. The binary's
-    // tests (`tests/all/observe.rs`) show it doesn't ask without one.
+    // tests (`tests/all/observe.rs`) show that without one it doesn't ask,
+    // and runs nothing unless given `--yes`.
 
     /// A folder whose test writes `ran`, so a test can tell whether it ran.
     fn folder() -> tempfile::TempDir {
@@ -844,11 +952,16 @@ mod tests {
         dir
     }
 
-    fn args(format: Format) -> Args {
+    fn args(format: Format, yes: bool) -> Args {
         Args {
             name: DEFAULT_OBSERVATION.to_owned(),
             check: false,
-            yes: false,
+            // The folder isn't a repository.
+            guard: guard::Options {
+                force: true,
+                ..guard::Options::default()
+            },
+            yes,
             format,
         }
     }
@@ -856,10 +969,15 @@ mod tests {
     /// Runs `observe` in `dir`, answering `answer` when it's asked, or not
     /// asking with `None`: the exit code, standard output, and standard error.
     fn run_in(dir: &Path, format: Format, answer: Option<&str>) -> (u8, String, String) {
+        run_with(dir, &args(format, false), answer)
+    }
+
+    /// [`run_in`], with `args`.
+    fn run_with(dir: &Path, args: &Args, answer: Option<&str>) -> (u8, String, String) {
         let (mut out, mut err) = (Vec::new(), Vec::new());
         let mut answers = answer.map(str::as_bytes);
         let ask = answers.as_mut().map(|a| a as &mut dyn BufRead);
-        let code = observe(dir, &args(format), ask, &mut out, &mut err);
+        let code = observe(dir, args, ask, &mut out, &mut err);
         (
             code,
             String::from_utf8(out).unwrap(),
@@ -921,10 +1039,29 @@ mod tests {
         assert_eq!(report["test"]["passed"], true);
     }
 
+    const REFUSED: &str = "error: standard input isn't a terminal, so nobody was asked before running them. Read them, then run `ascribe observe` again with `--yes` to run them. Nothing ran, and nothing was written.\n";
+
     #[test]
-    fn not_asked_it_runs_them_as_it_says() {
+    fn not_asked_and_without_yes_it_shows_the_commands_and_runs_nothing() {
         let dir = folder();
         let (code, out, err) = run_in(dir.path(), Format::Text, None);
+        assert_eq!(code, exit::FAILURE);
+        assert_eq!(out, LIST);
+        assert_eq!(err, REFUSED);
+        assert!(!dir.path().join("ran").exists());
+        assert!(!dir.path().join(OBSERVATIONS_FOLDER).exists());
+
+        let (code, out, err) = run_in(dir.path(), Format::Json, None);
+        assert_eq!(code, exit::FAILURE);
+        assert_eq!(out, "");
+        assert_eq!(err, format!("{LIST}{REFUSED}"));
+        assert!(!dir.path().join("ran").exists());
+    }
+
+    #[test]
+    fn not_asked_with_yes_it_runs_them_as_it_says() {
+        let dir = folder();
+        let (code, out, err) = run_with(dir.path(), &args(Format::Text, true), None);
         assert_eq!(code, exit::OK, "{err}");
         assert!(
             out.starts_with("Running the commands in ascribe.examples.toml:\n"),

@@ -1,0 +1,1 @@
+- **`ascribe diff` and review show a moved page once, as moved.** A page git sees renamed, or whose move `ascribe.addresses` records, is listed where it is now with what it moved from, and the JSON carries `moved_from`. See [`ascribe diff`](docs/content/review/diff.md).

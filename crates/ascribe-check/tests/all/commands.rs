@@ -7,10 +7,13 @@
 use std::fs;
 use std::path::Path;
 
+use ascribe_check::side_files::SIDE_FILES;
 use ascribe_check::{
-    LoadError, LocateError, MODEL_FILE, Project, Severity, UnknownBuild, count_errors, diagnose,
-    select_builds,
+    BASELINE_FILE, DiagnoseError, Diagnostic, LOADER, MODEL_FILE, Project, Request, Scope,
+    Severity, UnknownBuild, baseline, count_errors, diagnose, diagnose_with, select_builds,
 };
+use ascribe_core::RelPath;
+use ascribe_workspace::{LoadError, Workspace};
 
 const MODEL: &str =
     "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[builds.site]\n[builds.pdf]\n";
@@ -26,39 +29,40 @@ fn project(model: &str, pages: &[(&str, &str)]) -> tempfile::TempDir {
 }
 
 fn load(dir: &Path) -> Project {
-    Project::load(&dir.join(MODEL_FILE)).expect("the project loads")
+    ascribe_check::load(&dir.join(MODEL_FILE))
+        .map(|w| Project::new(w.snapshot()).with_plain_markdown(source_text))
+        .expect("the project loads")
+}
+
+/// A stand-in for `ascribe_emit::plain_markdown`, which this crate doesn't
+/// use: a page's plain Markdown is its file's text.
+fn source_text(
+    index: &ascribe_resolve::Project,
+    _: &Path,
+    _: &ascribe_model::Build,
+    page: &ascribe_resolve::ResolvedPage,
+) -> Option<String> {
+    index.file_by_id(page.file).map(|f| f.source.to_string())
 }
 
 #[test]
-fn locate_takes_a_file_or_the_folder_that_holds_one() {
+fn the_loader_checks_the_model_and_reads_every_side_file() {
     let dir = project(MODEL, &[]);
     let config = dir.path().join(MODEL_FILE);
-    assert_eq!(Project::locate(Some(dir.path())).expect("found"), config);
-    assert_eq!(Project::locate(Some(&config)).expect("found"), config);
+    fs::write(dir.path().join(BASELINE_FILE), "").expect("write the baseline");
+    let loaded = Workspace::load(&LOADER, &config).expect("the project loads");
+    assert_eq!(LOADER.side_files.len(), SIDE_FILES.len());
+    assert!(load(dir.path()).baseline().is_some());
+    assert_eq!(loaded.snapshot().side_files().len(), 1);
 
-    let missing = dir.path().join("nowhere.toml");
-    let err = Project::locate(Some(&missing)).expect_err("not a file");
-    assert!(matches!(&err, LocateError::NotAFile { path } if *path == missing));
-    assert_eq!(
-        err.to_string(),
-        format!("{} doesn't exist or isn't a file", missing.display())
-    );
-}
-
-#[test]
-fn load_model_reads_only_the_content_model() {
-    // A page that isn't UTF-8 doesn't matter to it.
-    let dir = project(MODEL, &[]);
-    fs::write(dir.path().join("docs/broken.md"), [0xff, 0xfe]).expect("write");
-    let loaded = Project::load_model(&dir.path().join(MODEL_FILE)).expect("the model loads");
-    assert_eq!(loaded.root, dir.path());
-    assert_eq!(loaded.text, MODEL);
-    assert_eq!(loaded.model.builds.len(), 2);
-
-    let bad = project("spec = \"0.1\"\n[project\n", &[]);
-    match Project::load_model(&bad.path().join(MODEL_FILE)) {
-        Err(LoadError::Model { diagnostics, .. }) => {
-            assert_eq!(diagnostics[0].slug.as_str(), "model-toml-syntax");
+    // A template that isn't there is the content model's error, which the
+    // content model alone doesn't know.
+    let missing = format!("{MODEL}[types.guide]\ntemplate = \"templates/guide.md\"\n");
+    fs::write(&config, missing).expect("write the model");
+    match LOADER.load_model(&config) {
+        Err(LoadError::Model { issues, .. }) => {
+            let slugs: Vec<&str> = issues.iter().map(|i| i.slug.as_str()).collect();
+            assert_eq!(slugs, ["model-type-file"]);
         }
         other => panic!("expected the model's errors, got {other:?}"),
     }
@@ -148,42 +152,110 @@ fn count_errors_counts_what_diagnose_reports_as_errors() {
 }
 
 #[test]
-fn find_below_lists_the_projects_in_the_folders_below() {
-    let dir = tempfile::tempdir().expect("a temporary directory");
-    for folder in [
-        "b",
-        "a",
-        "a/nested",
-        "node_modules/c",
-        ".hidden",
-        "none/deeper",
-    ] {
-        fs::create_dir_all(dir.path().join(folder)).expect("create a folder");
-    }
-    for folder in ["b", "a", "a/nested", "node_modules/c", ".hidden"] {
-        fs::write(dir.path().join(folder).join(MODEL_FILE), MODEL).expect("write the model");
-    }
-    let found = Project::find_below(dir.path(), usize::MAX);
-    let a = dir.path().join("a");
-    assert_eq!(found, [a.clone(), a.join("nested"), dir.path().join("b")]);
-    assert_eq!(
-        Project::find_below(dir.path(), 2),
-        [a.clone(), a.join("nested")]
+fn page_size_is_measured_with_the_renderer_the_caller_gives() {
+    let page = "---\ntitle: Big\n---\n\nSome words to pass the limit.\n";
+    let model = format!("{MODEL}[checks.page-size]\nlevel = \"error\"\nlimit = 10\n");
+    let dir = project(&model, &[("big.md", page)]);
+    let sizes = |project: &Project| {
+        diagnose(project, &[])
+            .expect("every build")
+            .diagnostics
+            .iter()
+            .filter(|d| d.slug.as_str() == "page-size")
+            .count()
+    };
+    assert_eq!(sizes(&load(dir.path())), 1);
+    // Without a renderer, this crate can't measure a page.
+    let unrendered = ascribe_check::load(&dir.path().join(MODEL_FILE))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
+    assert_eq!(sizes(&unrendered), 0);
+}
+
+#[test]
+fn a_request_applies_the_baseline_and_the_scope_for_every_surface() {
+    // Two pages whose long `nav-label`s are advice (`nav-label-long`), and
+    // a home page that links to both.
+    let page = |title: &str, label: &str| {
+        format!("---\ntitle: {title}\nnav-label: {label}\n---\n\nText.\n")
+    };
+    let sync = page("Sync", "Synchronize two copies");
+    let keys = page("Keys", "All about the API keys");
+    let home = "---\ntitle: Home\n---\n\nSee [sync](sync.md) and [keys](keys.md).\n";
+    let model = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n";
+    let dir = project(
+        model,
+        &[("index.md", home), ("sync.md", &sync), ("keys.md", &keys)],
+    );
+    let before = load(dir.path());
+    let found = diagnose(&before, &[]).expect("every build");
+    let written = baseline::write(&before, None, &found.diagnostics);
+    assert_eq!(written.entries, 2, "{}", written.text);
+    fs::write(dir.path().join(BASELINE_FILE), &written.text).expect("write the baseline");
+    let project = load(dir.path());
+    let long = |d: &Diagnostic| d.slug.as_str() == "nav-label-long";
+
+    // The whole project: both held back, and counted.
+    let whole = Request {
+        baseline: true,
+        ..Request::default()
+    };
+    let checked = diagnose_with(&project, &whole).expect("checked");
+    assert!(!checked.reported.iter().any(|r| long(&r.diagnostic)));
+    assert_eq!(checked.baselined.len(), 2);
+    assert_eq!(checked.builds, ["site"]);
+
+    // Without the baseline, both are reported, as `diagnose` finds them.
+    let without = diagnose_with(&project, &Request::default()).expect("checked");
+    assert_eq!(without.baselined.len(), 0);
+    assert_eq!(without.into_diagnostics(), found.diagnostics);
+
+    // With a scope, only what counts for it is reported or counted.
+    let scope = Scope::new([RelPath::parse("docs/sync.md").expect("a path")]);
+    let scoped = Request {
+        scope: Some(&scope),
+        ..whole
+    };
+    let checked = diagnose_with(&project, &scoped).expect("checked");
+    assert_eq!(checked.baselined.len(), 1);
+    assert!(
+        checked
+            .reported
+            .iter()
+            .all(|r| scope.contains_file(&project, r.diagnostic.location.file)),
+        "{:?}",
+        checked.reported
     );
 
-    // The error names them; with none, it says what it said before.
-    let err = LocateError::not_found(dir.path().to_owned());
-    assert!(
-        matches!(&err, LocateError::NotFound { below, .. } if *below == found),
-        "{err:?}"
-    );
-    let empty = dir.path().join("none");
+    // An entry that matches nothing is stale for the whole project only.
+    fs::write(dir.path().join("docs/sync.md"), page("Sync", "Sync")).expect("fix the label");
+    let project = load(dir.path());
+    let stale = |request: &Request<'_>| {
+        diagnose_with(&project, request)
+            .expect("checked")
+            .into_diagnostics()
+            .iter()
+            .filter(|d| d.slug.as_str() == "baseline-entry-unmatched")
+            .count()
+    };
+    assert_eq!(stale(&whole), 1);
+    assert_eq!(stale(&scoped), 0);
+    let editor = Request {
+        editor_build: true,
+        ..whole
+    };
     assert_eq!(
-        LocateError::not_found(empty.clone()).to_string(),
-        format!(
-            "no {MODEL_FILE} found in {} or any parent directory; run ascribe from a project, \
-             or pass --config",
-            empty.display()
-        )
+        stale(&editor),
+        0,
+        "the editor's build alone isn't the whole"
     );
+
+    // A baseline that can't be read stops a request that asks for it.
+    fs::write(dir.path().join(BASELINE_FILE), "not a baseline\n").expect("break it");
+    let project = load(dir.path());
+    assert!(matches!(
+        diagnose_with(&project, &whole),
+        Err(DiagnoseError::Baseline(_))
+    ));
+    assert!(diagnose_with(&project, &Request::default()).is_ok());
 }

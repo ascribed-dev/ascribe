@@ -1,17 +1,27 @@
 //! Starting a project: `ascribe init`.
 //!
 //! It writes a project's first `ascribe.toml`, [`MODEL_TEXT`], in a folder
-//! with none at or above it, and makes its content root. With the templates,
-//! it calls [`eject()`] with that text, as `ascribe templates eject` would
-//! in a project that had it, so the two can't differ; eject then writes the
-//! file, with the six types added at its end. It asks nothing, and writes
-//! over nothing: where there's a project already, it refuses.
+//! with none at or above it, an empty `ascribe.addresses` beside it, so the
+//! addresses the pages publish are kept from the first commit, and makes its
+//! content root. With the templates, it calls [`eject()`] with that text,
+//! as `ascribe templates eject` would in a project that had it, so the two
+//! can't differ; eject then writes the file, with the six types added at
+//! its end. It asks nothing, and writes over nothing: where there's a
+//! project already, it refuses, and an `ascribe.addresses` already there is
+//! left as it is.
+//!
+//! A content root that holds pages already is adopted: the file declares no
+//! page types, so the pages are of the implicit type `page` and none of them
+//! needs `type:` (SPEC §7.2), and the templates, which declare types, are
+//! refused. It gets `ascribe.addresses` too, so those pages are kept from
+//! the first commit.
 
 use std::path::{Path, PathBuf};
 
-use ascribe_check::{MODEL_FILE, Project};
+use ascribe_check::MODEL_FILE;
 use ascribe_core::RelPath;
-use ascribe_resolve::{DiskFs, Layout};
+use ascribe_model::{ADDRESSES_FILE, AddressFile};
+use ascribe_resolve::{DiskFs, FileSystem as _, Layout};
 use serde::Serialize;
 
 use crate::eject::{Eject, EjectAnswer, EjectError, TEMPLATES_DIR, eject};
@@ -19,12 +29,60 @@ use crate::eject::{Eject, EjectAnswer, EjectError, TEMPLATES_DIR, eject};
 /// The first `ascribe.toml`, as `ascribe init` writes it.
 pub const MODEL_TEXT: &str = include_str!("../first.ascribe.toml");
 
+/// The comment that opens [`MODEL_TEXT`]'s page type, its last section.
+const PAGE_TYPE: &str = "# The one kind of page, `page`,";
+
+/// What takes the place of the page type in the `ascribe.toml` of a folder of
+/// pages already there.
+const ADOPTED: &str = "\
+# No page types: every page is of the one implicit kind, `page`, and names
+# no type in its frontmatter. Each needs a `title`, and can have a
+# `description`. Once a type is declared here, each page names its own, as
+# `type: page`: https://ascribed-dev.com/go/content-model/
+[frontmatter]
+description = \"string?\"
+";
+
 /// Where `ascribe init` sends a person next: the Astro guide, by its
 /// permalink.
 pub const NEXT: &str = ascribe_core::docs_permalink!("astro-guide");
 
 /// The version of [`InitAnswer`]'s schema.
 pub const SCHEMA_VERSION: u32 = 2;
+
+/// The first `ascribe.toml` for a content root: [`MODEL_TEXT`], with
+/// `content_root` when one is given, and, for a folder of pages there
+/// already (`adopted`), without its page type, so the pages are of the
+/// implicit type `page` and name none.
+#[must_use]
+pub fn model_text(content_root: Option<&RelPath>, adopted: bool) -> String {
+    let mut text = MODEL_TEXT.to_owned();
+    if adopted && let Some(at) = text.find(PAGE_TYPE) {
+        text.truncate(at);
+        text.push_str(ADOPTED);
+    }
+    let Some(content_root) = content_root else {
+        return text;
+    };
+    let Ok(mut doc) = text.parse::<toml_edit::DocumentMut>() else {
+        return text;
+    };
+    let written = content_root.to_string();
+    // The value only, so the comment above the key stays.
+    if let Some(value) = doc
+        .get_mut("project")
+        .and_then(|project| project.get_mut(CONTENT_ROOT))
+        .and_then(toml_edit::Item::as_value_mut)
+    {
+        let decor = value.decor().clone();
+        *value = toml_edit::Value::from(written);
+        *value.decor_mut() = decor;
+    }
+    doc.to_string()
+}
+
+/// The key of `[project]` that names the content root.
+const CONTENT_ROOT: &str = "content-root";
 
 /// What `ascribe init` did.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -37,13 +95,20 @@ pub struct InitAnswer {
     pub ascribe_version: &'static str,
     /// The files written, from the new project's folder, `/`-separated, in
     /// the order they were written: with the templates, eject's files, then
-    /// `ascribe.toml`. Empty when the templates were refused.
+    /// `ascribe.toml`, then `ascribe.addresses`, unless one was there
+    /// already. Empty when the templates were refused. With `--dry-run`,
+    /// the files it would write.
     pub written: Vec<String>,
+    /// Whether it ran with `--dry-run`, and wrote and made nothing.
+    pub dry_run: bool,
     /// The content root, from the new project's folder.
     pub content_root: String,
-    /// Whether the content root was made: false when the folder was there
-    /// already, or nothing was written.
+    /// Whether the content root was made, or with `--dry-run` would be:
+    /// false when the folder was there already, or nothing was written.
     pub content_root_made: bool,
+    /// How many pages the content root held already. When it held any,
+    /// `ascribe.toml` declares no page types, so none of them needs `type:`.
+    pub pages: usize,
     /// What eject did, when the templates were asked for; otherwise null.
     /// When its `refused` isn't empty, nothing was written.
     pub templates: Option<EjectAnswer>,
@@ -71,6 +136,25 @@ pub enum InitError {
         /// The folder named.
         folder: PathBuf,
     },
+    /// The content root given isn't a relative path.
+    #[error("--content-root takes a folder from the project's folder, and `{given}` {reason}")]
+    ContentRoot {
+        /// The content root given.
+        given: String,
+        /// Why it can't be one.
+        reason: &'static str,
+    },
+    /// The templates were asked for in a folder of pages, which they'd make
+    /// name a type each.
+    #[error(
+        "the templates declare page types, which every page in `{content_root}` ({pages} found) would then have to name as `type:`; run `ascribe init` without --templates, and `ascribe templates eject` once the pages check clean, then give each page `type:`"
+    )]
+    TemplatesWithPages {
+        /// How many pages there are.
+        pages: usize,
+        /// The content root, from the new project's folder.
+        content_root: String,
+    },
     /// The templates couldn't be written.
     #[error(transparent)]
     Templates(#[from] EjectError),
@@ -89,6 +173,8 @@ impl ascribe_core::Coded for InitError {
         match self {
             InitError::Project { .. } => "project_exists",
             InitError::NotAFolder { .. } => "init_folder_refused",
+            InitError::ContentRoot { .. } => "init_content_root_refused",
+            InitError::TemplatesWithPages { .. } => "init_templates_refused",
             InitError::Templates(e) => e.code(),
             InitError::Write { .. } => "init_unwritable",
         }
@@ -103,21 +189,30 @@ pub struct Init<'a> {
     /// Whether to take the templates too, as `ascribe templates eject` with
     /// no name does.
     pub templates: bool,
+    /// The content root, from the folder, `/`-separated: `docs` when it's
+    /// `None`.
+    pub content_root: Option<&'a str>,
     /// The version of Ascribe `templates.lock` records.
     pub ascribe_version: &'a str,
+    /// Whether to write nothing, and answer with what would be written.
+    pub dry_run: bool,
 }
 
 /// Starts a project in `request.root`: writes its first `ascribe.toml`, with
-/// the templates when they're asked for, and makes its content root.
+/// the templates when they're asked for, and `ascribe.addresses`, and makes
+/// its content root. A content root with pages in it already gets an
+/// `ascribe.toml` that declares no page types.
 ///
 /// # Errors
 ///
 /// There's an `ascribe.toml` at or above the folder, the folder is a file,
-/// eject can't write the templates, or a file can't be written. Templates
-/// refused aren't an error: the answer lists them, and nothing is written.
+/// the content root given isn't a relative path, the templates are asked for
+/// in a folder of pages, eject can't write the templates, or a file can't be
+/// written. Templates refused aren't an error: the answer lists them, and
+/// nothing is written.
 pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
     let root = request.root;
-    if let Some(found) = Project::find_config(root) {
+    if let Some(found) = ascribe_workspace::find_config(root) {
         return Err(InitError::Project { found });
     }
     // Outside FileSystem: the folder a project is to start in, before there's
@@ -127,17 +222,44 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
             folder: root.to_path_buf(),
         });
     }
-    // The text is compiled in, and a test loads it with no diagnostics.
-    #[allow(clippy::expect_used)]
-    let model = ascribe_model::load_str(MODEL_TEXT, ascribe_core::FileId::new(0))
-        .expect("the first ascribe.toml loads");
+    let given = request
+        .content_root
+        .map(content_root)
+        .transpose()
+        .map_err(|reason| InitError::ContentRoot {
+            given: request.content_root.unwrap_or_default().to_owned(),
+            reason,
+        })?;
+    let refused = |reason| InitError::ContentRoot {
+        given: request.content_root.unwrap_or_default().to_owned(),
+        reason,
+    };
+    let unloaded = || refused("can't be written in `ascribe.toml`");
+    let model = loaded(&model_text(given.as_ref(), false)).ok_or_else(unloaded)?;
     let layout = Layout::from_model(&model);
+    let pages = DiskFs::new(root, &layout)
+        .sources()
+        .paths
+        .iter()
+        .filter(|path| !model.is_fragment(path.as_str()))
+        .count();
+    let text = model_text(given.as_ref(), pages > 0);
+    let model = loaded(&text).ok_or_else(unloaded)?;
+    let shown = layout.content_root.to_string();
+    if pages > 0 && request.templates {
+        return Err(InitError::TemplatesWithPages {
+            pages,
+            content_root: format!("{shown}/"),
+        });
+    }
     let mut answer = InitAnswer {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
         written: Vec::new(),
-        content_root: layout.content_root.to_string(),
+        dry_run: request.dry_run,
+        content_root: shown,
         content_root_made: false,
+        pages,
         templates: None,
         next: NEXT,
     };
@@ -148,11 +270,12 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
             &Eject {
                 root,
                 model: &model,
-                model_text: MODEL_TEXT,
+                model_text: &text,
                 names: &[],
                 to: &to,
                 ascribe_version: request.ascribe_version,
                 keep_type: false,
+                dry_run: request.dry_run,
             },
             &fs,
         )?;
@@ -163,15 +286,53 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
             return Ok(answer);
         }
     } else {
-        write(root, MODEL_FILE, |file| std::fs::write(file, MODEL_TEXT))?;
+        if !request.dry_run {
+            // Library write: the first `ascribe.toml`, through `write`.
+            write(root, MODEL_FILE, |file| std::fs::write(file, &text))?;
+        }
         answer.written.push(MODEL_FILE.to_owned());
+    }
+    // Outside FileSystem: a file of the project just written, which is
+    // written only where there's none. Library write: the first
+    // `ascribe.addresses`, through `write`.
+    if !root.join(ADDRESSES_FILE).exists() {
+        if !request.dry_run {
+            write(root, ADDRESSES_FILE, |file| {
+                std::fs::write(file, AddressFile::default().to_toml())
+            })?;
+        }
+        answer.written.push(ADDRESSES_FILE.to_owned());
     }
     let content_root = layout.content_root.as_str();
     // Outside FileSystem: the content root of a project just written, which
     // must exist for the project to load.
     answer.content_root_made = !root.join(content_root).is_dir();
-    write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
+    if !request.dry_run {
+        // Library write: as above.
+        write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
+    }
     Ok(answer)
+}
+
+/// The first `ascribe.toml`, loaded: `None` when it has errors, which only a
+/// content root given can give it, since a test loads [`MODEL_TEXT`] and its
+/// adopted form with none.
+fn loaded(text: &str) -> Option<ascribe_model::ContentModel> {
+    ascribe_model::load_str(text, ascribe_core::FileId::new(0)).ok()
+}
+
+/// The content root given, as a path from the project's folder; or why it
+/// can't be one. It's a folder inside the project's: the project's own
+/// folder would hold the build's output, and a folder outside it isn't the
+/// project's to start.
+fn content_root(given: &str) -> Result<RelPath, &'static str> {
+    let path = RelPath::parse(given).map_err(|_| "isn't a relative path")?;
+    if path.is_root() || !path.is_inside() {
+        return Err(
+            "isn't a folder inside it; give the pages a folder of their own, such as `docs`",
+        );
+    }
+    Ok(path)
 }
 
 /// Does `act` to `path`, from the project's folder, making the folders on the
@@ -186,6 +347,8 @@ fn write(
         path: path.to_owned(),
         reason: e.to_string(),
     };
+    // Library write: the project `ascribe init` makes, which has no
+    // project to return its files to before it exists.
     if let Some(dir) = target.parent() {
         std::fs::create_dir_all(dir).map_err(failed)?;
     }

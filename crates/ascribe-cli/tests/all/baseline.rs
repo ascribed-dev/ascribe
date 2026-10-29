@@ -1,5 +1,5 @@
-//! `ascribe baseline write` and `prune`, and `ascribe check` reading
-//! `ascribe.baseline`, by running the binary: what each writes, its JSON,
+//! `ascribe baseline write` and `prune`, and `ascribe check`, `build`, and
+//! `report` reading `ascribe.baseline`, by running the binary: what each writes, its JSON,
 //! its exit codes, and a baseline that can't be read. What the baseline
 //! holds back, and its stale entries, are conformance cases
 //! (`tests/conformance/cases/checks/baseline/`); the file's syntax is
@@ -103,7 +103,7 @@ fn write_makes_the_baseline_and_check_holds_back_what_it_lists() {
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
-        "checked 3 files for every build, reported on 3: 0 errors, 0 warnings, 0 advice, 2 in the baseline\n"
+        "checked 3 files for every build, 0 with problems: 0 errors, 0 warnings, 0 advice, 2 in the baseline\n"
     );
     let report = json(&ascribe(dir.path(), &["check", "--format", "json"]));
     assert_eq!(report["diagnostics"], serde_json::json!([]));
@@ -116,7 +116,7 @@ fn write_run_twice_gives_the_same_file_byte_for_byte() {
     let dir = project(MODEL);
     assert_eq!(code_of(&ascribe(dir.path(), &["baseline", "write"])), 0);
     let first = fs::read(dir.path().join("ascribe.baseline")).unwrap();
-    let out = ascribe(dir.path(), &["baseline", "write"]);
+    let out = ascribe(dir.path(), &["baseline", "write", "--force"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
@@ -143,7 +143,10 @@ fn write_keeps_what_it_had_adds_only_advice_and_says_what_it_skipped() {
         "docs/new.md",
         &page("New", "A label that's long"),
     );
-    let out = ascribe(dir.path(), &["baseline", "write", "--format", "json"]);
+    let out = ascribe(
+        dir.path(),
+        &["baseline", "write", "--force", "--format", "json"],
+    );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let written = json(&out);
     assert_eq!(written["schema_version"], 1);
@@ -160,7 +163,7 @@ fn write_keeps_what_it_had_adds_only_advice_and_says_what_it_skipped() {
     let text = read(dir.path(), "ascribe.baseline");
     assert!(!text.contains("page-orphan"), "{text}");
 
-    let out = ascribe(dir.path(), &["baseline", "write"]);
+    let out = ascribe(dir.path(), &["baseline", "write", "--force"]);
     assert!(
         stdout(&out).contains(
             "skipped 1 warning, since a baseline holds advice only; to put one off, lower its check to \"advice\" in [checks] in ascribe.toml, then run `ascribe baseline write` again"
@@ -189,7 +192,7 @@ fn prune_removes_the_entries_that_match_nothing() {
         stdout(&out)
     );
 
-    let out = ascribe(dir.path(), &["baseline", "prune"]);
+    let out = ascribe(dir.path(), &["baseline", "prune", "--force"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
@@ -197,7 +200,10 @@ fn prune_removes_the_entries_that_match_nothing() {
     );
     assert!(!read(dir.path(), "ascribe.baseline").contains("docs/sync.md"));
 
-    let out = ascribe(dir.path(), &["baseline", "prune", "--format", "json"]);
+    let out = ascribe(
+        dir.path(),
+        &["baseline", "prune", "--force", "--format", "json"],
+    );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let pruned = json(&out);
     assert_eq!(pruned["schema_version"], 1);
@@ -209,14 +215,17 @@ fn prune_removes_the_entries_that_match_nothing() {
     let out = ascribe(dir.path(), &["check", "--format", "concise"]);
     assert_eq!(
         stdout(&out),
-        "checked 3 files for every build, reported on 3: 0 errors, 0 warnings, 0 advice, 1 in the baseline\n"
+        "checked 3 files for every build, 0 with problems: 0 errors, 0 warnings, 0 advice, 1 in the baseline\n"
     );
 }
 
 #[test]
 fn prune_without_a_baseline_writes_nothing() {
     let dir = project(MODEL);
-    let out = ascribe(dir.path(), &["baseline", "prune", "--format", "json"]);
+    let out = ascribe(
+        dir.path(),
+        &["baseline", "prune", "--force", "--format", "json"],
+    );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(json(&out)["found"], false);
     assert!(!dir.path().join("ascribe.baseline").exists());
@@ -291,11 +300,149 @@ fn a_check_of_some_files_or_builds_reports_no_stale_entry() {
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
-        "checked 3 files for every build, reported on 1: 0 errors, 0 warnings, 0 advice\n"
+        "checked 3 files for every build, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice\n"
     );
     let out = ascribe(
         dir.path(),
         &["check", "--editor-build", "--format", "concise"],
     );
     assert!(!stdout(&out).contains("ASC243"), "{}", stdout(&out));
+}
+
+#[test]
+fn build_holds_back_what_the_baseline_lists_as_check_does() {
+    let dir = project(MODEL);
+    assert_eq!(code_of(&ascribe(dir.path(), &["baseline", "write"])), 0);
+    let out = ascribe(dir.path(), &["build", "--emit", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert_eq!(
+        stdout(&out),
+        "checked 3 files in every build: no problems, 2 in the baseline\n"
+    );
+    let report = json(&ascribe(
+        dir.path(),
+        &["build", "--emit", "json", "--format", "json"],
+    ));
+    let check = json(&ascribe(dir.path(), &["check", "--format", "json"]));
+    assert_eq!(report["diagnostics"], check["diagnostics"]);
+    assert_eq!(report["summary"], check["summary"]);
+    assert_eq!(report["summary"]["baselined"], 2);
+}
+
+#[test]
+fn build_no_baseline_reports_everything() {
+    let dir = project(MODEL);
+    assert_eq!(code_of(&ascribe(dir.path(), &["baseline", "write"])), 0);
+    let out = ascribe(dir.path(), &["build", "--emit", "json", "--no-baseline"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert_eq!(
+        stdout(&out),
+        "checked 3 files in every build: 0 errors, 0 warnings, 2 advice: ascribe check --no-baseline for each\n"
+    );
+    let report = json(&ascribe(
+        dir.path(),
+        &[
+            "build",
+            "--emit",
+            "json",
+            "--format",
+            "json",
+            "--no-baseline",
+        ],
+    ));
+    assert_eq!(report["summary"]["advice"], 2);
+    assert_eq!(report["summary"].get("baselined"), None);
+}
+
+#[test]
+fn build_without_a_baseline_reports_everything() {
+    let dir = project(MODEL);
+    let out = ascribe(dir.path(), &["build", "--emit", "json"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert_eq!(
+        stdout(&out),
+        "checked 3 files in every build: 0 errors, 0 warnings, 2 advice: ascribe check for each\n"
+    );
+}
+
+#[test]
+fn report_holds_back_what_the_baseline_lists_and_counts_it() {
+    let dir = project(MODEL);
+    let before = json(&ascribe(
+        dir.path(),
+        &["report", "problems", "--format", "json", "--no-history"],
+    ));
+    assert_eq!(before["problems"]["summary"]["advice"], 2);
+    assert_eq!(before["problems"].get("baselined"), None);
+
+    assert_eq!(code_of(&ascribe(dir.path(), &["baseline", "write"])), 0);
+    let out = ascribe(dir.path(), &["report", "problems", "--no-history"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).contains("0 errors, 0 warnings, 0 advice, and 2 in the baseline."),
+        "{}",
+        stdout(&out)
+    );
+    let after = json(&ascribe(
+        dir.path(),
+        &["report", "problems", "--format", "json", "--no-history"],
+    ));
+    assert_eq!(after["problems"]["summary"]["advice"], 0);
+    assert_eq!(after["problems"]["baselined"], 2);
+    // `--exit-code` doesn't fail on what the baseline holds back.
+    let out = ascribe(
+        dir.path(),
+        &["report", "problems", "--no-history", "--exit-code"],
+    );
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+}
+
+#[test]
+fn report_no_baseline_reports_everything() {
+    let dir = project(MODEL);
+    assert_eq!(code_of(&ascribe(dir.path(), &["baseline", "write"])), 0);
+    let report = json(&ascribe(
+        dir.path(),
+        &[
+            "report",
+            "problems",
+            "--format",
+            "json",
+            "--no-history",
+            "--no-baseline",
+        ],
+    ));
+    assert_eq!(report["problems"]["summary"]["advice"], 2);
+    assert_eq!(report["problems"].get("baselined"), None);
+    assert_eq!(
+        report["problems"]["list_command"],
+        "ascribe check --no-baseline --format json"
+    );
+}
+
+#[test]
+fn a_baseline_that_cant_be_read_stops_build_and_report() {
+    let dir = project(MODEL);
+    write(
+        dir.path(),
+        "ascribe.baseline",
+        "# ascribe baseline 1\nnot an entry\n",
+    );
+    for args in [
+        &["build", "--emit", "json"][..],
+        &["report", "problems", "--no-history"][..],
+    ] {
+        let out = ascribe(dir.path(), args);
+        assert_eq!(code_of(&out), 2, "{args:?}: {}", stdout(&out));
+        assert!(
+            stderr(&out).starts_with("error: ascribe.baseline:2: ")
+                && stderr(&out).contains("pass --no-baseline"),
+            "{args:?}: {}",
+            stderr(&out)
+        );
+        let mut without = args.to_vec();
+        without.push("--no-baseline");
+        let out = ascribe(dir.path(), &without);
+        assert_eq!(code_of(&out), 0, "{without:?}: {}", stderr(&out));
+    }
 }

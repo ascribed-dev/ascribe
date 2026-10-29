@@ -1,5 +1,6 @@
-//! Checks the diagnostics registry, `tests/conformance/diagnostics.toml`,
-//! against SPEC.md: every §8.2 row and the sections it cites.
+//! Checks the diagnostics registry, `crates/ascribe-core/data/diagnostics.toml`,
+//! against SPEC.md: every §8.2 row and the sections it cites, and the checks
+//! that the acknowledgement examples in SPEC.md and the docs name.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -73,7 +74,7 @@ fn templates(e: &Entry) -> Vec<&String> {
 fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 127, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 133, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {
@@ -169,7 +170,8 @@ fn codes_go_up_and_slugs_are_unique() {
     let mut slugs = BTreeSet::new();
     let mut last = 0u32;
     for e in &reg.entries {
-        // A removed diagnostic leaves a gap; nothing is renumbered.
+        // A removed diagnostic, or a reserved code no pull request used,
+        // leaves a gap; nothing is renumbered (decision #982).
         let number = e
             .code
             .strip_prefix("ASC")
@@ -177,7 +179,8 @@ fn codes_go_up_and_slugs_are_unique() {
             .and_then(|digits| digits.parse::<u32>().ok());
         assert!(
             number.is_some_and(|n| n > last),
-            "{}: codes are `ASC` and three digits, going up in file order",
+            "{}: codes are `ASC` and three digits, going up in file order; \
+             after merging `main`, sort both sides' entries by code",
             e.code
         );
         last = number.unwrap_or(last);
@@ -224,7 +227,10 @@ fn spec_sections_exist() {
     let sections: BTreeSet<String> = spec
         .lines()
         .filter_map(|l| {
-            let rest = l.strip_prefix("### ").or_else(|| l.strip_prefix("## "))?;
+            let rest = l
+                .strip_prefix("#### ")
+                .or_else(|| l.strip_prefix("### "))
+                .or_else(|| l.strip_prefix("## "))?;
             let number = rest.split(' ').next()?.trim_end_matches('.');
             number
                 .chars()
@@ -234,6 +240,16 @@ fn spec_sections_exist() {
         .collect();
     assert!(sections.contains("8.2") && sections.contains("11"));
     for e in registry().entries {
+        // A check SPEC doesn't define cites no section (SPEC §7.2's
+        // processor settings). A §8.2 row is SPEC's, so it always cites one.
+        if e.spec == "none" {
+            assert!(
+                e.row.is_none(),
+                "{}: a SPEC §8.2 row cites the section that defines it",
+                e.slug
+            );
+            continue;
+        }
         assert!(
             sections.contains(&e.spec),
             "{}: SPEC has no §{}",
@@ -241,4 +257,75 @@ fn spec_sections_exist() {
             e.spec
         );
     }
+}
+
+/// The check slugs an acknowledgement names in `text`: `{check=…}` on an
+/// `@intended` line, `check: …` in an `intended` frontmatter list, and
+/// `check = "…"` in an `[[intended]]` table.
+fn acknowledged_checks(text: &str) -> Vec<(usize, String)> {
+    let mut out = Vec::new();
+    let mut in_table = false;
+    for (i, line) in text.lines().enumerate() {
+        let n = i + 1;
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') || trimmed.starts_with("```") {
+            in_table = trimmed == "[[intended]]";
+        }
+        if trimmed.starts_with("@intended") {
+            for rest in trimmed.split("check=").skip(1) {
+                let slug: String = rest
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+                    .collect();
+                out.push((n, slug));
+            }
+        }
+        let item = trimmed.strip_prefix("- ").unwrap_or(trimmed);
+        if let Some(rest) = item.strip_prefix("check:") {
+            out.push((n, rest.trim().to_owned()));
+        }
+        if in_table
+            && let Some(rest) = trimmed.strip_prefix("check")
+            && let Some(value) = rest.trim_start().strip_prefix('=')
+        {
+            out.push((n, value.trim().trim_matches('"').to_owned()));
+        }
+    }
+    out
+}
+
+fn markdown_files(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            markdown_files(&path, out);
+        } else if path.extension().is_some_and(|e| e == "md") {
+            out.push(path);
+        }
+    }
+}
+
+#[test]
+fn acknowledgement_examples_name_checks_that_exist() {
+    let slugs: BTreeSet<String> = registry().entries.into_iter().map(|e| e.slug).collect();
+    let mut files = vec![repo().join("SPEC.md")];
+    markdown_files(&repo().join("docs/content"), &mut files);
+    let mut seen = 0;
+    let mut missing = Vec::new();
+    for file in &files {
+        let text = std::fs::read_to_string(file).unwrap();
+        for (line, slug) in acknowledged_checks(&text) {
+            seen += 1;
+            if !slugs.contains(&slug) {
+                let rel = file.strip_prefix(repo()).unwrap_or(file);
+                missing.push(format!("{}:{line}: {slug:?}", rel.display()));
+            }
+        }
+    }
+    assert!(seen > 0, "found no acknowledgements to check");
+    assert!(
+        missing.is_empty(),
+        "these acknowledgements name a check the registry doesn't have:\n{}",
+        missing.join("\n")
+    );
 }

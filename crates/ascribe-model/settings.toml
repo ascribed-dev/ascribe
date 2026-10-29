@@ -1,7 +1,7 @@
 # Every key of `ascribe.toml`: the registry the loader reads its keys and
 # defaults from (`ascribe_model::settings`), which the binary carries. A
 # check's own settings aren't here: a check is described by its `when` in
-# tests/conformance/diagnostics.toml, and its settings are in `[checks]`'s
+# crates/ascribe-core/data/diagnostics.toml, and its settings are in `[checks]`'s
 # code. Decision 6 of the editor's views'
 # plan: https://github.com/ascribed-dev/ascribe/blob/62bf76a9/project-docs/roadmap.md#decisions
 #
@@ -226,9 +226,9 @@ table = "<field>"
 key = "role"
 kind = "choice"
 type = "string"
-choices = ["description", "review-date", "owner"]
+choices = ["description", "recheck-date", "owner"]
 only = "fields"
-description = '''What the field is for, which a check reads: `"description"`, `"review-date"`, or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
+description = '''What the field is for, which a check reads: `"description"`, `"recheck-date"` (or `"review-date"`, its old name, for a release), or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
 
 # ---- 6. `[dimensions.<name>]` -------------------------------------------------
 
@@ -927,44 +927,9 @@ default = 3
 description = '''How many days a link that answered before and fails now is listed as unconfirmed, and not reported, before it's reported. A 404 or a 410 is reported at once. `0` reports every failure at once.'''
 
 # ---- 20. `[permalinks]` -------------------------------------------------------
-
-[[setting]]
-table = ""
-key = "permalinks"
-kind = "table"
-type = "table"
-description = '''Names for something outside the docs to link to that no heading or page declares: a permalink ended on purpose, and a second name for one.'''
-
-[[setting]]
-table = "permalinks"
-key = "retired"
-kind = "table"
-type = "table of tables"
-description = '''An entry for each retired permalink, keyed by its name.'''
-
-[[setting]]
-table = "permalinks.retired.<name>"
-key = "reason"
-kind = "text"
-type = "string"
-required = true
-default-text = "required"
-description = '''Why it was retired. A reader whose link leads there sees it, as text. Not empty.'''
-
-[[setting]]
-table = "permalinks.retired.<name>"
-key = "to"
-kind = "text"
-type = "string"
-default-text = ""
-description = '''Where its address leads now: a page, by its path from the content root, and `#` and a heading's id, as `guides/security.md#rotate-keys`. Without it, or in a build that doesn't publish the page, the address shows that what was there was removed, the reason, and a link to the docs' home.'''
-
-[[setting]]
-table = "permalinks"
-key = "aliases"
-kind = "table"
-type = "table of strings"
-description = '''An entry for each alias, keyed by its name, whose value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one.'''
+#
+# None: what happened to a permalink is recorded in `ascribe.addresses`
+# (#944a), and the loader reports the table as replaced.
 
 # ---- 21. `[crawlers]` ---------------------------------------------------------
 
@@ -1074,7 +1039,7 @@ key = "reference"
 kind = "table"
 type = "table or string"
 required = true
-description = '''Where the published reference is: `{ renderer = "redoc", at = "/api/" }` for Redoc's page, or a template of an operation's address, with `{operationId}` and `{tag}`, for another renderer.'''
+description = '''Where the published reference is: `{ renderer = "redoc", at = "/api/" }` for Redoc's page, or an address pattern, an operation's address with `{operationId}` and `{tag}`, for another renderer.'''
 
 [[setting]]
 table = "apis.<name>.reference"

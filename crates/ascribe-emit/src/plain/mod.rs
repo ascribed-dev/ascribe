@@ -29,26 +29,43 @@
 //! agents, laid out by URL so that it's copied as it is to the site's base
 //! path: each page at its Markdown version's path
 //! ([`ascribe_resolve::AstroRouter::markdown_path`]), opening with a
-//! blockquote that points at the index; `llms.txt`, and a file per section
+//! blockquote that points at the index and says which releases the build
+//! describes ([`llms::releases_described`]), and with a blockquote after its
+//! title and availability line that gives its type and description
+//! ([`about_line`], decision #1028); `llms.txt`, and a file per section
 //! when it's split ([`ascribe_resolve::llms`]); and every asset under
 //! `_ascribe/files/`, referred to by its absolute URL.
+//!
+//! A link to a page the build publishes, a glossary link among them, leads
+//! to that page's Markdown version, so an agent that follows it stays in
+//! Markdown (decision #1023). Its fragment is the anchor a Markdown reader
+//! gives the heading in that version: the slug of the heading's text as the
+//! page's Markdown writes it, numbered across the page
+//! ([`PlainEmitter::learn_pages`]). That's the page id unless the heading
+//! has an `@id`, or is in a variant arm, whose label its text ends with. A
+//! link out of a line of a versioned build, to an operation, or in
+//! `_ascribe/help.json`'s sections keeps its HTML address.
 
 pub(crate) mod inline;
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 
-use ascribe_core::{AssetUse, RelPath, Router};
+use ascribe_core::info_string::InfoString;
+use ascribe_core::{AssetUse, RelPath, Router, SlugScope};
 use ascribe_model::{ContentModel, PlainContent, Segment};
 use ascribe_resolve::{
-    AstroRouter, PageSection, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedKind,
-    ResolvedLink, ResolvedPage, llms, pages,
+    AstroRouter, EmbeddedOperation, PageSection, ResolvedArm, ResolvedBlock, ResolvedBuild,
+    ResolvedKind, ResolvedLink, ResolvedPage, llms, pages, slug::GithubSlugger,
 };
 use ascribe_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
-use crate::assets::{Placement, mirrored_path};
+use crate::assets::{Placement, markdown_destination, mirrored_path};
 use crate::emitter::{EmitContext, Emitter, PageContext, mirrored_placement};
 use crate::error::EmitError;
-use crate::labels::{availability_display, availability_display_of_text, dimensional_label};
+use crate::labels::{
+    availability_display, availability_display_of_text, dimensional_label, operation_text,
+};
 use crate::site::{FILES_DIR, arm_values, route_collisions, sync_dimension};
 use crate::store::{Contents, EmittedFile, FileKind};
 use inline::{Style, escape};
@@ -59,20 +76,64 @@ pub struct PlainEmitter {
     /// The router of the outputs for agents, when the content model asks for
     /// them (`[consumer] agents = true`).
     agents: Option<Agents>,
+    /// Whether a link to a page keeps its HTML address in the outputs for
+    /// agents ([`PlainEmitter::with_html_links`]).
+    html_links: bool,
 }
 
-/// What the outputs for agents need: where each page is published, and the
-/// site's origin for the absolute URLs.
+/// What the outputs for agents need: where each page is published, the
+/// site's origin for the absolute URLs, and the pages a link can lead to.
 #[derive(Clone, Debug)]
-struct Agents {
+pub(crate) struct Agents {
     router: AstroRouter,
     origin: String,
+    published: RefCell<Published>,
+}
+
+/// The pages of the build being written, as links to them need them
+/// ([`PlainEmitter::learn_pages`]).
+#[derive(Clone, Debug, Default)]
+struct Published {
+    /// Each page by its route.
+    by_route: HashMap<String, RelPath>,
+    /// For each page, the anchor each of its page ids has in its Markdown.
+    anchors: HashMap<RelPath, HashMap<String, String>>,
 }
 
 impl Agents {
     /// A URL path under the base path as an absolute URL.
     fn absolute(&self, url: &str) -> String {
         format!("{}{url}", self.origin.trim_end_matches('/'))
+    }
+
+    /// The absolute URL of `page`'s Markdown version, then `#` and the anchor
+    /// its heading with page id `id` has there, when there's an id. Before
+    /// the pages are learned, the anchor is the page id.
+    pub(crate) fn markdown_link(&self, page: &RelPath, id: Option<&str>) -> String {
+        let mut url = self.absolute(&self.router.markdown_url(page));
+        if let Some(id) = id {
+            let published = self.published.borrow();
+            let anchor = published
+                .anchors
+                .get(page)
+                .and_then(|anchors| anchors.get(id))
+                .map_or(id, String::as_str);
+            url.push('#');
+            url.push_str(anchor);
+        }
+        url
+    }
+
+    /// [`Agents::markdown_link`] for a link written as a route and a
+    /// fragment, as a glossary link is, when the route is a page's. `None`
+    /// for any other, and before the pages are learned.
+    pub(crate) fn route_link(&self, destination: &str) -> Option<String> {
+        let (route, id) = match destination.split_once('#') {
+            Some((route, id)) => (route, Some(id)),
+            None => (destination, None),
+        };
+        let page = self.published.borrow().by_route.get(route).cloned()?;
+        Some(self.markdown_link(&page, id))
     }
 }
 
@@ -90,9 +151,69 @@ impl PlainEmitter {
                 .map(|origin| Agents {
                     router: AstroRouter::from_consumer(consumer),
                     origin: origin.clone(),
+                    published: RefCell::default(),
                 }),
+            html_links: false,
         }
     }
+
+    /// The same emitter, with a link to a page keeping its HTML address in
+    /// the outputs for agents, as `_ascribe/help.json`'s sections do: the
+    /// pages it writes are what those sections are cut from.
+    #[must_use]
+    pub fn with_html_links(mut self) -> PlainEmitter {
+        self.html_links = true;
+        self
+    }
+
+    /// Learns the pages of `build`, which the outputs for agents link to:
+    /// each page's route, and the anchor each heading has in its Markdown
+    /// version, which is where a link's fragment leads (the module
+    /// documentation says why). [`Emitter::prepare`] does this; a caller
+    /// that renders pages with [`crate::emit_page`] alone calls it first.
+    /// Without the outputs for agents it does nothing.
+    pub fn learn_pages(&self, cx: &EmitContext<'_>, build: &ResolvedBuild) {
+        let Some(agents) = &self.agents else {
+            return;
+        };
+        let mut published = Published::default();
+        for page in &build.pages {
+            published
+                .by_route
+                .insert(agents.router.route(&page.path), page.path.clone());
+            let page_cx = PageContext::new(cx, self.page_path(&page.path), self);
+            let r = Renderer::new(&page_cx, false, None);
+            let _ = r.page(page, None);
+            let mut scope = GithubSlugger.scope();
+            let mut anchors = HashMap::new();
+            for (id, line) in r.headings.take() {
+                let anchor = scope.slug(&heading_text(&line));
+                if let Some(id) = id {
+                    anchors.entry(id).or_insert(anchor);
+                }
+            }
+            published.anchors.insert(page.path.clone(), anchors);
+        }
+        agents.published.replace(published);
+    }
+}
+
+/// The text a Markdown reader reads from an ATX heading, which its anchor is
+/// the slug of: the heading's text and code, without its marks and escapes.
+fn heading_text(line: &str) -> String {
+    use comrak_ascribe::nodes::NodeValue;
+    let arena = comrak_ascribe::Arena::new();
+    let root = comrak_ascribe::parse_document(&arena, line, &comrak_ascribe::Options::default());
+    let mut out = String::new();
+    for node in root.descendants() {
+        match &node.data.borrow().value {
+            NodeValue::Text(text) => out.push_str(text),
+            NodeValue::Code(code) => out.push_str(&code.literal),
+            NodeValue::SoftBreak | NodeValue::LineBreak => out.push(' '),
+            _ => {}
+        }
+    }
+    out
 }
 
 impl Emitter for PlainEmitter {
@@ -109,25 +230,42 @@ impl Emitter for PlainEmitter {
         }
     }
 
-    fn prepare(&self, _cx: &EmitContext<'_>, build: &ResolvedBuild) -> Result<(), EmitError> {
+    fn prepare(&self, cx: &EmitContext<'_>, build: &ResolvedBuild) -> Result<(), EmitError> {
         match &self.agents {
             // Laid out by URL, two pages with one route would be one file.
-            Some(agents) => route_collisions(&agents.router, build, "the plain output for agents"),
+            Some(agents) => {
+                route_collisions(&agents.router, build, "the plain output for agents")?;
+                self.learn_pages(cx, build);
+                Ok(())
+            }
             None => Ok(()),
         }
     }
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
-        let text = render_page(cx, page);
-        let text = match version_line(cx.emit, page) {
+        let agents = self.agents.as_ref().filter(|_| !self.html_links);
+        let about = self
+            .agents
+            .as_ref()
+            .and_then(|_| about_line(cx.emit.model, page));
+        let text = Renderer::new(cx, false, agents).page(page, about);
+        let version = version_line(cx.emit, page);
+        // The pointer says which releases the build describes, unless the
+        // version line, right after it, already does.
+        let releases = match version {
+            Some(_) => None,
+            None => llms::releases_described(cx.emit.model, cx.emit.build),
+        };
+        let text = match version {
             Some(line) => format!("{line}\n\n{text}"),
             None => text,
         };
         Ok(match &self.agents {
             Some(agents) => {
                 let index = agents.absolute(&agents.router.url_of("llms.txt"));
+                let releases = releases.map(|r| format!(" {r}")).unwrap_or_default();
                 format!(
-                    "> For the complete documentation index, see [llms.txt]({index}).\n\n{text}"
+                    "> For the complete documentation index, see [llms.txt]({index}).{releases}\n\n{text}"
                 )
             }
             None => text,
@@ -198,6 +336,33 @@ impl Emitter for PlainEmitter {
     }
 }
 
+/// What a page is for, as the Markdown for agents writes it after the
+/// page's title and availability line, where the site shows its
+/// description (decision #1028): a blockquote with the page's type,
+/// `Reference`, and its description ([`llms::description`]), joined by
+/// ` · `. The type is left out when it's the implicit `page` type of a
+/// project that declares none, and `None` when that leaves nothing.
+fn about_line(model: &ContentModel, page: &ResolvedPage) -> Option<String> {
+    let ty = model
+        .type_of(page.frontmatter.as_ref())
+        .found()
+        .filter(|ty| !ty.implicit)
+        .map(|ty| {
+            let mut chars = ty.name.chars();
+            chars.next().map_or_else(String::new, |first| {
+                first.to_uppercase().chain(chars).collect::<String>()
+            })
+        });
+    let description = llms::description(model, page);
+    let text = match (ty, description) {
+        (Some(ty), Some(description)) => format!("{ty} · {description}"),
+        (Some(ty), None) => ty,
+        (None, Some(description)) => description,
+        (None, None) => return None,
+    };
+    Some(quote(&escape(&text, true)))
+}
+
 /// In a line of a versioned build, the blockquote that says which version a
 /// page documents: the target's label and the line, the day its support
 /// ends when the list says, and in an older line, the current line and the
@@ -249,32 +414,53 @@ fn version_line(cx: &EmitContext<'_>, page: &ResolvedPage) -> Option<String> {
     Some(text)
 }
 
-/// Renders a page as plain markdown.
-fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
-    let r = Renderer {
-        page: cx,
-        model: cx.emit.model,
-        arms: RefCell::new(Vec::new()),
-        level: Cell::new(1),
-        alt_text: false,
-    };
-    let mut chunks = Vec::new();
-    if let Some(segments) = page.formatted_title() {
-        chunks.push(format!("# {}", formatted_heading(segments)));
-    } else if let Some(title) = &page.title {
-        // A folded YAML scalar can hold a line break; a heading can't.
-        let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
-        chunks.push(format!("# {}", escape(&title, false)));
+impl<'a> Renderer<'a> {
+    /// A renderer at the start of a page, writing an image as its alt text
+    /// when `alt_text` says, and linking pages to their Markdown versions
+    /// when it has `agents`.
+    fn new(page: &'a PageContext<'a>, alt_text: bool, agents: Option<&'a Agents>) -> Self {
+        Renderer {
+            page,
+            model: page.emit.model,
+            arms: RefCell::new(Vec::new()),
+            level: Cell::new(1),
+            alt_text,
+            agents,
+            headings: RefCell::new(Vec::new()),
+        }
     }
-    if let Some(availability) = &page.availability {
-        chunks.push(r.availability_line(&availability.spec));
+
+    /// Renders a page as plain markdown, with `about` after its title and
+    /// availability line ([`about_line`]).
+    fn page(&self, page: &ResolvedPage, about: Option<String>) -> String {
+        let mut chunks = Vec::new();
+        if let Some(segments) = page.formatted_title() {
+            chunks.push(self.recorded(format!("# {}", formatted_heading(segments)), None));
+        } else if let Some(title) = &page.title {
+            // A folded YAML scalar can hold a line break; a heading can't.
+            let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
+            chunks.push(self.recorded(format!("# {}", escape(&title, false)), None));
+        }
+        if let Some(availability) = &page.availability {
+            chunks.push(self.availability_line(&availability.spec));
+        }
+        chunks.extend(about);
+        chunks.extend(self.blocks(&page.blocks));
+        let mut out = chunks.join("\n\n");
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        out
     }
-    chunks.extend(r.blocks(&page.blocks));
-    let mut out = chunks.join("\n\n");
-    if !out.is_empty() {
-        out.push('\n');
+
+    /// A heading's line, recorded with the page id it has, if any, for
+    /// [`PlainEmitter::learn_pages`].
+    fn recorded(&self, line: String, id: Option<&str>) -> String {
+        self.headings
+            .borrow_mut()
+            .push((id.map(str::to_owned), line.clone()));
+        line
     }
-    out
 }
 
 /// A title read with `inline = "code"` as a heading's text: its text
@@ -329,6 +515,12 @@ pub(crate) struct Renderer<'a> {
     /// Whether an image is written as its alt text alone, for a reader that
     /// can't load it from the docs' host.
     pub(crate) alt_text: bool,
+    /// The outputs for agents, when a link to a page leads to its Markdown
+    /// version: in a page the plain output for agents writes.
+    pub(crate) agents: Option<&'a Agents>,
+    /// Every heading written so far, as its page id, if it has one, and its
+    /// line.
+    headings: RefCell<Vec<(Option<String>, String)>>,
 }
 
 /// A part of a page as the plain output writes it, apart from its page.
@@ -350,13 +542,7 @@ pub(crate) fn render_section(
     page: &ResolvedPage,
     section: &PageSection<'_>,
 ) -> Rendered {
-    let r = Renderer {
-        page: cx,
-        model: cx.emit.model,
-        arms: RefCell::new(Vec::new()),
-        level: Cell::new(1),
-        alt_text: true,
-    };
+    let r = Renderer::new(cx, true, None);
     for (group, arm) in &section.arms {
         if let Some(label) = r.arm_label(group, &arm.opener) {
             r.arms.borrow_mut().push(label);
@@ -374,6 +560,28 @@ pub(crate) fn render_section(
     Rendered { text, summary }
 }
 
+/// One page's plain Markdown in `build`, as the build writes it: what
+/// `ascribe-check`'s `page-size` measures, which it's given as
+/// `ascribe_check::page::PlainMarkdown`. `None` when the page can't be rendered,
+/// which its other problems say.
+///
+/// With the outputs for agents on, the pointer to llms.txt is part of the
+/// page. One page alone doesn't learn the build's pages
+/// ([`PlainEmitter::learn_pages`]), so a link's fragment is its page id and
+/// a glossary link keeps its HTML address: a few characters off, the same
+/// for every caller, the editor's included.
+pub fn plain_markdown(
+    index: &ascribe_resolve::Project,
+    root: &std::path::Path,
+    build: &ascribe_model::Build,
+    page: &ResolvedPage,
+) -> Option<String> {
+    let cx = EmitContext::new(index, root, build);
+    crate::emit_page(&PlainEmitter::new(index.model()), &cx, page)
+        .ok()
+        .map(|page| page.text)
+}
+
 /// The summary of the section of `page` whose heading's page id is
 /// `anchor`, or of its opening for `None`, as `_ascribe/help.json` writes
 /// it (SPEC §4.12): its `@summary`'s text or paragraph, as the plain output
@@ -387,13 +595,7 @@ pub fn section_summary(
 ) -> Option<String> {
     let plain = PlainEmitter::new(cx.model);
     let page_cx = PageContext::new(cx, plain.page_path(&page.path), &plain);
-    let r = Renderer {
-        page: &page_cx,
-        model: cx.model,
-        arms: RefCell::new(Vec::new()),
-        level: Cell::new(1),
-        alt_text: true,
-    };
+    let r = Renderer::new(&page_cx, true, None);
     summary_with(&r, page, anchor)
 }
 
@@ -532,16 +734,18 @@ impl Renderer<'_> {
                 };
                 let level = h.level.clamp(1, 6);
                 self.level.set(level);
-                vec![heading(level, &text)]
+                let id = block.heading.as_ref().map(|ids| ids.page_id.as_str());
+                vec![self.recorded(heading(level, &text), id)]
             }
             BlockKind::Paragraph(p) => {
                 vec![self.inlines(block, &p.inlines, Style::default())]
             }
             BlockKind::CodeBlock(c) => {
-                let mut out = vec![fenced(c)];
+                let mut out = vec![fenced(c, PLAIN_DROPS)];
                 // A tested example says what it was tested with in a line of
-                // its own, which nothing styles (decision #458b).
-                if let Some(tested) = block.snippet.as_ref().and_then(|s| s.tested()) {
+                // its own, which nothing styles (decision #458b), in place of
+                // its `tested` pair.
+                if let Some(tested) = InfoString::parse(&c.info).get("tested") {
                     out.push(format!("Tested with {}.", escape(tested, true)));
                 }
                 out
@@ -573,6 +777,12 @@ impl Renderer<'_> {
         match line.name.as_str() {
             "id" | "include" | "snippet" | "steps" | "details" | "summary" => Vec::new(),
             "available" => self.annotation(block).into_iter().collect(),
+            "operation" => block
+                .operation
+                .as_deref()
+                .map(|operation| self.operation(operation))
+                .into_iter()
+                .collect(),
             "note" => match &line.primary {
                 Some(PrimaryValue::Text(text)) => {
                     let content = self.inlines(block, &text.inlines, Style::default());
@@ -584,6 +794,21 @@ impl Renderer<'_> {
                 Some(widget) => self.fallback(widget),
                 None => Vec::new(),
             },
+        }
+    }
+
+    /// An `@operation`'s line (SPEC §4.13): `GET /users/{id}: Get a user`,
+    /// linked to the operation's address, then `(deprecated)` when it is.
+    fn operation(&self, operation: &EmbeddedOperation) -> String {
+        let link = format!(
+            "[{}]({})",
+            escape(&operation_text(operation), false),
+            markdown_destination(&self.page.emit.absolute_url(&operation.address))
+        );
+        if operation.deprecated {
+            format!("{link} (deprecated)")
+        } else {
+            link
         }
     }
 
@@ -735,7 +960,7 @@ impl Renderer<'_> {
                 } else {
                     format!("{text} ({})", enclosing.join(", "))
                 };
-                out.push(heading(level, &escape_closing_hash(text)));
+                out.push(self.recorded(heading(level, &escape_closing_hash(text)), None));
             }
             self.level.set(level);
             if let Some(label) = &label {
@@ -986,15 +1211,24 @@ pub(crate) fn starts_nested(chunk: &str) -> bool {
         || (digits > 0 && matches!(first[digits..].chars().next(), Some('.' | ')')))
 }
 
+/// The info-string pairs the site output leaves out (SPEC §3.3.1): they've
+/// done their work. `phrases` was substituted, and `request` and `response`
+/// were checked; their links are the source's, which mean nothing to a
+/// reader.
+pub(crate) const SITE_DROPS: &[&str] = &["phrases", "request", "response"];
+
+/// The pairs the plain output leaves out: the site output's, and `tested`,
+/// which it writes as a line of its own under the block.
+const PLAIN_DROPS: &[&str] = &["phrases", "request", "response", "tested"];
+
 /// A code block as a fenced one: the fence is longer than any run of backticks
-/// in the code. A `phrases=true` info word has done its work and is dropped.
-pub(crate) fn fenced(code: &CodeBlock) -> String {
-    let info = code
-        .info
-        .split_whitespace()
-        .filter(|word| *word != "phrases=true")
-        .collect::<Vec<_>>()
-        .join(" ");
+/// in the code. The info string loses the pairs in `drops`, and its
+/// backslashes are escaped, so that a reader of the output takes off the
+/// Markdown escapes and gets the info string back.
+pub(crate) fn fenced(code: &CodeBlock, drops: &[&str]) -> String {
+    let info = InfoString::parse(&code.info)
+        .without(drops)
+        .replace('\\', "\\\\");
     let mut longest = 0;
     let mut run = 0;
     for ch in code.literal.chars() {

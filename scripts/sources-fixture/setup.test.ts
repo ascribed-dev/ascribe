@@ -1,8 +1,10 @@
 // The update pull request's recipe is one file,
 // examples/docs-repository/.github/workflows/update-sources.yml: the drift
 // guide shows it, and the sources fixture runs it. The check's recipe is
-// check.yml beside it, which the CI how-to shows. These tests check that
-// each uses its file, and, when asked, run the fixture's pass on this machine:
+// examples/getting-started/.github/workflows/check.yml, which the CI how-to
+// shows: it runs the `ascribe` the project pins, where the docs repository's
+// check.yml beside update-sources.yml follows `main`. These tests check that
+// each page uses its file, and, when asked, run the fixture's pass on this machine:
 // with ASCRIBE_BIN naming the binary, or ASCRIBE_SOURCES_FIXTURE=1 for this
 // repository's debug build. A plain `pnpm test` skips the pass, whether or not
 // that build exists: it takes ten seconds, and rust.yml runs it after its
@@ -22,7 +24,7 @@ const workflow = path.join(
   "workflows",
   "update-sources.yml",
 );
-const check = path.join("examples", "docs-repository", ".github", "workflows", "check.yml");
+const check = path.join("examples", "getting-started", ".github", "workflows", "check.yml");
 const built = path.join(
   root,
   "target",
@@ -47,14 +49,21 @@ test("the docs-repository guide shows the workflow the fixture runs", () => {
   expect(text).toContain("# :snippet-end:\n");
 });
 
-test("the CI how-to shows the docs repository's check workflow", () => {
+test("the CI how-to shows a check workflow that runs the pinned ascribe", () => {
   const page = readFileSync(path.join(root, "docs", "content", "checks", "ci.md"), "utf8");
   expect(page).toContain(
-    "@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/docs-repository/.github/workflows/check.yml#workflow\n",
+    "@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/getting-started/.github/workflows/check.yml#workflow\n",
   );
   const text = readFileSync(path.join(root, check), "utf8");
   expect(text).toContain("# :snippet-start: workflow\n");
   expect(text).toContain("# :snippet-end:\n");
+  // The project's own `@ascribed/cli`, never the latest release.
+  expect(text).toContain("- run: npm ci\n");
+  expect(text).toContain("- run: npx ascribe check --deny-warnings");
+  expect(text).toContain("- run: npx ascribe fmt --check");
+  expect(text).not.toMatch(/npm install --global|:remove:/);
+  // Without Node, a named release.
+  expect(page).toContain("install.sh | sh -s -- --version <version>\n");
 });
 
 test.skipIf(ascribe === undefined || process.platform === "win32")(

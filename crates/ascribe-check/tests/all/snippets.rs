@@ -32,14 +32,20 @@ fn check(page: &str, files: &[(&str, &str)]) -> (Project, Vec<Diagnostic>) {
         fs = fs.with_file(path, text);
     }
     let text = format!("---\ntitle: T\n---\n{page}");
-    let sources = Project::from_sources([(RelPath::parse("index.md").expect("a path"), text)]);
-    let project = Project::from_parts_with_fs(
-        PathBuf::from("/no/such/project"),
-        RelPath::parse("docs").expect("a path"),
-        model,
-        MODEL.to_owned(),
-        sources,
-        Arc::new(fs),
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+        RelPath::parse("index.md").expect("a path"),
+        text,
+    )]);
+    let project = Project::new(
+        ascribe_check::in_memory_with(
+            PathBuf::from("/no/such/project"),
+            RelPath::parse("docs").expect("a path"),
+            model,
+            MODEL.to_owned(),
+            sources,
+            Arc::new(fs),
+        )
+        .snapshot(),
     );
     let found = check_files(&project);
     (project, found)
@@ -132,15 +138,20 @@ git = "https://github.com/acme/api.git"
         );
         let fs = MemoryFs::new(&Layout::from_model(&model)).with_file("ascribe.lock", &lock);
         let text = "---\ntitle: T\n---\n@snippet: api:src/gone.py\n\n@snippet: api:src/new.py\n";
-        let sources =
-            Project::from_sources([(RelPath::parse("index.md").expect("a path"), text.into())]);
-        let project = Project::from_parts_with_fs(
-            PathBuf::from("/no/such/project"),
-            RelPath::parse("docs").expect("a path"),
-            model,
-            REMOTE.to_owned(),
-            sources,
-            Arc::new(fs),
+        let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+            RelPath::parse("index.md").expect("a path"),
+            text.into(),
+        )]);
+        let project = Project::new(
+            ascribe_check::in_memory_with(
+                PathBuf::from("/no/such/project"),
+                RelPath::parse("docs").expect("a path"),
+                model,
+                REMOTE.to_owned(),
+                sources,
+                Arc::new(fs),
+            )
+            .snapshot(),
         );
         check_files(&project)
             .into_iter()
@@ -171,4 +182,37 @@ git = "https://github.com/acme/api.git"
         "{}",
         found[0]
     );
+}
+
+/// A path that repeats the source's folder, or names a file the source has
+/// elsewhere, is offered the address of the file, as a fix that keeps the
+/// region.
+#[test]
+fn a_file_elsewhere_in_the_source_is_offered() {
+    let files = [APP, ("code/lib/util.py", "x = 1\n")];
+    let page = "@snippet: code:code/app.py#setup\n\
+                @snippet: code:util.py\n\
+                @snippet: code:gone.py\n";
+    let (project, found) = check(page, &files);
+    let text = &project.sources()[0].text;
+    let fixed = |d: &Diagnostic| {
+        d.fixes
+            .first()
+            .map(|f| ascribe_core::apply_edits(text, &f.edits).expect("edits apply"))
+    };
+    assert_eq!(found.len(), 3, "{found:#?}");
+    assert_eq!(
+        found[0].message,
+        "`code/app.py` doesn't exist in source `code`: the path is relative to the source's \
+         folder, `code`, so it doesn't repeat it; the file is `code:app.py`"
+    );
+    let first = fixed(&found[0]).expect("a fix");
+    assert!(first.contains("@snippet: code:app.py#setup\n"), "{first}");
+    assert_eq!(
+        found[1].message,
+        "`util.py` doesn't exist in source `code`; did you mean `code:lib/util.py`?"
+    );
+    let second = fixed(&found[1]).expect("a fix");
+    assert!(second.contains("@snippet: code:lib/util.py\n"), "{second}");
+    assert!(found[2].fixes.is_empty());
 }

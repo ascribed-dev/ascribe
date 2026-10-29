@@ -765,19 +765,9 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"nope\" #!\nreason = \"r\"\n",
         ),
         case(
-            "model-permalinks",
-            None,
-            "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"r\" }\n[permalinks.aliases]\na = \"b\" #!\n",
-        ),
-        case(
-            "model-permalinks",
-            Some("loop"),
-            "spec = \"0.1\"\n[permalinks.aliases]\na = \"a\" #!\n",
-        ),
-        case(
-            "model-permalinks",
-            Some("placeholder"),
-            "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"why this permalink was retired\" } #!\n",
+            "model-unknown-key",
+            Some("permalinks-moved"),
+            "spec = \"0.1\"\n[permalinks.retired] #!\na = { reason = \"r\" }\n",
         ),
         case(
             "model-crawlers-line",
@@ -939,8 +929,8 @@ fn every_rule_has_a_failing_fixture_with_the_documented_error() {
 /// Every `model-` slug in the registry has a fixture here or in `fs.rs`.
 #[test]
 fn every_registered_rule_is_covered() {
-    let registry =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance/diagnostics.toml");
+    let registry = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates/ascribe-core/data/diagnostics.toml");
     let text = std::fs::read_to_string(registry).unwrap();
     let doc: toml::Table = text.parse().unwrap();
     let mut registered = BTreeSet::new();
@@ -975,8 +965,8 @@ fn every_registered_rule_is_covered() {
 /// can be rendered from it.
 #[test]
 fn issues_carry_every_placeholder_of_their_message() {
-    let registry =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance/diagnostics.toml");
+    let registry = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates/ascribe-core/data/diagnostics.toml");
     let doc: toml::Table = std::fs::read_to_string(registry).unwrap().parse().unwrap();
     let entries = doc["diagnostic"].as_array().unwrap();
     let mut problems = Vec::new();

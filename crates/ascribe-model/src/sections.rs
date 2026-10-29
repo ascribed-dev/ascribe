@@ -91,6 +91,7 @@ impl Loader<'_> {
                         | "intended"
                         | "type"
                         | "nav-label"
+                        | "draft"
                 )
             };
             for (name, span, _) in entries(ft) {
@@ -224,6 +225,7 @@ impl Loader<'_> {
                     | "intended"
                     | "type"
                     | "nav-label"
+                    | "draft"
                     | "slug"
                     | "formatted"
                     | "source"
@@ -806,6 +808,7 @@ impl Loader<'_> {
                         availability,
                         versions,
                         line: None,
+                        drafts: false,
                     };
                     out.extend(lines_of(build, releases));
                 }
@@ -820,6 +823,7 @@ impl Loader<'_> {
                 availability: AvailabilityMode::Badge,
                 versions: None,
                 line: None,
+                drafts: false,
             });
         }
         out
@@ -1657,8 +1661,8 @@ fn lines_of(build: Build, releases: &[Releases]) -> Vec<Build> {
 /// type declares a field of its name, which replaces it whole, then the
 /// type's others, with `title` first when neither declares it (SPEC §7.2).
 /// A role is the field's that's given it, the type's own before a shared
-/// one; one no field is given is the field's of its name, when its type
-/// takes the role.
+/// one; one no field is given is the field's of its name, or of the
+/// role's old name, when its type takes the role.
 fn type_fields(shared: &[Field], own: Vec<Field>) -> Vec<Field> {
     // Each field, and whether the type declares it.
     let mut fields: Vec<(Field, bool)> = shared.iter().map(|f| (f.clone(), false)).collect();
@@ -1679,12 +1683,15 @@ fn type_fields(shared: &[Field], own: Vec<Field>) -> Vec<Field> {
                 }
             }
         }
-        if !fields.iter().any(|(f, _)| f.role == Some(role))
-            && let Some((f, _)) = fields
-                .iter_mut()
-                .find(|(f, _)| f.name == role.name() && f.role.is_none() && role.accepts(&f.ty))
-        {
-            f.role = Some(role);
+        // By its name first, then by the role's old name.
+        for name in std::iter::once(role.name()).chain(role.old_name()) {
+            if !fields.iter().any(|(f, _)| f.role == Some(role))
+                && let Some((f, _)) = fields
+                    .iter_mut()
+                    .find(|(f, _)| f.name == name && f.role.is_none() && role.accepts(&f.ty))
+            {
+                f.role = Some(role);
+            }
         }
     }
     fields.into_iter().map(|(f, _)| f).collect()

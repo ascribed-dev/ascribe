@@ -2,6 +2,7 @@
   "schema_version": 1,
   "ascribe_version": "{version}",
   "changed": true,
+  "written": false,
   "created": false,
   "added": [],
   "moved": [
@@ -12,6 +13,7 @@
     }
   ],
   "aliased": [],
+  "forwarded": [],
   "retired": [],
   "removed": [
     "rotate-keys"

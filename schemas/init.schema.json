@@ -53,6 +53,10 @@
           "description": "The version of Ascribe that wrote it.",
           "type": "string"
         },
+        "dry_run": {
+          "description": "Whether it ran with `--dry-run`, and wrote nothing.",
+          "type": "boolean"
+        },
         "kept": {
           "description": "The types `ascribe.toml` declared already and kept, with `--keep-type`,\nin the order they were named: each takes its template and guide from\n`templates/templates.lock`, or, written in another folder, was given\nits `template` and `guide`, and nothing else in it changed. Empty when\nanything was refused.",
           "items": {
@@ -84,7 +88,7 @@
           "type": "array"
         },
         "written": {
-          "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`, when it changed. Empty when anything was refused.",
+          "description": "The files written, from the folder `ascribe.toml` is in,\n`/`-separated, in the order they were written: each template, its\nguide, and Ascribe's notes on its type, then `templates.lock`, then\n`ascribe.toml`, when it changed. Empty when anything was refused.\nWith `dry_run`, the files it would write.",
           "items": {
             "type": "string"
           },
@@ -95,6 +99,7 @@
         "schema_version",
         "ascribe_version",
         "written",
+        "dry_run",
         "added",
         "kept",
         "refused",
@@ -221,12 +226,21 @@
       "type": "string"
     },
     "content_root_made": {
-      "description": "Whether the content root was made: false when the folder was there\nalready, or nothing was written.",
+      "description": "Whether the content root was made, or with `--dry-run` would be:\nfalse when the folder was there already, or nothing was written.",
+      "type": "boolean"
+    },
+    "dry_run": {
+      "description": "Whether it ran with `--dry-run`, and wrote and made nothing.",
       "type": "boolean"
     },
     "next": {
       "description": "The page to read next: the Astro guide, by its permalink.",
       "type": "string"
+    },
+    "pages": {
+      "description": "How many pages the content root held already. When it held any,\n`ascribe.toml` declares no page types, so none of them needs `type:`.",
+      "minimum": 0,
+      "type": "integer"
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
@@ -245,7 +259,7 @@
       "description": "What eject did, when the templates were asked for; otherwise null.\nWhen its `refused` isn't empty, nothing was written."
     },
     "written": {
-      "description": "The files written, from the new project's folder, `/`-separated, in\nthe order they were written: with the templates, eject's files, then\n`ascribe.toml`. Empty when the templates were refused.",
+      "description": "The files written, from the new project's folder, `/`-separated, in\nthe order they were written: with the templates, eject's files, then\n`ascribe.toml`, then `ascribe.addresses`, unless one was there\nalready. Empty when the templates were refused. With `--dry-run`,\nthe files it would write.",
       "items": {
         "type": "string"
       },
@@ -256,8 +270,10 @@
     "schema_version",
     "ascribe_version",
     "written",
+    "dry_run",
     "content_root",
     "content_root_made",
+    "pages",
     "templates",
     "next"
   ],

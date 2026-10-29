@@ -19,7 +19,7 @@ use ascribe_emit::{SiteEmitter, render_site_html};
 use ascribe_resolve::Project;
 use support::{FULL_MODEL, emit_build, first_difference, html_tree, load, memory_project, quill};
 
-const QUILL_BUILDS: [&str; 3] = ["site", "cloud", "self-managed-3.3"];
+const QUILL_BUILDS: [&str; 2] = ["site", "cloud"];
 
 fn render_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/render")
@@ -259,7 +259,9 @@ fn every_block_has_an_anchor() {
                 continue;
             };
             let tag = rest.split([' ', '>']).next().unwrap_or("");
-            if is_block(tag) {
+            // A tab's label is its tab's attribute again, as text (element
+            // contract §3): the tab's anchor says where it is.
+            if is_block(tag) && !node.contains("class=\"ascribe-tab-label\"") {
                 assert!(
                     node.contains("data-ascribe-source="),
                     "{name}: a block has no anchor: {node}\n--- HTML\n{html}"

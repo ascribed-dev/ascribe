@@ -39,7 +39,7 @@
       "type": "array"
     },
     "aliased": {
-      "description": "The aliases recorded, new or leading somewhere new, by name.",
+      "description": "The names moved to another permalink recorded, new or leading\nsomewhere new, by name.",
       "items": {
         "type": "string"
       },
@@ -56,6 +56,13 @@
     "created": {
       "description": "Whether the project had no list, so this makes one.",
       "type": "boolean"
+    },
+    "forwarded": {
+      "description": "The names moved to a page recorded, new or leading somewhere new, by\nname.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     },
     "moved": {
       "description": "The names whose place changed, by name.",
@@ -82,16 +89,22 @@
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
       "type": "integer"
+    },
+    "written": {
+      "description": "Whether the list's file was written: it changes, and nothing said to\nwrite nothing (`--check`, `--dry-run`).",
+      "type": "boolean"
     }
   },
   "required": [
     "schema_version",
     "ascribe_version",
     "changed",
+    "written",
     "created",
     "added",
     "moved",
     "aliased",
+    "forwarded",
     "retired",
     "removed"
   ],

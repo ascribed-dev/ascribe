@@ -80,7 +80,7 @@ impl Pass<'_> {
                         self.location(line.name_span),
                     )
                     .with_arg("name", line.name.clone());
-                    self.report(issue);
+                    self.report_binding(line, issue);
                     Some(Bound::Unbound)
                 }
                 Class::Block => Some(self.bind_block(children, &classes, i, scope)),
@@ -112,6 +112,20 @@ impl Pass<'_> {
                 Some(&container.opener)
             }
             _ => None,
+        }
+    }
+
+    /// Reports a binding problem, unless the line has text that fits no part
+    /// of it: that's reported already (`directive-extra-text`), and is
+    /// likely why the line binds where it does, as with the attributes of
+    /// `@note type=warning: text` written without their braces.
+    fn report_binding(&mut self, line: &DirectiveLine, issue: Issue) {
+        let trailing = matches!(
+            &line.primary,
+            Some(PrimaryValue::Identifier(p)) if p.trailing.is_some()
+        );
+        if line.unexpected.is_none() && !trailing {
+            self.report(issue);
         }
     }
 
@@ -164,7 +178,8 @@ impl Pass<'_> {
         // they all describe the block the last of them touches. A line-form
         // directive that is its own text (`@note: text`) renders as a block,
         // so it can be bound, as can a `@snippet`, which becomes a code block
-        // (SPEC §4.8); one that stands alone (`@include`, `@id`) or an end
+        // (SPEC §4.8), and an `@operation`, which becomes its element
+        // (SPEC §4.13); one that stands alone (`@include`, `@id`) or an end
         // line can't.
         let mut j = i + 1;
         while classes.get(j) == Some(&Class::Block) {
@@ -176,17 +191,16 @@ impl Pass<'_> {
             Some(BlockKind::Directive(l))
                 if classes.get(j) == Some(&Class::Own)
                     && (matches!(l.primary, Some(PrimaryValue::Text(_)))
-                        || self
-                            .options
-                            .schema(&l.name)
-                            .is_some_and(|s| is_builtin(s, Builtin::Snippet)))
+                        || self.options.schema(&l.name).is_some_and(|s| {
+                            is_builtin(s, Builtin::Snippet) || is_builtin(s, Builtin::Operation)
+                        }))
         );
         match target {
             None => {
                 let issue = Issue::new(diagnostics::BINDING_NO_BLOCK, at)
                     .with_arg("name", line.name.clone())
                     .with_arg("container", scope.noun());
-                self.report(issue);
+                self.report_binding(line, issue);
                 return Bound::Unbound;
             }
             Some(BlockKind::End(_) | BlockKind::Directive(_) | BlockKind::Title(_))
@@ -195,13 +209,13 @@ impl Pass<'_> {
                 let issue = Issue::new(diagnostics::BINDING_NO_BLOCK, at)
                     .with_arg("name", line.name.clone())
                     .with_arg("container", scope.noun());
-                self.report(issue);
+                self.report_binding(line, issue);
                 return Bound::Unbound;
             }
             Some(BlockKind::Heading(_)) => {
                 let issue = Issue::new(diagnostics::BINDING_HEADING, at)
                     .with_arg("name", line.name.clone());
-                self.report(issue);
+                self.report_binding(line, issue);
                 return Bound::Unbound;
             }
             Some(_) => {}
@@ -215,7 +229,7 @@ impl Pass<'_> {
                 self.location(line.name_span),
             )
             .with_arg("name", line.name.clone());
-            self.report(issue);
+            self.report_binding(line, issue);
         }
         let schema = self.options.schema(&line.name);
         if schema.is_some_and(|s| is_builtin(s, Builtin::Steps))
@@ -224,7 +238,7 @@ impl Pass<'_> {
         {
             let issue = Issue::new(diagnostics::STEPS_NOT_ORDERED_LIST, at)
                 .with_arg("found", describe(kind));
-            self.report(issue);
+            self.report_binding(line, issue);
         }
         // SPEC §4.12: a summary is shown as a sentence or two.
         if schema.is_some_and(|s| is_builtin(s, Builtin::Summary))
@@ -233,7 +247,7 @@ impl Pass<'_> {
         {
             let issue = Issue::new(diagnostics::SUMMARY_NOT_PARAGRAPH, at)
                 .with_arg("found", describe(kind));
-            self.report(issue);
+            self.report_binding(line, issue);
         }
         Bound::FollowingBlock
     }

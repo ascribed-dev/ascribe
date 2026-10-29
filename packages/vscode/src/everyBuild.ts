@@ -105,11 +105,11 @@ export function quickFixes(entry: Entry, root: string, file: string, text: strin
 /**
  * The problems the Project view counts on their own, by their diagnostics'
  * names: tested examples changed since they were tested or never tested,
- * reviews overdue, and a permalinks list that's behind.
+ * rechecks overdue, and a permalinks list that's behind.
  */
 const COUNTED = {
   examples: ["example-stale", "example-unobserved"],
-  reviews: ["review-overdue"],
+  rechecks: ["recheck-overdue"],
   permalinks: ["permalinks-list-behind"],
 } as const satisfies Record<string, readonly string[]>;
 
@@ -140,7 +140,7 @@ export function countedIn(
   };
   return {
     examples: found(COUNTED.examples),
-    reviews: found(COUNTED.reviews),
+    rechecks: found(COUNTED.rechecks),
     permalinks: found(COUNTED.permalinks),
   };
 }
@@ -173,4 +173,36 @@ export function checkedText(
 
 function count(n: number, noun: string): string {
   return n === 0 ? "" : `${n} ${noun}${n === 1 ? "" : "s"}`;
+}
+
+/**
+ * A diagnostic as the language server writes it, in the protocol's shape:
+ * what `ascribe/addresses` sends, each with the data a published diagnostic
+ * carries.
+ */
+export interface ServerDiagnostic {
+  range: EditorRange;
+  /** 1 for an error, 2 a warning, 3 information, 4 a hint. */
+  severity?: number;
+  code?: string | number;
+  codeDescription?: { href: string };
+  message: string;
+  relatedInformation?: { location: { uri: string; range: EditorRange }; message: string }[];
+  data?: {
+    slug?: string;
+    fixes?: {
+      title: string;
+      applicability: string;
+      edits: { range: EditorRange; newText: string }[];
+    }[];
+  };
+}
+
+/** The fixes the server gives a diagnostic of `ascribe/addresses`, which edit its own file. */
+export function serverFixes(diagnostic: ServerDiagnostic): QuickFix[] {
+  return (diagnostic.data?.fixes ?? []).map((fix) => ({
+    title: fix.title,
+    safe: fix.applicability === "safe",
+    edits: fix.edits.map((edit) => ({ range: edit.range, newText: edit.newText })),
+  }));
 }

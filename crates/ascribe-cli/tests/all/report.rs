@@ -103,14 +103,14 @@ fn with_no_section_it_reports_what_needs_nothing_outside_the_project() {
     assert!(text.contains("By type: guide 2, page 1."), "{text}");
     assert!(text.contains("By owner: platform 2, no owner 1."), "{text}");
     assert!(
-        text.contains("server leaves out 1 page and 0 pieces of content that another build keeps:\n    guides/cloud.md: "),
+        text.contains("server leaves out 1 page that another build keeps:\n    guides/cloud.md: not available (available: cloud); cloud publishes it\n"),
         "{text}"
     );
     assert!(!text.contains("External links"), "{text}");
 
     let out = ascribe(dir.path(), &["report", "--format", "json"]);
     let report = json(&out);
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 3);
     assert_eq!(
         report["sections"],
         serde_json::json!(["problems", "inventory", "builds"])
@@ -125,12 +125,171 @@ fn with_no_section_it_reports_what_needs_nothing_outside_the_project() {
         report["builds"][1]["pages"]["items"][0]["kept_by"],
         serde_json::json!(["cloud"])
     );
+    assert_eq!(
+        report["builds"][1]["pages"]["items"][0]["kind"],
+        "availability"
+    );
+    assert_eq!(report["builds"][1]["pages"]["items"][0]["mark"], "cloud");
+}
+
+/// Each mark is one entry, at its line, under its heading, however many
+/// blocks it takes out; the build's line counts marks by what they take out.
+#[test]
+fn builds_list_each_mark_once() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        r#"spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "server"]
+versionless = ["cloud", "server"]
+
+[builds.cloud]
+availability = { filter = "cloud" }
+variants = { deployment = "cloud" }
+
+[builds.server]
+availability = { filter = "server" }
+variants = { deployment = "server" }
+
+[editor]
+build = "cloud"
+"#,
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Sign events\n@id: sign\n@available: server\n\nOne.\n\nTwo.\n\n- Three.\n\n## Connect\n\n@variant {deployment=cloud}:\nIn the cloud.\n\n@variant {deployment=server}:\nOn a server.\n@end\n\n@include: _parts/note.md\n",
+    );
+    write(
+        dir.path(),
+        "docs/_parts/note.md",
+        "@available: server\nOnly on a server.\n",
+    );
+    write(
+        dir.path(),
+        "docs/server.md",
+        "---\ntitle: Server\nvariant:\n  deployment: server\n---\n\nOn a server.\n",
+    );
+    let out = ascribe(dir.path(), &["report", "builds"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.contains("  cloud leaves out 1 page, 1 section, 1 block, and 1 variant arm that another build keeps:\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains("    server.md: not this build's variant (variant: deployment=server); server publishes it\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains("    index.md § Sign events (line 7): Available on server (GA), not cloud; server keeps it\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains(
+            "    index.md § Connect (line 20): variant arm the build doesn't show (it shows only deployment=cloud); server keeps it\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("    index.md § Connect (docs/_parts/note.md:1): "),
+        "{text}"
+    );
+    assert_eq!(text.matches("index.md § Sign events").count(), 1, "{text}");
+
+    let report = json(&ascribe(
+        dir.path(),
+        &["report", "builds", "--format", "json"],
+    ));
+    let content = &report["builds"][0]["content"];
+    assert_eq!(content["total"], 3, "{content}");
+    let first = &content["items"][0];
+    assert_eq!(first["heading"], "Sign events");
+    assert_eq!(first["scope"], "section");
+    assert_eq!(first["range"]["start"]["line"], 7);
+    assert_eq!(content["items"][2]["file"], "docs/_parts/note.md");
+    assert_eq!(content["items"][2]["scope"], "block");
+
+    // In Markdown, a heading's text is escaped.
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Use `snake_case` keys\n@available: server\n\nOne.\n",
+    );
+    let markdown = stdout(&ascribe(
+        dir.path(),
+        &["report", "builds", "--format", "markdown"],
+    ));
+    assert!(
+        markdown.contains("§ Use snake\\_case keys (line 6)"),
+        "{markdown}"
+    );
+}
+
+/// A line of a versioned build names its target and line as what content
+/// isn't available on, and the verb agrees with how many builds keep it.
+#[test]
+fn builds_name_a_line_and_agree_with_the_builds_that_keep_it() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        r#"spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[releases.self-managed]
+live = ["3.4", "3.5"]
+
+[builds.site]
+versions = "self-managed"
+
+[builds.cloud]
+availability = { filter = "cloud" }
+"#,
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Home\n---\n\n## Keys\n@available: self-managed\n\nOn self-managed.\n\n## Signing\n@available: self-managed 3.5\n\nFrom 3.5.\n",
+    );
+    write(
+        dir.path(),
+        "docs/server.md",
+        "---\ntitle: Server\navailable: self-managed\n---\n\nOn self-managed.\n",
+    );
+    write(
+        dir.path(),
+        "docs/webhooks.md",
+        "---\ntitle: Webhooks\navailable: self-managed 3.5\n---\n\nFrom 3.5.\n",
+    );
+    let out = ascribe(dir.path(), &["report", "builds"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(text.contains("; site publishes it\n"), "{text}");
+    assert!(text.contains("; site and site@3.4 publish it\n"), "{text}");
+    assert!(
+        text.contains(
+            "Available on self-managed (GA, 3.5+), not self-managed 3.4; site keeps it\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("Available on self-managed (GA), not cloud; site and site@3.4 keep it\n"),
+        "{text}"
+    );
+    assert!(!text.contains("not ;"), "{text}");
 }
 
 #[test]
 fn a_section_that_can_t_run_says_why_and_fails_only_with_exit_code() {
     let dir = project(MODEL);
-    let out = ascribe(dir.path(), &["report", "links", "agents"]);
+    let out = ascribe(dir.path(), &["report", "links", "delivery"]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let text = stdout(&out);
     assert!(
@@ -147,10 +306,16 @@ fn a_section_that_can_t_run_says_why_and_fails_only_with_exit_code() {
 
     let out = ascribe(
         dir.path(),
-        &["report", "links", "agents", "--format", "json"],
+        &["report", "links", "delivery", "--format", "json"],
     );
     let report = json(&out);
-    assert_eq!(report["not_run"], serde_json::json!(["links", "agents"]));
+    assert_eq!(report["not_run"], serde_json::json!(["links", "delivery"]));
+    // The section's name before decision #953 still runs it.
+    let old = json(&ascribe(
+        dir.path(),
+        &["report", "agents", "--format", "json"],
+    ));
+    assert_eq!(old["not_run"], serde_json::json!(["delivery"]));
     assert!(
         report["links"]["not_run"]["how"]
             .as_str()
@@ -484,7 +649,7 @@ fn the_site_s_checks_say_who_changes_what() {
         &bin,
         &[
             "report",
-            "agents",
+            "delivery",
             "--site",
             "https://docs.example.com",
             "--format",
@@ -493,12 +658,12 @@ fn the_site_s_checks_say_who_changes_what() {
     );
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let report = json(&out);
-    let agents = &report["agents"];
-    assert_eq!(agents["results"][1]["owner"], "hosting");
-    let entry = &agents["diagnostics"]["items"][0];
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["results"][1]["owner"], "hosting");
+    let entry = &delivery["diagnostics"]["items"][0];
     assert_eq!(entry["slug"], "delivery-hosting");
     assert_eq!(entry["next"], "outside");
-    let warning = &agents["diagnostics"]["items"][1];
+    let warning = &delivery["diagnostics"]["items"][1];
     assert_eq!(warning["slug"], "delivery-hosting");
     assert!(
         warning["message"]
@@ -507,7 +672,7 @@ fn the_site_s_checks_say_who_changes_what() {
             .starts_with("the site passes the delivery spec's `cache-header-hygiene` check with a warning: llms.txt has no Cache-Control. Set `Cache-Control`"),
         "{warning}"
     );
-    assert!(agents["diagnostics"]["items"].as_array().unwrap().len() == 2);
+    assert!(delivery["diagnostics"]["items"].as_array().unwrap().len() == 2);
 }
 
 const PAGES_MODEL: &str = r#"spec = "0.1"
@@ -971,13 +1136,13 @@ const AFDOCS_REDIRECTS_FAIL_LATER: &str = r#"redirects=pass
 printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"pass","message":"found"},{"id":"content-negotiation","category":"markdown-availability","status":"fail","message":"Markdown is never served for Accept: text/markdown"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"A redirect goes to another host"}]}' "$2" "$redirects"
 exit 1"#;
 
-/// `ascribe report agents` on `site`, in `dir` on `today`, with the stand-in
+/// `ascribe report delivery` on `site`, in `dir` on `today`, with the stand-in
 /// afdocs in `dir/tools`.
 #[cfg(unix)]
-fn agents_on(dir: &Path, today: &str, site: &str, args: &[&str]) -> Output {
+fn delivery_on(dir: &Path, today: &str, site: &str, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
-        .args(["report", "agents", "--site", site])
+        .args(["report", "delivery", "--site", site])
         .args(args)
         .env("NO_COLOR", "1")
         .env("PATH", dir.join("tools"))
@@ -986,11 +1151,11 @@ fn agents_on(dir: &Path, today: &str, site: &str, args: &[&str]) -> Output {
         .expect("run ascribe")
 }
 
-/// `agents` says which checks are failing since the last report on the
+/// `delivery` says which checks are failing since the last report on the
 /// same site (decision #788): a check's identity is the site and its id.
 #[cfg(unix)]
 #[test]
-fn agents_says_what_s_failing_since_the_last_report() {
+fn delivery_says_what_s_failing_since_the_last_report() {
     let dir = project(MODEL);
     script(
         &dir.path().join("tools"),
@@ -1000,7 +1165,7 @@ fn agents_says_what_s_failing_since_the_last_report() {
     let site = "https://docs.example.com";
 
     // A first run says nothing about what's new, and keeps what it found.
-    let first = agents_on(dir.path(), "2026-10-09", site, &[]);
+    let first = delivery_on(dir.path(), "2026-10-09", site, &[]);
     assert_eq!(code_of(&first), 0, "{}", stderr(&first));
     let text = stdout(&first);
     assert!(
@@ -1013,23 +1178,23 @@ fn agents_says_what_s_failing_since_the_last_report() {
 
     // The redirects fail the second time: the report names the check.
     fs::write(dir.path().join("failing"), "").unwrap();
-    let report = json(&agents_on(
+    let report = json(&delivery_on(
         dir.path(),
         "2026-10-10",
         site,
         &["--format", "json"],
     ));
-    let agents = &report["agents"];
-    assert_eq!(agents["previous_run"], "2026-10-09");
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["previous_run"], "2026-10-09");
     assert_eq!(
-        (&agents["new"], &agents["resolved"]),
+        (&delivery["new"], &delivery["resolved"]),
         (&1.into(), &0.into())
     );
     assert_eq!(
-        agents["new_checks"],
+        delivery["new_checks"],
         serde_json::json!(["redirect-behavior"])
     );
-    let text = stdout(&agents_on(dir.path(), "2026-10-11", site, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-11", site, &[]));
     assert!(
         text.contains("  3 checks: 1 passing, 2 failing, none of them new since 10 October.\n"),
         "{text}"
@@ -1039,23 +1204,23 @@ fn agents_says_what_s_failing_since_the_last_report() {
     // writes the history.
     fs::remove_file(dir.path().join("failing")).unwrap();
     let before = fs::read_to_string(&history).unwrap();
-    let report = json(&agents_on(
+    let report = json(&delivery_on(
         dir.path(),
         "2026-10-12",
         site,
         &["--no-history", "--format", "json"],
     ));
-    let agents = &report["agents"];
-    assert_eq!(agents["previous_run"], serde_json::Value::Null);
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["previous_run"], serde_json::Value::Null);
     assert_eq!(
-        (&agents["new"], &agents["resolved"]),
+        (&delivery["new"], &delivery["resolved"]),
         (&serde_json::Value::Null, &serde_json::Value::Null)
     );
-    assert_eq!(agents["new_checks"], serde_json::json!([]));
+    assert_eq!(delivery["new_checks"], serde_json::json!([]));
     assert_eq!(fs::read_to_string(&history).unwrap(), before);
 
     // The redirects pass again: one that failed no longer does.
-    let text = stdout(&agents_on(dir.path(), "2026-10-13", site, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-13", site, &[]));
     assert!(
         text.contains(
             "  3 checks: 2 passing, 1 failing, not new since 11 October; 1 that failed on 11 October no longer fails.\n"
@@ -1067,19 +1232,19 @@ fn agents_says_what_s_failing_since_the_last_report() {
     // with it.
     fs::write(dir.path().join("failing"), "").unwrap();
     let preview = "http://localhost:4321";
-    let text = stdout(&agents_on(dir.path(), "2026-10-14", preview, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-14", preview, &[]));
     assert!(!text.contains("since"), "{text}");
-    let text = stdout(&agents_on(dir.path(), "2026-10-15", preview, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-15", preview, &[]));
     assert!(
         text.contains("  3 checks: 1 passing, 2 failing, none of them new since 14 October.\n"),
         "{text}"
     );
 
-    // A report of `problems` alone keeps what `agents` found.
+    // A report of `problems` alone keeps what `delivery` found.
     let out = problems_on(dir.path(), "2026-10-16", &[]);
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     fs::remove_file(dir.path().join("failing")).unwrap();
-    let text = stdout(&agents_on(dir.path(), "2026-10-17", preview, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-17", preview, &[]));
     assert!(
         text.contains("  3 checks: 2 passing, 1 failing, not new since 15 October; 1 that failed on 15 October no longer fails.\n"),
         "{text}"
@@ -1093,42 +1258,152 @@ const AFDOCS_FAILS_BY_FILE: &str = r#"status() { if [ -f "$1" ]; then echo fail;
 printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"%s","message":"checked"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"checked"}]}' "$2" "$(status llms-txt-exists)" "$(status redirect-behavior)"
 exit 0"#;
 
-/// With nothing failing now or on the last report, `agents` leaves out the
+/// With nothing failing now or on the last report, `delivery` leaves out the
 /// line about what's failing since then: the counts above it say it all.
 /// One that failed then and passes now keeps it.
 #[cfg(unix)]
 #[test]
-fn agents_says_nothing_since_when_nothing_fails_then_or_now() {
+fn delivery_says_nothing_since_when_nothing_fails_then_or_now() {
     let dir = project(MODEL);
     script(&dir.path().join("tools"), "afdocs", AFDOCS_FAILS_BY_FILE);
     let site = "https://docs.example.com";
 
-    agents_on(dir.path(), "2026-10-09", site, &[]);
-    let text = stdout(&agents_on(dir.path(), "2026-10-10", site, &[]));
+    delivery_on(dir.path(), "2026-10-09", site, &[]);
+    let text = stdout(&delivery_on(dir.path(), "2026-10-10", site, &[]));
     assert!(text.contains("2 pass."), "{text}");
     assert!(!text.contains(" checks: "), "{text}");
-    let report = json(&agents_on(
+    let report = json(&delivery_on(
         dir.path(),
         "2026-10-11",
         site,
         &["--format", "json"],
     ));
-    let agents = &report["agents"];
-    assert_eq!(agents["previous_run"], "2026-10-10");
+    let delivery = &report["delivery"];
+    assert_eq!(delivery["previous_run"], "2026-10-10");
     assert_eq!(
-        (&agents["new"], &agents["resolved"]),
+        (&delivery["new"], &delivery["resolved"]),
         (&0.into(), &0.into())
     );
 
     // The redirects fail, then pass again: the line says so.
     fs::write(dir.path().join("redirect-behavior"), "").unwrap();
-    agents_on(dir.path(), "2026-10-12", site, &[]);
+    delivery_on(dir.path(), "2026-10-12", site, &[]);
     fs::remove_file(dir.path().join("redirect-behavior")).unwrap();
-    let text = stdout(&agents_on(dir.path(), "2026-10-13", site, &[]));
+    let text = stdout(&delivery_on(dir.path(), "2026-10-13", site, &[]));
     assert!(
         text.contains(
             "  2 checks: 2 passing, 0 failing; 1 that failed on 12 October no longer fails.\n"
         ),
         "{text}"
     );
+}
+
+/// What afdocs writes: three checks, each with the status written in a
+/// file named for it in the folder it runs in, and passing without one.
+#[cfg(unix)]
+const AFDOCS_STATUS_BY_FILE: &str = r#"status() { if [ -f "$1" ]; then read -r s < "$1"; echo "$s"; else echo pass; fi; }
+printf '{"url":"%s","results":[{"id":"llms-txt-exists","category":"content-discoverability","status":"%s","message":"checked"},{"id":"llms-txt-links-resolve","category":"content-discoverability","status":"%s","message":"checked"},{"id":"redirect-behavior","category":"url-stability","status":"%s","message":"checked"}]}' "$2" "$(status llms-txt-exists)" "$(status llms-txt-links-resolve)" "$(status redirect-behavior)"
+exit 0"#;
+
+/// A check that went from failing to warning is still failing, so it isn't
+/// one that no longer fails; and the check new since the last report is
+/// named next to what says it's new, not after what no longer fails.
+#[cfg(unix)]
+#[test]
+fn a_check_that_warns_instead_of_failing_still_fails() {
+    let dir = project(MODEL);
+    script(&dir.path().join("tools"), "afdocs", AFDOCS_STATUS_BY_FILE);
+    let site = "https://docs.example.com";
+    let set = |id: &str, status: &str| fs::write(dir.path().join(id), status).unwrap();
+
+    set("llms-txt-exists", "fail");
+    set("redirect-behavior", "fail");
+    delivery_on(dir.path(), "2026-10-24", site, &[]);
+
+    // The first warns now, the second passes, and the links are new.
+    set("llms-txt-exists", "warn");
+    set("redirect-behavior", "pass");
+    set("llms-txt-links-resolve", "warn");
+    let text = stdout(&delivery_on(dir.path(), "2026-10-25", site, &[]));
+    assert!(
+        text.contains(
+            "  3 checks: 1 passing, 2 failing, 1 of them failing since 24 October: llms-txt-links-resolve; 1 that failed on 24 October no longer fails.\n"
+        ),
+        "{text}"
+    );
+}
+
+/// A project declaring an API whose spec has three operations: `getInvoice`,
+/// which its page links to, `deleteInvoice`, which it doesn't, and a
+/// deprecated one.
+fn api_project() -> TempDir {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[apis.public]\nspec = \"api/openapi.yaml\"\nreference = { renderer = \"redoc\", at = \"/api/\" }\n",
+    );
+    write(
+        dir.path(),
+        "api/openapi.yaml",
+        "openapi: 3.1.0\ninfo: { title: Invoices, version: \"1\" }\npaths:\n  /invoices/{id}:\n    get:\n      operationId: getInvoice\n    delete:\n      operationId: deleteInvoice\n  /invoices:\n    get:\n      operationId: listInvoices\n      deprecated: true\n",
+    );
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Invoices\n---\n\nFetch one with [Get an invoice](../api/openapi.yaml#getInvoice).\n",
+    );
+    dir
+}
+
+#[test]
+fn check_and_the_inventory_say_which_operations_no_page_links_to() {
+    let dir = api_project();
+    let out = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let text = format!("{}{}", stdout(&out), stderr(&out));
+    assert!(
+        text.contains(
+            "[ASC282] Advice: no page links to `deleteInvoice` (DELETE /invoices/{id}) in api/openapi.yaml"
+        ),
+        "{text}"
+    );
+    assert!(!text.contains("listInvoices"), "{text}");
+
+    let text = stdout(&ascribe(dir.path(), &["report", "inventory"]));
+    assert!(
+        text.contains("APIs: public: 3 operations, 1 linked, 0 with a checked example."),
+        "{text}"
+    );
+    let report = json(&ascribe(
+        dir.path(),
+        &["report", "inventory", "--format", "json"],
+    ));
+    assert_eq!(
+        report["inventory"]["apis"],
+        serde_json::json!([
+            { "api": "public", "operations": 3, "linked": 1, "examples": 0 }
+        ])
+    );
+
+    // A project without an API has no such key.
+    let plain = project(MODEL);
+    let report = json(&ascribe(plain.path(), &["report", "--format", "json"]));
+    assert!(report["inventory"].get("apis").is_none(), "{report}");
+}
+
+#[test]
+fn the_inventory_counts_the_operations_a_marked_example_claims() {
+    let dir = api_project();
+    write(
+        dir.path(),
+        "docs/index.md",
+        "---\ntitle: Invoices\n---\n\nFetch one with [Get an invoice](../api/openapi.yaml#getInvoice).\n\n```json response=\"../api/openapi.yaml#getInvoice 200\"\n{}\n```\n\n```json response=\"../api/openapi.yaml#getInvoice 404\"\n{}\n```\n",
+    );
+    let report = json(&ascribe(
+        dir.path(),
+        &["report", "inventory", "--format", "json"],
+    ));
+    // Two markers, one operation.
+    assert_eq!(report["inventory"]["apis"][0]["examples"], 1, "{report}");
 }

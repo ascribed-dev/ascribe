@@ -1,7 +1,8 @@
 ---
 type: reference
 title: JSON report contract
-description: The JSON Schemas of what the ascribe commands write with --format json.
+description: "The JSON Schemas of what the `ascribe` commands write with `--format json`."
+permalink: json-reports
 ---
 
 The commands that take `--format json` each write one JSON document, and this contract gives each document's schema. The schemas are JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. They're in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder. The [command reference](../command/index.md) says what each command does, with an example of its document.
@@ -13,16 +14,15 @@ Every document follows these rules:
 - A field the schema doesn't list as required is left out when it has no value. A required field that can be `null` is always written.
 - Keys are snake_case.
 
-The schemas of `ascribe check`, `ascribe build`, `ascribe fmt`, and `ascribe baseline` are on this page, and the rest on eight more:
+The pages are grouped as the [`ascribe.toml` reference](../content-model/index.md#contents) is, by what the commands are for:
 
-- [`ascribe diff` and `ascribe drift`](json-reports/diff.md)
-- [`ascribe report`](json-reports/report.md)
-- [`ascribe init`, `ascribe sources`, `ascribe observe`, and `ascribe permalinks`](json-reports/sources.md)
-- [`ascribe addresses`](json-reports/addresses.md)
-- [`ascribe templates`](json-reports/templates.md)
-- [`ascribe versions`](json-reports/versions.md)
-- [`ascribe model`](json-reports/model.md)
-- [`ascribe explain`, `outline`, `link`, `refs`, `resolve`, `search`, and `agents index`](json-reports/questions.md)
+- What pages are: [`ascribe init` and `ascribe model`](json-reports/model.md), and [`ascribe templates`](json-reports/templates.md)
+- How content varies: [`ascribe versions`](json-reports/versions.md)
+- Where pages are published: [`ascribe permalinks` and `ascribe addresses`](json-reports/addresses.md)
+- What pages draw from: [`ascribe sources` and `ascribe observe`](json-reports/sources.md)
+- Checks: `ascribe check`, `ascribe build`, `ascribe fmt`, `ascribe baseline`, and `ascribe vale eject`, on this page, [`ascribe report`](json-reports/report.md), and [`ascribe diff` and `ascribe drift`](json-reports/diff.md)
+- Questions: [`ascribe explain`, `outline`, `link`, `refs`, `resolve`, and `search`](json-reports/questions.md)
+- Agents: [`ascribe agents index`, `sync`, and `prompt`](json-reports/agents.md)
 
 ## `ascribe check` and `ascribe build`
 
@@ -39,3 +39,8 @@ The schemas of `ascribe check`, `ascribe build`, `ascribe fmt`, and `ascribe bas
 ## `ascribe baseline prune`
 
 @include: ../_generated/json-baseline-prune.md
+
+## `ascribe vale eject`
+@available: ascribe planned
+
+@include: ../_generated/json-vale-eject.md

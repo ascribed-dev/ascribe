@@ -207,7 +207,8 @@ impl Emitter for SiteEmitter {
             })
         };
         let found = build.permalinks();
-        let help = help::entries(cx, build, &found);
+        let recorded = cx.project().recorded_permalinks();
+        let help = help::entries(cx, &recorded, build, &found);
         let help_paths = help::entry_paths(cx, help.keys().copied());
         let redirects = redirects::redirects(
             cx.model,
@@ -226,7 +227,10 @@ impl Emitter for SiteEmitter {
                 }),
             )?,
             generated(PAGES_PATH, pages::list(cx.model, build))?,
-            generated(PERMALINKS_PATH, permalinks::list(cx.model, build))?,
+            generated(
+                PERMALINKS_PATH,
+                permalinks::list(cx.model, &recorded, build),
+            )?,
             generated(REDIRECTS_PATH, redirects::json(&redirects))?,
             generated(SCHEMA_PATH, crate::zod::generate(cx.model))?,
         ];
@@ -237,9 +241,17 @@ impl Emitter for SiteEmitter {
                     HOST_HEADERS_PATH,
                     headers::netlify(cx.model, build, &help_paths),
                 )?);
+                // An older line's permalinks aren't served: the addresses
+                // are the current line's.
+                let permalinks = if cx.build.line_folder().is_none() {
+                    let named = permalinks::named(&recorded, build, &found);
+                    redirects::permalink_rules(cx.model, &named, &redirects)
+                } else {
+                    Vec::new()
+                };
                 files.push(generated(
                     HOST_REDIRECTS_PATH,
-                    redirects::netlify(&redirects),
+                    redirects::netlify(&redirects, &permalinks),
                 )?);
             }
         }

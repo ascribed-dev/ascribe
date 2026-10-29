@@ -2,11 +2,11 @@
 //! the edges between files, and the problems found on the way.
 
 use ascribe_core::{FileId, Issue, Location, RelPath, Slugger, Span, diagnostics};
-use ascribe_model::{ADDRESSES_FILE, AddressFile, ContentModel, NAV_FILE, NavFile};
+use ascribe_model::{AddressFile, ContentModel, NavFile, RecordedPermalinks};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
-use crate::closest::closest_fixes;
+use crate::closest::offer_closest;
 use crate::expand::{ExpandedPage, Expander, IncludeSite};
 use crate::fs::FileSystem;
 use crate::incremental::FileIds;
@@ -15,6 +15,7 @@ use crate::layout::Layout;
 use crate::navigation::Navigation;
 use crate::openapi::{ApiSpecs, operation_issue};
 use crate::references::{SourceSet, include_issue, reference_issue, resolve_reference};
+use crate::side_file::Indexed;
 use crate::slug::{default_slugger, slugger_by_name};
 use crate::snippet::{CodeFiles, Snippet, resolve_snippet};
 
@@ -61,13 +62,15 @@ pub enum Resolution {
         page_exists: bool,
     },
     /// A link to an operation of a declared API (`[apis.<name>]`): a link
-    /// to its spec with a fragment, the operation's `operationId`. The spec
-    /// may be outside the project's folder (SPEC §9.4). Whether the spec has
-    /// the operation is [`crate::openapi::ApiSpecs`]'s to say.
+    /// to its spec with a fragment, the operation's `operationId`, or its
+    /// method and path, `get/users/{id}`. The spec may be outside the
+    /// project's folder (SPEC §9.4). Whether the spec has the operation is
+    /// [`crate::openapi::ApiSpecs`]'s to say ([`crate::openapi::Spec::named`]).
     Operation {
         /// The API's name.
         api: String,
-        /// The fragment, percent-decoded: the `operationId` it names.
+        /// The fragment, percent-decoded: the `operationId` it names, or the
+        /// method and path.
         id: String,
     },
     /// A link with no fragment to a declared spec outside the project's
@@ -139,6 +142,9 @@ pub(crate) struct ReverseEdges {
     includes: BTreeMap<RelPath, Vec<IncludeEdge>>,
     links: BTreeMap<RelPath, Vec<LinkSite>>,
     assets: BTreeMap<RelPath, Vec<AssetSite>>,
+    /// The files with a link to a page that doesn't exist, whose message
+    /// names the page it most likely meant, wherever that is.
+    missing: BTreeSet<RelPath>,
 }
 
 impl ReverseEdges {
@@ -188,6 +194,9 @@ impl ReverseEdges {
                     },
                     |e| (e.file.clone(), e.span),
                 ),
+                Resolution::SourceMissing { .. } => {
+                    self.missing.insert(index.path.clone());
+                }
                 _ => {}
             }
         }
@@ -196,6 +205,7 @@ impl ReverseEdges {
     /// Forgets everything a file contributed (given what it was, before).
     fn remove_file(&mut self, index: &FileIndex, resolutions: &[Resolution]) {
         let path = &index.path;
+        self.missing.remove(path);
         for include in &index.includes {
             if let Some(target) = &include.target {
                 retain_edges(&mut self.includes, target, |e| &e.file != path);
@@ -213,22 +223,6 @@ impl ReverseEdges {
             }
         }
     }
-}
-
-/// `ascribe.nav` beside `ascribe.toml`, when it's there and reads.
-fn read_nav(fs: &dyn FileSystem) -> Option<Arc<NavFile>> {
-    let path = RelPath::parse(NAV_FILE).ok()?;
-    let bytes = fs.read_file(&path).ok()?;
-    let text = String::from_utf8(bytes).ok()?;
-    NavFile::parse(&text, FileId::new(0)).ok().map(Arc::new)
-}
-
-/// `ascribe.addresses` beside `ascribe.toml`, when it's there and reads.
-fn read_addresses(fs: &dyn FileSystem) -> Option<Arc<AddressFile>> {
-    let path = RelPath::parse(ADDRESSES_FILE).ok()?;
-    let bytes = fs.read_file(&path).ok()?;
-    let text = String::from_utf8(bytes).ok()?;
-    AddressFile::parse(&text, FileId::new(0)).ok().map(Arc::new)
 }
 
 fn insert_sorted<T>(list: &mut Vec<T>, item: T, key: impl Fn(&T) -> (RelPath, Span)) {
@@ -293,11 +287,10 @@ pub struct Project {
     unreadable: Vec<Unreadable>,
     nested: Vec<RelPath>,
     own_folder: Option<RelPath>,
-    /// `ascribe.nav`, when the project has one that reads (SPEC §7.8).
-    nav: Option<Arc<NavFile>>,
-    /// `ascribe.addresses`, when the project has one that reads (SPEC
-    /// §7.10), as it was when the project was loaded.
-    addresses: Option<Arc<AddressFile>>,
+    /// The side files the index reads (`ascribe.nav`, SPEC §7.8, and
+    /// `ascribe.addresses`, SPEC §7.10), as they were when the project was
+    /// loaded or as the last change gave them.
+    side: Indexed,
     /// Each declared API's spec (`[apis.<name>]`), read with the project.
     apis: Arc<ApiSpecs>,
     /// Expansions worked out so far, by page. `None` records a path that
@@ -319,8 +312,7 @@ impl Clone for Project {
             unreadable: self.unreadable.clone(),
             nested: self.nested.clone(),
             own_folder: self.own_folder.clone(),
-            nav: self.nav.clone(),
-            addresses: self.addresses.clone(),
+            side: self.side.clone(),
             apis: self.apis.clone(),
             expansions: Mutex::new(self.expansion_cache().clone()),
         }
@@ -379,11 +371,16 @@ impl Project {
             nested,
             own: found.own_folder,
         };
-        Project::assemble(model, layout, files, by_id, unreadable, folders, fs)
+        let code = CodeFiles::with_ids(std::mem::take(&mut ids.code));
+        let project =
+            Project::assemble(model, layout, files, by_id, unreadable, folders, fs, &code);
+        ids.code = code.into_ids();
+        project
     }
 
     /// A project from indexed files: resolves every reference and builds the
     /// edges.
+    #[allow(clippy::too_many_arguments)] // A project's parts, each needed.
     pub(crate) fn assemble(
         model: Arc<ContentModel>,
         layout: Layout,
@@ -392,6 +389,7 @@ impl Project {
         unreadable: Vec<Unreadable>,
         folders: Folders,
         fs: &dyn FileSystem,
+        code: &CodeFiles,
     ) -> Project {
         let apis = Arc::new(ApiSpecs::read(&model, fs));
         let mut project = Project {
@@ -405,8 +403,7 @@ impl Project {
             unreadable,
             nested: folders.nested,
             own_folder: folders.own,
-            nav: read_nav(fs),
-            addresses: read_addresses(fs),
+            side: Indexed::read(fs),
             apis,
             expansions: Mutex::new(HashMap::new()),
         };
@@ -421,7 +418,6 @@ impl Project {
             })
             .collect();
         // Each code file is read once, however many snippets use it.
-        let code = CodeFiles::new();
         project.snippets = project
             .files
             .values()
@@ -429,7 +425,7 @@ impl Project {
             .map(|index| {
                 (
                     index.path.clone(),
-                    Arc::new(project.resolve_snippets(index, fs, &code)),
+                    Arc::new(project.resolve_snippets(index, fs, code)),
                 )
             })
             .collect();
@@ -440,21 +436,36 @@ impl Project {
     /// `ascribe.nav`, when the project has one and it reads; a file that
     /// doesn't is `nav-invalid`, and the project has the default order.
     pub fn nav_file(&self) -> Option<&NavFile> {
-        self.nav.as_deref()
+        self.side.nav.as_deref()
     }
 
     /// `ascribe.addresses`, when the project has one and it reads; a file
     /// that doesn't is `addresses-file-invalid`, and the project records no
-    /// addresses. As it was when the project was loaded: an incremental
-    /// update doesn't read it again.
+    /// addresses. As it was when the project was loaded, or as the last
+    /// [`crate::incremental::Change::SideFiles`] gave it.
     pub fn addresses_file(&self) -> Option<&AddressFile> {
-        self.addresses.as_deref()
+        self.side.addresses.as_deref()
+    }
+
+    /// What `ascribe.addresses` records of permalinks (SPEC §7.6): each
+    /// name it moves or retires. Nothing without the file.
+    pub fn recorded_permalinks(&self) -> RecordedPermalinks {
+        self.addresses_file()
+            .map(AddressFile::permalinks)
+            .unwrap_or_default()
     }
 
     /// Each declared API's spec (`[apis.<name>]`), as read when the project
     /// was loaded or its content model last changed.
     pub fn apis(&self) -> &ApiSpecs {
         &self.apis
+    }
+
+    /// Keeps where each `operationId` was in a base revision's specs, so a
+    /// link to one renamed since is offered the operation in its place
+    /// ([`ApiSpecs::renamed`]).
+    pub fn remember_base_apis(&mut self, base: &ApiSpecs) {
+        Arc::make_mut(&mut self.apis).remember(base);
     }
 
     /// The project's navigation (SPEC §7.8): `ascribe.nav`'s order over the
@@ -617,6 +628,11 @@ impl Project {
         self.edges.links.get(target).map_or(&[], Vec::as_slice)
     }
 
+    /// The files with a link to a page that doesn't exist.
+    pub fn files_linking_missing_pages(&self) -> &BTreeSet<RelPath> {
+        &self.edges.missing
+    }
+
     /// The links that name this source id in a file.
     pub fn links_to_id<'a>(
         &'a self,
@@ -687,7 +703,7 @@ impl Project {
             };
             for range in block.own_ranges() {
                 for (at, reference) in index.references.iter().enumerate() {
-                    if !range.contains_span(reference.span) {
+                    if reference.example || !range.contains_span(reference.span) {
                         continue;
                     }
                     let resolution = self.resolutions.get(&index.path).and_then(|r| r.get(at));
@@ -726,9 +742,34 @@ impl Project {
                 out.push(issue);
             }
         }
-        for (reference, resolution) in index.references.iter().zip(self.resolutions(path)) {
+        let resolutions = self.resolutions(path);
+        for (reference, resolution) in index.references.iter().zip(resolutions) {
             out.extend(self.reference_problem(index, reference, resolution));
         }
+        out.extend(crate::openapi::examples::problems(self, index, resolutions));
+        out.sort_by_key(|i| (i.location.span, i.slug));
+        out
+    }
+
+    /// The problems with one file's code blocks marked as examples of an
+    /// operation's request or response: their links', and their checks
+    /// against the bodies' schemas ([`crate::openapi::examples`]), in source
+    /// order. [`Project::problems`] has them too.
+    pub fn example_problems(&self, path: &RelPath) -> Vec<Issue> {
+        let Some(index) = self.files.get(path) else {
+            return Vec::new();
+        };
+        if index.examples.is_empty() {
+            return Vec::new();
+        }
+        let resolutions = self.resolutions(path);
+        let mut out = Vec::new();
+        for (reference, resolution) in index.references.iter().zip(resolutions) {
+            if reference.example {
+                out.extend(self.reference_problem(index, reference, resolution));
+            }
+        }
+        out.extend(crate::openapi::examples::problems(self, index, resolutions));
         out.sort_by_key(|i| (i.location.span, i.slug));
         out
     }
@@ -805,8 +846,14 @@ impl Project {
         self.apis = Arc::new(apis);
     }
 
-    pub(crate) fn set_nav(&mut self, nav: Option<Arc<NavFile>>) {
-        self.nav = nav;
+    /// The side files the index reads, as they were when the project was
+    /// loaded or as the last change gave them.
+    pub(crate) fn side_files(&self) -> &Indexed {
+        &self.side
+    }
+
+    pub(crate) fn set_side_files(&mut self, side: Indexed) {
+        self.side = side;
     }
 
     pub(crate) fn set_unreadable(&mut self, unreadable: Vec<Unreadable>) {
@@ -974,7 +1021,8 @@ impl Project {
         // The headings `ascribe link` lists as closest: the target page's,
         // which the problem already depends on. A missing page's closest
         // targets can be any page, so the file-level check offers those.
-        issue.fixes = closest_fixes(
+        offer_closest(
+            &mut issue,
             self,
             &index.path,
             &reference.target,

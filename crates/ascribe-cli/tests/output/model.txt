@@ -16,6 +16,11 @@
 - `{version}`: 3.4.1
 - `{api}`: https://api.quill.dev/v3/
 
+## Image attributes
+
+- `width` (number)
+- `height` (number)
+
 ## Releases
 
 - `self-managed`: 3.5 (current, `site`); 3.4 (live, `site@3.4`)
@@ -25,8 +30,7 @@
 - `site`, the editor's build: variants switch, availability badge, line 3.5 of `self-managed`
 - `site@3.4`: variants switch, availability badge, line 3.4 of `self-managed`
 - `cloud`: variants deployment=cloud, availability filter cloud
-- `self-managed-3.3`: variants switch, availability filter self-managed 3.3
 
 ## Settings
 
-- `project`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, `permalinks`, each with its keys and values: `ascribe model --section <name>`
+- `project`, `versions`, `consumer`, `editor`, `checks`, `crawlers`, `listing`, each with its keys and values: `ascribe model --section <name>`

@@ -33,17 +33,20 @@ fn checking_every_resolved_page_over_a_shared_index_equals_check() {
         fs = fs.with_source(path, text);
     }
     let index = ascribe_resolve::Project::load(Arc::new(model.clone()), layout, &fs);
-    let sources = Project::from_sources(
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter(
         FILES
             .iter()
             .map(|(p, t)| (RelPath::parse(p).expect("a path"), (*t).to_owned())),
     );
-    let project = Project::from_parts(
-        PathBuf::from("/nowhere"),
-        RelPath::parse("docs").expect("a path"),
-        model.clone(),
-        MODEL.to_owned(),
-        sources,
+    let project = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nowhere"),
+            RelPath::parse("docs").expect("a path"),
+            model.clone(),
+            MODEL.to_owned(),
+            sources,
+        )
+        .snapshot(),
     );
     let build = model.editor_default_build().clone();
     let expected = PageChecker::new(&project).check(&build);

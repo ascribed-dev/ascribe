@@ -8,6 +8,8 @@ You can run Quill in the browser.
 
 <ascribe-tab value="npm" label="npm">
 
+<p class="ascribe-tab-label">npm</p>
+
 ### Install with npm <ascribe-attributes id="install-with-npm"></ascribe-attributes>
 
 ```shell
@@ -17,6 +19,8 @@ npm install -g @quill/agent
 </ascribe-tab>
 
 <ascribe-tab value="pnpm" label="pnpm">
+
+<p class="ascribe-tab-label">pnpm</p>
 
 ```shell
 pnpm add -g @quill/agent

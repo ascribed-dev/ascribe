@@ -120,7 +120,7 @@ export interface ProjectViewServices {
 
 export class ProjectView implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
-  /** Draws the view again when the day changes, which overdue reviews are counted for. */
+  /** Draws the view again when the day changes, which overdue rechecks are counted for. */
   private midnight: ReturnType<typeof setTimeout> | undefined;
   /** Each project's sources, for About, by its folder: asked once, and again when they may have changed. */
   private readonly sources = new Map<string, AboutFacts["sources"]>();
@@ -222,6 +222,7 @@ export class ProjectView implements vscode.Disposable {
       state: server.state,
       version: binary && formatVersion(binary.version),
       everyBuild: this.checks.resultOf(project.folder),
+      addresses: this.checks.addressesOf(project.folder),
       inventory: inventory && inventoryCounts(inventory),
       agentFiles: this.agentFiles.resultOf(project.folder),
       now: Date.now(),
@@ -306,7 +307,7 @@ export class ProjectView implements vscode.Disposable {
         await vscode.commands.executeCommand("workbench.actions.view.problems");
         return;
       case PROJECT_KEYS.examples:
-      case PROJECT_KEYS.reviews:
+      case PROJECT_KEYS.rechecks:
       case PROJECT_KEYS.permalinks: {
         const result = this.checks.resultOf(server.project.folder);
         const first = result.kind === "made" ? result.counted[key].first : null;
@@ -317,6 +318,12 @@ export class ProjectView implements vscode.Disposable {
             selection: new vscode.Range(start.line, start.character, end.line, end.character),
           });
         }
+        return;
+      }
+      case PROJECT_KEYS.addresses: {
+        await vscode.commands.executeCommand("workbench.actions.view.problems");
+        const uri = server.addresses?.uri;
+        if (uri) await vscode.window.showTextDocument(vscode.Uri.parse(uri));
         return;
       }
       case PROJECT_KEYS.orphans:
@@ -398,7 +405,12 @@ const projectReport: Check<ProjectReport> = shape<ProjectReport>({
     shape<ProjectReport["sections"][number]>({ key: text, label: text, open: boolean }),
   ),
   groups: listOf(
-    shape<ProjectReport["groups"][number]>({ key: text, head: text, action: nullable(text) }),
+    shape<ProjectReport["groups"][number]>({
+      key: text,
+      head: text,
+      action: nullable(text),
+      none: nullable(text),
+    }),
   ),
   health: listOf(
     shape<ProjectReport["health"][number]>({
@@ -406,6 +418,7 @@ const projectReport: Check<ProjectReport> = shape<ProjectReport>({
       value: text,
       note: text,
       state: text,
+      shown: boolean,
       dimmed: boolean,
       severities: listOf(text),
     }),

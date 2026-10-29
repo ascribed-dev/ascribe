@@ -1,8 +1,9 @@
 //! A project kept checked without an editor: the server's state and its
-//! incremental index, driven by a caller that says which files changed, and
-//! asks for a file's problems. `ascribe agents hook-server` keeps one per
+//! `Workspace`, driven by a caller that says which files changed, and asks
+//! for a file's problems. `ascribe agents hook-server` keeps one per
 //! project, so the check after an agent's edit redoes only what the edit
-//! affects, as the server does after a keystroke.
+//! affects, as the server does after a keystroke, and checks the whole
+//! project on the same `Workspace` ([`Watched::snapshot`]).
 //!
 //! The problems of a file are those `ascribe check <file> --editor-build`
 //! reports: what the server would publish for it (its file-level
@@ -15,6 +16,7 @@ use std::path::{Path, PathBuf};
 
 use ascribe_check::Severity;
 use ascribe_core::path::normalize;
+use ascribe_workspace::WorkspaceSnapshot;
 use crossbeam_channel::Receiver;
 use lsp_server::Message;
 use lsp_types::{Diagnostic, DiagnosticSeverity, FileChangeType, FileEvent, NumberOrString};
@@ -160,13 +162,23 @@ impl Watched {
     /// project has loaded.
     pub fn build(&self) -> Option<String> {
         let loaded = self.core.loaded.as_ref()?;
-        Some(loaded.model.editor_default_build().name.clone())
+        Some(loaded.model().editor_default_build().name.clone())
     }
 
     /// The project root, `ascribe.toml`'s folder; `None` before the project
     /// has loaded.
     pub fn root(&self) -> Option<&Path> {
         self.core.loaded.as_ref().map(|l| l.root.as_path())
+    }
+
+    /// The project as the changes so far leave it, which a check of the
+    /// whole project reads; `None` before it has loaded, and while its
+    /// content model doesn't load.
+    pub fn snapshot(&self) -> Option<WorkspaceSnapshot> {
+        if self.core.model_problem.is_some() {
+            return None;
+        }
+        Some(self.core.loaded.as_ref()?.workspace.snapshot())
     }
 }
 

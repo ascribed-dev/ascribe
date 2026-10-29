@@ -387,7 +387,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             ],
         ),
         (
-            "ascribe_format",
+            "ascribe_fmt",
             json!({ "paths": ["site/docs"] }),
             &[
                 "fmt",
@@ -400,7 +400,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             ],
         ),
         (
-            "ascribe_changes",
+            "ascribe_diff",
             json!({ "project": "site", "base": "HEAD" }),
             &[
                 "diff",
@@ -414,7 +414,7 @@ fn every_tool_returns_its_commands_json_and_changes_nothing() {
             ],
         ),
         (
-            "ascribe_changes",
+            "ascribe_diff",
             json!({ "project": "site", "base": "HEAD", "blocks": true }),
             &[
                 "diff", "--config", "site", "--base", "HEAD", "--format", "json",
@@ -506,9 +506,90 @@ fn resolve_shows_a_permalinks_help() {
     );
     let message = server.call_error(
         "ascribe_resolve",
-        json!({ "page": "site/docs/keys.md", "build": "cloud", "project": "site" }),
+        json!({ "page": "site/docs/gone.md", "build": "cloud", "project": "site" }),
     );
-    assert!(message.contains("`project` goes with"), "{message}");
+    assert!(
+        message.starts_with(
+            "Leave out `project` when `page` is a path; the page's project is found from it\n"
+        ),
+        "{message}"
+    );
+    // A page that is a file: the call to make instead.
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": "site/docs/rotate.md", "build": "cloud", "project": "site" }),
+    );
+    assert!(
+        message.starts_with(
+            "Leave out `project` when `page` is a path; the page's project is found from it. \
+             Call it with `{\"build\":\"cloud\",\"page\":\"site/docs/rotate.md\"}`\n"
+        ),
+        "{message}"
+    );
+}
+
+/// `ascribe_resolve` with `emit` returns what `ascribe resolve --emit`
+/// writes: `site` the site output's Markdown, with its elements, and
+/// `plain` the default. With `go:<name>`, `emit` is the command's usage
+/// error.
+#[test]
+fn resolve_takes_emit() {
+    let repo = repository();
+    let root = repo.path();
+    let mut server = Server::start(root);
+    let page = "site/docs/install.md";
+    let (text, structured) = server.call_ok(
+        "ascribe_resolve",
+        json!({ "page": page, "build": "cloud", "emit": "site" }),
+    );
+    let expected = stdout(
+        root,
+        &[
+            "resolve", page, "--build", "cloud", "--emit", "site", "--format", "json",
+        ],
+    );
+    assert_eq!(text, expected);
+    assert_eq!(
+        structured,
+        serde_json::from_str::<Value>(&expected).unwrap()
+    );
+    assert_eq!(structured["emit"], "site", "{structured}");
+    let site = structured["text"].as_str().unwrap();
+    assert_eq!(
+        site,
+        stdout(
+            root,
+            &["resolve", page, "--build", "cloud", "--emit", "site"]
+        ),
+    );
+    assert!(site.contains("<ascribe-note"), "{site}");
+
+    // Left out, and `plain`, are the plain form.
+    let (_, default) = server.call_ok("ascribe_resolve", json!({ "page": page, "build": "cloud" }));
+    let (_, plain) = server.call_ok(
+        "ascribe_resolve",
+        json!({ "page": page, "build": "cloud", "emit": "plain" }),
+    );
+    assert_eq!(default, plain);
+    assert_eq!(default["emit"], "plain", "{default}");
+    assert!(
+        !default["text"].as_str().unwrap().contains("<ascribe-"),
+        "{default}"
+    );
+
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": "go:rotate-keys", "build": "cloud", "project": "site", "emit": "plain" }),
+    );
+    assert!(
+        message.starts_with("a permalink's help has one form, help.json's; leave out --emit"),
+        "{message}"
+    );
+    let message = server.call_error(
+        "ascribe_resolve",
+        json!({ "page": page, "build": "cloud", "emit": "html" }),
+    );
+    assert!(message.contains("`plain` or `site`"), "{message}");
 }
 
 #[test]
@@ -612,7 +693,7 @@ fn the_commands_json_has_what_the_tools_need() {
     let page = &report["builds"][0]["pages"][0];
     assert_eq!(page["path"], "keys.md");
     assert_eq!(page["changes"], json!([]), "{page}");
-    assert_eq!(page["counts"]["added"], 1, "{page}");
+    assert_eq!(page["counts"]["changed"], 1, "{page}");
     let full: Value = serde_json::from_str(&stdout(
         root,
         &[
@@ -699,10 +780,13 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
             "ascribe_refs",
             "ascribe_search",
             "ascribe_resolve",
-            "ascribe_format",
-            "ascribe_changes",
+            "ascribe_fmt",
+            "ascribe_diff",
+            "ascribe_rename",
             "ascribe_addresses_move",
             "ascribe_addresses_retire",
+            "ascribe_format",
+            "ascribe_changes",
         ]
     );
     for tool in tools["tools"].as_array().unwrap() {
@@ -712,8 +796,15 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
         assert_eq!(annotations["idempotentHint"], true, "{tool}");
         assert_eq!(annotations["openWorldHint"], false, "{tool}");
         assert_eq!(tool["inputSchema"]["type"], "object", "{tool}");
-        assert_eq!(tool["outputSchema"]["type"], "object", "{tool}");
-        assert!(tool["description"].as_str().unwrap().contains("Example: "));
+        // The JSON report contract has the result's schema (#1033).
+        assert!(tool.get("outputSchema").is_none(), "{tool}");
+        let description = tool["description"].as_str().unwrap();
+        assert!(description.contains("Example: "), "{description}");
+        assert!(
+            description
+                .ends_with("JSON report contract: https://ascribed-dev.com/go/json-reports/"),
+            "{description}"
+        );
     }
 
     for version in ["2025-11-25", "2025-06-18"] {
@@ -723,6 +814,22 @@ fn both_revisions_list_the_same_tools_in_the_same_order() {
         let (text, _) = legacy.call_ok("ascribe_explain", json!({ "code": "ASC037" }));
         assert!(text.contains("link-id-missing"), "{text}");
     }
+}
+
+/// `tools/list` stays within a budget: a host gives it to the model in every
+/// session, before the agent's first call. A new tool, or a longer
+/// description, spends from it; raise it only on purpose (#1033).
+#[test]
+fn the_tool_list_stays_within_its_budget() {
+    const BUDGET: usize = 25_000;
+    let repo = repository();
+    let mut server = Server::start(repo.path());
+    let tools = server.result("tools/list", json!({}));
+    let size = serde_json::to_string(&tools).unwrap().len();
+    assert!(
+        size <= BUDGET,
+        "tools/list is {size} bytes, over its budget of {BUDGET}"
+    );
 }
 
 #[test]
@@ -804,7 +911,7 @@ fn one_server_serves_two_projects_and_says_when_a_path_is_in_neither() {
 
 /// Rewrites `path` with `text`, the same length as what's there, and gives
 /// it back its modification time: a change the server's listing can't
-/// see, so the answers show whether it loaded the project again.
+/// see, so the answers show whether it read the file again.
 fn change_unseen(path: &Path, text: &str) {
     let modified = fs::metadata(path).unwrap().modified().unwrap();
     assert_eq!(fs::read(path).unwrap().len(), text.len());
@@ -840,10 +947,15 @@ fn files_outside_the_content_root_dont_load_the_project_again() {
     write(&root.join("notes.md"), "# Notes\n");
     assert_eq!(heading(&mut server), "rotate-keys");
 
-    // A file in the content root is.
+    // A file in the content root is, and only it is read.
     write(
         &root.join("docs/tokens.md"),
         "---\ntype: page\ntitle: Tokens\n---\n",
+    );
+    assert_eq!(heading(&mut server), "rotate-keys");
+    write(
+        &root.join("docs/keys.md"),
+        &KEYS.replace("Rotate keys", "Rotate keyz"),
     );
     assert_eq!(heading(&mut server), "rotate-keyz");
 }
@@ -927,9 +1039,16 @@ fn a_second_search_doesnt_load_the_project_again() {
     );
     // Another query, and the project as it was loaded.
     assert!(search(&mut server, "them").contains("docs/keys.md:8: Rotate them."));
+    // Another page added: it's read, and the page that wasn't seen to
+    // change isn't.
     write(
         &root.join("docs/tokens.md"),
         "---\ntype: page\ntitle: Tokens\n---\n",
+    );
+    assert!(search(&mut server, "rotate").contains("docs/keys.md:8: Rotate them."));
+    write(
+        &root.join("docs/keys.md"),
+        &KEYS.replace("Rotate them.", "Rotate thez."),
     );
     assert!(search(&mut server, "rotate").contains("docs/keys.md:8: Rotate thez."));
 }
@@ -1154,7 +1273,33 @@ fn the_new_page_prompt_says_where_the_page_goes_and_what_it_needs() {
         text.contains("type: guide\ntitle: \"Rotate your keys\""),
         "{text}"
     );
-    assert!(text.contains("\naudience:\n---\n"), "{text}");
+    assert!(text.contains("\naudience:\ndraft: true\n---\n"), "{text}");
+    assert!(
+        text.contains("and fill in each empty field, the type's required ones:"),
+        "{text}"
+    );
+
+    // A type with no required field but its title has no empty field to
+    // fill in, so the prompt doesn't ask for one.
+    let text = stdout(
+        repo.path(),
+        &[
+            "agents",
+            "prompt",
+            "new-page",
+            "--arg",
+            "type=page",
+            "--arg",
+            "title=Rotate your keys",
+            "--arg",
+            "path=site",
+        ],
+    );
+    assert!(
+        text.contains("Start the file with this frontmatter:\n"),
+        "{text}"
+    );
+    assert!(!text.contains("empty field"), "{text}");
 }
 
 #[test]
@@ -1185,12 +1330,12 @@ fn agents_prompt_lists_its_prompts_and_refuses_what_it_doesnt_know() {
     }
 }
 
-/// The command a description names, as words: "The command: `...`."
+/// The command a description names, as words: "The command: `...`".
 fn named_command(description: &str) -> Vec<String> {
     let (_, rest) = description
         .rsplit_once("The command: `")
         .unwrap_or_else(|| panic!("names no command: {description}"));
-    let command = rest.trim_end_matches("`.");
+    let command = rest.split('`').next().unwrap_or_default();
     command
         .split(' ')
         .filter(|word| !word.starts_with('<'))
@@ -1216,7 +1361,7 @@ fn every_tool_resource_and_prompt_names_a_command_that_exists() {
         "resourceTemplates",
     );
     collect(server.result("prompts/list", json!({})), "prompts");
-    assert_eq!(descriptions.len(), 12 + 3 + 2 + 3);
+    assert_eq!(descriptions.len(), 13 + 2 + 3 + 2 + 3);
     for description in descriptions {
         let words = named_command(&description);
         assert_eq!(words[0], "ascribe", "{description}");
@@ -1262,8 +1407,9 @@ fn call_in_project(tool: &str) -> Value {
         "ascribe_refs" => json!({ "target": "phrase:product" }),
         "ascribe_search" => json!({ "query": "product" }),
         "ascribe_resolve" => json!({ "page": "docs/install.md", "build": "cloud" }),
-        "ascribe_format" => json!({ "paths": ["docs"] }),
-        "ascribe_changes" => json!({ "base": "HEAD" }),
+        "ascribe_fmt" | "ascribe_format" => json!({ "paths": ["docs"] }),
+        "ascribe_diff" | "ascribe_changes" => json!({ "base": "HEAD" }),
+        "ascribe_rename" => json!({ "target": "keys.md", "new": "api-keys.md", "project": "." }),
         "ascribe_addresses_move" => json!({ "old": "keys.md", "new": "api-keys.md" }),
         "ascribe_addresses_retire" => json!({ "old": "keys.md", "reason": "Removed." }),
         other => panic!("{other} is a new tool: give it a call here"),
@@ -1553,4 +1699,216 @@ fn an_agent_records_a_move_git_sees_with_the_tool_s_edit() {
             .all(|d| d["severity"] != "error"),
         "{report}"
     );
+}
+
+/// An agent with no shell moves a page with `ascribe_rename`: the tool
+/// writes nothing, and gives what `ascribe rename --format json` writes in a
+/// copy of the project, but `written`. Once the agent writes each file's
+/// text and moves the page, the project is what the command leaves, and the
+/// check passes.
+#[test]
+fn an_agent_moves_a_page_with_the_rename_tool() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("agent");
+    write_project(&root);
+    let out = ascribe(&root, &["addresses", "init"]);
+    assert!(out.status.success(), "{out:?}");
+    let copy = dir.path().join("command");
+    fs::create_dir_all(&copy).unwrap();
+    copy_tree(&root, &copy);
+    let before = contents(&root);
+
+    let mut server = Server::start(&root);
+    let arguments = json!({ "target": "docs/keys.md", "new": "docs/security/keys.md" });
+    let (_, renamed) = server.call_ok("ascribe_rename", arguments);
+    assert_eq!(contents(&root), before, "the tool wrote");
+    assert_eq!(renamed["written"], false, "{renamed}");
+    assert_eq!(
+        renamed["moved"],
+        json!({ "from": "docs/keys.md", "to": "docs/security/keys.md" })
+    );
+    assert_eq!(
+        renamed["recorded"],
+        json!([{ "key": "keys.md", "value": "security/keys.md" }])
+    );
+
+    let out = ascribe(
+        &copy,
+        &[
+            "rename",
+            "--force",
+            "docs/keys.md",
+            "docs/security/keys.md",
+            "--format",
+            "json",
+        ],
+    );
+    assert!(out.status.success(), "{out:?}");
+    let mut command: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(command["written"], true);
+    command["written"] = json!(false);
+    assert_eq!(renamed, command);
+
+    for file in renamed["files"].as_array().unwrap() {
+        fs::write(
+            root.join(file["file"].as_str().unwrap()),
+            file["text"].as_str().unwrap(),
+        )
+        .unwrap();
+    }
+    fs::create_dir_all(root.join("docs/security")).unwrap();
+    fs::rename(
+        root.join("docs/keys.md"),
+        root.join("docs/security/keys.md"),
+    )
+    .unwrap();
+    let relative = |files: BTreeMap<PathBuf, Vec<u8>>, from: &Path| -> BTreeMap<PathBuf, Vec<u8>> {
+        files
+            .into_iter()
+            .map(|(path, text)| (path.strip_prefix(from).unwrap().to_owned(), text))
+            .collect()
+    };
+    assert_eq!(
+        relative(contents(&root), &root),
+        relative(contents(&copy), &copy)
+    );
+    let link = fs::read_to_string(root.join("docs/install.md")).unwrap();
+    assert!(link.contains("(security/keys.md#rotat)"), "{link}");
+
+    let (_, report) = server.call_ok("ascribe_check", json!({ "response_format": "detailed" }));
+    let codes: Vec<&str> = report["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["slug"].as_str().unwrap())
+        .collect();
+    assert!(!codes.contains(&"address-lost"), "{report}");
+}
+
+/// `ascribe_rename` renames a phrase in the project `project` names, from a
+/// server started above it, as `ascribe rename --config` does; without
+/// `project`, there's no project at or above the server's folder.
+#[test]
+fn rename_finds_the_project_an_entry_is_in_from_project() {
+    let repo = repository();
+    let root = repo.path();
+    let before = contents(root);
+    let mut server = Server::start(root);
+    let message = server.call_error(
+        "ascribe_rename",
+        json!({ "target": "phrase:product", "new": "brand" }),
+    );
+    assert!(message.contains("ascribe.toml"), "{message}");
+
+    let (_, renamed) = server.call_ok(
+        "ascribe_rename",
+        json!({ "target": "phrase:product", "new": "brand", "project": "site" }),
+    );
+    assert_eq!(contents(root), before, "the tool wrote");
+    let files: Vec<&str> = renamed["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["file"].as_str().unwrap())
+        .collect();
+    assert!(files.contains(&"site/ascribe.toml"), "{renamed}");
+    assert!(files.contains(&"site/docs/install.md"), "{renamed}");
+
+    let out = ascribe(
+        root,
+        &[
+            "rename",
+            "phrase:product",
+            "brand",
+            "--config",
+            "site",
+            "--format",
+            "json",
+        ],
+    );
+    assert!(out.status.success(), "{out:?}");
+    let mut command: Value = serde_json::from_slice(&out.stdout).unwrap();
+    command["written"] = json!(false);
+    assert_eq!(renamed, command);
+}
+
+/// A tool's old name calls the tool, and `tools/list` gives it as the tool
+/// with a sentence saying so first.
+#[test]
+fn an_old_name_calls_its_tool() {
+    let repo = repository();
+    let mut server = Server::start(repo.path());
+    let arguments = json!({ "project": "site", "base": "HEAD" });
+    assert_eq!(
+        server.call_ok("ascribe_changes", arguments.clone()),
+        server.call_ok("ascribe_diff", arguments)
+    );
+    let tools = server.result("tools/list", json!({}));
+    let tool = |name: &str| {
+        tools["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"] == name)
+            .unwrap()
+            .clone()
+    };
+    let (old, new) = (tool("ascribe_format"), tool("ascribe_fmt"));
+    assert_eq!(old["inputSchema"], new["inputSchema"]);
+    let description = old["description"].as_str().unwrap();
+    assert!(
+        description.starts_with("The old name of `ascribe_fmt`")
+            && description.ends_with(new["description"].as_str().unwrap()),
+        "{description}"
+    );
+}
+
+/// Copies the files under `from` into `to`.
+fn copy_tree(from: &Path, to: &Path) {
+    for entry in fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            fs::create_dir_all(&target).unwrap();
+            copy_tree(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+#[test]
+fn link_answers_with_the_operation_a_link_to_a_spec_names() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
+    fs::copy(example.join("ascribe.toml"), root.join("ascribe.toml")).unwrap();
+    for folder in ["api", "content"] {
+        fs::create_dir_all(root.join(folder)).unwrap();
+        copy_tree(&example.join(folder), &root.join(folder));
+    }
+    let guide = "content/Guides/Teams/Share a loom.md";
+    let mut server = Server::start(root);
+    let target = "../../../api/openapi.yaml#delete/looms/{id}";
+    let (_, answer) = server.call_ok("ascribe_link", json!({ "target": target, "from": guide }));
+    assert_eq!(answer["kind"], "operation");
+    assert_eq!(
+        answer["operation"],
+        json!({
+            "api": "loom",
+            "operation_id": null,
+            "method": "delete",
+            "path": "/looms/{id}",
+            "summary": "Delete a loom",
+            "tag": "Looms",
+            "deprecated": false,
+            "address": "/docs/api#paths/~1looms~1%7Bid%7D/delete",
+        })
+    );
+    let command: Value = serde_json::from_str(&stdout(
+        root,
+        &["link", target, "--from", guide, "--format", "json"],
+    ))
+    .unwrap();
+    assert_eq!(answer, command);
 }

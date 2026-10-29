@@ -59,6 +59,16 @@ pub const SUMMARY_SENTENCE: &str = "Give a heading with a permalink a summary, a
      section that reads well alone, or `@summary: <text>` under the heading and its `@id` \
      when none does, as for a lead-in to a list. Keep it under 300 characters.";
 
+/// What the rules say of the site form: how to see a page as a reader of the
+/// site gets it, and where the elements it holds are explained.
+pub const SITE_FORM_SENTENCE: &str = concat!(
+    "To see what a reader of the site gets, not only a reader of the Markdown, run `ascribe \
+     resolve <page> --build <name> --emit site`, or call `ascribe_resolve` with `emit: \
+     \"site\"`: the page as the site output gives it to the site, with Ascribe's elements. \
+     How to read them: ",
+    ascribe_core::docs_permalink!("reading-site-output"),
+);
+
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
 /// from there, and empty when the file is beside `ascribe.toml`. `root` is
@@ -77,9 +87,15 @@ pub const SUMMARY_SENTENCE: &str = "Give a heading with a permalink a summary, a
 /// [`PERMALINK_SENTENCE`], and in one that declares a heading's, with
 /// [`SUMMARY_SENTENCE`] after it.
 ///
-/// When the whole is longer than [`RULES_BUDGET`], the memo sentences are
-/// cut first; then the page types' lines, and the cut says where the full list
-/// is; then the directives'.
+/// When the whole is longer than [`RULES_BUDGET`], what an agent can read
+/// elsewhere goes before what only this project says, until the rest fits:
+/// the memo sentences first; then each built-in directive's syntax, which
+/// the skill's `references/directives.md` has, leaving its name and what
+/// this project declares for it; then [`SUMMARY_SENTENCE`] and
+/// [`SITE_FORM_SENTENCE`], which the skill says too; then each page type's
+/// template, guide, and fields, leaving its name and what it's for. Only then
+/// are lines cut: the directives' from the end, then the page types', and the
+/// cut says where the full list is.
 pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPath) -> String {
     let model = project.model();
     let at = At::new(project, dir, root);
@@ -94,15 +110,16 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
     let types = type_entries(model, &ascribe_templates::summaries(model, fs));
     let phrases = phrases_section(model, &at);
     let declared = project.declared_permalinks();
-    let mut permalinks = if declared.is_empty() {
+    let permalink = if declared.is_empty() {
         String::new()
     } else {
         format!(" {}", PERMALINK_SENTENCE.replace("{config}", &at.config()))
     };
-    if declared.iter().any(|p| p.id.is_some()) {
-        permalinks.push(' ');
-        permalinks.push_str(SUMMARY_SENTENCE);
-    }
+    let summary = if declared.iter().any(|p| p.id.is_some()) {
+        format!(" {SUMMARY_SENTENCE}")
+    } else {
+        String::new()
+    };
     let moving = if project.addresses_file().is_some() {
         format!(
             "\n### Moving pages\n\n{}\n",
@@ -111,15 +128,23 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
     } else {
         String::new()
     };
-    let tail = format!(
-        "\n### Links\n\nLink to the source file, with a relative path such as \
-         `../guides/install.md#configure`, not to the site's address. `ascribe outline \
-         <page>` lists a page's headings with their ids, and `ascribe link <target> --from \
-         <page>` says whether a link works and what to write.{permalinks}\n{moving}\n### More\n\n\
-         `ascribe model{}` shows everything the content model allows. Every directive: {}\n",
-        at.path_arg(),
-        directive_reference_url(),
-    );
+    let tail = |skill_text: bool| -> String {
+        let (summary, site_form) = if skill_text {
+            (summary.as_str(), format!("{SITE_FORM_SENTENCE}\n\n"))
+        } else {
+            ("", String::new())
+        };
+        format!(
+            "\n### Links\n\nLink to the source file, with a relative path such as \
+             `../guides/install.md#configure`, not to the site's address. `ascribe outline \
+             <page>` lists a page's headings with their ids, and `ascribe link <target> --from \
+             <page>` says whether a link works and what to write.{permalink}{summary}\n{moving}\n\
+             ### More\n\n{site_form}`ascribe model{}` shows everything the content model allows. \
+             Every directive: {}\n",
+            at.path_arg(),
+            directive_reference_url(),
+        )
+    };
     let used = project.directive_names();
     let mut memo = String::new();
     if used.contains(Builtin::Memo.name()) {
@@ -129,13 +154,19 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
         memo.push_str(&format!("\n{MEMO_FILE_SENTENCE}\n"));
     }
     let lines = directive_lines(model, &used);
-    let directives = |n: usize| -> String {
+    let directives = |n: usize, long: bool| -> String {
         if lines.is_empty() {
             return String::new();
         }
         let mut out = String::from("\n### Directives this project uses\n\n");
-        for line in &lines[..n] {
-            out.push_str(&format!("- {line}\n"));
+        if !long {
+            out.push_str(
+                "Each one's syntax is in the `ascribe` skill's `references/directives.md`, and \
+                 in the directive reference below.\n\n",
+            );
+        }
+        for (full, short) in &lines[..n] {
+            out.push_str(&format!("- {}\n", if long { full } else { short }));
         }
         if n < lines.len() {
             out.push_str(&format!(
@@ -145,26 +176,84 @@ pub fn rules(project: &Project, fs: &dyn FileSystem, dir: &RelPath, root: &RelPa
         }
         out
     };
-    let render = |memo: &str, types_taken: usize, directives_taken: usize| -> String {
+    let render = |cut: Cut| -> String {
+        let types: Vec<String> = types
+            .iter()
+            .map(|(full, short)| (if cut.long_types { full } else { short }).clone())
+            .collect();
         format!(
-            "{head}{memo}{}{phrases}{}{tail}",
-            section(Section::Types, types_intro(model), &types, types_taken, &at),
-            directives(directives_taken)
+            "{head}{}{}{phrases}{}{}",
+            if cut.memo { memo.as_str() } else { "" },
+            section(Section::Types, types_intro(model), &types, cut.types, &at),
+            directives(cut.directives, cut.long_directives),
+            tail(cut.skill_text),
         )
     };
-    let every_directive = lines.len();
-    let whole = render(&memo, types.len(), every_directive);
-    if whole.chars().count() <= RULES_BUDGET {
-        return whole;
-    }
-    let fits = |t: usize, d: usize| render("", t, d).chars().count() <= RULES_BUDGET;
-    let types_taken = fit(&[types.len()], |taken| fits(taken[0], every_directive))[0];
-    let directives_taken = if fits(types_taken, every_directive) {
-        every_directive
-    } else {
-        fit(&[lines.len()], |taken| fits(0, taken[0]))[0]
+    let fits = |cut: Cut| render(cut).chars().count() <= RULES_BUDGET;
+    let whole = Cut {
+        memo: true,
+        long_directives: true,
+        skill_text: true,
+        long_types: true,
+        directives: lines.len(),
+        types: types.len(),
     };
-    render("", types_taken, directives_taken)
+    let no_memo = Cut {
+        memo: false,
+        ..whole
+    };
+    let short_directives = Cut {
+        long_directives: false,
+        ..no_memo
+    };
+    let no_skill_text = Cut {
+        skill_text: false,
+        ..short_directives
+    };
+    let short = Cut {
+        long_types: false,
+        ..no_skill_text
+    };
+    if let Some(cut) = [whole, no_memo, short_directives, no_skill_text, short]
+        .into_iter()
+        .find(|cut| fits(*cut))
+    {
+        return render(cut);
+    }
+    let directives = fit(&[lines.len()], |taken| {
+        fits(Cut {
+            directives: taken[0],
+            ..short
+        })
+    })[0];
+    let cut = Cut {
+        directives,
+        ..short
+    };
+    if fits(cut) {
+        return render(cut);
+    }
+    let types = fit(&[types.len()], |taken| {
+        fits(Cut {
+            types: taken[0],
+            ..cut
+        })
+    })[0];
+    render(Cut { types, ..cut })
+}
+
+/// How much of the rules [`rules`] gives: whether it gives the memo
+/// sentences, each directive's syntax, the sentences the skill says too, and
+/// each page type's whole line, and how many of the directives' and the
+/// page types' lines.
+#[derive(Clone, Copy)]
+struct Cut {
+    memo: bool,
+    long_directives: bool,
+    skill_text: bool,
+    long_types: bool,
+    directives: usize,
+    types: usize,
 }
 
 /// A short text for a file above a project's folder (the repository's root
@@ -308,7 +397,7 @@ impl At {
         let whole = format!("ascribe check{}", self.config());
 
         format!(
-            "Programmatic check: after editing a page, run `ascribe check <file> --format \
+            "After editing a page, run `ascribe check <file> --format \
              concise` and fix every error. Before you finish, run `{whole}`. `ascribe explain \
              <code>` says what a problem means and how to fix it."
         )
@@ -393,10 +482,16 @@ fn section(section: Section, intro: &str, lines: &[String], n: usize, at: &At) -
     out
 }
 
-/// A line for each directive the project's pages use: the built-ins in
+/// Two lines for each directive the project's pages use: the built-ins in
 /// SPEC §4 order, with what this project declares for them, then its
-/// widgets in declaration order. A name that's neither is left out.
-fn directive_lines(model: &ContentModel, used: &std::collections::BTreeSet<String>) -> Vec<String> {
+/// widgets in declaration order. A name that's neither is left out. The
+/// first line has a built-in's syntax; the second, its name and what this
+/// project declares alone. A widget's two are the same, since only this
+/// project says what it is.
+fn directive_lines(
+    model: &ContentModel,
+    used: &std::collections::BTreeSet<String>,
+) -> Vec<(String, String)> {
     let code = |names: Vec<&str>| -> String {
         names
             .into_iter()
@@ -404,15 +499,27 @@ fn directive_lines(model: &ContentModel, used: &std::collections::BTreeSet<Strin
             .collect::<Vec<_>>()
             .join(", ")
     };
-    let mut lines: Vec<String> = Builtin::ALL
+    let example = available_example(model);
+    let mut lines: Vec<(String, String)> = Builtin::ALL
         .into_iter()
         .filter(|b| used.contains(b.name()))
         .map(|b| {
-            let line = builtin_line(b);
+            let line = match b {
+                Builtin::Available => available_line(Some(&example)),
+                _ => builtin_line(b),
+            };
             let declared = match b {
+                Builtin::Available if !example.is_empty() => {
+                    Some(format!("targets such as `{example}`"))
+                }
                 Builtin::Variant if !model.dimensions.is_empty() => Some(format!(
                     "dimensions {}",
-                    code(model.dimensions.iter().map(|d| d.name.as_str()).collect())
+                    model
+                        .dimensions
+                        .iter()
+                        .map(dimension_values)
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )),
                 Builtin::Note => {
                     let types: Vec<&str> = model.notes.iter().map(|n| n.name.as_str()).collect();
@@ -422,11 +529,21 @@ fn directive_lines(model: &ContentModel, used: &std::collections::BTreeSet<Strin
                     "sources {}",
                     code(model.sources.iter().map(|s| s.name.as_str()).collect())
                 )),
+                Builtin::Operation if !model.apis.is_empty() => Some(format!(
+                    "APIs {}",
+                    code(model.apis.iter().map(|a| a.name.as_str()).collect())
+                )),
                 _ => None,
             };
+            let name = format!("`@{}`", b.name());
             match declared {
-                Some(declared) => format!("{line}. Here: {declared}"),
-                None => line,
+                // `@available`'s line has its example already.
+                Some(declared) if b == Builtin::Available => (line, format!("{name}: {declared}")),
+                Some(declared) => (
+                    format!("{line}. Here: {declared}"),
+                    format!("{name}: {declared}"),
+                ),
+                None => (line, name),
             }
         })
         .collect();
@@ -435,7 +552,10 @@ fn directive_lines(model: &ContentModel, used: &std::collections::BTreeSet<Strin
             .widgets
             .iter()
             .filter(|w| used.contains(&w.schema.name))
-            .map(|w| widget_line(&w.schema)),
+            .map(|w| {
+                let line = widget_line(&w.schema);
+                (line.clone(), line)
+            }),
     );
     lines
 }
@@ -451,10 +571,7 @@ fn builtin_line(builtin: Builtin) -> String {
         Builtin::Variant => "`@variant {<dimension>=<value>}:` before each arm, and one `@end` \
                              after the last: content that differs by a dimension"
             .to_owned(),
-        Builtin::Available => "`@available: <spec>` under a heading or above a block: where it \
-                               applies, as targets with an optional state and version \
-                               (`cloud, self-managed preview 3.4`), or a feature's key"
-            .to_owned(),
+        Builtin::Available => available_line(None),
         Builtin::Note => "`@note {type=<type>}: <text>`, or `@note:` … `@end` around several \
                           blocks: a callout"
             .to_owned(),
@@ -483,7 +600,73 @@ fn builtin_line(builtin: Builtin) -> String {
                              above a paragraph: the section's summary, its own text, which \
                              the page doesn't show, or the paragraph, which it does"
             .to_owned(),
+        Builtin::Operation => "`@operation: <spec>#<operationId>`, a link to an operation of an \
+                               API `[apis]` declares: its method, path, and summary, linked to \
+                               its reference"
+            .to_owned(),
     }
+}
+
+/// The line for `@available`, with `example`, a spec, after its targets; or,
+/// with none, the language's own example.
+fn available_line(example: Option<&str>) -> String {
+    let example = match example {
+        Some("") => String::new(),
+        Some(spec) => format!(" (`{spec}`)"),
+        None => " (`cloud, self-managed preview 3.4`)".to_owned(),
+    };
+    format!(
+        "`@available: <spec>` under a heading or above a block: where it applies, as targets \
+         with an optional state and version{example}, or a feature's key"
+    )
+}
+
+/// A spec of the project's own targets: two values of the dimension
+/// availability is most likely about, the first with a value that has
+/// release lines or is versionless, or else the first dimension. Empty when
+/// it has no dimension values.
+fn available_example(model: &ContentModel) -> String {
+    let versioned = |d: &&ascribe_model::Dimension| {
+        d.implicit
+            || d.values
+                .iter()
+                .any(|v| v.versionless || model.releases.iter().any(|r| r.target == v.value))
+    };
+    let dimension = model
+        .dimensions
+        .iter()
+        .find(versioned)
+        .or_else(|| model.dimensions.first());
+    dimension.map_or_else(String::new, |d| {
+        d.values
+            .iter()
+            .take(2)
+            .map(|v| v.value.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    })
+}
+
+/// The most values a dimension's line names.
+const VALUES_SHOWN: usize = 6;
+
+/// A dimension and its values, as the directives' lines name them:
+/// `` `pm` (`npm`, `pnpm`) ``, its first [`VALUES_SHOWN`] values and `…` when
+/// there are more.
+fn dimension_values(dimension: &ascribe_model::Dimension) -> String {
+    let mut values: Vec<String> = dimension
+        .values
+        .iter()
+        .take(VALUES_SHOWN)
+        .map(|v| format!("`{}`", v.value))
+        .collect();
+    if dimension.values.len() > VALUES_SHOWN {
+        values.push("…".to_owned());
+    }
+    if values.is_empty() {
+        return format!("`{}`", dimension.name);
+    }
+    format!("`{}` ({})", dimension.name, values.join(", "))
 }
 
 fn widget_line(schema: &DirectiveSchema) -> String {
@@ -713,8 +896,82 @@ mod tests {
         }
     }
 
+    /// The content model of a project with a dimension and `n` page types,
+    /// each with a purpose, a template, and a title, and its page, which
+    /// uses `@variant` and `@steps`.
+    fn kinds(n: usize) -> (String, &'static str) {
+        let mut model = String::from(
+            "spec = \"0.1\"\n\n[dimensions.pm]\nlabel = \"Package manager\"\n\
+             values = [\"npm\", \"pnpm\"]\n",
+        );
+        for i in 0..n {
+            model.push_str(&format!(
+                "\n[types.kind-{i}]\npurpose = \"A page about one kind of thing.\"\n\
+                 template = \"templates/kind-{i}.md\"\n\n\
+                 [types.kind-{i}.frontmatter]\ntitle = \"string\"\n"
+            ));
+        }
+        let page = "---\ntype: kind-0\ntitle: Steps\n---\n\n@steps\n1. One.\n2. Two.\n\n\
+                    @variant {pm=npm}:\nRun npm.\n@variant {pm=pnpm}:\nRun pnpm.\n@end\n";
+        (model, page)
+    }
+
+    /// The rules of [`kinds`]`(n)`.
+    fn kinds_rules(n: usize) -> String {
+        let (model, page) = kinds(n);
+        rules_of(&model, &[("docs/steps.md", page)])
+    }
+
+    /// The lines of the rules for the page types of [`kinds`].
+    fn kind_lines(rules: &str) -> Vec<&str> {
+        rules
+            .lines()
+            .filter(|l| l.starts_with("- `kind-"))
+            .collect()
+    }
+
     #[test]
-    fn the_type_lines_are_cut_first_and_say_where_the_rest_are() {
+    fn a_directive_s_syntax_is_cut_before_any_of_a_type_s_line() {
+        let whole = "- `@variant {<dimension>=<value>}:`";
+        assert!(kinds_rules(1).contains(whole));
+        let n = (1..100).find(|&n| !kinds_rules(n).contains(whole)).unwrap();
+        let rules = kinds_rules(n);
+        assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
+        // The directives keep their names and what the project declares.
+        assert!(rules.contains("\n- `@steps`\n"), "{rules}");
+        assert!(
+            rules.contains("\n- `@variant`: dimensions `pm` (`npm`, `pnpm`)\n"),
+            "{rules}"
+        );
+        assert!(rules.contains("`references/directives.md`"), "{rules}");
+        // Every type's line is whole.
+        let lines = kind_lines(&rules);
+        assert_eq!(lines.len(), n, "{rules}");
+        assert!(
+            lines
+                .iter()
+                .all(|l| l.contains("(template `templates/kind-")
+                    && l.contains("frontmatter `title` (string, required)")),
+            "{rules}"
+        );
+    }
+
+    #[test]
+    fn a_type_keeps_its_name_and_purpose_after_the_rest_of_its_line_is_cut() {
+        let whole = "(template `templates/kind-";
+        let n = (1..100).find(|&n| !kinds_rules(n).contains(whole)).unwrap();
+        let rules = kinds_rules(n);
+        assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
+        let lines = kind_lines(&rules);
+        assert_eq!(lines.len(), n, "{rules}");
+        assert_eq!(lines[0], "- `kind-0`: A page about one kind of thing");
+        // What the skill says too went first, and the directives are short.
+        assert!(!rules.contains(SITE_FORM_SENTENCE), "{rules}");
+        assert!(rules.contains("\n- `@steps`\n"), "{rules}");
+    }
+
+    #[test]
+    fn the_type_lines_are_cut_last_and_say_where_the_rest_are() {
         let mut model = String::from("spec = \"0.1\"\n");
         for i in 0..30 {
             model.push_str(&format!(
@@ -727,17 +984,26 @@ mod tests {
         let page = "---\ntype: kind-0\ntitle: Steps\n---\n\n@steps\n1. One.\n2. Two.\n";
         let rules = rules_of(&model, &[("docs/kind-0/steps.md", page)]);
         assert!(rules.chars().count() <= RULES_BUDGET, "{rules}");
-        let kept = rules.lines().filter(|l| l.starts_with("- `kind-")).count();
-        assert!(kept > 0 && kept < 30, "{kept} kept:\n{rules}");
+        let kept = kind_lines(&rules);
+        assert!(kept.len() > 1 && kept.len() < 30, "{rules}");
+        assert!(
+            kept[0].starts_with("- `kind-0`: A page about the 0th"),
+            "{rules}"
+        );
         assert!(
             rules.contains(&format!(
                 "- …and {} more: `ascribe model --section types`",
-                30 - kept
+                30 - kept.len()
             )),
             "{rules}"
         );
-        // What's after the types is whole.
+        // The directives went before the types did.
+        assert!(
+            rules.contains("- …and 1 more, in the directive reference below"),
+            "{rules}"
+        );
+        assert!(!rules.contains("`@steps`"), "{rules}");
+        // The phrases are whole.
         assert!(rules.contains("- `{product}`: Lantern"), "{rules}");
-        assert!(rules.contains("- `@steps` on the line above"), "{rules}");
     }
 }

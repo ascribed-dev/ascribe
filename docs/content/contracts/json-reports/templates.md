@@ -1,10 +1,16 @@
 ---
 type: reference
 title: "JSON reports: `ascribe templates`"
-description: "The JSON Schemas of what ascribe templates writes with --format json."
+nav-label: "`ascribe templates`"
+description: "The JSON Schemas of what `ascribe templates` writes with `--format json`."
 ---
 
 Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
+
+## `ascribe templates list`
+@available: ascribe planned
+
+@include: ../../_generated/json-templates-list.md
 
 ## `ascribe templates eject`
 
@@ -13,3 +19,7 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 ## `ascribe templates status`
 
 @include: ../../_generated/json-templates-status.md
+
+## `ascribe new`
+
+@include: ../../_generated/json-new.md

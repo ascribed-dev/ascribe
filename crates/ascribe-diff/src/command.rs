@@ -2,9 +2,14 @@
 //! working tree against a base revision, from choosing the builds to the
 //! finished report.
 
+use std::borrow::Borrow;
+use std::path::Path;
+use std::sync::Arc;
+
 use ascribe_check::{count_errors, select_builds};
 use ascribe_core::{RelPath, percent_decode};
-use ascribe_resolve::Project;
+use ascribe_model::ContentModel;
+use ascribe_resolve::{FileKind, Project};
 
 use crate::drift::{BaseProject, drift_with, read_base};
 use crate::html::{
@@ -37,7 +42,7 @@ pub struct ProjectDiff {
     repo: Repository,
     /// The base revision and its source index, when the project exists there.
     before: BaseProject,
-    now: Project,
+    now: Arc<Project>,
     /// The memo files about the working tree's files, committed and
     /// personal, placed against it.
     memos: Vec<MemoPlace>,
@@ -56,7 +61,7 @@ impl std::fmt::Debug for ProjectDiff {
 }
 
 impl ProjectDiff {
-    /// Writes the prompts, and the HTML report's, for an agent in `here`,
+    /// Writes the prompts, and the HTML preview's, for an agent in `here`,
     /// the folder the command was run in, as [`Context::seen_from`] has it.
     pub fn seen_from(&mut self, here: std::path::PathBuf) {
         self.here = Some(here);
@@ -135,6 +140,20 @@ impl ProjectDiff {
         })
     }
 
+    /// Whether the build `build` publishes the page at `path` now. A page a
+    /// build publishes on one side only is in its report, as added or
+    /// removed, so one it publishes now and isn't in its report didn't
+    /// change there.
+    pub fn publishes(&self, build: &str, path: &str) -> bool {
+        let (Some(build), Ok(path)) = (self.now.model().build(build), RelPath::parse(path)) else {
+            return false;
+        };
+        self.now
+            .file(&path)
+            .is_some_and(|f| f.kind == FileKind::Page)
+            && self.now.dropped(&path, build).is_none()
+    }
+
     /// A block's lines as they're written, in the base when `base` is true
     /// and in the working tree when it isn't. `None` when the file isn't in
     /// that version, or doesn't have those lines.
@@ -183,18 +202,77 @@ pub fn diff_project(
     project: &ascribe_check::Project,
     options: &DiffOptions<'_>,
 ) -> Result<ProjectDiff, DiffError> {
+    let loaded = diff_loading(project.root(), options, || {
+        Ok::<_, std::convert::Infallible>(project)
+    });
+    match loaded {
+        Ok((_, diff)) => diff,
+        Err(never) => match never {},
+    }
+}
+
+/// [`diff_project`] of the project `load` loads, the project at `root`: the
+/// base revision is found first, and read and indexed while `load` runs.
+/// Returns what `load` loaded, with the comparison.
+///
+/// # Errors
+///
+/// `load`'s error, before anything else; then as [`diff_project`].
+pub fn diff_loading<P, E>(
+    root: &Path,
+    options: &DiffOptions<'_>,
+    load: impl FnOnce() -> Result<P, E>,
+) -> Result<(P, Result<ProjectDiff, DiffError>), E>
+where
+    P: Borrow<ascribe_check::Project>,
+{
+    // Finding the base runs `git` and is quick; its error is reported after
+    // the load's and the builds'.
+    let found;
+    let ahead = match Repository::discover(root)
+        .and_then(|repo| Ok((repo.base(options.base, options.base_exact)?, repo)))
+    {
+        Ok(base_and_repo) => {
+            found = base_and_repo;
+            Ok(&found)
+        }
+        Err(e) => Err(e),
+    };
+    std::thread::scope(|scope| {
+        let ahead = ahead.map(|found @ (base, repo)| {
+            (found, scope.spawn(move || read_base(repo, base.compared())))
+        });
+        let loaded = load()?;
+        let diff = compare_loaded(loaded.borrow(), options, ahead);
+        Ok((loaded, diff))
+    })
+}
+
+/// A base and the repository it's in, with the thread reading it.
+type Ahead<'scope, 'found> = (
+    &'found (Base, Repository),
+    std::thread::ScopedJoinHandle<'scope, Result<BaseProject, DiffError>>,
+);
+
+/// The rest of [`diff_loading`], once the project is loaded.
+fn compare_loaded(
+    project: &ascribe_check::Project,
+    options: &DiffOptions<'_>,
+    ahead: Result<Ahead<'_, '_>, DiffError>,
+) -> Result<ProjectDiff, DiffError> {
     let builds = select_builds(project, options.builds)?;
-    let repo = Repository::discover(project.root())?;
-    let base = repo.base(options.base, options.base_exact)?;
+    let ((base, repo), before) = ahead?;
     let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
     // Counting the errors is a full check of the working tree, the longest
     // part: it runs beside everything else, as reading and indexing the base
-    // does beside indexing the working tree.
+    // does beside loading the working tree.
     let (before, now, diffs, errors) = std::thread::scope(|scope| {
         let errors = scope.spawn(|| count_errors(project, options.builds).unwrap_or(0));
-        let before = scope.spawn(|| read_base(&repo, base.compared()));
-        let now = project.index();
+        let renames =
+            scope.spawn(|| crate::renames(repo, base.compared(), &project.layout().content_root));
+        let now = project.index().clone();
         let before = joined(before)?;
+        let renames = joined(renames)?;
         let before_side = before.as_ref().map(|(revision, project)| Side {
             project,
             model_text: &revision.model_text,
@@ -203,15 +281,15 @@ pub fn diff_project(
             project: &now,
             model_text: project.model_text(),
         };
-        let diffs = compare_builds(before_side, now_side, &names);
+        let diffs = compare_builds(before_side, now_side, &names, &renames);
         Ok::<_, DiffError>((before, now, diffs, joined(errors)))
     })?;
-    let mut report = Report::new(&repo, &base, diffs);
+    let mut report = Report::new(repo, base, diffs);
     report.working_tree_errors = errors;
     let memos = MemoPlace::all(&now, project.all_memos());
     Ok(ProjectDiff {
         report,
-        repo,
+        repo: repo.clone(),
         before,
         memos,
         now,
@@ -253,51 +331,85 @@ pub fn drift_project(
     project: &ascribe_check::Project,
     options: &DriftOptions<'_>,
 ) -> Result<DriftReport, DiffError> {
-    let builds = select_builds(project, options.builds)?;
-    let repo = Repository::discover(project.root())?;
-    let base: Base = repo.base(options.base, options.base_exact)?;
-    let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    // The base's pages are read only when an example changed, which takes
-    // the working tree's index to know. When `git diff` lists a file in a
-    // source's folder, one likely did: the base is read beside the index
-    // then, instead of after it. A listing that fails is listed again, and
-    // reported, only when it's needed, as `drift` does.
-    let changes = repo.changed_files(base.compared()).ok();
-    let likely = changes
-        .as_ref()
-        .is_some_and(|changes| in_sources(project, &repo, changes.keys()));
+    let loaded = drift_loading(project.root(), project.model(), options, || {
+        Ok::<_, std::convert::Infallible>(project)
+    });
+    match loaded {
+        Ok(report) => report,
+        Err(never) => match never {},
+    }
+}
+
+/// [`drift_project`] of the project `load` loads, from the content model
+/// `model` of the project at `root`: the base revision is found, and its
+/// pages read when an example likely changed, while `load` runs.
+///
+/// # Errors
+///
+/// `load`'s error, before anything else; then as [`drift_project`].
+pub fn drift_loading<P, E>(
+    root: &Path,
+    model: &ContentModel,
+    options: &DriftOptions<'_>,
+    load: impl FnOnce() -> Result<P, E>,
+) -> Result<Result<DriftReport, DiffError>, E>
+where
+    P: Borrow<ascribe_check::Project>,
+{
     std::thread::scope(|scope| {
-        let early = likely.then(|| scope.spawn(|| read_base(&repo, base.compared())));
-        let now_project = project.index();
-        let now = Side {
-            project: &now_project,
-            model_text: project.model_text(),
-        };
-        drift_with(
-            &repo,
-            &base,
-            now,
-            project.file_system(),
-            &names,
-            changes,
-            || match early {
-                Some(thread) => joined(thread),
-                None => read_base(&repo, base.compared()),
-            },
-        )
+        // The base's pages are read only when an example changed, which takes
+        // the working tree's index to know. When `git diff` lists a file in a
+        // source's folder, one likely did: the base is read beside the load
+        // then, instead of after it. A listing that fails is listed again, and
+        // reported, only when it's needed, as `drift` does.
+        let ahead = scope.spawn(|| {
+            let repo = Repository::discover(root)?;
+            let base = repo.base(options.base, options.base_exact)?;
+            let changes = repo.changed_files(base.compared()).ok();
+            let likely = changes
+                .as_ref()
+                .is_some_and(|changes| in_sources(model, &repo, changes.keys()));
+            let early = likely.then(|| read_base(&repo, base.compared()));
+            Ok::<_, DiffError>((repo, base, changes, early))
+        });
+        // A load that fails leaves the thread to finish, unread.
+        let loaded = load()?;
+        let project = loaded.borrow();
+        let report = select_builds(project, options.builds)
+            .map_err(DiffError::from)
+            .and_then(|builds| {
+                let (repo, base, changes, early) = joined(ahead)?;
+                let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
+                let now = Side {
+                    project: project.index(),
+                    model_text: project.model_text(),
+                };
+                drift_with(
+                    &repo,
+                    &base,
+                    now,
+                    project.file_system(),
+                    &names,
+                    changes,
+                    || match early {
+                        Some(read) => read,
+                        None => read_base(&repo, base.compared()),
+                    },
+                )
+            });
+        Ok(report)
     })
 }
 
 /// Whether any of these files, by path from the repository's root, is in
 /// the folder of one of the project's sources (where code files are).
 fn in_sources<'a>(
-    project: &ascribe_check::Project,
+    model: &ContentModel,
     repo: &Repository,
     mut files: impl Iterator<Item = &'a RelPath>,
 ) -> bool {
     let project_dir = repo.project_dir();
-    let folders: Vec<RelPath> = project
-        .model()
+    let folders: Vec<RelPath> = model
         .sources
         .iter()
         .filter_map(|source| project_dir.join(&source.path).ok())

@@ -4,7 +4,8 @@ use std::cmp::Ordering;
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Name, Version};
 use ascribe_core::{
-    AttributeSchema, Date, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span, builtin_schemas,
+    AttributeSchema, Date, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span,
+    builtin_schemas, diagnostics,
 };
 
 use crate::pattern::Pattern;
@@ -75,8 +76,6 @@ pub struct ContentModel {
     /// `[[intended]]`: the acknowledged problems about an entry or an image
     /// (SPEC §4.9), in declaration order.
     pub intended: Vec<Intended>,
-    /// `[permalinks]`: the retired permalinks and the aliases.
-    pub permalinks: ModelPermalinks,
     /// `[crawlers]`: what the project says to crawlers.
     pub crawlers: Crawlers,
     /// `[listing]`: how the site's, a folder's, or a type's pages are listed.
@@ -192,9 +191,17 @@ impl Checks {
             .and_then(|s| s.level)
     }
 
-    /// Whether the project turns a check off.
+    /// Whether the project names a check, with a level or a table.
+    pub fn names(&self, slug: DiagnosticSlug) -> bool {
+        self.settings.iter().any(|s| s.slug == slug)
+    }
+
+    /// Whether a check is off: the project turns it off, or it's off by
+    /// default ([`diagnostics::OFF_BY_DEFAULT`]) and the project doesn't
+    /// name it.
     pub fn is_off(&self, slug: DiagnosticSlug) -> bool {
         self.level(slug) == Some(CheckLevel::Off)
+            || (diagnostics::OFF_BY_DEFAULT.contains(&slug) && !self.names(slug))
     }
 
     /// The `limit` the project sets for a check, if it sets one: a number
@@ -544,83 +551,6 @@ impl ContentModel {
     }
 }
 
-/// `[permalinks]`: the names `ascribe.toml` gives somewhere to lead that
-/// no heading or page declares (SPEC §7.6). Each name is in one of them.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ModelPermalinks {
-    /// `[permalinks.retired]`, in declaration order.
-    pub retired: Vec<RetiredPermalink>,
-    /// `[permalinks.aliases]`, in declaration order.
-    pub aliases: Vec<PermalinkAlias>,
-}
-
-/// A permalink retired on purpose, in `[permalinks.retired]`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RetiredPermalink {
-    /// The name.
-    pub name: String,
-    /// Why it was retired, as the author wrote it.
-    pub reason: String,
-    /// Where its address leads now, written as a link from the content
-    /// root is: a page's content path, and `#` and a heading's id.
-    pub to: Option<String>,
-    /// The name's key, in `ascribe.toml`.
-    pub span: Span,
-    /// The `to` value.
-    pub to_span: Option<Span>,
-}
-
-/// A second name for a permalink, in `[permalinks.aliases]`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PermalinkAlias {
-    /// The alias.
-    pub name: String,
-    /// The name it leads to: a permalink, or another alias.
-    pub target: String,
-    /// The alias's key, in `ascribe.toml`.
-    pub span: Span,
-    /// The target's value.
-    pub target_span: Span,
-}
-
-impl ModelPermalinks {
-    /// Whether `ascribe.toml` retires or aliases nothing.
-    pub fn is_empty(&self) -> bool {
-        self.retired.is_empty() && self.aliases.is_empty()
-    }
-
-    /// The retired permalink `name`.
-    pub fn retired(&self, name: &str) -> Option<&RetiredPermalink> {
-        self.retired.iter().find(|r| r.name == name)
-    }
-
-    /// The alias `name`.
-    pub fn alias(&self, name: &str) -> Option<&PermalinkAlias> {
-        self.aliases.iter().find(|a| a.name == name)
-    }
-
-    /// The name the alias `name` ends at, following aliases of aliases: a
-    /// name that isn't an alias. `None` when `name` isn't an alias, or its
-    /// aliases make a loop.
-    pub fn alias_end<'a>(&'a self, name: &'a str) -> Option<&'a str> {
-        let mut at = self.alias(name)?;
-        let mut seen = vec![name];
-        loop {
-            let next = at.target.as_str();
-            if seen.contains(&next) {
-                return None;
-            }
-            match self.alias(next) {
-                Some(further) => {
-                    seen.push(next);
-                    at = further;
-                }
-                None => return Some(next),
-            }
-        }
-    }
-}
-
 /// One check named in `[checks]`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CheckSetting {
@@ -714,7 +644,8 @@ pub struct Api {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ApiReference {
     /// Redoc's page at `at` (`{ renderer = "redoc", at = "…" }`): an
-    /// operation's address is `<at>#operation/<operationId>`.
+    /// operation's address is `<at>#operation/<operationId>`, and one with
+    /// no id's `<at>#paths/<pointer>/<method>`, Redoc 3's.
     Redoc {
         /// The page's address, relative to `[consumer] base-path`, or
         /// absolute.
@@ -741,6 +672,24 @@ impl ApiReference {
             ApiReference::Template(template) => template
                 .replace("{operationId}", &encode_component(operation_id))
                 .replace("{tag}", &encode_component(tag.unwrap_or_default())),
+        }
+    }
+
+    /// The address of an operation with no id, by its method and path, before
+    /// it's joined to the base path: Redoc 3's, `<at>#paths/<pointer>/<method>`,
+    /// the path as a JSON pointer (`~1` for `/`, `~0` for `~`), percent-encoded.
+    /// None for a template, which has no placeholder for it.
+    pub fn path_address(&self, method: &str, path: &str) -> Option<String> {
+        match self {
+            ApiReference::Redoc { at } => {
+                let pointer = path.replace('~', "~0").replace('/', "~1");
+                Some(format!(
+                    "{at}#paths/{}/{}",
+                    encode_component(&pointer),
+                    encode_component(method)
+                ))
+            }
+            ApiReference::Template(_) => None,
         }
     }
 }
@@ -1469,6 +1418,11 @@ pub struct Build {
     /// declared and each other `<build>@<line>`. `None` for a build that
     /// isn't versioned.
     pub line: Option<BuildLine>,
+    /// Whether the build publishes drafts (SPEC §2.1) as it would any other
+    /// page. `false` for every build the content model declares: a draft is
+    /// built nowhere. `check` sets it on the build it checks content no
+    /// build publishes with.
+    pub drafts: bool,
 }
 
 /// One live line of a versioned build.
@@ -1777,6 +1731,27 @@ impl ContentModel {
             l.current = false;
         }
         Some(made)
+    }
+
+    /// Whether `name` is the build of a line `[releases]` archives:
+    /// `<build>@<line>`, where `<build>` is declared, versioned by a target
+    /// whose `archived` lists the line. Such a build is gone on purpose.
+    pub fn is_archived_line_build(&self, name: &str) -> bool {
+        let Some((build, line)) = name.rsplit_once('@') else {
+            return false;
+        };
+        let Ok(line) = ascribe_core::availability::parse_version(line, 0) else {
+            return false;
+        };
+        self.builds
+            .iter()
+            .filter(|b| b.declared_name() == build && b.line.is_some())
+            .filter_map(|b| self.releases_of(b.versions.as_deref()?))
+            .any(|r| {
+                r.archived
+                    .iter()
+                    .any(|a| a.line.components == line.components)
+            })
     }
 
     /// `[releases.<target>]` for a target, when the project lists its lines.

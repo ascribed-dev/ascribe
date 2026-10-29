@@ -245,7 +245,9 @@ fn an_entry_for_a_check_the_editor_doesnt_run_isnt_stale() {
     );
     // What `ascribe baseline write` writes: every advice of the whole check,
     // `image-unused` among them, which the editor doesn't run.
-    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).unwrap();
+    let project = ascribe_check::load(&f.path("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .unwrap();
     let found = ascribe_check::diagnose(&project, &[]).unwrap();
     let written = ascribe_check::baseline::write(&project, None, &found.diagnostics);
     assert!(written.text.contains("image-unused "), "{}", written.text);

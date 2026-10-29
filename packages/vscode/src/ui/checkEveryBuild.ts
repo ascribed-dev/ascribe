@@ -11,16 +11,19 @@ import {
   countedIn,
   panelProblems,
   quickFixes,
+  serverFixes,
   type Counted,
   type EditorRange,
   type Found,
   type PanelProblem,
+  type QuickFix,
+  type ServerDiagnostic,
 } from "../everyBuild.js";
 import { isAscribeSource } from "../problems.js";
 import { comparable, owningProject, type Project } from "../projects.js";
 import { changedSince, projectFiles, readKept, type KeptCheck } from "../lastCheck.js";
 import type { ProjectRegistry } from "../registry.js";
-import type { CheckReport, Summary } from "../shapes.js";
+import type { AddressesParams, BaseInfo, CheckReport, Summary } from "../shapes.js";
 import { STATE_NAMES } from "./describe.js";
 
 export const CHECK_EVERY_BUILD_COMMAND = "ascribe.checkEveryBuild";
@@ -50,6 +53,8 @@ export interface EveryBuildApi {
   whenRead(): Promise<void>;
   /** What's stored of the last check of the project in `folder`, as it's stored. */
   kept(folder: string): unknown;
+  /** What the server of the project in `folder` last found comparing its addresses, as the Project view counts it. */
+  addresses(folder: string): AddressesResult;
   /** Stores `value` as the last check of the project in `folder`. */
   keep(folder: string, value: unknown): Thenable<void>;
 }
@@ -80,9 +85,40 @@ interface Checked {
 
 const NOTHING_COUNTED: Record<Counted, Found> = {
   examples: { count: 0, first: null },
-  reviews: { count: 0, first: null },
+  rechecks: { count: 0, first: null },
   permalinks: { count: 0, first: null },
 };
+
+/**
+ * What a project's server last found comparing its addresses with the
+ * base's, between checks: its problems in the Problems panel until a check
+ * of every build replaces them.
+ */
+interface Live {
+  /** When it said so, in milliseconds since the epoch. */
+  at: number;
+  params: AddressesParams;
+  /** Its problems, each with its fixes. */
+  problems: { diagnostic: vscode.Diagnostic; fixes: QuickFix[] }[];
+  /** `ascribe.addresses`, while its problems are in the panel. */
+  shown: vscode.Uri | undefined;
+}
+
+/** What a project's server found comparing its addresses with the base's, as the Project view counts it. */
+export type AddressesResult =
+  /** The server hasn't said: it's starting, or it isn't running. */
+  | { kind: "unknown" }
+  /** The project has no `ascribe.addresses`: nothing is compared. */
+  | { kind: "off" }
+  | {
+      kind: "made";
+      /** When the server said so, in milliseconds since the epoch. */
+      at: number;
+      /** How many pages' addresses are lost; `null` when the base couldn't be read, or the file doesn't. */
+      lost: number | null;
+      /** The base compared with. */
+      base: BaseInfo | null;
+    };
 
 /** A project's check of every build, as the Project view counts it. */
 export type EveryBuildResult =
@@ -117,6 +153,12 @@ export type EveryBuildResult =
  * read back when the Project view first shows the project in a window:
  * current, with its problems back in the panel, if no file it follows was
  * added, removed, or modified since it started; out of date if one was.
+ *
+ * Between checks, the language server compares the addresses with the
+ * base's (`ascribe/addresses`), after each save and change on disk, and
+ * its problems at `ascribe.addresses` take the place of the last check's
+ * there: they're the same comparison's, newer. A check replaces them in
+ * turn when it runs.
  */
 export class EveryBuildChecks implements vscode.Disposable {
   private readonly collection = vscode.languages.createDiagnosticCollection("ascribe-every-build");
@@ -132,6 +174,8 @@ export class EveryBuildChecks implements vscode.Disposable {
   private readonly comparing = new Map<string, Checked | undefined>();
   /** The comparisons under way. */
   private readonly reading = new Set<Promise<void>>();
+  /** What each project's server last found of its addresses, by folder. */
+  private readonly live = new Map<string, Live>();
 
   /**
    * @param storage The workspace's storage, where each project's last check is kept.
@@ -170,6 +214,7 @@ export class EveryBuildChecks implements vscode.Disposable {
         await Promise.all(this.reading);
       },
       kept: (folder) => this.keptChecks()[comparable(folder)],
+      addresses: (folder) => this.addressesOf(folder),
       keep: (folder, value) =>
         this.storage.update(KEPT, { ...this.keptChecks(), [comparable(folder)]: value }),
     };
@@ -200,8 +245,22 @@ export class EveryBuildChecks implements vscode.Disposable {
             void this.store(key, undefined);
           }
         }
+        const folders = new Set(this.projects.projects.map((p) => comparable(p.folder)));
+        for (const key of this.live.keys()) {
+          if (!folders.has(key)) {
+            this.hideLive(key);
+            this.live.delete(key);
+          }
+        }
       }),
       vscode.commands.registerCommand(CHECK_EVERY_BUILD_COMMAND, () => this.queue()),
+      this.projects.onDidChangeAddresses((server) => this.addressesChanged(server)),
+      this.projects.onDidChangeState((server) => {
+        // A server that isn't running has nothing current to say.
+        if (server.state !== "running" && this.live.has(comparable(server.project.folder))) {
+          this.changed.fire();
+        }
+      }),
       // `ascribe.addresses` isn't a file the language server serves, so the
       // fixes of what the check reports there are offered from the check.
       vscode.languages.registerCodeActionsProvider(
@@ -247,7 +306,91 @@ export class EveryBuildChecks implements vscode.Disposable {
         }
       }
     }
+    for (const live of this.live.values()) {
+      if (!live.shown || comparable(live.shown.fsPath) !== file) continue;
+      for (const { diagnostic, fixes } of live.problems) {
+        const shown = context.diagnostics.find(
+          (d) =>
+            codeOf(d) === codeOf(diagnostic) &&
+            d.message === diagnostic.message &&
+            d.range.isEqual(diagnostic.range),
+        );
+        if (!shown) continue;
+        for (const fix of fixes) {
+          const action = new vscode.CodeAction(fix.title, vscode.CodeActionKind.QuickFix);
+          action.diagnostics = [shown];
+          action.isPreferred = fix.safe;
+          action.edit = new vscode.WorkspaceEdit();
+          for (const edit of fix.edits)
+            action.edit.replace(document.uri, toRange(edit.range), edit.newText);
+          actions.push(action);
+        }
+      }
+    }
     return actions;
+  }
+
+  /**
+   * The project's server said what it found comparing the addresses: its
+   * problems go in the panel at `ascribe.addresses`, in place of the last
+   * check's there, which are older.
+   */
+  private addressesChanged(server: ProjectServer): void {
+    const params = server.addresses;
+    if (!params) return;
+    const key = comparable(server.project.folder);
+    this.hideLive(key);
+    const source = this.projects.diagnosticSource(server.project);
+    const live: Live = {
+      at: Date.now(),
+      params,
+      problems: (params.diagnostics as ServerDiagnostic[]).map((d) => ({
+        diagnostic: fromServer(d, source),
+        fixes: serverFixes(d),
+      })),
+      shown: undefined,
+    };
+    if (params.uri !== null) {
+      const uri = vscode.Uri.parse(params.uri);
+      const checked = this.checked.get(key);
+      for (const file of checked?.files ?? []) {
+        if (comparable(vscode.Uri.parse(file).fsPath) === comparable(uri.fsPath)) {
+          checked?.files.delete(file);
+          this.collection.delete(vscode.Uri.parse(file));
+        }
+      }
+      this.collection.set(
+        uri,
+        live.problems.map((p) => p.diagnostic),
+      );
+      live.shown = uri;
+    }
+    this.live.set(key, live);
+    this.changed.fire();
+  }
+
+  /** Takes the server's problems about the addresses out of the panel: a check of every build replaces them. */
+  private hideLive(key: string): void {
+    const live = this.live.get(key);
+    if (!live?.shown) return;
+    this.collection.delete(live.shown);
+    live.shown = undefined;
+  }
+
+  /** What the server of the project in `folder` last found comparing its addresses. */
+  addressesOf(folder: string): AddressesResult {
+    const key = comparable(folder);
+    const server = this.projects.servers.find((s) => comparable(s.project.folder) === key);
+    const live = this.live.get(key);
+    if (!server?.addresses || !live) return { kind: "unknown" };
+    const { params } = live;
+    if (params.uri === null) return { kind: "off" };
+    return {
+      kind: "made",
+      at: live.at,
+      lost: params.base === null ? null : params.lost,
+      base: params.base,
+    };
   }
 
   /**
@@ -358,6 +501,8 @@ export class EveryBuildChecks implements vscode.Disposable {
     const texts = await readTexts(project.folder, report);
     // After the read, so a kept check read back meanwhile goes too.
     this.forget(key);
+    // The check's problems about the addresses are newer than the server's.
+    this.hideLive(key);
     const problems = panelProblems(
       report,
       project.folder,
@@ -531,7 +676,10 @@ export class EveryBuildChecks implements vscode.Disposable {
     if (!this.projects.projects.some((p) => p.config === project.config)) return;
     if (run.current) {
       const source = this.projects.diagnosticSource(project);
+      const live = this.live.get(key)?.shown;
       for (const problem of kept.problems) {
+        // The server's comparison of the addresses since is newer.
+        if (live && comparable(problem.file) === comparable(live.fsPath)) continue;
         const uri = vscode.Uri.file(problem.file);
         this.collection.set(uri, [
           ...(this.collection.get(uri) ?? []),
@@ -661,6 +809,37 @@ async function readTexts(root: string, report: CheckReport): Promise<Map<string,
     }),
   );
   return texts;
+}
+
+/** A diagnostic the server sent in `ascribe/addresses`, for the panel, named with `source`. */
+function fromServer(d: ServerDiagnostic, source: string): vscode.Diagnostic {
+  const severities = [
+    vscode.DiagnosticSeverity.Error,
+    vscode.DiagnosticSeverity.Warning,
+    vscode.DiagnosticSeverity.Information,
+    vscode.DiagnosticSeverity.Hint,
+  ];
+  const diagnostic = new vscode.Diagnostic(
+    toRange(d.range),
+    d.message,
+    severities[(d.severity ?? 1) - 1] ?? vscode.DiagnosticSeverity.Error,
+  );
+  diagnostic.source = source;
+  if (d.code !== undefined) {
+    diagnostic.code = d.codeDescription
+      ? { value: d.code, target: vscode.Uri.parse(d.codeDescription.href) }
+      : d.code;
+  }
+  if (d.relatedInformation && d.relatedInformation.length > 0) {
+    diagnostic.relatedInformation = d.relatedInformation.map(
+      (r) =>
+        new vscode.DiagnosticRelatedInformation(
+          new vscode.Location(vscode.Uri.parse(r.location.uri), toRange(r.location.range)),
+          r.message,
+        ),
+    );
+  }
+  return diagnostic;
 }
 
 function toDiagnostic(problem: PanelProblem, source: string): vscode.Diagnostic {

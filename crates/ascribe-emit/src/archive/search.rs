@@ -1,4 +1,4 @@
-//! An archive's search: the index `ascribe versions archive` writes beside
+//! An archive's search: the index `ascribe versions export` writes beside
 //! the pages, and the script that searches it from the box in each page's
 //! sidebar (decision #502j, `project-docs/decisions/502j-archive.md`).
 //!
@@ -97,7 +97,7 @@ pub(super) fn index_script(pages: &[IndexPage]) -> String {
     // Serializing a struct of strings and numbers can't fail.
     let json = serde_json::to_string(&index).unwrap_or_else(|_| "null".to_owned());
     format!(
-        "/* The search index of an archive, written by `ascribe versions archive`. */\nglobalThis.{INDEX_GLOBAL} = {json};\n"
+        "/* The search index of an archive, written by `ascribe versions export`. */\nglobalThis.{INDEX_GLOBAL} = {json};\n"
     )
 }
 

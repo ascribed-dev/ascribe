@@ -14,7 +14,7 @@
 //! | `summary-missing`, `summary-long` | the page's permalinked headings and its sections' summaries |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //! | `heading-level-skipped` | the page's resolved headings |
-//! | `page-size` | the page's plain Markdown, per build |
+//! | `page-size` | the page's plain Markdown, per build, rendered by the caller's [`PlainMarkdown`] |
 //! | `permalink-duplicate` | every page the build publishes |
 //!
 //! The entry points are [`check_project`], for one build, and
@@ -37,17 +37,16 @@
 //!
 //! A build records only the problems in content it publishes, so
 //! content that *no* build publishes (an arm none of the builds selects, a
-//! page every build drops) would never be checked at page level.
+//! page every build drops, a draft) would never be checked at page level.
 //! [`check_all_builds`] therefore resolves the project once more with a build
-//! that keeps everything (`switch` and `badge`) and reports the problems whose
-//! cause is in content no real build publishes, marked
+//! that keeps everything (`switch` and `badge`, drafts included) and reports
+//! the problems whose cause is in content no real build publishes, marked
 //! [`Diagnostic::unpublished`]. It costs nothing when a build already
-//! keeps everything.
+//! keeps everything and no page is a draft.
 //!
 //! A fragment that no page includes is part of no page, so it has no
 //! page-level diagnostics of its own.
 
-mod bridge;
 mod collect;
 mod permalinks;
 mod size;
@@ -59,7 +58,8 @@ pub const SUMMARY_LIMIT: u64 = 300;
 pub use collect::summary_limit;
 
 pub use size::{
-    DEFAULT_LIMIT as DEFAULT_SIZE_LIMIT, limit as size_limit, markdown_size, thousands,
+    DEFAULT_LIMIT as DEFAULT_SIZE_LIMIT, PlainMarkdown, limit as size_limit, markdown_size,
+    thousands,
 };
 
 use std::cell::RefCell;
@@ -72,8 +72,6 @@ use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage, llms, pages};
 
 use crate::{Diagnostic, Project, check_files_with};
 
-use bridge::Indexed;
-pub(crate) use bridge::held_index;
 pub(crate) use collect::Found;
 use collect::{Identity, LinkProblems, check_page, identity};
 
@@ -120,44 +118,21 @@ pub fn check_all_builds(project: &Project) -> Vec<Diagnostic> {
     out
 }
 
-/// The page-level checks over one indexed project, for checking several
-/// builds without indexing it again.
+/// The page-level checks over one project's source index, for checking
+/// several builds.
 pub struct PageChecker<'p> {
     project: &'p Project,
-    indexed: Indexed<'p>,
+    index: &'p ascribe_resolve::Project,
     links: LinkProblems,
     errors_only: bool,
 }
 
-/// A project's source index as a [`PageChecker`] reads it, made once and
-/// kept, so the checks of a project kept loaded don't index it each time.
-/// It's of the project it was made from, which mustn't change.
-pub struct PageIndex(Indexed<'static>);
-
-impl PageIndex {
-    /// Indexes the project, as [`PageChecker::new`] does.
-    pub fn new(project: &Project) -> PageIndex {
-        PageIndex(Indexed::new(project))
-    }
-}
-
 impl<'p> PageChecker<'p> {
-    /// A checker over `index`, made from `project` by [`PageIndex::new`]:
-    /// the same checks as [`PageChecker::new`]'s, without indexing again.
-    pub fn with_page_index(project: &'p Project, index: &'p PageIndex) -> PageChecker<'p> {
-        PageChecker {
-            project,
-            indexed: index.0.borrowed(),
-            links: RefCell::new(HashMap::new()),
-            errors_only: false,
-        }
-    }
-
-    /// Indexes the project.
+    /// A checker over the project's source index ([`Project::index`]).
     pub fn new(project: &'p Project) -> PageChecker<'p> {
         PageChecker {
             project,
-            indexed: Indexed::new(project),
+            index: project.index(),
             links: RefCell::new(HashMap::new()),
             errors_only: false,
         }
@@ -175,7 +150,7 @@ impl<'p> PageChecker<'p> {
     ) -> PageChecker<'p> {
         PageChecker {
             project,
-            indexed: Indexed::shared(index),
+            index,
             links: RefCell::new(HashMap::new()),
             errors_only: false,
         }
@@ -235,7 +210,7 @@ impl<'p> PageChecker<'p> {
         let router = DefaultRouter::from_consumer(&self.project.model().consumer);
         let found = pages
             .iter()
-            .filter_map(|path| self.indexed.index.resolve_page(path, build, &router))
+            .filter_map(|path| self.index.resolve_page(path, build, &router))
             .flat_map(|page| self.page(build, &page))
             .collect();
         self.finish(vec![(Some(build.name.as_str()), found)])
@@ -245,7 +220,7 @@ impl<'p> PageChecker<'p> {
     /// `files` or include one, transitively: every page-level diagnostic
     /// located in those files or with a related place in them.
     pub fn check_reaching(&self, build: &Build, files: &[RelPath]) -> Vec<Diagnostic> {
-        let index = &self.indexed.index;
+        let index = self.index;
         let mut pages: BTreeSet<RelPath> = BTreeSet::new();
         for file in files {
             pages.insert(file.clone());
@@ -281,9 +256,12 @@ impl<'p> PageChecker<'p> {
             let found = self.found(build, &mut |page| add_published(&mut published, page));
             per_build.push((Some(build.name.as_str()), found));
         }
-        let keeps_everything = model.builds.iter().any(|b| {
-            b.variants == VariantMode::Switch && b.availability == AvailabilityMode::Badge
-        });
+        // No build publishes a draft, so a project with one always has
+        // content no build publishes.
+        let keeps_everything = !self.index.has_drafts()
+            && model.builds.iter().any(|b| {
+                b.variants == VariantMode::Switch && b.availability == AvailabilityMode::Badge
+            });
         // Content no build publishes is checked with a
         // build that keeps everything, and reported as belonging to no build.
         // A fragment no page includes is in no page, so
@@ -298,16 +276,16 @@ impl<'p> PageChecker<'p> {
     /// build publishes.
     fn found(&self, build: &Build, on_page: &mut dyn FnMut(&ResolvedPage)) -> Vec<Found> {
         let router = DefaultRouter::from_consumer(&self.project.model().consumer);
-        let resolved = self.indexed.index.resolve_build(build, &router);
+        let resolved = self.index.resolve_build(build, &router);
         let mut found = Vec::new();
         for page in &resolved.pages {
             on_page(page);
             found.extend(self.page(build, page));
         }
         let pages: Vec<&ResolvedPage> = resolved.pages.iter().collect();
-        permalinks::duplicates(&self.indexed.index, &pages, &mut found);
+        permalinks::duplicates(self.index, &pages, &mut found);
         found.extend(crate::across::for_build(
-            &self.indexed.index,
+            self.index,
             &self.project.model().checks,
             &pages,
             self.errors_only,
@@ -321,7 +299,7 @@ impl<'p> PageChecker<'p> {
                 .level(diagnostics::LLMS_SECTION_LARGE)
                 == Some(CheckLevel::Error)
         {
-            found.extend(llms_sizes(&self.indexed.index, build, &resolved.pages));
+            found.extend(llms_sizes(self.index, build, &resolved.pages));
         }
         found
     }
@@ -329,13 +307,14 @@ impl<'p> PageChecker<'p> {
     /// The page-level problems of one page a build publishes: those of its
     /// resolved form, and its size.
     fn page(&self, build: &Build, page: &ResolvedPage) -> Vec<Found> {
-        let index = &self.indexed.index;
+        let index = self.index;
         let mut found = check_page(index, page, &self.links);
         let counted = !self.errors_only
             || index.model().checks.level(diagnostics::PAGE_SIZE) == Some(CheckLevel::Error);
         if counted
+            && let Some(render) = self.project.plain_markdown()
             && let Some(limit) = size::limit(index)
-            && let Some(f) = size::page_size(index, self.project.root(), build, page, limit)
+            && let Some(f) = size::page_size(render, index, self.project.root(), build, page, limit)
         {
             found.push(f);
         }
@@ -350,9 +329,9 @@ impl<'p> PageChecker<'p> {
     /// them on save; levels aren't applied.
     pub fn check_across(&self, build: &Build, pages: &[&ResolvedPage]) -> Vec<Diagnostic> {
         let mut found = Vec::new();
-        permalinks::duplicates(&self.indexed.index, pages, &mut found);
+        permalinks::duplicates(self.index, pages, &mut found);
         found.extend(crate::across::for_build(
-            &self.indexed.index,
+            self.index,
             &self.project.model().checks,
             pages,
             false,
@@ -370,17 +349,11 @@ impl<'p> PageChecker<'p> {
         &self,
         images: bool,
     ) -> std::collections::BTreeMap<FileId, Vec<Diagnostic>> {
-        let file = |id| self.indexed.file(id);
-        let mut out = crate::across::for_every_build(
-            self.project,
-            &self.indexed.index,
-            &file,
-            images,
-            self.errors_only,
-        );
-        let permalinks = crate::permalinks::check(self.project, &self.indexed.index, &file);
-        let glossary = crate::glossary::check(self.project, &self.indexed.index, &file);
-        let nav = crate::nav::check(self.project, &self.indexed.index, &file, self.errors_only);
+        let mut out =
+            crate::across::for_every_build(self.project, self.index, images, self.errors_only);
+        let permalinks = crate::permalinks::check(self.project, self.index);
+        let glossary = crate::glossary::check(self.project, self.index);
+        let nav = crate::nav::check(self.project, self.index, self.errors_only);
         for (id, found) in permalinks.into_iter().chain(glossary).chain(nav) {
             let list = out.entry(id).or_default();
             list.extend(found);
@@ -398,12 +371,13 @@ impl<'p> PageChecker<'p> {
             availability: AvailabilityMode::Badge,
             versions: None,
             line: None,
+            drafts: true,
         };
         let router = DefaultRouter::from_consumer(&self.project.model().consumer);
-        let resolved = self.indexed.index.resolve_build(&everything, &router);
+        let resolved = self.index.resolve_build(&everything, &router);
         let mut found = Vec::new();
         for page in &resolved.pages {
-            for f in check_page(&self.indexed.index, page, &self.links) {
+            for f in check_page(self.index, page, &self.links) {
                 // A cause that no block holds (which shouldn't happen) is
                 // reported: the conservative reading.
                 let is_published = innermost(page, &f).is_some_and(|key| published.contains(&key));
@@ -463,7 +437,6 @@ impl<'p> PageChecker<'p> {
                         .join(", ");
                     issue = issue.with_variant("builds").with_arg("builds", names);
                 }
-                self.to_project_ids(&mut issue);
                 let mut d = Diagnostic::from_issue(&issue);
                 d.builds = m.builds;
                 d.unpublished = m.unpublished;
@@ -478,19 +451,6 @@ impl<'p> PageChecker<'p> {
             ))
         });
         out
-    }
-
-    /// Renumbers the files of an issue from the index's ids to the checked
-    /// project's.
-    fn to_project_ids(&self, issue: &mut ascribe_core::Issue) {
-        let renumber = |file: &mut FileId| *file = self.indexed.file(*file);
-        renumber(&mut issue.location.file);
-        for related in &mut issue.related {
-            renumber(&mut related.location.file);
-        }
-        for fix in &mut issue.fixes {
-            renumber(&mut fix.file);
-        }
     }
 }
 

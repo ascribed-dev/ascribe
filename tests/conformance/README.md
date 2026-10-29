@@ -28,7 +28,6 @@ Every case runs through the runner: each area tag has an adapter (`tests/adapter
 tests/conformance/
   README.md          this file
   SKIPS.toml         skipped tags and cases, each with a reason
-  diagnostics.toml   the diagnostics registry
   _model/            the shared fixture model, ascribe.toml
   cases/             the cases, grouped by area: cases/<area>/<case>/
   snapshots/         insta snapshots of expected outputs
@@ -47,7 +46,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 |---|---|
 | `recognition/`, `attributes/`, `primary/` | Which lines are directives, attribute blocks and their diagnostics, identifier and text primaries (SPEC §3.1–§3.4) |
 | `forms/`, `groups/`, `titles/`, `binding/`, `lists/`, `nesting/` | Container and line forms, groups and the arm rule, title lines, binding, lists and blockquotes, nesting (§3.5–§3.10) |
-| `directives/<name>/` | Each built-in directive: `id`, `include`, `variant`, `available`, `note`, `steps`, `details`, `snippet`, `intended`, `memo` (§4) |
+| `directives/<name>/` | Each built-in directive: `id`, `include`, `variant`, `available`, `note`, `steps`, `details`, `snippet`, `intended`, `memo`, `summary`, `operation` (§4) |
 | `widgets/` | Project widgets (§6) |
 | `phrases/`, `links/`, `images/`, `headings/`, `glossary/` | Inline constructs, source ids and page ids (§5) |
 | `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |
@@ -58,7 +57,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 | `checks/` | The content checks across a project: orphans, unused fragments, model entries, and images, large images, and duplicate titles, and the baseline that holds some back (`checks/baseline/`). They aren't SPEC rules, so the shared model turns them off and these cases have models of their own |
 | `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |
 | `builds/selection/`, `builds/filter/`, `builds/lines/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, the lines of a versioned build, assets, which files are pages (§9.2–§9.4) |
-| `content/` | The checks about a page's content rather than its validity, which `[checks]` can set the level of: page size, descriptions, heading levels, code block languages, and review dates (§7.2, §8.2) |
+| `content/` | The checks about a page's content rather than its validity, which `[checks]` can set the level of: page size, descriptions, heading levels, code block languages, and recheck dates (§7.2, §8.2) |
 | `projects/quill/` | The whole Quill project of `examples/quill`, with no diagnostics under any build |
 | `samples/` | The two worked examples |
 
@@ -294,13 +293,13 @@ diagnostics:
         label: "first used here"    # optional
 ```
 
-- `slug` names an entry of the diagnostics registry, `tests/conformance/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and and a `page`-level slug under a build.
+- `slug` names an entry of the diagnostics registry, `crates/ascribe-core/data/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and and a `page`-level slug under a build.
 - `line` is 1-based and counts every line of the file, including frontmatter.
 - `column` is 1-based and counts Unicode scalar values (characters), not bytes or UTF-16 units. It's compared only when written.
 - `file` is relative to the content root. It defaults to `input.md` in single-file cases.
 - `related` is compared only when written, and then exactly: the diagnostic's related information, every place in the order the diagnostic names them. Each place's `label`, the note shown with it, is compared only when written.
 - `severity` is compared only when written: the diagnostic's severity after the content model's `[checks]` levels, which the adapters apply as every tool does. A check set to `off` isn't reported.
-- A check that compares with today's date (a review date) has no day unless the case names one in `today`, so a case's result doesn't change with the day it runs.
+- A check that compares with today's date (a recheck date) has no day unless the case names one in `today`, so a case's result doesn't change with the day it runs.
 - The expected list must match the reported diagnostics exactly, as a multiset: every expected diagnostic must be reported, and every reported diagnostic must be expected. Order doesn't matter.
 - Top-level `diagnostics` holds **file-level** diagnostics (§8.1) from every source file in the case. **Page-level** diagnostics depend on a build, so they go under that build (see below).
 
