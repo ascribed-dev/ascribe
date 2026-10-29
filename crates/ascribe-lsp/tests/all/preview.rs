@@ -551,3 +551,27 @@ fn a_page_nested_thousands_of_levels_deep_does_not_stop_the_server() {
     assert!(!result["page"].is_null(), "{result}");
     client.shutdown();
 }
+
+/// A folder of the content root that's a link isn't walked again on a file
+/// event for it: the index followed the link when the project loaded, and a
+/// link to a large tree outside the project held the server for minutes on
+/// every event.
+#[cfg(unix)]
+#[test]
+fn a_linked_folder_is_not_walked_again_on_an_event() {
+    let outside = tempfile::tempdir().expect("a folder outside the project");
+    std::fs::write(outside.path().join("a.md"), "# A\n").expect("a page outside");
+    let f = Fixture::new(MODEL, &[("docs/page.md", "# Page\n")]);
+    std::os::unix::fs::symlink(outside.path(), f.path("docs/linked")).expect("a link out");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    // A page that appears under the link after the load.
+    std::fs::write(outside.path().join("b.md"), "# B\n").expect("a page outside");
+    client.watched(&[(&f.path("docs/linked"), lsp_types::FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(client.publications(&f.path("docs/linked/b.md")).is_empty());
+    // The page itself is still served.
+    let result = preview(&mut client, &f.path("docs/page.md"), None);
+    assert!(!result["page"].is_null(), "{result}");
+    client.shutdown();
+}

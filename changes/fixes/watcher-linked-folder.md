@@ -1,0 +1,1 @@
+- **Fixed:** the language server no longer walks a linked folder again on every file event for it, which held the server for minutes when the link led to a large tree outside the project.
