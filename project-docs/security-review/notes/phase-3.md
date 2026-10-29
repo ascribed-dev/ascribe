@@ -13,7 +13,7 @@ Hardening notes from [phase 3](../phase-3-servers.md), reviewed on 27 October 20
 
 ## H2: `workspace/willRenameFiles` accepts a move into a linked folder that `ascribe rename` refuses
 
-- **Where:** `crates/ascribe-lsp/src/refactor.rs` (`will_rename`, which checks the new path's text), against `crates/ascribe-lsp/src/rename.rs`, whose command path refuses a path through a link.
+- **Where:** `crates/ascribe-edit/src/refactor.rs` since the edits moved there (`will_rename`, which checks the new path's text), against the command's rename, which refuses a path through a link.
 - **What it costs:** the server returns the link rewrites for a move the editor then makes through the link, outside the project. The person chose the folder in the explorer, so they see it; the two paths disagreeing is the fragility. `ascribe/edit`'s `newPage` into a linked folder is the same family.
 - **Recommendation:** the same link check on the new path in `will_rename`, returning an empty edit.
 - **Size:** small.
@@ -48,14 +48,14 @@ Hardening notes from [phase 3](../phase-3-servers.md), reviewed on 27 October 20
 
 ## H7: a check's cost is quadratic in a page's links
 
-- **Where:** the page-level checks; unprofiled. Measured: 300 links 0.1 s, 3,000 1 s, 15,000 20 s, 30,000 82 s, the same whether the links resolve or not, in the CLI, the MCP server, and the hook.
+- **Where:** the page-level checks; unprofiled. Measured on 27 October: 300 links 0.1 s, 3,000 1 s, 15,000 20 s, 30,000 82 s, the same whether the links resolve or not, in the CLI, the MCP server, and the hook; on 29 October, with the shared `Workspace`: 0.2, 1.4, 24, and 125 s.
 - **What it costs:** a slow request the servers recover from, not a hang; a realistic page is far below it. A crafted page of 30,000 link lines holds a tool call or a hook for over a minute.
 - **Recommendation:** profile the check on such a page and make it linear, or cap the links a page is checked for with a diagnostic.
 - **Size:** medium.
 
 ## H8: the MCP server answers about any Ascribe project on disk named by an absolute path
 
-- **Where:** `crates/ascribe-cli/src/answer.rs`'s `locate`, which finds `ascribe.toml` from any path an argument names; decision 77 bounded a project's sources to the folder the server was started in, not which project a tool resolves. The docs call the working directory the default, not a boundary. A path that isn't in an Ascribe project is refused.
+- **Where:** `crates/ascribe-cli/src/answer.rs`'s `locate`, which finds `ascribe.toml` from any path an argument names; decision 77 bounded a project's sources to the folder the server was started in, not which project a tool resolves. The docs call the working directory the default, not a boundary. A path that isn't in an Ascribe project is refused, and since the re-check of 29 October the refusal lists up to ten project folders below the path (`find_below`), and a project named by path is kept loaded between calls.
 - **What it costs:** an agent on a host with no shell reaches another project's pages, model, and search, and `git` in that project's repository through `ascribe_diff`, which decision 76's options bound. An agent with a shell could read the files itself. The maintainer may rule it by design; the threat model's row says the tools are "held to the project".
 - **Recommendation:** the maintainer's ruling; if closed, hold a tool's `page`, `path`, and `project` to the working directory, as `resources/list` already is.
 - **Size:** small to medium.
@@ -77,3 +77,7 @@ Hardening notes from [phase 3](../phase-3-servers.md), reviewed on 27 October 20
 - **Memos whose `about` names a file outside the project:** a diagnostic each, nothing read.
 - **The hook's input:** `file_path` of an outside, linked, or memo file, a Codex patch naming an outside file, `cwd` of `/etc` or `/tmp`, and input that isn't JSON: nothing printed, or the "can't read the hook's input" error. A path in another project is checked in that project, which is the harness's own folder choice. The mailbox's files are `0600` under the user's own cache folder.
 - **`ascribe preview`'s server:** `..` in every encoding, `//etc/passwd`, `%00`, a request into `.ascribe/preview/` itself, a missing or foreign `Host`, `POST` and `OPTIONS`, a 20 KB header line, and a request with no line end: `404`, `403`, `405`, cut at `MAX_HEAD`, or timed out on its own thread; no CORS headers, so another origin can't read an answer; a rendered page's policy blocks a planted inline script. A link planted in the folder before any archive exists is refused. One beside a manifest is the low private finding.
+
+## Re-checked on 29 October 2026, against `main` at `85c4c85c`
+
+All eight notes hold, every reproduction re-run with the rebuilt binary: H5's `detailed` answer is again 22 MB, H7's ladder is above, H4's listing of a link to `/` is 3,840 `source-unreadable` in 4.3 s (34 s before), H2 moved to `ascribe-edit`, H8 slightly worse, above. Every "nothing found" claim re-ran and holds, the outputs the same up to paths and timings; the hook with its check server on, whose first-run output had been a stale failure, is verified for the first time, against the server's single `Workspace`, with nothing new. No request, tool, resource, or prompt was added to the phase's surface. What changed behind them, each looked at: the language server, the MCP server, and the hook's check server each keep one `Workspace` and refresh it from a listing's stamps per call or event (the private stall finding's profile changed with it); the not-found project listing; the git guard in front of the three writing tools; `check --format github`; `ascribe new`; and placeholder lines in the hook's answer. Nothing exploitable found.
