@@ -80,7 +80,6 @@ From the command line, `ascribe new` does the same.
 
 ### `ascribe new`
 @id {permalink=true}: cli-new
-@available: ascribe planned
 
 @summary
 Starts a page of a type from the type's template, with its `type` and `title` set, as a draft, as **New Page** does, and writes it where `PATH` says. It never writes over a file.

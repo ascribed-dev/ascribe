@@ -1,1 +1,0 @@
-- **Fixed:** a link in the content root to a file outside the project is reported, not copied. The build, the HTML report, the preview, and an archive all refuse it now. See [assets](docs/content/contracts/assets.md).

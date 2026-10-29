@@ -26,7 +26,6 @@ Add `request="<link>"` or `response="<link> <status>"` to a `json` block's info 
 
 The marker sits beside `title` and `tested`, before or after them, as a pair of the info string ([SPEC §3.3.1]({repo}/blob/main/SPEC.md)), and the block stays a plain fenced block, shown as it is by every Markdown viewer. The published page doesn't change.
 
-@available: ascribe planned
 The site and plain outputs leave the marker out of the block's info string, since its link is a path in your repository, which means nothing to a reader of the page or to an agent reading its Markdown.
 
 A marker on a block that isn't a `json` block, or whose code isn't JSON, is `api-example-not-json`. One that names a body the operation doesn't have, a request body it doesn't take or a status it has no response for, is `api-example-body-missing`.

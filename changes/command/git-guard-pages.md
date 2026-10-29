@@ -1,1 +1,0 @@
-- **Behavior change: `fmt`, `check --fix`, and `rename` refuse pages git couldn't put back.** Each takes `--dry-run`, and `--force` writes a page with changes not committed. See [The `ascribe` command](docs/content/command/index.md).

@@ -1,1 +1,0 @@
-- **`ascribe diff main` and `ascribe drift HEAD` name the `--base` option.** A revision given where a page goes, as `git diff` takes one, gets an error that says to write `--base main`. See [`ascribe diff`](docs/content/review/diff.md).

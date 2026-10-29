@@ -1,1 +1,0 @@
-- **Fixed:** a lone carriage return in frontmatter no longer shifts what `ascribe fmt` edits. The positions after it were a byte early, so a space went before a directive's colon, as they were after one ending a link reference definition.

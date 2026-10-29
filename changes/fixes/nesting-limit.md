@@ -1,1 +1,0 @@
-- **Fixed:** a page that nests blocks or inlines thousands of levels deep no longer crashes the parser. Past a hundred levels the rest is text, so the language server and the MCP server survive it.

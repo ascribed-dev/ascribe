@@ -104,7 +104,6 @@ A table row's badges have no lead-in in sight. Their `(Available: ` and `)` are 
 A tab's label isn't generated: it's text, the tab's first paragraph, `<p class="ascribe-tab-label">`, so a reader of the HTML that runs neither script nor stylesheet, such as a tool that converts the page to text for an AI agent, finds each label before its tab's content. Without the script it introduces the tab; with it, the tab's button shows the label, and the paragraph is out of sight and hidden from screen readers, which hear the label once, from the button ([§3]({repo}/blob/main/packages/elements/CONTRACT.md#3-ascribe-tabs-and-ascribe-tab)).
 
 ## Copy buttons
-@available: ascribe planned
 
 The script adds a button to each code block, a `<pre>` holding a `<code>`, that copies the code: one with a title or a tested line, and one in a tab, too. It copies the code alone, without its caption or the newline that ends it, and says "Copied" in a live region, so a screen reader hears it. The button is `<button class="ascribe-copy">`, put after the `<pre>`, not inside it, so the code's text never holds it, and it sits in the block's top corner. With scripts off there's no button, and on a page that isn't a secure context, which has no clipboard, the script adds none either ([§12]({repo}/blob/main/packages/elements/CONTRACT.md#12-a-code-blocks-copy-button)).
 

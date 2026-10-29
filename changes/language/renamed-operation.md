@@ -1,1 +1,0 @@
-- **A link to a renamed `operationId` is offered the operation now at its method and path.** `ascribe check` reads the base's spec for it, and `--fix` applies it. See [A renamed id](docs/content/openapi/index.md#a-renamed-id).

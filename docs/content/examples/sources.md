@@ -30,7 +30,6 @@ It lists each copy it wrote or removed. It changes a copy or `ascribe.lock` only
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/sources-fetch.txt
 
-@available: ascribe planned
 With `--format json`, it writes what it did for each source, the files it couldn't copy among them, in the document its [schema](../contracts/json-reports/sources.md#ascribe-sources-fetch) describes. The note about a first copy still goes to standard error.
 
 | Code | Meaning |

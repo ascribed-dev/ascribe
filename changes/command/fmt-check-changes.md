@@ -1,1 +1,0 @@
-- **Behavior change: `ascribe fmt --check` lists each change, and `--diff` writes a unified diff.** Each change is its `file:line`, then the lines as they are and as they'd be, instead of the file alone. See [`ascribe fmt`](docs/content/checks/check.md).

@@ -1,1 +1,0 @@
-- **Fixed:** `ascribe fmt` keeps a directive in the list item it's in when the item follows `>` with no space. It took a space away, which moved the directive out of the item.

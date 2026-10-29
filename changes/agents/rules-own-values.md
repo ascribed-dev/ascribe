@@ -1,1 +1,0 @@
-- **The rules give a dimension's values, and an `@available` example from the project's own targets.** The check line loses its "Programmatic check:" label, and `new-page` asks to fill in empty fields only when there are some. See [Write the agent files](docs/content/agents/instructions.md).

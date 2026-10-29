@@ -1,1 +1,0 @@
-- **Behavior change: `init`, `sources`, `templates eject`, and `vale eject` refuse uncommitted files.** `sources fetch`, `sources update`, and the others each take `--dry-run`, and `--force` writes a file git couldn't put back. See [The `ascribe` command](docs/content/command/index.md).

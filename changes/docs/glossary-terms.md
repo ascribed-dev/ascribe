@@ -1,1 +1,0 @@
-- **The glossary defines thirteen more of Ascribe's concepts, each with one meaning.** Each says where the word is also used another way, and the diagnostics reference explains severity and level. See [the glossary](docs/content/glossary.md).

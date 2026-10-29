@@ -1,1 +1,0 @@
-- **The docs' tested command output says which ascribe printed it.** "Tested with ascribe 0.4.4 on Linux", where it said the Rust that built the binary, which nothing in the docs asks a reader to install. See [Show what an example was tested with](docs/content/examples/tested.md).

@@ -1,1 +1,0 @@
-- **`ascribe model` and `ascribe_model` show every table of `ascribe.toml`, `[apis]` among them.** New sections: `frontmatter`, `fragments`, `lifecycle`, `notes`, `images`, `apis`, `from`, `intended`, and `versions`, so an agent without a shell can read each API's spec and where its reference is. See [`ascribe model`](docs/content/command/questions.md).

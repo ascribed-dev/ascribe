@@ -1,1 +1,0 @@
-- **The changelog is published as Markdown, for agents, at `/changelog.md`.** The page links to it, asking for `/changelog/` as Markdown answers with it, and the docs' `llms.txt` lists it under Optional. See [the site's README](site/README.md#the-changelog-for-agents).

@@ -3,7 +3,7 @@ name: ascribe
 description: "Write and fix Markdown docs in an Ascribe project: pages with YAML frontmatter, `@` directives, and `{phrase}` keys, checked against the content model in `ascribe.toml`. Use when adding or editing pages in a folder with an `ascribe.toml`, fixing what `cargo run -q -p ascribe-cli -- check` reports, or finding which frontmatter, directives, and phrases the project allows."
 license: MPL-2.0
 metadata:
-  ascribe-version: "0.4.4"
+  ascribe-version: "0.4.5"
 ---
 
 # Ascribe

@@ -1,1 +1,0 @@
-- **`ascribe --help` lists the commands in groups, with short descriptions.** A command's own `--help` says the rest, and the note for agents moved to `ascribe agents --help`. See [the command reference](docs/content/command/index.md).

@@ -1,1 +1,0 @@
-- **Fixed:** `ascribe agents sync` no longer imports `AGENTS.md` twice in a `CLAUDE.md` that imports it already. It leaves such a file as it is, and removes a block it added there before. See [Claude Code](docs/content/agents/claude-code.md).

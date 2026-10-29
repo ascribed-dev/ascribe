@@ -41,6 +41,5 @@ The pages are grouped as the [`ascribe.toml` reference](../content-model/index.m
 @include: ../_generated/json-baseline-prune.md
 
 ## `ascribe vale eject`
-@available: ascribe planned
 
 @include: ../_generated/json-vale-eject.md

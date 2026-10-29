@@ -1,1 +1,0 @@
-- **Behavior change: `example-stale` is a warning, which `--deny-warnings` fails on.** A tested example changed after its last test run now fails CI's check; set `example-stale = "advice"` in `[checks]` to let it pass ([Checks in CI](docs/content/checks/ci.md#keep-tested-examples-tested)).

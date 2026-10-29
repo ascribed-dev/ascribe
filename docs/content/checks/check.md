@@ -59,7 +59,6 @@ It lists at most 50 problems. When there are more, the line before the summary s
 `--summary` works in any format. The text lists at most 20 files, then the command whose JSON lists them all. On a project with hundreds of warnings, it shows which rule or file to work through first.
 
 ### Output for GitHub Actions
-@available: ascribe planned
 
 `--format github` writes a GitHub Actions [workflow command](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands) for each problem, in the same order as `--format concise`, and ends with the summary line. The workflow run shows each one on the pull request's line: an error as an error, a warning as a warning, and advice as a notice. The path is from the repository's root, where GitHub looks for it, even when the project is in a folder of the repository, and the title is the diagnostic's name and code. The message is one line, without the help or the source snippet:
 
@@ -88,7 +87,6 @@ The output starts with a line for each file changed (`fixed 2 problems in docs/g
 In VS Code, **Source Action… → Apply the safe fixes in this page** applies a page's safe fixes the same way, to the text in the editor, saved or not, for the problems the editor shows, and can run each time you save. See [Apply the safe fixes](../editor/problems.md#apply-the-safe-fixes).
 
 ### Failing on warnings
-@available: ascribe planned
 
 `--exit-code=<level>` says the least problem that fails the command: `error`, which `--exit-code` alone means and the command does without it, or `warning`, for CI. `--deny-warnings` is the same as `--exit-code=warning`, and when both are given, the last one counts. The level follows `=`, so `ascribe check --exit-code docs/guides` checks the folder. Advice never fails the command, so `advice` isn't a level.
 
@@ -187,7 +185,6 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 ## `ascribe preview`
 @id {permalink=true}: cli-preview
-@available: ascribe planned
 
 @summary
 Shows a build's pages as readers see them, with nothing but the `ascribe` command: no Node, no editor, and no Astro. It renders them into `.ascribe/preview/`, serves the folder on this computer, and renders it again as you edit.

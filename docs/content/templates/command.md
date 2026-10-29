@@ -24,7 +24,6 @@ Shows each template the set has, in a line, with what it's for, and which releas
 
 @include: ../_generated/cli-templates-list-options.md
 
-@available: ascribe planned
 With `--format json`, it writes the same in the document its [schema](../contracts/json-reports/templates.md#ascribe-templates-list) describes, with the commit of theirs the set is from.
 
 .The JSON for this example

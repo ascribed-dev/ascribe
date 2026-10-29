@@ -1,1 +1,0 @@
-- **The MCP server reads only the files that changed since its last call.** Before, any change to a page loaded the whole project again, which takes seconds on a large one ([ascribe mcp](docs/content/agents/commands.md#cli-mcp)).

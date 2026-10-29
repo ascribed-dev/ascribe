@@ -1,1 +1,0 @@
-- **`ascribe check --exit-code=warning` fails on warnings.** `--deny-warnings` stays, as its alias, so the command takes the option the conventions name. See [`ascribe check`](docs/content/checks/check.md).

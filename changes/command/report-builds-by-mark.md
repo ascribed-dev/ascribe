@@ -1,1 +1,0 @@
-- **Behavior change: `ascribe report builds` lists each mark once.** A section's `@available`, a variant arm, or a page's frontmatter is one entry at its line, under its heading, and the JSON is at `schema_version` 3 ([the project report](docs/content/checks/report.md#builds)).

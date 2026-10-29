@@ -1,1 +1,0 @@
-- **Fixed:** A wide table on the docs site scrolls with the keyboard. Each docs page's lead, under its title, shows its code and curly quotes as the page does.

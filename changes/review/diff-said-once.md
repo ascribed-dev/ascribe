@@ -1,1 +1,0 @@
-- **`ascribe diff` says a change once when it's the same in every build.** Such a page is listed first, `in every build`, and JSON and HTML are unchanged. See [ascribe diff](docs/content/review/diff.md#cli-diff).

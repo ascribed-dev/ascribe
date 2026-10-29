@@ -1,1 +1,0 @@
-- **The MCP tools give no output schema, and `tools/list` is a fifth of its size.** It's 17 KB, from 92 KB, and the JSON report contract still has each schema. See [the MCP tools](docs/content/agents/commands.md).

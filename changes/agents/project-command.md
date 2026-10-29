@@ -1,1 +1,0 @@
-- **`ascribe agents sync` names the command the project runs Ascribe with.** `AGENTS.md`, the skill, and the hooks say `npx ascribe`, `pnpm exec ascribe`, or `yarn ascribe` when a `package.json` installs it, and `--command` names another. See [the command they name](docs/content/agents/instructions.md).

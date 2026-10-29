@@ -1,1 +1,0 @@
-- **`ascribe check`'s summary line says how many files have problems.** It reads `checked 9 files for every build, 1 with problems: …`, and names the files the paths cover only when paths are given. See [`ascribe check`](docs/content/checks/check.md).

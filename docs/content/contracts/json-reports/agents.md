@@ -12,12 +12,10 @@ Part of the [JSON report contract](../json-reports.md), whose rules every docume
 @include: ../../_generated/json-agents-index.md
 
 ## `ascribe agents sync`
-@available: ascribe planned
 
 @include: ../../_generated/json-agents-sync.md
 
 ## `ascribe agents prompt`
-@available: ascribe planned
 
 @include: ../../_generated/json-agents-prompt.md
 

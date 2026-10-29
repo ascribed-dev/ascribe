@@ -4,6 +4,163 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+## 0.4.5 (2026-10-29)
+
+### The language
+
+- **An API's `reference` that isn't Redoc's is called an address pattern.** `link-operation-form-unsupported` and `model-api-reference` say so in their messages, so they no longer read like a content type's template. See [Link to your API reference](docs/content/openapi/index.md).
+- **Behavior change: the OpenAPI example checks are `api-example-*`.** They were `example-schema-mismatch`, `example-not-json`, `example-body-missing`, and `example-schema-unsupported`, and keep their codes, ASC277 to ASC280, which `ascribe explain` still finds them by ([Check a JSON example against its schema](docs/content/openapi/examples.md)).
+- **Attributes written without braces are one error, with a fix that adds the braces.** `@note type=warning: text` no longer also reports the heading below it, and `ascribe check --fix` braces it. See [Directive lines](docs/content/writing/syntax.md#directive-lines).
+- **A build filtered for a version older than every declared line is advice.** `build-filter-line-undeclared` reports a filter whose version is in no live, planned, or archived line: declare the line in `archived`, or use `versions =`. See [`[builds.<name>]`](docs/content/content-model/output.md).
+- **A missing include or snippet file is offered the path that names it.** And `@variant` in a project with no dimensions gives the `[dimensions.<name>]` table to add. See [`@include`](docs/content/writing/directives.md).
+- **`draft: true` keeps a page out of every build until it's ready.** `ascribe check` still checks a draft, and a link to one from a published page is `link-page-dropped`. See [Frontmatter](docs/content/writing/frontmatter.md#a-draft).
+- **Behavior change: `example-stale` is a warning, which `--deny-warnings` fails on.** A tested example changed after its last test run now fails CI's check; set `example-stale = "advice"` in `[checks]` to let it pass ([Checks in CI](docs/content/checks/ci.md#keep-tested-examples-tested)).
+- **`ascribe check` reports an `ascribe.examples.toml` that no source reads.** One below a source's root was ignored without a word; now `check`, the editor, and `ascribe observe` say so, and how to fix it. See [tested examples](docs/content/examples/tested.md#1-say-which-files-are-examples).
+- **A file under `.git` is never an asset.** A link or image to one is reported as missing, with a message saying so, and no output copies it. See [assets](docs/content/contracts/assets.md).
+- **A GitHub alert, such as `> [!NOTE]`, is a warning, with a fix that writes the `@note`.** Ascribe showed it as a plain quote. The fix keeps the quote's content and the alert's type. See [`@note`](docs/content/writing/directives.md#note).
+- **A code block's info-string word that looks like a pair but isn't one is a warning.** `phrases = true`, `Title=x`, an unclosed quote, and a quote escaped once each get `info-pair-malformed`, with a fix where the pair is clear. See [Code block info strings](docs/content/writing/syntax.md#code-block-info-strings).
+- **Behavior change: a code block's info string has a grammar, and the outputs drop the checker's pairs.** Pairs such as `title` and `tested` are read as §3.3.1 says, and the site and plain outputs leave out `request` and `response`. See [SPEC.md](SPEC.md).
+- **`@Note:` draws `directive-unknown`, suggesting `@note`.** A line shaped like a directive whose name is a keyword in another case is still text, and is now warned about as a misspelling is. See [Syntax](docs/content/writing/syntax.md).
+- **A broken link's message names the target it most likely meant.** A heading whose id starts with the written id's words ranks first, and when one target clearly wins, the message ends with "did you mean" it. See [`ascribe link`](docs/content/command/questions.md#cli-link).
+- **Behavior change: a memo file's `about` has a grammar of its own in SPEC.md.** A path is percent-decoded as a link's is, and a malformed one is now `memo-invalid`; the editor and `ascribe rename` write it the same way. See [Memo files](docs/content/writing/memo-files.md).
+- **A draft isn't reported as left out of `ascribe.nav`.** `nav-page-unplaced` passes over a page with `draft: true`, which no sidebar shows yet. See [A draft](docs/content/writing/frontmatter.md).
+- **Behavior change: retired and aliased permalinks are kept in `ascribe.addresses`, not `ascribe.toml`.** `[permalinks]` in `ascribe.toml` is an error, which `ascribe addresses init` moves, and `permalink-removed` is now `permalink-lost`. See [Permalinks](docs/content/permalinks/index.md).
+- **`ascribe check` reports a phrase's value written out where the phrase could be.** A version or a URL typed out goes stale at the next release; the fix writes the phrase. See [Phrases](docs/content/writing/inline.md).
+- **A template's placeholder in a page that publishes is an error.** `template-placeholder-published` fails `check` and `build`; in a draft, `template-placeholder-left` stays advice. See [What's left to fill in](docs/content/templates/index.md).
+- **Behavior change: a page's review date is its recheck date.** `review-overdue` is `recheck-overdue`, keeping ASC153, and the role `review-date` is `recheck-date`; for a release, both old names still work in `ascribe.toml`, acknowledgements, frontmatter, and `ascribe explain` ([Field roles](docs/content/content-model/index.md#54-field-roles)).
+- **A link to a renamed `operationId` is offered the operation now at its method and path.** `ascribe check` reads the base's spec for it, and `--fix` applies it. See [A renamed id](docs/content/openapi/index.md#a-renamed-id).
+- **Snippets take regions from `Dockerfile`, `Makefile`, `.env`, CSS, SCSS, Less, and GraphQL files.** A file is matched by its name before its extension, and CSS takes tags in `/* */` comments. See [Snippets](docs/content/examples/snippets.md).
+- **The specification says it's a draft until 1.0.** Its grammar and built-in vocabulary may grow until then, and `spec = "0.1"` names the draft, not a frozen version. See [SPEC.md §11](SPEC.md#11-versioning).
+- **The specification tells its own errors from a content check a project raises to an error.** A raised check fails the build as an error does, but the page still conforms, and a raised review check can still be acknowledged: [Quieting a problem](docs/content/checks/check.md).
+- **The specification describes the implicit `release` dimension.** Ascribe already worked this way; the spec now says so, in §4.4 and §7.2. See [SPEC.md](SPEC.md#72-declarations).
+- **The specification's principles and binding rules cover the newer features.** Principle 3 says what's derived and from where, binding names `@memo`'s and `@summary`'s exceptions, and §1.3 defines advice. Nothing behaves differently. See [SPEC.md §1.2](SPEC.md#12-design-principles).
+- **The specification says which settings and checks are Ascribe's own.** Nothing Ascribe reports changes, and the diagnostics reference marks the checks the specification doesn't define. See [SPEC.md §7.2](SPEC.md#72-declarations) and [the diagnostics reference](docs/content/checks/diagnostics.md).
+- **SPEC.md's builds example, site output, and editor sections say what the toolchain does.** §7.3, §9, and §10 now match the toolchain. See [SPEC.md](SPEC.md#9-compilation).
+- **Behavior change: `summary-missing` and `summary-long` are off unless `[checks]` turns them on.** Only a project that shows its docs in a product needs summaries, and it turns them on. See [Show the docs in your product](docs/content/permalinks/in-your-product.md).
+- **A page with no `title` can take its opening heading as one.** `frontmatter-missing-field` offers the fix, safe while nothing links to the heading, so `ascribe check --fix` titles a folder of pages at once. See [Bring existing docs to Ascribe](docs/content/existing-docs.md#fix-what-the-check-finds).
+
+### The `ascribe` command
+
+- **Behavior change: `ascribe build` shows errors in full, counts the rest, and prints one line per build.** Warnings and advice are one summary line that points to `ascribe check`; `--format json` is unchanged. See [ascribe build](docs/content/checks/check.md#cli-build).
+- **`ascribe build` and `ascribe report` hold back what `ascribe.baseline` lists, as `ascribe check` does.** Both count what they held back, and `--no-baseline` reports everything. See [The baseline](docs/content/checks/baseline.md).
+- **`ascribe check --exit-code=warning` fails on warnings.** `--deny-warnings` stays, as its alias, so the command takes the option the conventions name. See [`ascribe check`](docs/content/checks/check.md).
+- **`ascribe check --format github` shows each problem on the pull request's lines in GitHub Actions.** `ascribe fmt --check` takes it too, and the CI recipe uses both. See [Output for GitHub Actions](docs/content/checks/check.md).
+- **`ascribe check` prints a code's shared help once.** In text output, later diagnostics with the same help point back to the first, and other formats are unchanged. See [Text output](docs/content/checks/check.md#text-output).
+- **`ascribe init` sends you to a first page, and `ascribe check` says when there are none yet.** In a project with no pages, `ascribe check` says `No pages in docs/ yet.` and exits with 0. See [`ascribe init`](docs/content/install.md).
+- **`ascribe check`'s summary line says how many files have problems.** It reads `checked 9 files for every build, 1 with problems: …`, and names the files the paths cover only when paths are given. See [`ascribe check`](docs/content/checks/check.md).
+- **Behavior change: `--check` writes a unified diff in `permalinks sync`, `agents sync`, and `observe`.** Each still exits with `1` when something would change. See [The `ascribe` command](docs/content/command/index.md).
+- **`ascribe check --format concise` keeps the first fix.** A problem with one ends its line with `→` and what the fix does, such as `→ Link to setup.md`. See [Output for agents](docs/content/checks/check.md).
+- **`ascribe diff main` and `ascribe drift HEAD` name the `--base` option.** A revision given where a page goes, as `git diff` takes one, gets an error that says to write `--base main`. See [`ascribe diff`](docs/content/review/diff.md).
+- **Behavior change: `ascribe fmt --check` lists each change, and `--diff` writes a unified diff.** Each change is its `file:line`, then the lines as they are and as they'd be, instead of the file alone. See [`ascribe fmt`](docs/content/checks/check.md).
+- **Behavior change: `ascribe fmt --check` writes a unified diff.** `--dry-run` lists each change, as `--check` did, and `--diff` is `--check`'s old spelling. See [`ascribe fmt`](docs/content/checks/check.md).
+- **Every command that takes `--format text` takes `concise` too.** A command with no one-line form writes its text, so an agent can pass `--format concise` to any of them. See [The `ascribe` command](docs/content/command/index.md).
+- **`sources fetch`, `templates list`, `vale eject`, `agents sync`, and `agents prompt` take `--format json`.** Each writes one document, and takes `concise` as text. See [JSON report contract](docs/content/contracts/json-reports.md).
+- **Behavior change: `agents sync`, `agents index`, and `observe` refuse files git couldn't put back.** Each takes `--dry-run`, and `--force` writes a file with changes not committed. See [The `ascribe` command](docs/content/command/index.md).
+- **Behavior change: `init`, `sources`, `templates eject`, and `vale eject` refuse uncommitted files.** `sources fetch`, `sources update`, and the others each take `--dry-run`, and `--force` writes a file git couldn't put back. See [The `ascribe` command](docs/content/command/index.md).
+- **Behavior change: `fmt`, `check --fix`, and `rename` refuse pages git couldn't put back.** Each takes `--dry-run`, and `--force` writes a page with changes not committed. See [The `ascribe` command](docs/content/command/index.md).
+- **Behavior change: `baseline`, `permalinks`, and `addresses` refuse files git couldn't put back.** Each that writes takes `--dry-run`, and `--force` writes a file with changes not committed. See [The `ascribe` command](docs/content/command/index.md).
+- **`ascribe --help` lists the commands in groups, with short descriptions.** A command's own `--help` says the rest, and the note for agents moved to `ascribe agents --help`. See [the command reference](docs/content/command/index.md).
+- **A diagnostic's `help` links to the docs' permalinks.** The JSON of `ascribe check` and `ascribe explain`, and the editor's, has addresses an agent can follow, such as `https://ascribed-dev.com/go/22-checks/`, in place of links relative to the docs. See [`ascribe check`](docs/content/checks/check.md).
+- **`ascribe init` writes `ascribe.addresses`, so a new project keeps the addresses it publishes.** A page moved with `git mv` is then `address-lost` on the next check against the base, and its fix records the move. See [`ascribe init`](docs/content/install.md).
+- **`ascribe init` adopts a folder of Markdown already there.** It declares no page types, so no page needs `type:`, then checks the pages and says what to run next; `--content-root` names their folder. See [Bring existing docs to Ascribe](docs/content/existing-docs.md).
+- **`ascribe model` and `ascribe_model` show every table of `ascribe.toml`, `[apis]` among them.** New sections: `frontmatter`, `fragments`, `lifecycle`, `notes`, `images`, `apis`, `from`, `intended`, and `versions`, so an agent without a shell can read each API's spec and where its reference is. See [`ascribe model`](docs/content/command/questions.md).
+- **`ascribe new` starts a page from its type's template, as a draft.** It sets the page's `type` and `title`, adds `draft: true`, as the editor's New Page now does too, and never writes over a file. See [Start a page](docs/content/templates/index.md).
+- **Behavior change: `ascribe observe` without a terminal runs nothing unless given `--yes`.** In CI, a hook, or an agent's shell, it lists the config's commands and exits 2, naming `--yes`. See [`ascribe observe`](docs/content/examples/sources.md).
+- **`ascribe preview` shows a build's pages as a site, with no Node, editor, or Astro.** It prints the check's problems, serves the pages at `127.0.0.1`, and renders them again as you edit: [`ascribe preview`](docs/content/checks/check.md).
+- **`ascribe report delivery` names the links `llms-txt-links-resolve` didn't reach.** `delivery-output` (`ASC171`) lists each address with its status or why it couldn't be fetched. See [What to measure](docs/content/agents/measuring.md#check-what-the-site-delivers-to-agents).
+- **Behavior change: `ascribe report builds` lists each mark once.** A section's `@available`, a variant arm, or a page's frontmatter is one entry at its line, under its heading, and the JSON is at `schema_version` 3 ([the project report](docs/content/checks/report.md#builds)).
+- **Behavior change: `ascribe report agents` is `ascribe report delivery`.** The section is named for the Web Documentation Delivery Spec it checks: its JSON key is `delivery`, at `schema_version` 2, and `agents` still runs it for now ([the project report](docs/content/checks/report.md#the-site-and-agents)).
+- **`ascribe versions retire` needs no `--force` for its target's part of other builds' availability.** It lists those pages apart, as `expected` in the JSON. See [Archive and retire a line](docs/content/versions/archive.md).
+- **`ascribe versions retire` records the line's addresses in `ascribe.addresses`.** Each address that goes to a page in the current line is recorded in `[moved]`, so the build writes its redirect. See [Archive and retire a line](docs/content/versions/archive.md).
+- **`ascribe search` cuts a long block to its match, in JSON and over MCP too.** A place's `text` is at most about 240 characters around the match, so a large block no longer comes back whole. See [`ascribe search`](docs/content/command/questions.md).
+- **`ascribe search` lists partial matches when no block has every word, and skips common words.** The closest places come with the words each lacks, as `partial_places` in JSON; `how do I publish llms.txt` finds what `publish llms.txt` does. See [the search reference](docs/content/command/questions.md).
+- **`sources fetch` and `sources update` reach each repository once.** They plan their changes, ask the git guard about them, and then make that plan, in place of fetching a second time to write; with `--force`, they write as they go. See [`ascribe sources` and `observe`](docs/content/examples/sources.md).
+- **Help printed in a terminal has no Markdown links.** `ascribe check` and `ascribe explain` write a link in a diagnostic's help as its text; JSON keeps the Markdown. See [`ascribe explain`](docs/content/command/questions.md).
+- **`ascribe versions archive` is now `ascribe versions export`.** It writes a copy of a line and doesn't archive it, which `retire` does. The old name still works, with a warning, for one more release. See [`ascribe versions export`](docs/content/versions/release.md#cli-versions-export).
+
+### The editor
+
+- **The Project view's Health shows only the counts that need doing.** Counts of none are behind a **Nothing else to do** line, and a group with nothing to do is its head alone. See [the Project view](docs/content/editor/sidebar.md).
+- **This page says each thing once, with every warning under Health.** About says what the page is, and the rows that can warn move to Health, whose header counts them. See [The sidebar](docs/content/editor/sidebar.md#this-page).
+
+### The language server
+
+- **`@operation`'s link completes, hovers, and opens as a link to an operation does.** It gets the safe fix when the spec renames the operation, too. See [Show an operation in a page](docs/content/openapi/operation.md#operation-editor).
+
+### Astro and the elements
+
+- **Code blocks have a copy button.** `@ascribed/elements` adds one to each code block, which a site can restyle or turn off in CSS. See [the element library reference](docs/content/astro/elements.md#copy-buttons).
+- **`init` writes a stylesheet for the starter's layout.** `src/styles/docs.css` gives the layout a readable column, a sidebar (a menu on phones), a side table of contents, and both color schemes, from the element library's `--ascribe-*` properties ([Set up a site](docs/content/astro/index.md#the-stylesheet)).
+- **`MissingPermalink` no longer offers search by default.** Its last paragraph offers the home page alone, since a site may have no search; a site with search passes its own paragraph ([the reference](docs/content/astro/reference.md)).
+- **Tabs' labels are text in the page, and code blocks name their language in a class.** A tool that converts a page's HTML to text or Markdown for an agent then reads which tab is which, and each block's language. See [the element library](docs/content/astro/elements.md#generated-text).
+
+### Agents
+
+- **The edit hook names the placeholders a page's template left.** After an edit, the agent hears each `template-placeholder-left` and `template-section-empty` in the files it wrote, so it fills them in while the page is its own. See [Hooks](docs/content/agents/hooks.md).
+- **Links in the Markdown published for agents lead to the other pages' Markdown.** A link to a heading lands on that heading in the `.md`, so an agent that follows a link stays in Markdown ([Publish for AI agents](docs/content/astro/agents.md#publish-for-ai-agents)).
+- **Agents' Markdown says what a page is for and which release it describes.** After the title, each `.md` gives the page's type and description, and with `[releases]`, its first line and `llms.txt` name the release ([Publish for AI agents](docs/content/astro/agents.md#publish-for-ai-agents)).
+- **The MCP server reads only the files that changed since its last call.** Before, any change to a page loaded the whole project again, which takes seconds on a large one ([ascribe mcp](docs/content/agents/commands.md#cli-mcp)).
+- **The MCP server's `ascribe_rename` gives what `ascribe rename` changes, for an agent with no shell.** It returns each changed file's text, the page that moves, and the entries recorded in `ascribe.addresses`, writing nothing; `ascribe rename --format json` writes the same ([ascribe rename](docs/content/command/questions.md#cli-rename)).
+- **The MCP tools `ascribe_format` and `ascribe_changes` are now `ascribe_fmt` and `ascribe_diff`.** They're named for their commands; the old names still work for one more release ([ascribe mcp](docs/content/agents/commands.md#cli-mcp)).
+- **The MCP tools give no output schema, and `tools/list` is a fifth of its size.** It's 17 KB, from 92 KB, and the JSON report contract still has each schema. See [the MCP tools](docs/content/agents/commands.md).
+- **A permalink's address gives an agent its section in one fetch.** Its section is at `go/<name>.md`, and with `host = "netlify"` the address answers `301`. See [Permalinks](docs/content/permalinks/index.md).
+- **`ascribe agents sync` names the command the project runs Ascribe with.** `AGENTS.md`, the skill, and the hooks say `npx ascribe`, `pnpm exec ascribe`, or `yarn ascribe` when a `package.json` installs it, and `--command` names another. See [the command they name](docs/content/agents/instructions.md).
+- **`ascribe_resolve` says to leave out `project` when `page` is a path.** The page's project is found from it, and the error gives the call to make instead. See [the MCP tools](docs/content/agents/commands.md).
+- **Long agent rules keep every page type, with what it's for.** Over 4,000 characters, each directive's syntax and the text the skill repeats go first, and the page types are cut last. See [Write the agent files](docs/content/agents/instructions.md).
+- **The rules give a dimension's values, and an `@available` example from the project's own targets.** The check line loses its "Programmatic check:" label, and `new-page` asks to fill in empty fields only when there are some. See [Write the agent files](docs/content/agents/instructions.md).
+- **The skill's commands work from the root when the only project is in a folder.** `ascribe agents sync` gives the commands that check or read the whole project `--config` with the project's folder. See [the skill](docs/content/agents/instructions.md#the-skill).
+
+### Review
+
+- **`ascribe diff` lists the pages an API spec's change reaches.** A page whose `@operation` or operation link writes something new is listed through the operation, `api/openapi.yaml#createWidget`, in the text, JSON, prompt, and review. See [When the spec changes](docs/content/openapi/index.md).
+- **`ascribe diff` says a change once when it's the same in every build.** Such a page is listed first, `in every build`, and JSON and HTML are unchanged. See [ascribe diff](docs/content/review/diff.md#cli-diff).
+- **The review report is now the HTML preview.** `ascribe diff --format html` is named beside the page preview and the site preview, so "report" means `ascribe report` alone ([Attach the HTML preview to every pull request](docs/content/review/ci-report.md)).
+- **`ascribe diff` and review show a moved page once, as moved.** A page git sees renamed, or whose move `ascribe.addresses` records, is listed where it is now with what it moved from, and the JSON carries `moved_from`. See [`ascribe diff`](docs/content/review/diff.md).
+- **The page preview's toolbar and threads say less.** The build's settings move to the Build picker's tooltip, and a thread carries one label for where it stands. See [how review works](docs/content/review/how-it-works.md).
+- **Review marks the changed words in a one-line note and in a short sentence that grew.** A sentence that keeps its old words at one end is a change, not a removal and an addition. See [`ascribe diff`](docs/content/review/diff.md).
+
+### The docs and the site
+
+- **The docs' home page opens with a path for engineers, writers, and agent builders.** Each is a few pages in order after Getting started, and the contracts are under For implementers, at the sidebar's end. See [the docs](docs/content/index.md).
+- **The changelog is published as Markdown, for agents, at `/changelog.md`.** The page links to it, asking for `/changelog/` as Markdown answers with it, and the docs' `llms.txt` lists it under Optional. See [the site's README](site/README.md#the-changelog-for-agents).
+- **The CI recipe runs the `ascribe` your project pins.** Its workflow runs `npm ci` and `npx ascribe`, so CI checks with the editor's version; without Node, it installs a named release. See [Checks in CI](docs/content/checks/ci.md).
+- **The `ascribe.toml` reference is grouped by what each section is for.** A page each for what pages hold, how content varies, where they're published, what they draw from, and the checks. See [the contents](docs/content/content-model/index.md#contents).
+- **Each diagnostic's header line links its words to what they mean.** The severity, level, next step, "configurable", and "acknowledged" link to their definitions, and three long diagnostics pages are split to fit. See [Diagnostics](docs/content/checks/diagnostics.md).
+- **Getting started's dimension has `labels`.** Its example gives each package manager the name readers see on the site's tabs, and says what `label` and `labels` are for. See [Getting started](docs/content/getting-started.md).
+- **The glossary defines thirteen more of Ascribe's concepts, each with one meaning.** Each says where the word is also used another way, and the diagnostics reference explains severity and level. See [the glossary](docs/content/glossary.md).
+- **The docs index, the command reference, and Files Ascribe writes list every feature again.** A test now fails when one of them falls behind. See the [docs index](docs/content/index.md).
+- **The docs no longer badge features with the release that added them.** Every reader is on the live release, so only what's in `main` but not yet released, or a lifecycle state such as deprecated, is marked. See [`@available`](docs/content/writing/directives.md#available).
+- **The changelog is a line per entry, with the detail on the page each entry links to.** 0.4.4 and the entries after it are written this way. See [the changelog's entries](changes/README.md).
+- **The glossary tells the four previews apart, and defines the recheck date.** The page preview, the site preview, the HTML preview, and `ascribe preview` each have one name ([Preview](docs/content/glossary.md#preview)).
+- **The reference pages' longest paragraphs are lists, tables, and shorter paragraphs.** None outside the contracts runs over 150 words, and a test keeps it so. See [when a mark does nothing](docs/content/content-model/variation.md#121-releasestarget).
+- **The docs site links each page to the ones before and after it.** On this page marks the section in view, and the phone menu dims the page behind it. See [Navigation](docs/content/navigation/index.md).
+- **The docs' tested command output says which ascribe printed it.** "Tested with ascribe 0.4.4 on Linux", where it said the Rust that built the binary, which nothing in the docs asks a reader to install. See [Show what an example was tested with](docs/content/examples/tested.md).
+
+### Fixes
+
+- **Fixed:** the docs now say a retired address gets a page saying why it was removed. Files Ascribe writes lists the redirects and pages `@ascribed/astro` writes from `ascribe.addresses`. See [Keep the addresses you've published](docs/content/publishing/redirects.md).
+- **Fixed:** An archive's pages declare their language. Each starts with a "Skip to content" link past the sidebar too, for a keyboard at a phone's width. See the [archive contract](docs/content/contracts/archive.md).
+- **Fixed:** a link in the content root to a file outside the project is reported, not copied. The build, the HTML report, the preview, and an archive all refuse it now. See [assets](docs/content/contracts/assets.md).
+- **Fixed:** `ascribe agents sync` no longer imports `AGENTS.md` twice in a `CLAUDE.md` that imports it already. It leaves such a file as it is, and removes a block it added there before. See [Claude Code](docs/content/agents/claude-code.md).
+- **Fixed:** a code span that runs from an indented line onto the next ends where its text does. The text after it overlapped it.
+- **Fixed:** With `--config <folder>`, `ascribe addresses move` and `retire` read a page's path from here. Before, `retire` recorded that path as an address no page had; `rename`, `diff`, and `permalinks` read it the same way now.
+- **Fixed:** A wide table on the docs site scrolls with the keyboard. Each docs page's lead, under its title, shows its code and curly quotes as the page does.
+- **Fixed:** `ascribe fmt` keeps a directive in the list item it's in when the item follows `>` with no space. It took a space away, which moved the directive out of the item.
+- **Fixed:** a symbolic link to a file under `.git` is reported, not copied. A link to the file itself already was. See [assets](docs/content/contracts/assets.md).
+- **Fixed:** the `@intended` example on the directives page names a check that exists. It said `check=link-dead`, which `ascribe check` rejects; it's `check=link-external-broken`, the external link check, as on [the external links page](docs/content/checks/external-links.md).
+- **Fixed:** a link or image whose destination, title, or label runs onto the next line ends at its `)`. An image's attribute block after it was lost, and the text after it was misplaced.
+- **Fixed:** a lone carriage return in frontmatter no longer shifts what `ascribe fmt` edits. The positions after it were a byte early, so a space went before a directive's colon, as they were after one ending a link reference definition.
+- **Fixed:** a page that nests blocks or inlines thousands of levels deep no longer crashes the parser. Past a hundred levels the rest is text, so the language server and the MCP server survive it.
+- **Fixed:** text after a link definition with an indented line is placed where it is. It was off by the indent.
+- **Fixed:** a paragraph that a table interrupts after a `\r\n` line ending no longer loses its position. Its span was empty, so what pointed at it pointed nowhere.
+- **Fixed:** the preview and the HTML report drop a page's frames, objects, embeds, and form actions. A frame's document could load a script the policy's resource origin allows; scripts were already dropped.
+- **Fixed:** `ascribe preview`'s server no longer follows a link in the folder it serves. A link committed beside the archive's manifest could serve any file on the machine.
+- **Fixed:** `ascribe report delivery` names the checks new since the last report next to that count. They came after "no longer fails", which read as if those checks had stopped failing.
+- **Fixed:** `ascribe report` names the line a versioned build's content isn't available on. Content marked for a later line read "not ;"; it now reads "not self-managed 3.4", as the editor's build lens does.
+- **Fixed:** In the editor, a search match in a code file a `@snippet` shows gets that file's lines. After an edit, it could get another code file's lines or text.
+- **Fixed:** a table row under an indented header line has the position of its own text. Each cell's span was shifted by the header's indent, so what pointed at it missed by that many characters.
+- **Fixed:** the language server no longer walks a linked folder again on each file event for it. A link to a large tree outside the project held the server for minutes on every event.
+
 ## 0.4.4 (2026-10-26)
 
 ### The language

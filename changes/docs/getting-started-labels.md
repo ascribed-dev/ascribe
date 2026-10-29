@@ -1,1 +1,0 @@
-- **Getting started's dimension has `labels`.** Its example gives each package manager the name readers see on the site's tabs, and says what `label` and `labels` are for. See [Getting started](docs/content/getting-started.md).

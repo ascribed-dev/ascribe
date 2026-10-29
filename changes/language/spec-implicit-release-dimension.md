@@ -1,1 +1,0 @@
-- **The specification describes the implicit `release` dimension.** Ascribe already worked this way; the spec now says so, in §4.4 and §7.2. See [SPEC.md](SPEC.md#72-declarations).

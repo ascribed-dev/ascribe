@@ -1,1 +1,0 @@
-- **A code block's info-string word that looks like a pair but isn't one is a warning.** `phrases = true`, `Title=x`, an unclosed quote, and a quote escaped once each get `info-pair-malformed`, with a fix where the pair is clear. See [Code block info strings](docs/content/writing/syntax.md#code-block-info-strings).

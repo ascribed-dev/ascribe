@@ -1,1 +1,0 @@
-- **`ascribe search` lists partial matches when no block has every word, and skips common words.** The closest places come with the words each lacks, as `partial_places` in JSON; `how do I publish llms.txt` finds what `publish llms.txt` does. See [the search reference](docs/content/command/questions.md).

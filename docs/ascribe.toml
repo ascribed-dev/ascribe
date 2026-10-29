@@ -70,8 +70,8 @@ planned-label = "in main, not yet released"
 
 [releases.ascribe]
 label = "Ascribe"
-live = ["0.4.4"]
-planned = ["0.4.5"]
+live = ["0.4.5"]
+planned = ["0.4.6"]
 
 [releases.ascribe.archived]
 "0.3.1" = {}
@@ -80,6 +80,7 @@ planned = ["0.4.5"]
 "0.4.1" = {}
 "0.4.2" = {}
 "0.4.3" = {}
+"0.4.4" = {}
 
 [phrases]
 # The latest release: `[releases.ascribe]`'s live line, which

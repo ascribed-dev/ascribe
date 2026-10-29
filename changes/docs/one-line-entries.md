@@ -1,1 +1,0 @@
-- **The changelog is a line per entry, with the detail on the page each entry links to.** 0.4.4 and the entries after it are written this way. See [the changelog's entries](changes/README.md).

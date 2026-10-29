@@ -1,1 +1,0 @@
-- **Behavior change: `baseline`, `permalinks`, and `addresses` refuse files git couldn't put back.** Each that writes takes `--dry-run`, and `--force` writes a file with changes not committed. See [The `ascribe` command](docs/content/command/index.md).

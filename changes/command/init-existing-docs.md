@@ -1,1 +1,0 @@
-- **`ascribe init` adopts a folder of Markdown already there.** It declares no page types, so no page needs `type:`, then checks the pages and says what to run next; `--content-root` names their folder. See [Bring existing docs to Ascribe](docs/content/existing-docs.md).

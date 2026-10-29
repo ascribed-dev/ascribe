@@ -1,1 +1,0 @@
-- **Fixed:** In the editor, a search match in a code file a `@snippet` shows gets that file's lines. After an edit, it could get another code file's lines or text.

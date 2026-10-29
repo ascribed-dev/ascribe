@@ -1,1 +1,0 @@
-- **Fixed:** `ascribe preview`'s server no longer follows a link in the folder it serves. A link committed beside the archive's manifest could serve any file on the machine.

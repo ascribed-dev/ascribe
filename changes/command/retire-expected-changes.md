@@ -1,1 +1,0 @@
-- **`ascribe versions retire` needs no `--force` for its target's part of other builds' availability.** It lists those pages apart, as `expected` in the JSON. See [Archive and retire a line](docs/content/versions/archive.md).
