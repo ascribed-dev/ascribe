@@ -8758,6 +8758,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Crawler sources to reread"
+    },
+    {
+      "content": {
+        "body": "Found reviewing #931.\n\n**What happens.** A base build is matched, by the rename heuristic in `matched` (`crates/ascribe-check/src/addresses/mod.rs`), to an older line whose base is under the line's folder, and in the same change `[consumer] agents` goes from on to off. For each Markdown address, `moved_by` returns `[Agents, BasePath]`. `compare` filters that against `changes()`, which has no base-path change because `base-path` didn't move, so the result is `[AgentsOff]`. Once `[former] agents = [true]` is recorded, that counts as recorded and the address is skipped.\n\nBut `former_pairs` (`crates/ascribe-emit/src/site/redirects.rs`) forwards Markdown versions only from today's base (`router.markdown_url`), not from the old base without the line's folder. So the old `.md` addresses are neither forwarded in `redirects.json` nor reported as `address-lost`.\n\n**What done looks like.** Either those addresses are forwarded, or the check reports them like any other lost page (as #931 now does for the page addresses in the same situation). A test in `crates/ascribe-check/tests/all/addresses_settings.rs` covers it, with a conformance case under `tests/conformance/cases/addresses/`.",
+        "number": 1219,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Addresses: an older line's Markdown versions vanish silently when agents is turned off in the same rename",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1219"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhEXjLI",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Addresses: an older line's Markdown versions vanish silently when agents is turned off in the same rename"
     }
   ]
 }
