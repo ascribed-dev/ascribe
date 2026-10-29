@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe preview`'s server no longer follows a symbolic link in the folder it serves, so a link committed beside the archive can't serve a file from outside it.

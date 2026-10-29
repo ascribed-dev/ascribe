@@ -135,11 +135,18 @@ fn respond(request_line: &str, host: Option<&str>, port: u16, folder: &Path) -> 
         return status(404, "Not Found", "No file of the preview is there.");
     };
     let mut file = folder.to_owned();
+    let mut rel = std::path::PathBuf::new();
     for segment in &segments {
         file.push(segment);
+        rel.push(segment);
     }
     // Outside FileSystem: the preview's own output, which `ascribe preview`
-    // just wrote, not a project file.
+    // just wrote, not a project file. Nothing on the way to the file is a
+    // link: the folder is written beside a manifest a repository can commit,
+    // and a committed link in it would serve any file on the machine.
+    if ascribe_resolve::link_on_the_way(folder, &rel).is_some() {
+        return status(404, "Not Found", "No file of the preview is there.");
+    }
     let is_folder = std::fs::metadata(&file).is_ok_and(|m| m.is_dir());
     if is_folder {
         if !path.ends_with('/') {
@@ -348,5 +355,29 @@ mod tests {
         }
         let response = ask("POST / HTTP/1.1", dir.path());
         assert!(response.starts_with("HTTP/1.1 405 "));
+    }
+
+    /// A link in the folder, to a file or a folder outside it, isn't followed.
+    #[cfg(unix)]
+    #[test]
+    fn nothing_through_a_link_is_answered() {
+        let dir = folder();
+        let outside = tempfile::tempdir().expect("a folder outside");
+        std::fs::write(outside.path().join("secret.txt"), "secret").expect("a file outside");
+        std::os::unix::fs::symlink(
+            outside.path().join("secret.txt"),
+            dir.path().join("file-link"),
+        )
+        .expect("a link to a file");
+        std::os::unix::fs::symlink(outside.path(), dir.path().join("dir-link"))
+            .expect("a link to a folder");
+        for target in ["/file-link", "/dir-link/secret.txt", "/dir-link/"] {
+            let response = ask(&format!("GET {target} HTTP/1.1"), dir.path());
+            assert!(
+                response.starts_with("HTTP/1.1 404 "),
+                "{target}: {response}"
+            );
+            assert!(!response.contains("secret"), "{target}: {response}");
+        }
     }
 }
