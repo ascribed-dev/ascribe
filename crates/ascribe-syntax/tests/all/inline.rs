@@ -468,6 +468,10 @@ fn an_attribute_block_attaches_to_every_form_of_image() {
         ("![alt][r]{width=600}\n\n[r]: s.png\n", LinkForm::Full),
         ("![alt][]{width=600}\n\n[alt]: s.png\n", LinkForm::Collapsed),
         ("![alt]{width=600}\n\n[alt]: s.png\n", LinkForm::Shortcut),
+        // Its destination, title, or label on more than one line (#1220).
+        ("![alt](s.png\n){width=600}\n", LinkForm::Inline),
+        ("![alt](\ns.png \"a\nb\"\n){width=600}\n", LinkForm::Inline),
+        ("![alt][\nr]{width=600}\n\n[r]: s.png\n", LinkForm::Full),
     ] {
         let d = doc(source);
         let image = only_image(&d);
