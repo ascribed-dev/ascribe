@@ -672,3 +672,43 @@ fn a_file_under_git_is_not_an_asset() {
     );
     assert!(asset_paths(&p, "index.md").is_empty());
 }
+
+/// A symbolic link in the content root to a file under `.git` isn't an
+/// asset either: the file it names once followed is the repository's
+/// (decision #1222).
+#[cfg(unix)]
+#[test]
+fn an_asset_that_is_a_link_into_git_is_not_an_asset() {
+    use ascribe_resolve::{DiskFs, Layout, Project};
+    use std::fs;
+
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let root = dir.path();
+    fs::create_dir_all(root.join("docs")).expect("the content root");
+    fs::create_dir_all(root.join(".git")).expect("a repository");
+    fs::write(root.join(".git/config"), b"token").expect("a credential");
+    fs::write(
+        root.join("docs/index.md"),
+        format!("{PAGE}[a](creds.txt)\n\n![b](linked/config)\n"),
+    )
+    .expect("a page");
+    std::os::unix::fs::symlink("../.git/config", root.join("docs/creds.txt"))
+        .expect("a link to a file under .git");
+    std::os::unix::fs::symlink("../.git", root.join("docs/linked"))
+        .expect("a link to the .git folder");
+
+    let model = support::model();
+    let layout = Layout::from_model(&model);
+    let fs = DiskFs::new(root, &layout);
+    let p = Project::load(model, layout, &fs);
+    let problems = p.problems(&path("index.md"));
+    assert_eq!(
+        slugs(&p, "index.md", &problems),
+        [
+            ("image-source-missing".to_owned(), 7),
+            ("link-target-missing".to_owned(), 5),
+        ]
+    );
+    assert!(problems.iter().all(|i| i.variant == Some("git")));
+    assert!(asset_paths(&p, "index.md").is_empty());
+}

@@ -336,6 +336,9 @@ pub fn resolve_reference(
                     .real_path(&layout.project_path(path))
                     .and_then(|real| content_path_of(layout, &real))
                 {
+                    // A link into `.git` would carry the repository's own
+                    // files, and a credential with them (decision #1222).
+                    Some(real) if layout.is_in_git(&real) => Missing::Git,
                     Some(real) if layout.is_allowed(&real) => {
                         return Resolution::Asset {
                             path: path.clone(),
