@@ -32,6 +32,7 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
         index: LineIndex::new(source),
         options,
         issues: Vec::new(),
+        depth: 0,
     };
     let frontmatter = root
         .first_child()
@@ -63,11 +64,24 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
     }
 }
 
+/// How deep blocks and inlines may nest in the tree: a block quote in a
+/// block quote, an image in an image's text, each one level. Past it, a node
+/// is its source text, with nothing nested in it, as comrak keeps a list past
+/// its own `MAX_LIST_DEPTH` as text. Converting a node is a few stack frames
+/// a level, as is every walk of the tree after it, so a page that nests a
+/// few thousand levels deep, which is a few kilobytes of `>` or `![`, would
+/// otherwise overflow the stack of the thread parsing it and abort the
+/// process, the language server's and the MCP server's included; no real
+/// page nests a hundredth as deep.
+pub const MAX_NESTING: usize = 100;
+
 struct Converter<'a> {
     source: &'a str,
     index: LineIndex,
     options: &'a ParseOptions,
     issues: Vec<Issue>,
+    /// How many blocks and inlines are open above the node being converted.
+    depth: usize,
 }
 
 impl<'a> Converter<'a> {
@@ -205,6 +219,27 @@ impl<'a> Converter<'a> {
     }
 
     fn block(&mut self, node: Node<'_>, out: &mut Vec<Block>) {
+        if self.depth >= MAX_NESTING {
+            // Past the limit, a block is a paragraph of its source text.
+            let span = self.trimmed(self.span(node));
+            let text = Inline {
+                span,
+                kind: InlineKind::Text(self.text(span).to_owned()),
+            };
+            out.push(Block {
+                span,
+                kind: BlockKind::Paragraph(Paragraph {
+                    inlines: vec![text],
+                }),
+            });
+            return;
+        }
+        self.depth += 1;
+        self.nested_block(node, out);
+        self.depth -= 1;
+    }
+
+    fn nested_block(&mut self, node: Node<'_>, out: &mut Vec<Block>) {
         let mut span = self.span(node);
         let ast = node.data();
         let kind = match &ast.value {
@@ -743,6 +778,21 @@ impl<'a> Converter<'a> {
     }
 
     fn inline(&mut self, node: Node<'_>, out: &mut Vec<Inline>) {
+        if self.depth >= MAX_NESTING {
+            // Past the limit, an inline is its source text.
+            let span = self.raw_span(node);
+            out.push(Inline {
+                span,
+                kind: InlineKind::Text(self.text(span).to_owned()),
+            });
+            return;
+        }
+        self.depth += 1;
+        self.nested_inline(node, out);
+        self.depth -= 1;
+    }
+
+    fn nested_inline(&mut self, node: Node<'_>, out: &mut Vec<Inline>) {
         // A line break's span is its line ending, so nothing is trimmed.
         let span = self.raw_span(node);
         let ast = node.data();

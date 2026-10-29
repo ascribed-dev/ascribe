@@ -13,6 +13,8 @@ mod agreement;
 mod definitions;
 #[path = "all/inline.rs"]
 mod inline;
+#[path = "all/nesting.rs"]
+mod nesting;
 #[path = "all/parse.rs"]
 mod parse;
 #[path = "all/spans.rs"]

@@ -27,6 +27,7 @@ assert!(doc.issues.is_empty());
 ## Rules
 
 - **It parses one file and knows nothing else:** not the content model (only the schemas in `ParseOptions`), not other files, not the file system. Whether a link's target exists, or an attribute's value is allowed, is decided later, in `ascribe-resolve` and `ascribe-check`.
+- **Nesting is bounded.** Past `MAX_NESTING` (100) levels of blocks and inlines, a node is its source text with nothing nested in it, as comrak keeps a list past its own depth limit. Converting a node is a few stack frames a level, as is every walk of the tree after it, so a page nesting a few thousand levels deep would otherwise abort the process parsing it. `tests/all/nesting.rs` holds it.
 - **It depends only on `ascribe-core` and `comrak-ascribe`.** No other crate sees comrak's types; a change to the fork stays behind this crate's tree.
 - **Issues are reported by registry slug** (`ascribe_core::Issue`) and worded by `ascribe-check`.
 - **A span covers exactly its node's source text,** counted in UTF-8 bytes from the start of the file, frontmatter included.

@@ -67,6 +67,7 @@ mod unknown;
 
 pub mod tree;
 
+pub use convert::MAX_NESTING;
 pub use frontmatter_lines::{FrontmatterLine, frontmatter_lines};
 pub use options::ParseOptions;
 pub use structure::{bound_block, bound_heading};

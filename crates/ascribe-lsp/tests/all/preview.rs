@@ -529,3 +529,25 @@ fn a_linked_asset_outside_the_project_is_not_served() {
     assert!(path_ends_with(&assets[0]["path"], "docs/inside.png"));
     client.shutdown();
 }
+
+/// A page that nests inlines thousands of levels deep is parsed on the
+/// server's worker thread, whose stack is small: past the parser's nesting
+/// limit the rest is text, so the server answers instead of aborting.
+#[test]
+fn a_page_nested_thousands_of_levels_deep_does_not_stop_the_server() {
+    let f = Fixture::new(MODEL, &[("docs/page.md", "# Page\n")]);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let n = 5_000;
+    let deep = format!(
+        "# Page\n\n{}x{}\n\n{} quoted\n",
+        "![".repeat(n),
+        "]()".repeat(n),
+        ">".repeat(n)
+    );
+    client.open(&f.path("docs/page.md"), 1, &deep);
+    client.settle();
+    let result = preview(&mut client, &f.path("docs/page.md"), None);
+    assert!(!result["page"].is_null(), "{result}");
+    client.shutdown();
+}
