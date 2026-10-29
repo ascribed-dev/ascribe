@@ -25,14 +25,14 @@ Hardening notes from [phase 2](../phase-2-programs.md), reviewed on 27 October 2
 
 ## H4: `[checks.links] command` and `[checks.vale] command` choose the binary that runs
 
-- **Where:** `crates/ascribe-check/src/tool.rs` (`program`: a command with a path separator is resolved against the project root, a bare name against the `PATH`); `crates/ascribe-model/src/checks.rs` and `prose/`. The site check's command is the fixed bare name `afdocs`.
+- **Where:** `crates/ascribe-report/src/tool.rs` since the split of `ascribe-report` (`program`: a command with a path separator is resolved against the project root, a bare name against the `PATH`); `crates/ascribe-model/src/checks.rs` and `prose/`. The site check's command is the fixed bare name `afdocs`.
 - **What it costs:** the project's content picks which program runs for the link check and the prose check. Decision 76 bounds Vale: the MCP server never starts it, the hook runs only a bare name, and the language server asks once. The link and site checks are report-only (`stage = "report"` for ASC168 to ASC171 in `tests/conformance/diagnostics.toml`), so lychee and afdocs run only from `ascribe report`, which this repository runs on a schedule on `main` (`report.yml`), never on a pull request's checkout. Arguments are a list, never a shell, and lychee reads its addresses on standard input, so the program's name is the only lever. If `ascribe report` or a link check were ever run on a fork's checkout, a project-supplied binary would run in CI.
 - **Recommendation:** give the link check's `command` the rule decision 76 gives Vale's (a bare name on the `PATH` from an agent's surface; a question from the editor), and have phase 5 record that no workflow runs `report` on an untrusted checkout.
 - **Size:** small to record; medium to extend decision 76's rule to the link check.
 
 ## H5: the extension runs a `.cmd` shim through a shell on Windows
 
-- **Where:** `packages/vscode/src/environment.ts` (`runVersion`), `ui/tasks.ts` (`askSources`), `ui/checkEveryBuild.ts`, and `ui/agentFiles.ts`, each with `shell: usesShell(file)`, true only on Windows for a `.cmd` or `.bat` file.
+- **Where:** `packages/vscode/src/environment.ts` (`runVersion`), `ui/tasks.ts` (`askSources`), `ui/checkEveryBuild.ts`, `ui/agentFiles.ts`, `ui/keepAddresses.ts`, `diskChanges.ts`, `client.ts` (the language server itself), and `agents/mcpServer.ts`, each with `shell: usesShell(file)`, true only on Windows for a `.cmd` or `.bat` file.
 - **What it costs:** the project's `node_modules/.bin/ascribe.cmd` runs through `cmd.exe`. The path is double-quoted and a Windows path can't contain `"`, the arguments are static, and the whole activation waits on Workspace Trust (`extension.ts`), with `tasks.ts` rechecking `isTrusted` at every entry; running the project's own binary after trust is the extension's declared design (`package.json`'s `untrustedWorkspaces`). Nothing to inject today.
 - **Recommendation:** none required. For defence in depth, run the shim as an explicit `cmd /c` argument list instead of `shell: true`.
 - **Size:** small.
@@ -43,6 +43,7 @@ Hardening notes from [phase 2](../phase-2-programs.md), reviewed on 27 October 2
 - **What it costs:** nothing today: the job already runs `cargo test --workspace` on the same checkout, `ci.yml` calls `rust.yml` with `with:` and no `secrets: inherit`, `rust.yml` sets `permissions: contents: read`, and `ci.yml` never uses `pull_request_target`. `observe`'s own guards hold: it reads only the `ascribe.examples.toml` in the folder it's run in, refuses one that arrived as a `sources fetch` copy, and substitutes nothing into the line. The cost is that the invariant is unwritten, so a job that gained a secret or a write token while running `observe` on a fork's checkout would be exploitable with no tripwire.
 - **Recommendation:** a line in `scripts/ci/` (which already checks every job has a timeout) that fails when a job running `observe`, `cargo test`, or `pnpm test` on a `pull_request` checkout inherits secrets or has a write permission.
 - **Size:** small.
+- **Re-checked 29 October:** better. Decision #979 has `observe` list its commands and run nothing without a terminal unless given `--yes`, which `rust.yml` now passes; the tripwire is still missing.
 
 ## Checked, nothing found
 
@@ -58,3 +59,13 @@ Each question of the phase, what was tried, and the outcome. Reproductions were 
 - **`@ascribed/astro`'s `run.ts`, `project.ts`, and `review/diff.ts`; `@ascribed/review`'s `git.ts`.** `execFile`, no shell; the binary from the `binary` option, `ASCRIBE_BIN`, then the bundled one, which the site's author sets, not a page; `review/diff.ts` puts `--` before its path. `git.ts` applies `ascribe_core::git`'s `OPTIONS` and `CLEARED`, held to the Rust lists by `packages/review/test/git.test.ts`. What's missing is H2.
 - **The hook's check server.** `checker.rs` starts `current_exe()` as `agents hook-server` with absolute paths it built; on Windows it starts `powershell.exe -NoProfile -NonInteractive` with paths single-quote-escaped. The mailbox and the binary's copy live in the user's cache folder, not the project.
 - **`ascribe observe`.** The one shell start, `sh -c` or `cmd /C`. It asks at a terminal and runs nothing on a no; `--yes` or no terminal runs it. It reads only the `ascribe.examples.toml` in the current folder, refuses one that's a `sources fetch` copy, and substitutes nothing. Where CI runs it is H6.
+
+## Re-checked on 29 October 2026, against `main` at `85c4c85c`
+
+All six notes hold: H1 reproduced three ways (outside git, in a clean repository, against a bare target), H4 reproduced, H2 and H3 unchanged (the review package's sources are byte-identical), H5 unchanged with four more call sites named above, H6 better. `program_starts.rs` lists the same five files, `tool.rs` moved to `ascribe-report`; no program start was added, and the TypeScript side's `child_process` users are the same. Every "nothing found" claim holds, the planted `.git/config` re-run under the new `git` callers included. What the 200 commits added:
+
+- **The git guard** (`crates/ascribe-cli/src/guard.rs`): `git rev-parse` and `git status --porcelain -z -- :(literal)<path>` from seventeen commands and three MCP tools (`ascribe_fmt`, `ascribe_rename`, `ascribe_addresses_move`), through `ascribe_diff::Repository`, so with decision 76's options and the cleared environment; a planted `core.fsmonitor`, `core.hooksPath`, `diff.external`, textconv driver, and `core.pager` fired nothing under it.
+- **`rust.yml`'s `agents sync --check --command "cargo run -q -p ascribe-cli --"`** on a pull request's checkout: the value is a workflow literal, held to letters, digits, spaces, and `._/@:+=-`, written into agent files, never started; `--check` writes nothing.
+- **`ci.yml`'s `record` job** runs `scripts/ci/change-record.ts` from the pull request's checkout with the read-only token; its one program start is `git diff --name-status` with a fixed base.
+- **`site.yml`'s `ascribe check --base`** with the base repository's ref or SHA: `--end-of-options` applies anyway. `site` is the one job `ci.yml` calls with `secrets: inherit`, for the Netlify preview, which a fork's run doesn't receive; phase 5 holds it.
+- **`sources fetch --dry-run` and `update --dry-run`** still fetch into the cache to say what they'd copy, so they're one more way to a `file://` repository, with a smaller result (H1).

@@ -51,6 +51,8 @@ Phase 0 comes first because every later phase asks "is this input trusted?" Phas
 
 **Status, 27 October 2026:** phases 0 to 5 ran, each phase's findings checked by a second, adversarial agent. Five private findings are with the maintainer (two high, two medium, one low; decision 1), and the hardening notes are in `notes/phase-1.md` to `notes/phase-5.md`, each ending with what was checked and held. The fuzz targets phase 1 added are in `fuzz/`. Phase 6 is next.
 
+**Re-checked on 29 October 2026** against `main` at `85c4c85c`, two hundred commits on (the `ascribe-workspace`, `ascribe-edit`, and `ascribe-report` crates, the git guard): all five private findings hold, one wider than first written; of the hardening notes one is fixed (phase 1's H4) and one improved (phase 2's H6), the rest hold; each notes file ends with what the two hundred commits added to its surface, looked at, with two new notes (phase 1's H5 and H6).
+
 ## No thread
 
 A review, not a feature: no layer is built, so the steel-threads ordering doesn't apply.

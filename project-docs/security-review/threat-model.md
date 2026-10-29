@@ -125,6 +125,17 @@ Two more corrections to the README's "What exists today":
 - **Fuzzing exists.** `fuzz/` holds three `cargo-fuzz` targets (`parse`, `model`, `format`), and `fuzz.yml` runs them nightly, opening an issue per distinct crash (decision #1020). Phase 1's new targets (frontmatter, the OpenAPI reader, the example validator) join that crate and that job rather than starting one.
 - **The hook's check server starts this binary again,** and on Windows starts `powershell.exe` (`crates/ascribe-cli/src/agents/checker.rs`); `program_starts.rs` lists it. Phase 2 and 3 cover it.
 
+## Since 27 October
+
+`main` moved two hundred commits between the review and its re-check on 29 October. What they added to the entry points, and the phase that holds each:
+
+- **`ascribe-workspace`** (decision #994): one loaded project shared by every surface, with its own three reads outside `FileSystem` (finding and reading `ascribe.toml`, and a listing of the content root for stamps that doesn't descend a linked folder). Phase 1.
+- **The git guard** (`crates/ascribe-cli/src/guard.rs`, decision #965): `git rev-parse` and `git status` before every writing command and the MCP tools that write, so a new caller of `git` in a checkout Ascribe didn't make, with decision 76's options. It checks that a file is restorable, not that it's inside the project. Phase 2.
+- **`ascribe-edit`**: the rename, release, retire, memo, nav, and model edits shared by the commands and the language server. Phase 3.
+- **`ascribe-report`**: `tool.rs` and the link checks, moved out of `ascribe-check`; the cache and histories are written by the CLI's `DiskStore`. Phases 2 and 5.
+- **`ascribe new`**, **`check --format github`**, the `--check` unified diffs, `observe --yes` (decision #979), and `sources fetch --dry-run`. Phases 1 and 2.
+- **`ci.yml`'s `record` job**, `rust.yml`'s `agents sync --check`, and `site.yml`'s `check --base`. Phase 5.
+
 ## Settled, and to settle
 
 README decision 3 is the settlement of who's trusted; this page applies it. One point the table surfaces that the README doesn't settle, for the maintainer (README decision 7 records the answer):
