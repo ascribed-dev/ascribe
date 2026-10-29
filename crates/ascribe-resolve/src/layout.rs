@@ -52,6 +52,15 @@ impl Layout {
         let in_output = !self.output_dir.is_root() && in_project.starts_with(&self.output_dir);
         inside && !in_output
     }
+
+    /// Whether the file at this content path is under a `.git` folder: the
+    /// repository's own files, which a build never copies, since a checkout's
+    /// `.git/config` can hold a credential (decision #1222).
+    pub(crate) fn is_in_git(&self, content_path: &RelPath) -> bool {
+        self.project_path(content_path)
+            .segments()
+            .any(|segment| segment == ".git")
+    }
 }
 
 #[cfg(test)]

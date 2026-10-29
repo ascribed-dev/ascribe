@@ -261,3 +261,57 @@ fn a_build_with_none_of_the_pages_is_gone_not_renamed() {
     assert_eq!(found.len(), 1, "{:?}", messages(&found));
     assert_eq!(found[0].slug, diagnostics::ADDRESSES_BUILD_GONE);
 }
+
+/// `MODEL` with its build versioned: `site`, the current line `1.1`, under
+/// `/docs/`, and `site@1.0`, the older line, under `/docs/1.0/`.
+fn with_lines() -> String {
+    MODEL.replace(
+        "[builds.site]\n",
+        "[dimensions.release]\nlabel = \"Product\"\nvalues = [\"prod\"]\n\
+         [releases.prod]\nlive = [\"1.0\", \"1.1\"]\n\
+         [builds.site]\nversions = \"prod\"\n",
+    )
+}
+
+#[test]
+fn a_rename_that_ties_prefers_the_build_that_isn_t_an_older_line() {
+    // `site` and `site@1.0` publish every page `old` did.
+    let before = MODEL.replace("[builds.site]", "[builds.old]");
+    let (found, _) = compared(&before, &with_lines(), "");
+    assert_eq!(
+        messages(&found),
+        [(
+            diagnostics::ADDRESS_LOST.as_str(),
+            Severity::Warning,
+            "the build `old` was renamed `site`, so no address moved"
+        )]
+    );
+}
+
+#[test]
+fn an_older_line_s_own_folder_is_each_page_s_move() {
+    // `site` keeps its name, so `old` can only be `site@1.0`, whose pages
+    // moved under `1.0/` with no setting changed.
+    let before = format!("{MODEL}[builds.old]\n");
+    let (found, _) = compared(&before, &with_lines(), "");
+    let lost = |page: &str| format!("{page}, and nothing publishes them now in the build `old`");
+    let (index, keys, setup) = (
+        lost("index.md was published at /docs and /docs/index.md"),
+        lost("keys.md was published at /docs/keys and /docs/keys.md"),
+        lost("setup.md was published at /docs/setup and /docs/setup.md"),
+    );
+    let lost = diagnostics::ADDRESS_LOST.as_str();
+    assert_eq!(
+        messages(&found),
+        [
+            (
+                lost,
+                Severity::Warning,
+                "the build `old` was renamed `site@1.0`, so no address moved"
+            ),
+            (lost, Severity::Warning, index.as_str()),
+            (lost, Severity::Warning, keys.as_str()),
+            (lost, Severity::Warning, setup.as_str()),
+        ]
+    );
+}

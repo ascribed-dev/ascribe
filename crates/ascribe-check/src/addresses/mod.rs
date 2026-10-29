@@ -228,14 +228,17 @@ pub fn compare(here: &Here<'_>, base: &Base) -> Vec<Diagnostic> {
                     .iter()
                     .filter(|c| by.contains(&c.setting()))
                     .collect();
-                if by.iter().all(|c| c.recorded(&file.former)) {
+                // A move no setting of the content model made, as a line's
+                // own folder, is the page's, and reported as one.
+                if !by.is_empty() {
+                    if !by.iter().all(|c| c.recorded(&file.former)) {
+                        for change in by {
+                            moved.change(change.clone());
+                        }
+                        moved.add(address, &after.build);
+                    }
                     continue;
                 }
-                for change in by {
-                    moved.change(change.clone());
-                }
-                moved.add(address, &after.build);
-                continue;
             }
             match address.kind {
                 AddressKind::Page | AddressKind::Markdown => {
@@ -380,13 +383,18 @@ fn matched<'a>(
             .filter(|a| a.kind == AddressKind::Page)
             .map(|a| &a.page)
             .collect();
+        // The most pages shared, then a build that isn't an older line,
+        // then the first.
         let best = unmatched
             .iter()
             .enumerate()
-            .map(|(i, b)| (i, sources.iter().filter(|p| b.publishes(p)).count()))
-            .max_by_key(|(_, shared)| *shared)
-            .filter(|(_, shared)| *shared * 2 > sources.len());
-        if let Some((i, _)) = best {
+            .map(|(i, b)| {
+                let shared = sources.iter().filter(|p| b.publishes(p)).count();
+                (i, shared, b.settings.base == b.settings.base_path)
+            })
+            .max_by(|x, y| (x.1, x.2).cmp(&(y.1, y.2)).then(y.0.cmp(&x.0)))
+            .filter(|(_, shared, _)| *shared * 2 > sources.len());
+        if let Some((i, _, _)) = best {
             *after = Some(unmatched.remove(i).build.as_str());
         }
     }

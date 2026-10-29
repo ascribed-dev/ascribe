@@ -17,6 +17,10 @@
       "message": "`{path}` doesn't exist; did you mean `{closest}`?"
     },
     {
+      "name": "git",
+      "message": "`{path}` is in `.git`, the repository's own folder, which is never copied into the output"
+    },
+    {
       "name": "outside",
       "message": "`{path}` is outside the project, so it can't be copied into the output"
     }

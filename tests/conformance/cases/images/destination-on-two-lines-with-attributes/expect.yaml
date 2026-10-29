@@ -1,0 +1,11 @@
+description: >-
+  An image whose destination and title run onto later lines ends at its `)`,
+  so the attribute block directly after it is still its own (#1220).
+spec: ["5.3"]
+tags: [inline]
+
+outline:
+  - image: settings.png
+    alt: The Quill settings page
+    title: The settings
+    attributes: {width: "600"}

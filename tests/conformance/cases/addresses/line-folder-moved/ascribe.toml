@@ -1,0 +1,16 @@
+spec = "0.1"
+
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+base-path = "/docs/"
+
+[dimensions.release]
+label = "Quill"
+values = ["quill"]
+
+[releases.quill]
+live = ["1.0", "1.1"]
+
+[builds.site]
+versions = "quill"
