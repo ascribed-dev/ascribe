@@ -1,1 +1,1 @@
-- **Fixed:** the language server no longer walks a linked folder again on every file event for it, which held the server for minutes when the link led to a large tree outside the project.
+- **Fixed:** the language server no longer walks a linked folder again on each file event for it. A link to a large tree outside the project held the server for minutes on every event.
