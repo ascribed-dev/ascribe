@@ -71,11 +71,13 @@ The skill at the repository's root is shared by its projects, so when they run A
 
 ## Keeping them current in CI
 
-`--check` writes nothing, and exits with `1` when a file is out of date, naming it. Run it in CI so the instructions can't fall behind `ascribe.toml`:
+`--check` writes nothing, prints how each file out of date would change as a unified diff, and exits with `1` when one is. Run it in CI so the instructions can't fall behind `ascribe.toml`:
 
 ```shell
 ascribe agents sync --check
 ```
+
+`--dry-run` lists the files `sync` would write, and writes none. Like [every command that writes](../command/index.md#commands-that-write), `sync` won't change a file git couldn't put back, such as an `AGENTS.md` with changes not committed: commit them, or pass `--force`.
 
 ## The skill
 

@@ -20,9 +20,13 @@ fn project() -> TempDir {
 }
 
 fn ascribe(dir: &Path, args: &[&str]) -> Output {
+    // The folder isn't a repository, so eject passes the git guard with
+    // `--force`; `guard.rs` tests the guard.
+    let writes = args.contains(&"eject") && !args.contains(&"--dry-run");
     Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
+        .args(writes.then_some("--force"))
         .env("NO_COLOR", "1")
         .output()
         .expect("run ascribe")

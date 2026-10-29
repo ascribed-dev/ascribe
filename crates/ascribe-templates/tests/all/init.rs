@@ -27,6 +27,7 @@ fn run_in(
         templates,
         content_root,
         ascribe_version: "9.9.9",
+        dry_run: false,
     })
 }
 

@@ -385,8 +385,18 @@ impl World {
     pub fn disk(&self, layout: &Layout) -> Disk {
         let fs = Arc::new(self.fs(layout));
         Disk {
-            probes: Arc::clone(&fs),
+            probes: Some(Arc::clone(&fs)),
             now: Arc::new(Mutex::new((fs, self.unreadable_list()))),
+        }
+    }
+
+    /// [`World::disk`], with each probe answered as the files are now, as a
+    /// project on disk that's told of every change answers (a `Workspace`
+    /// kept from listings of its files).
+    pub fn live_disk(&self, layout: &Layout) -> Disk {
+        Disk {
+            probes: None,
+            ..self.disk(layout)
         }
     }
 
@@ -520,7 +530,8 @@ impl World {
 /// read as it is now. [`Disk::update`] moves it to a later world.
 #[derive(Clone)]
 pub struct Disk {
-    probes: Arc<MemoryFs>,
+    /// The files probes see; `None` when they see the files as they are now.
+    probes: Option<Arc<MemoryFs>>,
     now: Arc<Mutex<(Arc<MemoryFs>, Vec<Unreadable>)>>,
 }
 
@@ -557,7 +568,10 @@ impl FileSystem for Disk {
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {
-        self.probes.probe(project_path)
+        match &self.probes {
+            Some(probes) => probes.probe(project_path),
+            None => self.now().0.probe(project_path),
+        }
     }
 
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {

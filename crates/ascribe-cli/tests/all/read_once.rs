@@ -4,22 +4,25 @@
 //! (`tests/support/counting.rs`). The source index a command resolves with
 //! is built from what loading read, not read again. What the commands
 //! answer is tested in their own files; this holds only how often they
-//! read.
+//! read. A project kept between calls, as the MCP server keeps one, reads
+//! only the page an edit wrote before its next call.
 
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use ascribe_check::Project;
 use ascribe_core::RelPath;
 use ascribe_diff::{DiffOptions, DriftOptions};
 use ascribe_emit::{Output, WriteOptions};
+use ascribe_model::SourceBound;
 use ascribe_query::{Asked, Emit, Readings, Search};
 use ascribe_resolve::{DiskFs, Layout};
-use ascribe_workspace::Workspace;
+use ascribe_workspace::{Kept, SharedFs, Workspace};
 use tempfile::TempDir;
 
 use crate::counting::Counting;
@@ -202,4 +205,71 @@ fn each_command_reads_each_source_once_and_lists_them_once() {
     reads_once(dir, "versions", |project| {
         ascribe_query::versions::list(project.index());
     });
+}
+
+/// A project kept between calls, as the MCP server keeps one
+/// (`crate::mcp::cache`), reads only the page an edit wrote before its next
+/// call, and checks the project as it is now.
+#[test]
+fn a_kept_project_reads_only_the_page_an_edit_wrote() {
+    let dir = quill();
+    let dir = dir.path();
+    let made: Arc<Mutex<Option<Arc<Counting>>>> = Arc::default();
+    let fs_for = {
+        let made = made.clone();
+        Box::new(move |root: &Path, layout: &Layout| -> SharedFs {
+            let counting = Counting::new(Arc::new(DiskFs::new(root, layout)));
+            *made.lock().unwrap() = Some(counting.clone());
+            counting
+        })
+    };
+    let mut kept = Kept::load_through(
+        ascribe_check::LOADER,
+        &dir.join("ascribe.toml"),
+        SourceBound::Anywhere,
+        fs_for,
+    )
+    .expect("Quill loads");
+    let counting = made.lock().unwrap().clone().expect("a file system");
+    let call = |kept: &mut Kept| {
+        kept.refresh(SourceBound::Anywhere).expect("Quill loads");
+        let project = Project::new(kept.snapshot());
+        ascribe_check::Found::from(ascribe_check::diagnose(&project, &[]).expect("every build"))
+    };
+    call(&mut kept);
+    let before = counting.reads();
+
+    let edited = dir.join("docs/quickstart.md");
+    let text = fs::read_to_string(&edited).expect("the page");
+    fs::write(&edited, format!("{text}\n[Gone](gone.md)\n")).expect("an edit");
+    let found = call(&mut kept);
+
+    let mut read: BTreeMap<RelPath, usize> = counting.reads();
+    for (path, n) in &before {
+        if let Some(now) = read.get_mut(path) {
+            *now -= n;
+        }
+    }
+    read.retain(|_, n| *n > 0);
+    assert_eq!(
+        read,
+        BTreeMap::from([(page("quickstart.md"), 1)]),
+        "the next call read other sources"
+    );
+    assert_eq!(counting.listed(), 1, "the sources were listed again");
+    // And it finds what a fresh load finds.
+    let (fresh, _) = load(dir);
+    let fresh =
+        ascribe_check::Found::from(ascribe_check::diagnose(&fresh, &[]).expect("every build"));
+    assert_eq!(
+        format!("{:?}", found.diagnostics),
+        format!("{:?}", fresh.diagnostics)
+    );
+    assert!(
+        found
+            .diagnostics
+            .iter()
+            .any(|d| d.message.contains("gone.md")),
+        "the edit's broken link is found"
+    );
 }

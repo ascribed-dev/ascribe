@@ -42,8 +42,11 @@ pub struct AgentsIndex {
     /// The file the index was written into, between its markers, from the
     /// folder the command ran in; `null` when it was printed.
     pub file: Option<String>,
-    /// Whether that file changed.
+    /// Whether that file changed: with `--dry-run`, whether it would.
     pub changed: bool,
+    /// Whether the file and the pages were written: false when the index
+    /// was printed, or with `--dry-run`.
+    pub written: bool,
     /// The folder the pages were copied into, from the folder the command
     /// ran in; `null` without `--pages`.
     pub folder: Option<String>,
@@ -121,6 +124,7 @@ pub fn agents_index(
         without_description: strings(&index.without_description),
         file: None,
         changed: false,
+        written: false,
         folder: None,
         pages: copied,
         text: index.text,

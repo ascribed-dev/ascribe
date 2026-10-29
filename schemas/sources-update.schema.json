@@ -360,7 +360,7 @@
       "type": "string"
     },
     "changed": {
-      "description": "Whether any file changed: a copy, or the lock.",
+      "description": "Whether any file changed: a copy, or the lock. With `--dry-run`,\nwhether any would.",
       "type": "boolean"
     },
     "pages": {
@@ -391,12 +391,17 @@
         "$ref": "#/$defs/SourceUpdate"
       },
       "type": "array"
+    },
+    "written": {
+      "description": "Whether the copies and the lock were written: false with\n`--dry-run`, which lists no pages, since it wrote no copies.",
+      "type": "boolean"
     }
   },
   "required": [
     "schema_version",
     "ascribe_version",
     "changed",
+    "written",
     "sources",
     "pages",
     "pages_unavailable"

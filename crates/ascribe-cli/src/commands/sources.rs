@@ -22,7 +22,7 @@ use crate::cli::Global;
 use crate::commands::diff::fail;
 use crate::commands::drift::{escape, write_summary_groups, write_text_groups};
 use crate::context::{Failure, checked, load_model, load_project, load_rest};
-use crate::exit;
+use crate::{exit, guard};
 
 /// The version of `fetch --format json`'s schema.
 pub const FETCH_SCHEMA_VERSION: u32 = 1;
@@ -64,6 +64,10 @@ pub struct FetchArgs {
     #[arg(value_name = "NAME")]
     pub names: Vec<String>,
 
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// How to show what was copied.
     #[arg(long, value_enum, default_value_t = answer::Format::Text, value_name = "FORMAT")]
     pub format: answer::Format,
@@ -83,6 +87,10 @@ pub struct UpdateArgs {
     /// Only for one source: name it.
     #[arg(long, value_name = "REV")]
     pub to: Option<String>,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what changed.
     #[arg(long, value_enum, default_value_t = UpdateFormat::Text, value_name = "FORMAT")]
@@ -154,6 +162,26 @@ fn view(global: &Global, err: &mut dyn Write) -> Result<(Project, SourcesView), 
     Ok((checked(&workspace), view))
 }
 
+/// Whether `fetch` and `update` plan their changes, for the guard to be asked
+/// about them before they're made: unless `--force` lets them write as they
+/// go. `--dry-run` only plans.
+fn plans(guard: &guard::Options) -> bool {
+    guard.dry_run || !guard.force
+}
+
+/// Asks the guard about the changes planned, then makes them, unless
+/// `--dry-run`. A run that stopped on an error makes what it planned before
+/// it, as one that writes as it goes would have written it.
+fn make_plan(view: &SourcesView, guard: &guard::Options, err: &mut dyn Write) -> Result<(), u8> {
+    guard
+        .allow(&view.planned())
+        .map_err(|e| exit::fail(err, &e))?;
+    if !guard.dry_run {
+        view.apply().map_err(|e| exit::fail(err, &e))?;
+    }
+    Ok(())
+}
+
 /// Exit codes: 0 when the copies match the lock, 1 when a file a snippet
 /// names couldn't be copied, 2 when it couldn't run.
 fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
@@ -165,12 +193,18 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
         Ok(options) => options,
         Err(e) => return exit::fail(err, &e),
     };
-    let report = match ascribe_sources::fetch(&view, &args.names, &options) {
+    let dry_run = args.guard.dry_run;
+    let view = view.planning(plans(&args.guard));
+    let fetched = ascribe_sources::fetch(&view, &args.names, &options);
+    if let Err(code) = make_plan(&view, &args.guard, err) {
+        return code;
+    }
+    let report = match fetched {
         Ok(report) => report,
         Err(e) => return exit::fail(err, &e),
     };
     let written = match args.format {
-        answer::Format::Text => write_fetch(out, err, &report),
+        answer::Format::Text => write_fetch(out, err, &report, dry_run),
         answer::Format::Json => {
             for source in report.sources.iter().filter(|s| s.first_copy) {
                 let _ = first_copy(err, &source.name);
@@ -180,6 +214,7 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
                 &FetchJson {
                     schema_version: FETCH_SCHEMA_VERSION,
                     ascribe_version: env!("CARGO_PKG_VERSION"),
+                    written: !dry_run,
                     report: &report,
                 },
             )
@@ -199,19 +234,36 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
     }
 }
 
-fn write_fetch(out: &mut dyn Write, err: &mut dyn Write, report: &FetchReport) -> io::Result<()> {
+/// What `fetch` did, or with `--dry-run`, would do.
+fn write_fetch(
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+    report: &FetchReport,
+    dry_run: bool,
+) -> io::Result<()> {
+    let [pinned, copied, removed, unpinned, wrote] = if dry_run {
+        [
+            "would pin",
+            "would copy",
+            "would remove",
+            "would unpin",
+            "would write",
+        ]
+    } else {
+        ["pinned", "copied", "removed", "unpinned", "wrote"]
+    };
     for source in &report.sources {
         let name = &source.name;
         if let Some(commit) = &source.commit
             && source.pinned
         {
-            writeln!(out, "{name}: pinned to {}", short(commit))?;
+            writeln!(out, "{name}: {pinned} to {}", short(commit))?;
         }
         for path in &source.copied {
-            writeln!(out, "{name}: copied {path}")?;
+            writeln!(out, "{name}: {copied} {path}")?;
         }
         for path in &source.removed {
-            writeln!(out, "{name}: removed {path}, which no snippet uses")?;
+            writeln!(out, "{name}: {removed} {path}, which no snippet uses")?;
         }
         for failure in &source.failed {
             writeln!(
@@ -220,18 +272,18 @@ fn write_fetch(out: &mut dyn Write, err: &mut dyn Write, report: &FetchReport) -
                 failure.path, failure.reason
             )?;
         }
-        if source.first_copy {
+        if source.first_copy && !dry_run {
             first_copy(err, name)?;
         }
     }
     for name in &report.unpinned {
         writeln!(
             out,
-            "unpinned {name}, which ascribe.toml no longer declares in another repository"
+            "{unpinned} {name}, which ascribe.toml no longer declares in another repository"
         )?;
     }
     if report.lock_written {
-        writeln!(out, "wrote ascribe.lock")?;
+        writeln!(out, "{wrote} ascribe.lock")?;
     } else if report
         .sources
         .iter()
@@ -260,6 +312,9 @@ pub(crate) struct FetchJson<'a> {
     schema_version: u32,
     /// The version of Ascribe that wrote it.
     ascribe_version: &'static str,
+    /// Whether the copies and the lock were written: false with
+    /// `--dry-run`, which says what it would copy, remove, and write.
+    written: bool,
     #[serde(flatten)]
     report: &'a FetchReport,
 }
@@ -356,21 +411,27 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
         Ok(options) => options,
         Err(e) => return exit::fail(err, &e),
     };
-    let report = match ascribe_sources::update(&view, &args.names, args.to.as_deref(), &options) {
+    let dry_run = args.guard.dry_run;
+    let view = view.planning(plans(&args.guard));
+    let to = args.to.as_deref();
+    let updated = ascribe_sources::update(&view, &args.names, to, &options);
+    if let Err(code) = make_plan(&view, &args.guard, err) {
+        return code;
+    }
+    let report = match updated {
         Ok(report) => report,
         Err(e) => return exit::fail(err, &e),
     };
     // The pages whose examples changed: the working tree, with the new
-    // copies, against HEAD.
-    let pages = if report.changed {
+    // copies, against HEAD. A dry run wrote no copies to compare.
+    let pages = if report.changed && !dry_run {
         pages(global)
     } else {
         Ok(None)
     };
     let site = project.model().consumer.site.as_deref();
-    let to = args.to.as_deref();
     let written = match args.format {
-        UpdateFormat::Text => write_update_text(out, err, &report, to, &pages),
+        UpdateFormat::Text => write_update_text(out, err, &report, to, &pages, dry_run),
         UpdateFormat::Json => {
             let (pages, unavailable) = match &pages {
                 Ok(drift) => (drift.as_ref().map(|d| d.pages.as_slice()), None),
@@ -382,6 +443,7 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
                     schema_version: UPDATE_SCHEMA_VERSION,
                     ascribe_version: env!("CARGO_PKG_VERSION"),
                     changed: report.changed,
+                    written: !dry_run,
                     sources: &report.sources,
                     pages,
                     pages_unavailable: unavailable,
@@ -410,8 +472,12 @@ pub(crate) struct UpdateJson<'a> {
     schema_version: u32,
     /// The version of Ascribe that wrote it.
     ascribe_version: &'static str,
-    /// Whether any file changed: a copy, or the lock.
+    /// Whether any file changed: a copy, or the lock. With `--dry-run`,
+    /// whether any would.
     changed: bool,
+    /// Whether the copies and the lock were written: false with
+    /// `--dry-run`, which lists no pages, since it wrote no copies.
+    written: bool,
     /// What the update did for each source, in declaration order.
     sources: &'a [SourceUpdate],
     /// The pages whose examples the new copies change, as `ascribe drift
@@ -550,6 +616,7 @@ fn write_update_text(
     report: &UpdateReport,
     to: Option<&str>,
     pages: &Result<Option<DriftReport>, PagesUnavailable>,
+    dry_run: bool,
 ) -> io::Result<()> {
     for source in &report.sources {
         let name = &source.name;
@@ -603,6 +670,12 @@ fn write_update_text(
     }
     if !report.changed {
         return writeln!(out, "\nNothing to move, and no file changed.");
+    }
+    if dry_run {
+        return writeln!(
+            out,
+            "\nWith --dry-run, no file was written, so the pages aren't compared."
+        );
     }
     match pages {
         Ok(Some(drift)) if !drift.pages.is_empty() => write_text_groups(out, drift),

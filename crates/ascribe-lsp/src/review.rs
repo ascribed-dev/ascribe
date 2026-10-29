@@ -293,9 +293,9 @@ impl Core {
         let loaded = self.loaded.as_ref()?;
         Some(ChangesTarget {
             epoch: loaded.epoch,
-            snapshot: loaded.inc.snapshot(),
-            model: loaded.model.clone(),
-            model_text: loaded.model_text.clone(),
+            snapshot: loaded.workspace.index_snapshot(),
+            model: loaded.model().clone(),
+            model_text: loaded.model_text().to_owned(),
             content_root: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             review: self.review.clone(),
         })

@@ -13,11 +13,12 @@ use ascribe_check::Diagnostic;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{LineIndex, RelPath, Visited};
 use ascribe_model::ContentModel;
-use ascribe_resolve::side_file::{self, Indexed, SideFile};
+use ascribe_resolve::side_file::{self, Nav, SideFile};
 use ascribe_resolve::{
-    Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
-    in_nested_project, is_source_path,
+    Affected, ApplyError, Change, DiskFs, FileSystem, Layout, ResolvedCache, in_nested_project,
+    is_source_path,
 };
+use ascribe_workspace::{Changed, ModelFile, Workspace};
 use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
 use lsp_types::{
@@ -28,7 +29,7 @@ use lsp_types::{
 
 use crate::compute::{Across, to_lsp};
 use crate::docs::Doc;
-use crate::fsx::{BufferFs, LayerFs};
+use crate::fsx::LayerFs;
 use crate::nav::Ctx;
 use crate::position::Encoding;
 use crate::uri::{path_to_uri, uri_to_path};
@@ -59,12 +60,12 @@ pub(crate) struct Loaded {
     pub epoch: u64,
     pub root: PathBuf,
     pub layout: Layout,
-    pub inc: IncrementalProject,
-    /// The latest model that loaded.
-    pub model: Arc<ContentModel>,
-    /// Its text.
-    pub model_text: String,
-    /// What the file-level checks probe for non-source files.
+    /// The project, with the open buffers over the disk, and the latest
+    /// model that loaded: each edit and each watched file's change is
+    /// applied to it.
+    pub workspace: Workspace,
+    /// What it reads through: the disk, with the open buffers and the
+    /// files reported appearing or going over it.
     pub fs: Arc<LayerFs>,
     /// Files whose diagnostics need computing.
     pub dirty: BTreeSet<RelPath>,
@@ -89,6 +90,16 @@ pub(crate) struct Loaded {
 }
 
 impl Loaded {
+    /// The latest model that loaded.
+    pub(crate) fn model(&self) -> &Arc<ContentModel> {
+        self.workspace.current().shared_model()
+    }
+
+    /// Its text.
+    pub(crate) fn model_text(&self) -> &str {
+        self.workspace.current().model_text()
+    }
+
     /// The absolute path of a source file.
     pub(crate) fn source_path(&self, path: &RelPath) -> PathBuf {
         normalize(
@@ -99,10 +110,11 @@ impl Loaded {
         )
     }
 
-    /// The side file `abs` is (`ascribe_check::side_files`), when it's one.
-    pub(crate) fn side_file(&self, abs: &Path) -> Option<&'static side_file::Entry> {
-        relative_path(&self.root, abs)
-            .and_then(|p| ascribe_check::side_files::side_file(p.as_str()))
+    /// The side file `abs` is, its entry in the list the project was loaded
+    /// with, when it's one.
+    pub(crate) fn side_entry(&self, abs: &Path) -> Option<&'static side_file::Entry> {
+        let project = relative_path(&self.root, abs)?;
+        self.workspace.current().side_entry(project.as_str())
     }
 
     /// Whether `abs` is in a memo folder, committed or personal.
@@ -116,11 +128,6 @@ impl Loaded {
             .filter_map(|folder| RelPath::parse(folder).ok())
             .any(|folder| project.starts_with(&folder))
         })
-    }
-
-    /// `ascribe.nav`'s path from the project root, when `abs` is it.
-    pub(crate) fn nav_file(&self, abs: &Path) -> Option<RelPath> {
-        relative_path(&self.root, abs).filter(|p| p.as_str() == ascribe_model::NAV_FILE)
     }
 
     /// What a path on disk is to this project.
@@ -143,7 +150,7 @@ impl Loaded {
         // or not, as a file in a hidden directory isn't.
         if let Some(content_path) = relative_path(&content, abs)
             && content_path.is_inside()
-            && self.inc.snapshot().is_source(&content_path)
+            && self.workspace.current().index().is_source(&content_path)
         {
             return Some(Kind::Source(content_path, project_rel));
         }
@@ -438,7 +445,7 @@ impl Core {
         let Some(loaded) = self.loaded.as_ref() else {
             return;
         };
-        let selector = crate::shown::selector(&loaded.root, &loaded.model);
+        let selector = crate::shown::selector(&loaded.root, loaded.model());
         if self.lens_selector.as_ref() == Some(&selector) {
             return;
         }
@@ -550,8 +557,7 @@ impl Core {
                 let vale = self
                     .loaded
                     .as_ref()
-                    .and_then(|l| l.model.checks.vale.clone());
-                let model = Arc::new(model);
+                    .and_then(|l| l.model().checks.vale.clone());
                 self.watch_specs(&model);
                 self.adopt_model(model, text);
                 if recovered {
@@ -565,17 +571,20 @@ impl Core {
         self.publish_model_diagnostics();
     }
 
-    fn adopt_model(&mut self, model: Arc<ContentModel>, text: String) {
+    fn adopt_model(&mut self, model: ContentModel, text: String) {
         let Some(loaded) = self.loaded.as_mut() else {
             self.load_project(model, text);
             return;
         };
-        match loaded.inc.apply([Change::Model(model.clone())]) {
-            Ok(affected) => {
-                loaded.model = model;
-                loaded.model_text = text;
+        let file = ModelFile {
+            root: loaded.root.clone(),
+            text: text.clone(),
+            model: model.clone(),
+        };
+        match loaded.workspace.apply([Changed::Model(Box::new(file))]) {
+            Ok(updated) => {
                 loaded.across_dirty = true;
-                self.absorb(&affected);
+                self.absorb(&updated.index);
                 self.publish_open_configs();
             }
             Err(ApplyError::LayoutChanged | ApplyError::NestedProjectChanged) => {
@@ -611,7 +620,7 @@ impl Core {
             return;
         };
         self.shown.clear();
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
         loaded
             .dirty
             .extend(snapshot.files().map(|f| f.path.clone()));
@@ -630,7 +639,7 @@ impl Core {
         let Some(loaded) = self.loaded.as_ref() else {
             return;
         };
-        let (model, text) = (loaded.model.clone(), loaded.model_text.clone());
+        let (model, text) = ((**loaded.model()).clone(), loaded.model_text().to_owned());
         self.load_project(model, text);
     }
 
@@ -638,7 +647,7 @@ impl Core {
     /// the first load, after a model change that moves the content root or
     /// the output directory, and when a nested project's `ascribe.toml`
     /// appears or goes.
-    fn load_project(&mut self, model: Arc<ContentModel>, text: String) {
+    fn load_project(&mut self, model: ContentModel, text: String) {
         let Some(config) = self.config.clone() else {
             return;
         };
@@ -656,25 +665,32 @@ impl Core {
                 (rel.is_inside() && is_source_path(&rel)).then(|| (rel, doc.text.clone()))
             })
             .collect();
-        let inc = IncrementalProject::load(
-            model.clone(),
-            layout.clone(),
-            BufferFs::new(disk.clone(), buffers),
-        );
-        let fs = Arc::new(LayerFs::new(disk));
+        let fs = Arc::new(LayerFs::with_sources(disk, buffers));
         // The open memo files, and the side files whose open buffer wins, as
         // the editor has them.
+        let side_files = ascribe_check::LOADER.side_files;
         for (path, doc) in &self.docs {
             if let Some(project) = relative_path(&root, path)
                 && (ascribe_resolve::is_memo_path(&project, &layout)
-                    || ascribe_check::side_files::side_file(project.as_str())
-                        .is_some_and(|entry| entry.stale.buffered))
+                    || side_files
+                        .iter()
+                        .any(|entry| entry.path == project.as_str() && entry.stale.buffered))
             {
                 fs.set_buffer(&project, Some(doc.text.clone()));
             }
         }
+        let file = ModelFile {
+            root: root.clone(),
+            text,
+            model,
+        };
+        let mut workspace =
+            Workspace::load_with(side_files, file, layout.content_root.clone(), fs.clone());
+        // Typed in from the first keystroke: what an update needs is made
+        // with the load.
+        workspace.prepare();
         let baseline = Arc::new(crate::baseline::Now::of(&fs));
-        let snapshot = inc.snapshot();
+        let snapshot = workspace.index_snapshot();
         if self
             .loaded
             .as_ref()
@@ -689,9 +705,7 @@ impl Core {
             epoch: self.epoch,
             root,
             layout,
-            inc,
-            model,
-            model_text: text,
+            workspace,
             fs,
             dirty,
             cache: Arc::new(Mutex::new(ResolvedCache::new())),
@@ -729,22 +743,29 @@ impl Core {
         for path in gone {
             self.clear(&path);
         }
-        // The project read its side files from the disk; an open buffer wins.
-        self.refresh_indexed();
         self.publish_open_configs();
     }
 
-    /// Gives the long-lived project the side files it reads as the editor
-    /// has them now, each open buffer over the disk: `ascribe.nav`, so the
-    /// navigation it gives, which the Pages view draws, follows the file, and
-    /// `ascribe.addresses`, for what it records of permalinks.
-    fn refresh_indexed(&mut self) {
+    /// Gives the project the side files at `paths`, from the project root,
+    /// as the editor has them now, each open buffer over the disk; the
+    /// source index is given those it reads ([`side_file::Stale::index`]):
+    /// `ascribe.nav`, so the navigation it gives, which the Pages view
+    /// draws, follows the file, and `ascribe.addresses`, for what it
+    /// records of permalinks.
+    fn reread_side_files(&mut self, paths: impl IntoIterator<Item = &'static str>) {
         let Some(loaded) = self.loaded.as_mut() else {
             return;
         };
-        let side = Indexed::read(&*loaded.fs);
-        if let Ok(affected) = loaded.inc.apply([Change::SideFiles(side)]) {
-            self.absorb(&affected);
+        let changes: Vec<Changed> = paths
+            .into_iter()
+            .map(|path| Changed::SideFile(path.to_owned()))
+            .collect();
+        if changes.is_empty() {
+            return;
+        }
+        // A side file neither moves the layout nor nests a project.
+        if let Ok(updated) = loaded.workspace.apply(changes) {
+            self.absorb(&updated.index);
         }
     }
 
@@ -758,7 +779,7 @@ impl Core {
         let Some(loaded) = self.loaded.as_mut() else {
             return false;
         };
-        let Some(entry) = loaded.side_file(abs).filter(|entry| entry.stale.buffered) else {
+        let Some(entry) = loaded.side_entry(abs).filter(|entry| entry.stale.buffered) else {
             return false;
         };
         if let Ok(project) = RelPath::parse(entry.path) {
@@ -772,9 +793,7 @@ impl Core {
         if entry.path == side_file::Addresses::PATH {
             self.addresses.changed();
         }
-        if entry.stale.index {
-            self.refresh_indexed();
-        }
+        self.reread_side_files([entry.path]);
         if entry.stale.every_file {
             self.refresh_baseline();
         }
@@ -795,7 +814,7 @@ impl Core {
             return;
         }
         loaded.baseline = Arc::new(now);
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
         loaded
             .dirty
             .extend(snapshot.files().map(|f| f.path.clone()));
@@ -843,7 +862,7 @@ impl Core {
             return;
         }
         // A file that's gone matches nothing.
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
         loaded
             .matched
             .retain(|path, _| snapshot.file(path).is_some());
@@ -855,9 +874,9 @@ impl Core {
             .collect();
         let found = crate::baseline::published(
             &loaded.baseline,
-            &loaded.model,
+            loaded.model(),
             &matched,
-            crate::baseline::every_build(&loaded.model),
+            crate::baseline::every_build(loaded.model()),
             self.encoding,
         );
         if found.is_empty() && !self.published.contains_key(&path) {
@@ -875,7 +894,7 @@ impl Core {
         let Some(Kind::Asset(project)) = loaded.classify(path) else {
             return None;
         };
-        let source = crate::examples::config_source(&loaded.model, &project)?;
+        let source = crate::examples::config_source(loaded.model(), &project)?;
         Some((source.clone(), project))
     }
 
@@ -889,7 +908,7 @@ impl Core {
             return false;
         };
         let found = crate::examples::config_diagnostics(
-            &loaded.model,
+            loaded.model(),
             &source,
             project.as_str(),
             text,
@@ -913,7 +932,7 @@ impl Core {
             return false;
         }
         let found = crate::examples::unread_diagnostics(
-            &loaded.model,
+            loaded.model(),
             &*loaded.fs,
             &project,
             text,
@@ -986,9 +1005,9 @@ impl Core {
             })
         };
         // A type's span is the loaded text's.
-        if loaded.model_text == *text
+        if loaded.model_text() == text
             && let Some(t) = loaded
-                .model
+                .model()
                 .types
                 .iter()
                 .find(|t| !t.implicit && t.span.start() <= offset && offset <= t.span.end())
@@ -998,7 +1017,7 @@ impl Core {
         if let Some(taken) = Core::taken_at(loaded, text, offset) {
             return markdown(taken.span, crate::hover::taken_markdown(taken));
         }
-        let (span, value) = crate::hover::model_field_markdown(&loaded.model, text, offset)?;
+        let (span, value) = crate::hover::model_field_markdown(loaded.model(), text, offset)?;
         markdown(span, value)
     }
 
@@ -1009,11 +1028,11 @@ impl Core {
         text: &str,
         offset: usize,
     ) -> Option<&'l ascribe_model::Taken> {
-        if loaded.model_text != *text {
+        if loaded.model_text() != text {
             return None;
         }
         loaded
-            .model
+            .model()
             .taken
             .iter()
             .find(|t| t.span.start() <= offset && offset <= t.span.end())
@@ -1059,11 +1078,13 @@ impl Core {
     ) -> Option<Vec<lsp_types::CompletionItem>> {
         let path = Core::doc_path(uri)?;
         let loaded = self.loaded.as_ref()?;
-        loaded.nav_file(&path)?;
+        loaded
+            .side_entry(&path)
+            .filter(|entry| entry.path == Nav::PATH)?;
         let text = &self.docs.get(&path)?.text;
         let index = ascribe_core::LineIndex::new(text);
         let offset = self.encoding.offset_lenient(&index, text, position);
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
         let navigation = ascribe_resolve::Navigation::of(snapshot.project(), None);
         let sections = crate::nav_file::sections(&navigation);
         let range = |start: usize, end: usize| {
@@ -1145,6 +1166,8 @@ impl Core {
             && let Some(Kind::Memo(project)) = loaded.classify(&path)
         {
             loaded.fs.set_buffer(&project, None);
+            // A memo store reads it again, from the disk.
+            let _ = loaded.workspace.apply([Changed::Read(project)]);
             loaded.across_dirty = true;
             self.page_uses.forget_memos();
             self.refresh_lenses();
@@ -1189,6 +1212,8 @@ impl Core {
         // place each memo and check it, run again with its text.
         if let Some(Kind::Memo(project)) = loaded.classify(path) {
             loaded.fs.set_buffer(&project, Some(text));
+            // A memo store reads it again, as it's typed.
+            let _ = loaded.workspace.apply([Changed::Read(project)]);
             loaded.across_dirty = true;
             self.page_uses.forget_memos();
             self.refresh_lenses();
@@ -1197,7 +1222,7 @@ impl Core {
         // Nor is a side file whose open buffer wins, `ascribe.nav` for one:
         // what's stale of it follows it as it's typed.
         if loaded
-            .side_file(path)
+            .side_entry(path)
             .is_some_and(|entry| entry.stale.buffered)
         {
             self.set_side_buffer(path, Some(text));
@@ -1236,7 +1261,8 @@ impl Core {
         let mut mirror: Vec<(RelPath, bool)> = Vec::new();
         let mut visited = Visited::default();
         let mut refresh = false;
-        let mut indexed = false;
+        // The side files written, read again once the events are through.
+        let mut side: Vec<&'static str> = Vec::new();
         let mut baseline = false;
         let mut redrawn = BTreeSet::new();
         for event in events {
@@ -1255,7 +1281,7 @@ impl Core {
                 continue;
             }
             if let Some(loaded) = self.loaded.as_ref() {
-                if crate::shown::used_by_a_source(&loaded.root, &loaded.model, &path) {
+                if crate::shown::used_by_a_source(&loaded.root, loaded.model(), &path) {
                     refresh = true;
                 } else if self.spec_files.contains(&path) {
                     // An API's pages are published from its spec.
@@ -1293,23 +1319,24 @@ impl Core {
                         .join(ascribe_check::type_files::lock_path().as_str())
             {
                 // A type that names no template or guide takes them from
-                // the lock, so the model is loaded again.
+                // the lock, so the model is loaded again, once the project
+                // has read it.
+                side.extend(loaded.side_entry(&path).map(|entry| entry.path));
                 sync_model = true;
                 continue;
             }
             if let Some(loaded) = self.loaded.as_mut()
-                && let Some(entry) = loaded.side_file(&path).filter(|entry| entry.watched())
+                && let Some(entry) = loaded.side_entry(&path).filter(|entry| entry.watched())
             {
-                // A side file isn't a source: what its `Stale` says is stale
-                // follows it, the index and the baseline once the events are
-                // through, each read again with an open buffer over the disk.
-                // `ascribe baseline write` and `prune` write the baseline, for
-                // one. A side file nothing else follows, the lock, is any
-                // other file.
+                // A side file isn't a source: the project reads it again,
+                // with an open buffer over the disk, once the events are
+                // through, and what its `Stale` says is stale follows it.
+                // `ascribe baseline write` and `prune` write the baseline,
+                // for one.
                 if entry.stale.across {
                     loaded.across_dirty = true;
                 }
-                indexed |= entry.stale.index;
+                side.push(entry.path);
                 baseline |= entry.stale.every_file;
                 addresses = true;
                 continue;
@@ -1363,10 +1390,13 @@ impl Core {
                     Change::AssetCreated { .. } | Change::AssetDeleted { .. }
                 )
             });
-            let before = self.loaded.as_ref().map(|loaded| loaded.inc.version());
+            let before = self
+                .loaded
+                .as_ref()
+                .map(|loaded| loaded.workspace.version());
             redrawn = self.apply(changes, &mirror);
             if let Some(loaded) = self.loaded.as_mut() {
-                if source || before != Some(loaded.inc.version()) {
+                if source || before != Some(loaded.workspace.version()) {
                     loaded.across_dirty = true;
                     addresses = true;
                 }
@@ -1383,9 +1413,7 @@ impl Core {
             }
             self.refresh_lenses();
         }
-        if indexed {
-            self.refresh_indexed();
-        }
+        self.reread_side_files(side);
         if baseline {
             self.refresh_baseline();
         }
@@ -1535,7 +1563,7 @@ impl Core {
             return;
         };
         let prefix = format!("{dir}/");
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
         let mut assets: BTreeSet<RelPath> = BTreeSet::new();
         // A nested project's folder, or one holding it, going takes its
         // `ascribe.toml` with it.
@@ -1610,10 +1638,13 @@ impl Core {
         for (path, present) in mirror {
             loaded.fs.set(path, *present);
         }
-        match loaded.inc.apply(changes) {
-            Ok(affected) => {
-                self.absorb(&affected);
-                return affected.re_resolve;
+        match loaded
+            .workspace
+            .apply(changes.into_iter().map(Changed::Index))
+        {
+            Ok(updated) => {
+                self.absorb(&updated.index);
+                return updated.index.re_resolve;
             }
             // A nested project's `ascribe.toml` came or went, which changes
             // which files are sources: the disk and the open buffers are read
@@ -1691,15 +1722,15 @@ impl Core {
             (Some(problem), _) => Some((&problem.text, problem.diagnostics.clone())),
             (None, Some(loaded)) => {
                 let mut found: Vec<Diagnostic> = loaded
-                    .model
+                    .model()
                     .warnings
                     .iter()
                     .map(Diagnostic::from_issue)
                     .collect();
-                found.extend_from_slice(loaded.across.of_model(&loaded.model_text));
+                found.extend_from_slice(loaded.across.of_model(loaded.model_text()));
                 Some((
-                    &loaded.model_text,
-                    ascribe_check::apply_levels(&loaded.model.checks, found),
+                    loaded.model_text(),
+                    ascribe_check::apply_levels(&loaded.model().checks, found),
                 ))
             }
             (None, None) => None,
@@ -1962,9 +1993,9 @@ impl Core {
         let loaded = self.loaded.as_ref()?;
         match loaded.classify(&path)? {
             Kind::Source(content, _) => {
-                let snapshot = loaded.inc.snapshot();
+                let snapshot = loaded.workspace.index_snapshot();
                 snapshot.file(&content)?;
-                Some((snapshot, content, loaded.model.clone()))
+                Some((snapshot, content, loaded.model().clone()))
             }
             Kind::Model | Kind::Asset(_) | Kind::Memo(_) => None,
         }
@@ -1979,7 +2010,7 @@ impl Core {
         let Kind::Source(content, _) = loaded.classify(&path)? else {
             return None;
         };
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
         snapshot.file(&content)?;
         self.ctx(loaded, snapshot, content, &path)
     }
@@ -1999,11 +2030,11 @@ impl Core {
             // `ascribe.addresses`, whose entry the list can be behind on.
             let loaded = self.loaded.as_ref()?;
             if loaded
-                .side_file(&path)
+                .side_entry(&path)
                 .is_some_and(|entry| entry.stale.across)
             {
                 let content = RelPath::parse(Ctx::PROJECT).ok()?;
-                return self.ctx(loaded, loaded.inc.snapshot(), content, &path);
+                return self.ctx(loaded, loaded.workspace.index_snapshot(), content, &path);
             }
             None
         })
@@ -2024,7 +2055,10 @@ impl Core {
                 // A file in a nested project's folder is that project's.
                 let nested = relative_path(&content_dir, &path).is_some_and(|content| {
                     content.is_inside()
-                        && in_nested_project(&content, loaded.inc.snapshot().nested_projects())
+                        && in_nested_project(
+                            &content,
+                            loaded.workspace.index_snapshot().nested_projects(),
+                        )
                 });
                 if !project_rel.is_inside() || nested {
                     return None;
@@ -2032,7 +2066,7 @@ impl Core {
                 RelPath::parse(Ctx::PROJECT).ok()?
             }
         };
-        self.ctx(loaded, loaded.inc.snapshot(), content, &path)
+        self.ctx(loaded, loaded.workspace.index_snapshot(), content, &path)
     }
 
     /// What a request about a memo file works from: the project's context,
@@ -2062,8 +2096,8 @@ impl Core {
             edit: ascribe_edit::nav::Ctx {
                 snapshot,
                 path: content,
-                model: loaded.model.clone(),
-                model_text: loaded.model_text.clone(),
+                model: loaded.model().clone(),
+                model_text: loaded.model_text().to_owned(),
                 model_problem: self.model_problem.is_some(),
                 config: self.config.clone()?,
                 content_dir: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
@@ -2087,7 +2121,7 @@ impl Core {
             return taken;
         }
         // A fresh lock, set once.
-        let _ = taken.set(self.taken_files(&loaded.model_text));
+        let _ = taken.set(self.taken_files(loaded.model_text()));
         taken
     }
 
@@ -2123,11 +2157,11 @@ impl Core {
     pub(crate) fn lens_target(&self, uri: &Uri) -> Option<(Ctx, PathBuf)> {
         let path = Core::doc_path(uri)?;
         let loaded = self.loaded.as_ref()?;
-        if !crate::shown::in_a_source(&loaded.root, &loaded.model, &path) {
+        if !crate::shown::in_a_source(&loaded.root, loaded.model(), &path) {
             return None;
         }
         let content = RelPath::parse(Ctx::PROJECT).ok()?;
-        let ctx = self.ctx(loaded, loaded.inc.snapshot(), content, &path)?;
+        let ctx = self.ctx(loaded, loaded.workspace.index_snapshot(), content, &path)?;
         Some((ctx, path))
     }
 
@@ -2178,7 +2212,7 @@ impl Core {
     /// A project snapshot for workspace-level refactorings.
     pub(crate) fn project_nav_target(&self) -> Option<Ctx> {
         let loaded = self.loaded.as_ref()?;
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
         let file = snapshot.files().next()?;
         let uri = path_to_uri(&loaded.source_path(&file.path))?;
         self.nav_target(&uri)

@@ -10,6 +10,10 @@
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
+    "dry_run": {
+      "description": "Whether it ran with `--dry-run`, and wrote nothing.",
+      "type": "boolean"
+    },
     "preset": {
       "description": "The preset written out.",
       "type": "string"
@@ -20,7 +24,7 @@
       "type": "integer"
     },
     "written": {
-      "description": "The files written, from the project's folder, `/`-separated, in the\norder they were written: `ascribe.toml` last.",
+      "description": "The files written, from the project's folder, `/`-separated, in the\norder they were written: `ascribe.toml` last. With `--dry-run`, the\nfiles it would write.",
       "items": {
         "type": "string"
       },
@@ -31,7 +35,8 @@
     "schema_version",
     "ascribe_version",
     "preset",
-    "written"
+    "written",
+    "dry_run"
   ],
   "title": "ValeEjectReport",
   "type": "object"

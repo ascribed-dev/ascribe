@@ -1,6 +1,6 @@
 //! The Ascribe language server, run as `ascribe lsp`.
 //!
-//! It keeps a project in memory ([`ascribe_resolve::IncrementalProject`]),
+//! It keeps a project in memory ([`ascribe_workspace::Workspace`]),
 //! follows every change to it (open documents, files changed on disk, the
 //! content model), and publishes the diagnostics `ascribe check` reports for
 //! the editor's build, as the author types. See the README for the design, the

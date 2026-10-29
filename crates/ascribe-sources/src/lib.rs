@@ -20,8 +20,9 @@
 mod copies;
 mod remote;
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use ascribe_core::RelPath;
 use ascribe_model::examples::{Status, is_examples_file};
@@ -34,7 +35,7 @@ pub use ascribe_model::short_commit as short;
 pub use copies::SIZE_LIMIT;
 pub use remote::{CommitLine, Commits, NEWEST, cache_root};
 
-use copies::{Folder, not_text};
+use copies::{Change, Folder, not_text};
 use remote::{Cache, History, Remote};
 
 /// Why a command couldn't do its work.
@@ -143,6 +144,11 @@ pub struct SourcesView {
     lock_text: Option<String>,
     /// For each source, the paths snippets name in it.
     used: BTreeMap<String, BTreeSet<String>>,
+    /// Whether `fetch` and `update` plan their changes, to make with
+    /// [`SourcesView::apply`], in place of making them as they go.
+    planning: bool,
+    /// When planning, the changes `fetch` or `update` would make, in order.
+    planned: RefCell<Vec<Change>>,
 }
 
 impl SourcesView {
@@ -189,7 +195,52 @@ impl SourcesView {
             lock,
             lock_text,
             used,
+            planning: false,
+            planned: RefCell::new(Vec::new()),
         })
+    }
+
+    /// The same view, where, when `planning`, `fetch` and `update` write
+    /// nothing, and plan what they'd write instead: the copies they'd copy
+    /// and remove, and the lock. Their reports are as they'd be. The plan is
+    /// asked about with [`SourcesView::planned`], and made with
+    /// [`SourcesView::apply`], so the repository is reached once.
+    #[must_use]
+    pub fn planning(mut self, planning: bool) -> SourcesView {
+        self.planning = planning;
+        self.planned = RefCell::new(Vec::new());
+        self
+    }
+
+    /// The files the plan would write or remove, absolute, in the order it
+    /// would change them: the copies, then `ascribe.lock`.
+    pub fn planned(&self) -> Vec<PathBuf> {
+        self.planned
+            .borrow()
+            .iter()
+            .map(|c| c.path().to_path_buf())
+            .collect()
+    }
+
+    /// Makes the changes planned, in order, and empties the plan.
+    ///
+    /// # Errors
+    ///
+    /// [`SourcesError::Write`] when a file can't be written or removed. The
+    /// changes made before it stay.
+    pub fn apply(&self) -> Result<(), SourcesError> {
+        let changes = std::mem::take(&mut *self.planned.borrow_mut());
+        for change in changes {
+            change.make(&self.root).map_err(|e| SourcesError::Write {
+                path: shown(&self.root, change.path()),
+                message: e.to_string(),
+            })?;
+        }
+        Ok(())
+    }
+
+    fn planned_list(&self) -> Option<&RefCell<Vec<Change>>> {
+        self.planning.then_some(&self.planned)
     }
 
     /// The sources in other repositories that `names` names, in declaration
@@ -225,11 +276,12 @@ impl SourcesView {
             .unwrap_or_default()
     }
 
-    fn folder(&self, source: &Source) -> Folder {
+    fn folder(&self, source: &Source) -> Folder<'_> {
         Folder::new(
             &self.root,
             &self.files,
             RelPath::parse(&source.path).unwrap_or_default(),
+            self.planned_list(),
         )
     }
 
@@ -380,11 +432,14 @@ impl SourcesView {
                 message: "it's a link; replace it with a file, or remove it".into(),
             });
         }
-        // Library write: the lock file, after a fetch that changed it.
-        std::fs::write(&path, text).map_err(|e| SourcesError::Write {
-            path: LOCK_FILE.into(),
-            message: e.to_string(),
-        })?;
+        let change = Change::Lock { path, text };
+        match self.planned_list() {
+            Some(planned) => planned.borrow_mut().push(change),
+            None => change.make(&self.root).map_err(|e| SourcesError::Write {
+                path: LOCK_FILE.into(),
+                message: e.to_string(),
+            })?,
+        }
         Ok(true)
     }
 }
@@ -555,6 +610,7 @@ pub fn fetch(
                     &view.root,
                     &view.files,
                     RelPath::parse(&folder).unwrap_or_default(),
+                    view.planned_list(),
                 );
                 for path in locked.files.keys() {
                     folder.remove(path).map_err(|e| SourcesError::Write {
@@ -871,7 +927,7 @@ fn update_one(
 /// copies in `folder`: its config, every observation, and the file, as the
 /// pages have it. A path that isn't an example, or has no copy, isn't
 /// listed. Read only: nothing in the config is run.
-fn example_states(folder: &Folder, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
+fn example_states(folder: &Folder<'_>, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
     let examples = folder.examples();
     let Some(Ok(config)) = &examples.config else {
         return BTreeMap::new();
@@ -885,6 +941,15 @@ fn example_states(folder: &Folder, paths: &BTreeSet<String>) -> BTreeMap<String,
             Some((path.clone(), ExampleState::from(status)))
         })
         .collect()
+}
+
+/// A file's path from the project root, `/`-separated, as an error names it.
+fn shown(root: &Path, path: &Path) -> String {
+    let rel = path.strip_prefix(root).unwrap_or(path);
+    rel.iter()
+        .map(|s| s.to_string_lossy())
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 /// Each source's pin and the state of its copies, read from the files alone.

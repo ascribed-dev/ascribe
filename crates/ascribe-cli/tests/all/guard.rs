@@ -113,6 +113,42 @@ fn addresses(root: &Path) {
     );
 }
 
+/// The agent files `sync` writes, committed, then one edited by hand inside
+/// its block, so `sync` would put it back.
+fn agent_files(root: &Path) {
+    assert!(
+        ascribe(root, &["agents", "sync", "--force"])
+            .status
+            .success(),
+        "sync"
+    );
+    git(root, &["add", "-A"]);
+    git(root, &["commit", "-q", "-m", "Sync the agent files"]);
+    let text = read(root, "AGENTS.md").expect("AGENTS.md");
+    // A line just after the block's start marker, the first line.
+    let (start, rest) = text.split_once('\n').expect("a marker");
+    let edited = format!("{start}\nEdited by hand.\n{rest}");
+    write(root, "AGENTS.md", &edited);
+}
+
+/// An observation of a test that passes, written and not committed, and an
+/// example changed since.
+fn observed(root: &Path) {
+    write(
+        root,
+        "ascribe.examples.toml",
+        "include = [\"examples/**\"]\ntest = \"echo ok\"\n",
+    );
+    write(root, "examples/a.sh", "echo a\n");
+    assert!(
+        ascribe(root, &["observe", "--yes", "--force"])
+            .status
+            .success(),
+        "observe"
+    );
+    write(root, "examples/a.sh", "echo b\n");
+}
+
 const CASES: &[Case] = &[
     Case {
         args: &["baseline", "write"],
@@ -184,6 +220,58 @@ const CASES: &[Case] = &[
         before: addresses,
         dry_run: 0,
         says: "ould ",
+        json: true,
+    },
+    Case {
+        args: &["agents", "sync"],
+        file: "AGENTS.md",
+        before: agent_files,
+        dry_run: 0,
+        says: "would write AGENTS.md",
+        json: true,
+    },
+    Case {
+        args: &["agents", "index", "--into", "INDEX.md"],
+        file: "INDEX.md",
+        before: |root| write(root, "INDEX.md", "# The index\n"),
+        dry_run: 0,
+        says: "would write INDEX.md",
+        json: true,
+    },
+    Case {
+        args: &["vale", "eject"],
+        file: "ascribe.toml",
+        before: |root| {
+            write(
+                root,
+                "ascribe.toml",
+                &format!("{MODEL}\n[checks.vale]\npreset = \"quiet\"\n"),
+            );
+        },
+        dry_run: 0,
+        says: "would write ascribe.toml",
+        json: false,
+    },
+    Case {
+        args: &["templates", "eject", "how-to"],
+        file: "ascribe.toml",
+        before: |root| {
+            write(
+                root,
+                "ascribe.toml",
+                &format!("{MODEL}\n# Not committed.\n"),
+            )
+        },
+        dry_run: 0,
+        says: "would write ascribe.toml",
+        json: false,
+    },
+    Case {
+        args: &["observe", "--yes"],
+        file: "examples.observations/default.toml",
+        before: observed,
+        dry_run: 0,
+        says: "Would write examples.observations/default.toml",
         json: true,
     },
 ];

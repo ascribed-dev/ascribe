@@ -1,18 +1,18 @@
 //! A project loaded from the disk for a command's edit, as the language
-//! server loads one with no document open: the same content model, the same
-//! incremental project over the same file systems, and the same [`Ctx`] for
-//! each source file, so the command and the editor change the same places.
+//! server loads one with no document open: the same content model, a
+//! [`Workspace`] over the same file systems, and the same [`Ctx`] for each
+//! source file, so the command and the editor change the same places.
 
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use ascribe_core::RelPath;
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_model::{ContentModel, SourceBound};
-use ascribe_resolve::{DiskFs, IncrementalProject, Layout};
+use ascribe_resolve::{DiskFs, Layout};
+use ascribe_workspace::{LoadError, Workspace};
 
-use crate::fsx::{BufferFs, LayerFs};
+use crate::fsx::LayerFs;
 use crate::nav::Ctx;
 use crate::position::Encoding;
 
@@ -39,12 +39,13 @@ pub struct Loaded {
     /// Where the project's files are.
     pub layout: Layout,
     /// The project.
-    pub inc: IncrementalProject,
+    pub workspace: Workspace,
     /// The content model.
     pub model: Arc<ContentModel>,
     /// Its text.
     pub model_text: String,
-    /// The project's files that aren't sources.
+    /// The disk the project was read through, and its files that aren't
+    /// sources are.
     pub fs: Arc<LayerFs>,
 }
 
@@ -53,17 +54,11 @@ pub struct Loaded {
 /// to a folder.
 pub fn load(config: &Path) -> Load {
     let config = normalize(config);
-    // Outside FileSystem: the content model, which says where the content
-    // root is.
-    let Ok(text) = std::fs::read_to_string(&config) else {
-        return Load::Unread;
-    };
-    let root = config
-        .parent()
-        .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-    let model = match ascribe_check::type_files::load_model(&text, &root, SourceBound::Anywhere) {
-        Ok(model) => Arc::new(model),
-        Err(issues) => {
+    let loader = ascribe_check::LOADER;
+    let file = match loader.load_model_bounded(&config, SourceBound::Anywhere) {
+        Ok(file) => file,
+        Err(LoadError::Read { .. }) => return Load::Unread,
+        Err(LoadError::Model { issues, .. }) => {
             return Load::Problem(
                 issues
                     .iter()
@@ -72,21 +67,24 @@ pub fn load(config: &Path) -> Load {
             );
         }
     };
+    let root = file.root.clone();
+    let model_text = file.text.clone();
+    let model = Arc::new(file.model.clone());
     let layout = Layout::from_model(&model);
-    let disk = DiskFs::new(&root, &layout);
-    let inc = IncrementalProject::load(
-        model.clone(),
-        layout.clone(),
-        BufferFs::new(disk.clone(), BTreeMap::new()),
+    let fs = Arc::new(LayerFs::new(DiskFs::new(&root, &layout)));
+    let workspace = Workspace::load_with(
+        loader.side_files,
+        file,
+        layout.content_root.clone(),
+        fs.clone(),
     );
-    let fs = Arc::new(LayerFs::new(disk));
     Load::Loaded(Box::new(Loaded {
         config,
         root,
         layout,
-        inc,
+        workspace,
         model,
-        model_text: text,
+        model_text,
         fs,
     }))
 }
@@ -109,7 +107,7 @@ impl Loaded {
         }
         let content_dir = self.content_dir();
         let path = relative_path(&content_dir, &abs).filter(RelPath::is_inside)?;
-        let snapshot = self.inc.snapshot();
+        let snapshot = self.workspace.index_snapshot();
         if !snapshot.is_source(&path) {
             return None;
         }
@@ -131,7 +129,7 @@ impl Loaded {
     /// What an edit of the whole project works from: the first source
     /// file's [`Loaded::ctx`]. `None` when the project has none.
     pub fn project_ctx(&self) -> Option<Ctx> {
-        let snapshot = self.inc.snapshot();
+        let snapshot = self.workspace.index_snapshot();
         let file = snapshot.files().next()?;
         self.ctx(&self.content_dir().join(file.path.as_str()))
     }

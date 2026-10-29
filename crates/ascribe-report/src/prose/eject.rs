@@ -105,13 +105,19 @@ pub fn ejected_files(preset: &Preset, off: &[String]) -> Vec<(String, String)> {
 /// Writes the project's preset out as its own Vale configuration, and
 /// switches `[checks.vale]` to it. `model_text` is `ascribe.toml`'s text,
 /// which is written again with `preset` and `off` replaced by `config`;
-/// its other keys and comments stay as they are.
+/// its other keys and comments stay as they are. With `dry_run`, nothing is
+/// written, and what's returned is what would be.
 ///
 /// # Errors
 ///
 /// `[checks.vale]` names no preset, a file eject writes is there already
 /// (then nothing is written), or a file can't be written.
-pub fn eject(root: &Path, model: &ContentModel, model_text: &str) -> Result<Ejected, EjectError> {
+pub fn eject(
+    root: &Path,
+    model: &ContentModel,
+    model_text: &str,
+    dry_run: bool,
+) -> Result<Ejected, EjectError> {
     let settings = model.checks.vale.as_ref();
     let (name, off) = match settings.map(|s| (&s.source, &s.off)) {
         Some((ValeSource::Preset(name), off)) => (name, off),
@@ -142,19 +148,17 @@ pub fn eject(root: &Path, model: &ContentModel, model_text: &str) -> Result<Ejec
     }
     let new_model = switched(model_text)?;
     let mut written = Vec::new();
-    for (path, text) in ejected_files(preset, off) {
-        write_if_changed(root, &path, &text).map_err(|e| EjectError::Write {
-            path: path.clone(),
-            reason: e.to_string(),
-        })?;
+    let mut files = ejected_files(preset, off);
+    files.push((ascribe_check::MODEL_FILE.to_owned(), new_model));
+    for (path, text) in files {
+        if !dry_run {
+            write_if_changed(root, &path, &text).map_err(|e| EjectError::Write {
+                path: path.clone(),
+                reason: e.to_string(),
+            })?;
+        }
         written.push(path);
     }
-    let model_file = ascribe_check::MODEL_FILE;
-    write_if_changed(root, model_file, &new_model).map_err(|e| EjectError::Write {
-        path: model_file.to_owned(),
-        reason: e.to_string(),
-    })?;
-    written.push(model_file.to_owned());
     Ok(Ejected {
         preset: preset.name.to_owned(),
         written,
@@ -228,7 +232,7 @@ mod tests {
     fn the_preset_is_written_out_and_the_model_switched_to_it() {
         let dir = tempfile::tempdir().unwrap();
         let text = "spec = \"0.1\"\n\n# Prose.\n[checks.vale]\npreset = \"quiet\" # the quiet one\noff = [\"Ascribe.Repeated\"]\nin-check = true\n";
-        let ejected = eject(dir.path(), &load(text), text).unwrap();
+        let ejected = eject(dir.path(), &load(text), text, false).unwrap();
         assert_eq!(ejected.written.first().unwrap(), ".vale.ini");
         assert_eq!(ejected.written.last().unwrap(), "ascribe.toml");
         let ini = std::fs::read_to_string(dir.path().join(".vale.ini")).unwrap();
@@ -266,7 +270,7 @@ mod tests {
         std::fs::write(dir.path().join(".vale.ini"), "mine").unwrap();
         let text = "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\n";
         std::fs::write(dir.path().join("ascribe.toml"), text).unwrap();
-        let error = eject(dir.path(), &load(text), text).unwrap_err();
+        let error = eject(dir.path(), &load(text), text, false).unwrap_err();
         assert!(matches!(error, EjectError::Exists { ref path } if path == ".vale.ini"));
         assert_eq!(
             std::fs::read_to_string(dir.path().join("ascribe.toml")).unwrap(),
@@ -280,7 +284,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let text = "spec = \"0.1\"\n[from.\"../docs/ascribe.toml\"]\ntake = [\"checks.vale\"]\n";
         let taken = load("spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\n");
-        let error = eject(dir.path(), &taken, text).unwrap_err();
+        let error = eject(dir.path(), &taken, text, false).unwrap_err();
         assert!(
             error
                 .to_string()
@@ -294,10 +298,10 @@ mod tests {
     fn a_project_without_a_preset_has_nothing_to_eject() {
         let dir = tempfile::tempdir().unwrap();
         let text = "spec = \"0.1\"\n[checks.vale]\nconfig = \"x.ini\"\n";
-        let error = eject(dir.path(), &load(text), text).unwrap_err();
+        let error = eject(dir.path(), &load(text), text, false).unwrap_err();
         assert!(matches!(error, EjectError::NoPreset { config: Some(_) }));
         let text = "spec = \"0.1\"\n";
-        let error = eject(dir.path(), &load(text), text).unwrap_err();
+        let error = eject(dir.path(), &load(text), text, false).unwrap_err();
         assert!(matches!(error, EjectError::NoPreset { config: None }));
     }
 }

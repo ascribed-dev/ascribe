@@ -3,6 +3,13 @@
 //! file, in `tests/`, where Cargo builds every file as a program of its own.
 //! To run one file's tests: `cargo test -p ascribe-workspace --test all load`.
 
+#[path = "../../ascribe-resolve/tests/incremental_support/mod.rs"]
+mod incremental_support;
+
+#[path = "all/differential.rs"]
+mod differential;
+#[path = "all/kept.rs"]
+mod kept;
 #[path = "all/load.rs"]
 mod load;
 #[path = "all/locate.rs"]

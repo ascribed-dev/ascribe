@@ -361,3 +361,60 @@ fn an_update_counts_an_example_current_when_any_observation_has_it_as_it_is() {
         }]
     );
 }
+
+#[test]
+fn a_planned_update_writes_nothing_until_applied_and_reaches_the_repository_once() {
+    use ascribe_sources::{ExampleState, ExampleUpdate};
+    let code = Code::new();
+    code.write("ascribe.examples.toml", "include = [\"*.rs\"]\n")
+        .write("a.rs", "a\n")
+        .write(
+            "examples.observations/default.toml",
+            observation(&[("a.rs", "a\n")]),
+        );
+    code.commit("first");
+    let docs = Docs::new(&source("api", &code));
+    docs.page("index.md", "---\ntitle: Home\n---\n\n@snippet: api:a.rs\n");
+    fetch(&docs.view(), &[], &docs.options()).unwrap();
+    let lock = docs.read("ascribe.lock").unwrap();
+
+    code.write("a.rs", "a2\n");
+    let second = code.commit("second");
+    let view = docs.view().planning(true);
+    let report = update(&view, &[], None, &docs.options()).unwrap();
+    // The report is the one writing would give: the example went stale,
+    // read from the copies as the plan leaves them.
+    assert!(report.changed);
+    assert_eq!(report.sources[0].to, second);
+    assert_eq!(
+        report.sources[0].examples,
+        [ExampleUpdate {
+            path: "a.rs".to_owned(),
+            status: ExampleState::Stale,
+            was: Some(ExampleState::Current),
+        }]
+    );
+    let planned: Vec<String> = view
+        .planned()
+        .iter()
+        .map(|p| {
+            p.strip_prefix(docs.root())
+                .unwrap()
+                .to_string_lossy()
+                .replace('\\', "/")
+        })
+        .collect();
+    assert_eq!(planned, ["sources/api/a.rs", "ascribe.lock"]);
+    // Nothing is written yet.
+    assert_eq!(docs.read("sources/api/a.rs").as_deref(), Some("a\n"));
+    assert_eq!(docs.read("ascribe.lock").as_deref(), Some(lock.as_str()));
+
+    // A commit after the plan isn't fetched: applying makes what was
+    // planned, without reaching the repository again.
+    code.write("a.rs", "a3\n");
+    code.commit("third");
+    view.apply().unwrap();
+    assert_eq!(docs.read("sources/api/a.rs").as_deref(), Some("a2\n"));
+    assert_eq!(pinned(&docs, "api"), second);
+    assert!(view.planned().is_empty());
+}

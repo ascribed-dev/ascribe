@@ -1,40 +1,33 @@
 //! The projects the MCP server keeps loaded between calls.
 //!
-//! A project is loaded once and kept, with its source index once a tool asks
-//! for it. Before each call the server lists the project's files again
-//! (paths, sizes, and modification times) and compares the listing with the
-//! one it loaded from; any difference, a new or a deleted file included,
-//! loads the project again. The project's files are what loading reads:
-//! `ascribe.toml`, `ascribe.lock`, `ascribe.permalinks`, and the content
-//! root, and whether each local source's folder is there. The code files
-//! snippets read are checked as they're read. Nothing else in the project's folder is listed, so a
-//! build's output beside `ascribe.toml` costs nothing. Listing is cheap
-//! beside loading: no file is read.
+//! A project is loaded once and kept, as an `ascribe_workspace::Kept`.
+//! Before each call the server lists the project's files again (paths,
+//! sizes, and modification times; `ascribe_workspace::Listing` says which)
+//! and applies what differs to the project's `Workspace`, reading only the
+//! files that do; a difference it can't take in place, as a project nested
+//! in the content root appearing, loads the project again. The code files
+//! snippets read are checked as they're read. What a call kept with the
+//! project, its checks and readings (`answer::Loaded`), belongs to the
+//! snapshot it was made from, and a new snapshot starts without them.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::time::SystemTime;
 
-use ascribe_check::{MODEL_FILE, Project};
+use ascribe_check::{LOADER, Project};
 use ascribe_core::path::normalize;
-use ascribe_model::{LOCK_FILE, PERMALINKS_FILE, SourceBound};
-use ascribe_workspace::LoadError;
+use ascribe_model::SourceBound;
+use ascribe_workspace::{Kept, Listing, LoadError};
 
 use crate::answer::{Loaded, Projects};
 
 /// A file as the listing sees it: its path, size, and modification time.
-pub(crate) type Stamp = (PathBuf, u64, Option<SystemTime>);
+pub(crate) use ascribe_workspace::Stamp;
 
-/// A project kept loaded.
+/// A project kept loaded, and what the last call kept with its snapshot.
 struct Entry {
-    /// The project's files when it was loaded.
-    listing: Vec<Stamp>,
-    /// The code files snippets have read, each as it was when it was first
-    /// seen read: they can be outside the project's folder, and they're read
-    /// when a check asks for them, after loading.
-    code: RefCell<Vec<Stamp>>,
+    kept: Kept,
     loaded: Rc<Loaded>,
 }
 
@@ -70,25 +63,24 @@ impl Cache {
 impl Projects for Cache {
     fn load(&self, config: &Path) -> Result<Rc<Loaded>, LoadError> {
         let key = absolute(config);
-        let root = key.parent().map(Path::to_owned).unwrap_or_default();
         let mut entries = self.entries.borrow_mut();
-        if let Some(entry) = entries.get(&key) {
-            let listing = list(&root, &entry.loaded.project);
-            if listing == entry.listing && entry.code_unchanged() {
-                return Ok(Rc::clone(&entry.loaded));
+        if let Some(entry) = entries.get_mut(&key) {
+            if let Err(e) = entry.kept.refresh(self.bound()) {
+                entries.remove(&key);
+                return Err(e);
             }
+            let snapshot = entry.kept.snapshot();
+            if !entry.loaded.is_of(&snapshot) {
+                entry.loaded = Rc::new(Loaded::new(snapshot));
+            }
+            return Ok(Rc::clone(&entry.loaded));
         }
-        entries.remove(&key);
-        let loaded = Rc::new(Loaded::new(ascribe_check::load_bounded(
-            config,
-            self.bound(),
-        )?));
-        let listing = list(&root, &loaded.project);
+        let kept = Kept::load(LOADER, &key, self.bound())?;
+        let loaded = Rc::new(Loaded::new(kept.snapshot()));
         entries.insert(
             key,
             Entry {
-                listing,
-                code: RefCell::new(Vec::new()),
+                kept,
                 loaded: Rc::clone(&loaded),
             },
         );
@@ -96,123 +88,20 @@ impl Projects for Cache {
     }
 }
 
-impl Entry {
-    /// Whether every code file read so far is as it was when it was first
-    /// seen read.
-    fn code_unchanged(&self) -> bool {
-        let project = &self.loaded.project;
-        let mut seen = self.code.borrow_mut();
-        for file in project.code_files().all() {
-            let path = normalize(&project.root().join(file.path.as_str()));
-            let now = stamp(&path);
-            match seen.iter().find(|s| s.0 == path) {
-                Some(then) if *then != now => return false,
-                Some(_) => {}
-                None => seen.push(now),
-            }
-        }
-        true
-    }
-}
-
-/// The project's files, in path order: `ascribe.toml`, `ascribe.lock` and
-/// `ascribe.permalinks` (there or not), every file under the content root,
-/// every file in `memos/` and `.ascribe/memos/`, and each local source's folder (there or not). In the content root, folders whose names
-/// start with `.`, `node_modules`, and the output directory are left out,
-/// and a symbolic link to a folder isn't followed.
-fn list(root: &Path, project: &Project) -> Vec<Stamp> {
-    let mut files = content_listing(root, project.content_root(), &project.layout().output_dir);
-    for folder in [
-        ascribe_resolve::MEMOS_FOLDER,
-        ascribe_resolve::PERSONAL_MEMOS_FOLDER,
-    ] {
-        walk(&root.join(folder), &|_| false, &mut files);
-    }
-    for source in &project.model().sources {
-        files.push(presence(&normalize(&root.join(&source.path))));
-    }
-    files.sort();
-    files.dedup();
-    files
-}
-
-/// The project's files, as [`list`] lists them, then each code file its
-/// snippets have read: what `ascribe preview` watches, rendering the build
-/// again when any of it changes.
+/// The project's files, as the MCP server lists them, then each code file
+/// its snippets have read: what `ascribe preview` watches, rendering the
+/// build again when any of it changes.
 pub(crate) fn watched(project: &Project) -> Vec<Stamp> {
     let root = project.root();
-    let mut files = list(root, project);
-    for file in project.code_files().all() {
-        files.push(stamp(&normalize(&root.join(file.path.as_str()))));
-    }
-    files
-}
-
-/// `ascribe.toml`, `ascribe.lock` and `ascribe.permalinks` (there or not),
-/// and every file under the content root, as [`list`] lists them, unsorted.
-pub(crate) fn content_listing(
-    root: &Path,
-    content_root: &ascribe_core::RelPath,
-    output_dir: &ascribe_core::RelPath,
-) -> Vec<Stamp> {
-    let output = normalize(&root.join(output_dir.as_str()));
-    let content = normalize(&root.join(content_root.as_str()));
-    let skip = |dir: &Path| dir != content && dir == output;
-    let mut files = vec![
-        stamp(&root.join(MODEL_FILE)),
-        stamp(&root.join(LOCK_FILE)),
-        stamp(&root.join(PERMALINKS_FILE)),
-    ];
-    walk(&content, &skip, &mut files);
-    files
-}
-
-fn walk(dir: &Path, skip: &dyn Fn(&Path) -> bool, files: &mut Vec<Stamp>) {
-    // Outside FileSystem: the listing reads no file, only names, sizes, and
-    // times, to see whether the project changed since it was loaded; loading
-    // it again reads through FileSystem.
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        files.push((dir.to_owned(), 0, None));
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let name = entry.file_name();
-        let hidden = name.to_string_lossy().starts_with('.') || name == "node_modules";
-        let Ok(kind) = entry.file_type() else {
-            continue;
-        };
-        if kind.is_dir() {
-            if !hidden && !skip(&path) {
-                walk(&path, skip, files);
-            }
-        } else if !hidden {
-            files.push(stamp(&path));
-        }
-    }
-}
-
-/// A file's stamp, following a symbolic link; a file that can't be read has
-/// no size or time.
-fn stamp(path: &Path) -> Stamp {
-    // Outside FileSystem: as in `walk`.
-    match std::fs::metadata(path) {
-        Ok(meta) => (path.to_owned(), meta.len(), meta.modified().ok()),
-        Err(_) => (path.to_owned(), 0, None),
-    }
-}
-
-/// Whether a folder is there: its path, and 2 for a folder, 1 for anything
-/// else, 0 for nothing. Its time isn't kept: what's in it is checked as
-/// it's read.
-fn presence(path: &Path) -> Stamp {
-    // Outside FileSystem: as in `walk`.
-    let kind = match std::fs::metadata(path) {
-        Ok(meta) if meta.is_dir() => 2,
-        Ok(_) => 1,
-        Err(_) => 0,
-    };
-    (path.to_owned(), kind, None)
+    let code = project
+        .code_files()
+        .all()
+        .into_iter()
+        .map(|file| ascribe_workspace::stamp(&normalize(&root.join(file.path.as_str()))));
+    Listing::of(root, project.layout(), project.model(), LOADER.side_files)
+        .with(code)
+        .stamps()
+        .to_vec()
 }
 
 /// `path` made absolute from the current directory, and normalized.

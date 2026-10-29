@@ -152,6 +152,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml_ng",
+ "similar 3.2.0",
  "tempfile",
  "thiserror",
 ]
@@ -251,6 +252,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "lsp-types",
  "serde_json",
  "serde_yaml_ng",
@@ -449,6 +451,7 @@ dependencies = [
  "ascribe-core",
  "ascribe-model",
  "ascribe-resolve",
+ "proptest",
  "tempfile",
  "thiserror",
 ]

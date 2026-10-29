@@ -14,7 +14,7 @@ use ascribe_check::{Found, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, RelPath, diagnostics};
 use ascribe_query::QueryError;
-use ascribe_workspace::{LoadError, LocateError, Workspace};
+use ascribe_workspace::{LoadError, LocateError, WorkspaceSnapshot};
 use clap::ValueEnum;
 use serde::Serialize;
 
@@ -50,10 +50,12 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
     ascribe_workspace::find_config(&start).ok_or_else(|| LocateError::not_found(start))
 }
 
-/// A loaded project, and what's kept with it between questions.
+/// A snapshot of a loaded project, and what's kept with it between
+/// questions: what's kept belongs to the snapshot, and the next snapshot of
+/// the same project starts without it.
 pub struct Loaded {
-    /// The project, loaded once.
-    pub workspace: Rc<Workspace>,
+    /// The project as it was when this was made.
+    snapshot: WorkspaceSnapshot,
     /// The checks' view of it, on today, with any text laid over it
     /// ([`Loaded::with_source`]).
     pub project: Project,
@@ -76,11 +78,15 @@ struct Checked {
 }
 
 impl Loaded {
-    /// A project loaded, checked as on today.
-    pub fn new(workspace: Workspace) -> Loaded {
-        Loaded::over(Rc::new(workspace), |workspace| {
-            crate::context::checked(workspace)
-        })
+    /// A snapshot of a project, checked as on today.
+    pub fn new(snapshot: WorkspaceSnapshot) -> Loaded {
+        let project = crate::context::checked_snapshot(snapshot.clone());
+        Loaded::over(snapshot, project)
+    }
+
+    /// Whether this is what's kept with `snapshot`.
+    pub fn is_of(&self, snapshot: &WorkspaceSnapshot) -> bool {
+        self.snapshot.same_as(snapshot)
     }
 
     /// The same project with the source file at `path` (a content path)
@@ -88,13 +94,13 @@ impl Loaded {
     /// ([`Project::with_source`]). Nothing kept is shared.
     pub fn with_source(&self, path: &RelPath, text: String) -> Loaded {
         let project = self.project.with_source(path, text);
-        Loaded::over(Rc::clone(&self.workspace), |_| project)
+        Loaded::over(self.snapshot.clone(), project)
     }
 
-    fn over(workspace: Rc<Workspace>, project: impl FnOnce(&Workspace) -> Project) -> Loaded {
+    fn over(snapshot: WorkspaceSnapshot, project: Project) -> Loaded {
         Loaded {
-            project: project(&workspace),
-            workspace,
+            project,
+            snapshot,
             based_index: OnceCell::new(),
             readings: ascribe_query::Readings::default(),
             checks: RefCell::new(Vec::new()),
@@ -166,7 +172,7 @@ pub struct FromDisk;
 
 impl Projects for FromDisk {
     fn load(&self, config: &Path) -> Result<Rc<Loaded>, LoadError> {
-        ascribe_check::load(config).map(|workspace| Rc::new(Loaded::new(workspace)))
+        ascribe_check::load(config).map(|workspace| Rc::new(Loaded::new(workspace.snapshot())))
     }
 }
 
@@ -315,6 +321,24 @@ pub fn content_path_readings(project: &Project, given: &Path) -> [Option<RelPath
 pub fn write_json(out: &mut dyn Write, answer: &impl Serialize) -> io::Result<()> {
     serde_json::to_writer_pretty(&mut *out, answer).map_err(io::Error::other)?;
     writeln!(out)
+}
+
+/// Writes how `file`'s text would change from `old` to `new`, as a unified
+/// diff with three lines of context, as `diff -u` and `git diff` write it:
+/// what `--check` prints. A file that isn't there yet is `old`, empty, and
+/// nothing is written when the two are the same.
+pub fn write_unified_diff(out: &mut dyn Write, file: &str, old: &str, new: &str) -> io::Result<()> {
+    if old == new {
+        return Ok(());
+    }
+    let diff = similar::TextDiff::from_lines(old, new);
+    let mut unified = diff.unified_diff();
+    unified.context_radius(3);
+    write!(
+        out,
+        "{}",
+        unified.header(&format!("a/{file}"), &format!("b/{file}"))
+    )
 }
 
 /// The exit code for an answer that couldn't be written: none for a closed

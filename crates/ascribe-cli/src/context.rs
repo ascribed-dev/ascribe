@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use ascribe_check::Project;
 use ascribe_core::Coded;
-use ascribe_workspace::{LoadError, LocateError, ModelFile, Workspace};
+use ascribe_workspace::{LoadError, LocateError, ModelFile, Workspace, WorkspaceSnapshot};
 
 use crate::cli::{Color, Global};
 
@@ -59,7 +59,12 @@ pub fn load_rest(config: &Path, model: ModelFile) -> Result<Workspace, Failure> 
 
 /// The checks' view of a command's project, on today.
 pub fn checked(workspace: &Workspace) -> Project {
-    Project::new(workspace.snapshot())
+    checked_snapshot(workspace.snapshot())
+}
+
+/// The checks' view of a snapshot of a project, on today.
+pub fn checked_snapshot(snapshot: WorkspaceSnapshot) -> Project {
+    Project::new(snapshot)
         .with_today(crate::clock::today())
         .with_plain_markdown(ascribe_emit::plain_markdown)
 }

@@ -139,37 +139,10 @@ impl fmt::Display for Rule {
 }
 
 /// Today's exceptions: each rule, with the commands that don't follow it
-/// yet. The pull requests that follow #965 remove them, a group of commands
-/// at a time; a renamed option keeps its old spelling as a hidden alias for
-/// a release.
-const EXCEPTIONS: &[(Rule, &[&str])] = &[
-    (
-        Rule::DryRun,
-        &[
-            "init",
-            "sources fetch",
-            "sources update",
-            "observe",
-            "templates eject",
-            "vale eject",
-            "agents sync",
-            "agents index",
-        ],
-    ),
-    (
-        Rule::Force,
-        &[
-            "init",
-            "sources fetch",
-            "sources update",
-            "observe",
-            "templates eject",
-            "vale eject",
-            "agents sync",
-            "agents index",
-        ],
-    ),
-];
+/// yet. There are none: the pull requests that followed #965 brought every
+/// command into line. A command added that can't follow a rule yet is
+/// listed here, with the issue that will bring it into line.
+const EXCEPTIONS: &[(Rule, &[&str])] = &[];
 
 fn excepted(name: &str) -> BTreeSet<Rule> {
     EXCEPTIONS

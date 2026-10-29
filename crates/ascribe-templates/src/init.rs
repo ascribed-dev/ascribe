@@ -96,12 +96,15 @@ pub struct InitAnswer {
     /// The files written, from the new project's folder, `/`-separated, in
     /// the order they were written: with the templates, eject's files, then
     /// `ascribe.toml`, then `ascribe.addresses`, unless one was there
-    /// already. Empty when the templates were refused.
+    /// already. Empty when the templates were refused. With `--dry-run`,
+    /// the files it would write.
     pub written: Vec<String>,
+    /// Whether it ran with `--dry-run`, and wrote and made nothing.
+    pub dry_run: bool,
     /// The content root, from the new project's folder.
     pub content_root: String,
-    /// Whether the content root was made: false when the folder was there
-    /// already, or nothing was written.
+    /// Whether the content root was made, or with `--dry-run` would be:
+    /// false when the folder was there already, or nothing was written.
     pub content_root_made: bool,
     /// How many pages the content root held already. When it held any,
     /// `ascribe.toml` declares no page types, so none of them needs `type:`.
@@ -191,6 +194,8 @@ pub struct Init<'a> {
     pub content_root: Option<&'a str>,
     /// The version of Ascribe `templates.lock` records.
     pub ascribe_version: &'a str,
+    /// Whether to write nothing, and answer with what would be written.
+    pub dry_run: bool,
 }
 
 /// Starts a project in `request.root`: writes its first `ascribe.toml`, with
@@ -251,6 +256,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
         written: Vec::new(),
+        dry_run: request.dry_run,
         content_root: shown,
         content_root_made: false,
         pages,
@@ -269,6 +275,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
                 to: &to,
                 ascribe_version: request.ascribe_version,
                 keep_type: false,
+                dry_run: request.dry_run,
             },
             &fs,
         )?;
@@ -279,25 +286,31 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
             return Ok(answer);
         }
     } else {
-        // Library write: the first `ascribe.toml`, through `write`.
-        write(root, MODEL_FILE, |file| std::fs::write(file, &text))?;
+        if !request.dry_run {
+            // Library write: the first `ascribe.toml`, through `write`.
+            write(root, MODEL_FILE, |file| std::fs::write(file, &text))?;
+        }
         answer.written.push(MODEL_FILE.to_owned());
     }
     // Outside FileSystem: a file of the project just written, which is
     // written only where there's none. Library write: the first
     // `ascribe.addresses`, through `write`.
     if !root.join(ADDRESSES_FILE).exists() {
-        write(root, ADDRESSES_FILE, |file| {
-            std::fs::write(file, AddressFile::default().to_toml())
-        })?;
+        if !request.dry_run {
+            write(root, ADDRESSES_FILE, |file| {
+                std::fs::write(file, AddressFile::default().to_toml())
+            })?;
+        }
         answer.written.push(ADDRESSES_FILE.to_owned());
     }
     let content_root = layout.content_root.as_str();
     // Outside FileSystem: the content root of a project just written, which
     // must exist for the project to load.
     answer.content_root_made = !root.join(content_root).is_dir();
-    // Library write: as above.
-    write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
+    if !request.dry_run {
+        // Library write: as above.
+        write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
+    }
     Ok(answer)
 }
 

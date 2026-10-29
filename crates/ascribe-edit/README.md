@@ -17,8 +17,8 @@ An edit works from a `nav::Ctx`: a snapshot of the project, the content model an
 | `src/nav_file.rs` | `sections`, `complete` | Completion's edits in `ascribe.nav`: a key, a `folder` the file doesn't list yet, or a page its section's `pages` doesn't name yet. |
 | `src/memos.rs` | `read`, `id_edits`, `entry_edits`, `move_edits` | The memos, and the edits that keep a memo's `about` naming what it named when that's renamed or moves. |
 | `src/nav.rs` | `Ctx`, `Lines`, `hit_at` | What an edit works from, and what's under a cursor in a file. |
-| `src/project.rs` | `load`, `Load`, `Loaded` | A project loaded from the disk, as the language server loads one with no document open. |
-| `src/fsx.rs` | `BufferFs`, `LayerFs` | The disk, with the editor's open buffers over it when there are any. |
+| `src/project.rs` | `load`, `Load`, `Loaded` | A project loaded from the disk as a `Workspace`, with the language server's file systems and `Ctx`, as it loads one with no document open. |
+| `src/fsx.rs` | `LayerFs` | The disk, with the editor's open buffers over it when there are any. |
 | `src/position.rs`, `src/uri.rs` | `Encoding`, `path_to_uri`, `uri_to_path` | Positions in the client's encoding, and `file:` URIs. |
 
 ## Rules
