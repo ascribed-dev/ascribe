@@ -8820,6 +8820,20 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
       "title": "Crawler sources to reread"
+    },
+    {
+      "content": {
+        "body": "The release of `v0.4.5` failed while publishing.\n\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/40932270433). Failed jobs:\n\n- check the version\n\nSome packages may already be published. Check npm, the Marketplace, and the GitHub release before running this again.\n",
+        "number": 1227,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Release failed: v0.4.5",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1227"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhEklOo",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Done",
+      "title": "Release failed: v0.4.5"
     }
   ]
 }
