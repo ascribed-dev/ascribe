@@ -1418,6 +1418,11 @@ pub struct Build {
     /// declared and each other `<build>@<line>`. `None` for a build that
     /// isn't versioned.
     pub line: Option<BuildLine>,
+    /// Whether the build publishes drafts (SPEC §2.1) as it would any other
+    /// page. `false` for every build the content model declares: a draft is
+    /// built nowhere. `check` sets it on the build it checks content no
+    /// build publishes with.
+    pub drafts: bool,
 }
 
 /// One live line of a versioned build.

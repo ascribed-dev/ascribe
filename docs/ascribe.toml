@@ -9,10 +9,11 @@ output-dir = ".ascribe/build"
 # has the fields in `[frontmatter]`. Titles can show code ("`ascribe.toml`
 # reference"); the site's layout uses the formatted title for the heading and
 # the sidebar. A field named `description` is the page's description, which
-# the checks and llms.txt read.
+# the checks and llms.txt read as plain text; it can show code too, and the
+# site's layout uses its formatted form for the lead under the title.
 [frontmatter]
 title = { type = "string", inline = "code" }
-description = "string"
+description = { type = "string", inline = "code" }
 
 # The home page, a list of the other pages. No template is for a landing page,
 # so the type has nothing of its own.
@@ -58,11 +59,12 @@ values = ["npm", "pnpm"]
 #
 # What isn't in the latest release is marked with availability. A feature in
 # `main` that no release has yet is `@available: ascribe planned`, the
-# planned line in `[releases.ascribe]`, so the page reads "planned". When a release ships it,
-# the line moves to `live` and the same marks read "since <version>".
-# Something that shipped in an earlier release says so directly:
-# `@available: ascribe 0.1.1`. `ascribe` is a value of the implicit `release`
-# dimension, since no declared dimension has it.
+# planned line in `[releases.ascribe]`, so the page reads "in main, not yet
+# released". Before 1.0, nothing says which release a feature arrived in:
+# every reader is on the live line, so when a release ships, its step in
+# RELEASING.md removes the version `planned` became, and keeps a lifecycle
+# state such as `deprecated` (decision #973). `ascribe` is a value of the
+# implicit `release` dimension, since no declared dimension has it.
 [releases]
 planned-label = "in main, not yet released"
 

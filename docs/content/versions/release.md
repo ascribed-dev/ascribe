@@ -10,7 +10,7 @@ The commands for a project's [release lines](lines.md): what they are, what diff
 @id {permalink=true}: cli-versions
 @summary: Lists a project's release lines, says what differs between two, releases one, archives one, and retires one.
 
-Lists a project's release lines, says what differs between two, releases one, archives one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/content.md#71-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
+Lists a project's release lines, says what differs between two, releases one, archives one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/variation.md#121-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
 
 ### `ascribe versions list`
 @id {permalink=true}: cli-versions-list
@@ -65,7 +65,7 @@ Releases a line: rewrites each mark's [`planned`](../writing/directives.md#avail
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-release.txt
 
-When it archives the old current line, the marks that name a version in it say nothing any more: every line left has what they mark. It removes or rewrites each one [`available-same-in-every-line`](../checks/diagnostics/content-checks.md#ASC212) would report, as that check's fix does: a mark with nothing left to say goes, and one that still says something, such as a state or another target, keeps that alone, as `self-managed beta 3.5` becomes `self-managed beta`. A feature's spec is rewritten the same way. The text lists each with its file and line, and the JSON as `cleared` and `cleared_features`, so after it `ascribe check` reports no `available-same-in-every-line` for the archived line. A mark that said nothing before the release, naming an older line, is left for `ascribe check` to report. A badge build showed what these marks said, so the pages it drew a badge on are among the outputs the release changes.
+When it archives the old current line, the marks that name a version in it say nothing any more: every line left has what they mark. It removes or rewrites each one [`available-same-in-every-line`](../checks/diagnostics/project-checks.md#ASC212) would report, as that check's fix does: a mark with nothing left to say goes, and one that still says something, such as a state or another target, keeps that alone, as `self-managed beta 3.5` becomes `self-managed beta`. A feature's spec is rewritten the same way. The text lists each with its file and line, and the JSON as `cleared` and `cleared_features`, so after it `ascribe check` reports no `available-same-in-every-line` for the archived line. A mark that said nothing before the release, naming an older line, is left for `ascribe check` to report. A badge build showed what these marks said, so the pages it drew a badge on are among the outputs the release changes.
 
 It builds the project in memory before and after, and refuses when rewriting the marks or archiving the old line would change what a reader sees: both are meant to change nothing, so a change there is a mark the rewrite got wrong. What the release itself changes, each page whose content was planned and is now live, it lists by build. It writes nothing when it refuses, and `--dry-run` says what it would do and writes nothing.
 

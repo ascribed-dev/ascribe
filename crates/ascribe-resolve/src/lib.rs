@@ -103,7 +103,7 @@ mod uses;
 
 pub use astro::AstroRouter;
 pub use build::{
-    Annotation, Availability, BuildResolver, DeclaredPermalink, DefaultRouter, Destination,
+    Annotation, Availability, BuildResolver, DRAFT, DeclaredPermalink, DefaultRouter, Destination,
     DropReason, DroppedPage, EmbeddedOperation, FormattedField, FoundSummary, GlossaryUse,
     HeadingIds, InLine, LinkTarget, NAV_LABEL, NavLabel, PagePermalink, PageSection, Permalink,
     Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,

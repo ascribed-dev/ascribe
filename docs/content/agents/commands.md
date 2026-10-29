@@ -36,6 +36,14 @@ It merges its entries into a file it shares: it updates the entries it wrote bef
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
+@available: ascribe planned
+With `--format json`, it writes the same list in the document its [schema](../contracts/json-reports/agents.md#ascribe-agents-sync) describes: each file's path, whether it `changed` (with `--check`, whether it's out of date), and the agents that read it; the notes and what an agent doesn't read; and with `--cloud`, the MCP server's JSON. The exit codes are the same. With `--check`, after a sync:
+
+.The JSON for this example
+@details:
+@snippet {lang=json}: code:crates/ascribe-cli/tests/output/agents-sync-check.json
+@end
+
 | Code | Meaning |
 |---|---|
 | `0` | The files are written, or with `--check`, up to date |
@@ -65,7 +73,7 @@ It lists the pages the build offers, the ones in `llms.txt`: a page that's `unli
 
 Of a [versioned build](../versions/lines.md#for-agents), `--build site@3.4` names an older line, and without `--build` it's the current line's. When the build has more than one live line, the index's heading names the line, as that line's `llms.txt` does: `## Loom (Self-managed 3.4)`.
 
-`--into` writes between markers as `sync` writes its block, so a second run replaces the first, and says whether the file changed. `--pages` writes each page's Markdown version as the build's `plain` output writes it. A file in the `--pages` folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
+`--into` writes between markers as `sync` writes its block, so a second run replaces the first, and says whether the file changed. With `--dry-run`, it says what it would write and writes nothing; and like [every command that writes](../command/index.md#commands-that-write), it won't change a file git couldn't put back unless given `--force`. `--pages` writes each page's Markdown version as the build's `plain` output writes it. A file in the `--pages` folder that isn't one of the index's pages, such as a page from an earlier run that the build no longer offers, is named, and left there.
 
 @include: ../_generated/cli-agents-index-options.md
 
@@ -78,7 +86,7 @@ ascribe agents index --build site --into packages/sdk/AGENTS.md --pages packages
 | `0` | It printed the index, or wrote it |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, more than one build and no `--build`, an unknown build, a file whose markers are damaged, a file or folder under the content root (so one of the project's pages), or a file it can't read or write. Nothing is written. |
 
-With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/questions.md#ascribe-agents-index) has every field:
+With `--format json`, the document is as follows, and its [schema](../contracts/json-reports/agents.md#ascribe-agents-index) has every field:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/agents-index.json
 
@@ -117,6 +125,9 @@ Without a `path` in the content root, `new-page` says the page goes where the re
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
+@available: ascribe planned
+With `--format json`, it writes the prompt's name and text, or with `--list` each prompt with its arguments, in the documents their [schemas](../contracts/json-reports/agents.md#ascribe-agents-prompt) describe.
+
 | Code | Meaning |
 |---|---|
 | `0` | It printed the prompt, or with `--list`, the prompts |
@@ -143,6 +154,8 @@ Checks an agent's work as its hook runs it: after the agent writes a file, or be
 @include: ../_generated/cli-agents-hook-options.md
 
 After an edit, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors, at most 10 lines in the concise form, then the advice in them that has a safe fix, at most 10, each line followed by its fix's title, which says what to change and where, then the build it checked. It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported. Neither is the advice [`ascribe.baseline`](../checks/baseline.md#for-agents) holds back: the answer says how many it held back, here and before the agent finishes. When `ascribe.baseline` can't be read, the edit's check holds nothing back, and the answer says which line to fix.
+
+It also tells the agent what a draft's template left to fill in, at most 10 lines, before the build it checked: [`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195) and [`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229), which have no fix, so the agent writes them while the page is its own. In a page that publishes, a placeholder left is an error, among the errors.
 
 Before the agent finishes, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
 
@@ -189,7 +202,7 @@ Each tool is named for its command. `ascribe_fmt` and `ascribe_diff` were `ascri
 
 Every tool is read-only: `ascribe_rename` gives the files' text and the move for the agent to make, and `ascribe_addresses_move` and `ascribe_addresses_retire` the edit to apply, and none writes a file or starts a program the project names, and each is marked read-only, idempotent, and closed-world. `ascribe_check`, and the `fix` prompt, never run Vale, even with `in-check = true` in `[checks.vale]`: they report one `prose-not-checked` advice instead, and `ascribe check --vale` in a shell checks the prose.
 
-Paths are from the folder the server runs in, and each call finds the nearest `ascribe.toml` at or above its paths, so one server serves every project in a repository. A project is loaded once and kept, with each build's pages as `ascribe_search` reads them once a search asks for the build, so a second search only scans: before each call the server lists the project's files again, names, sizes, and modification times, and loads it again when anything changed, a new or deleted file included. A call with bad arguments, or a path in no project, is a result marked as an error, with a sentence on what to call instead.
+Paths are from the folder the server runs in, and each call finds the nearest `ascribe.toml` at or above its paths, so one server serves every project in a repository. A project is loaded once and kept, with each build's pages as `ascribe_search` reads them once a search asks for the build, so a second search only scans: before each call the server lists the project's files again, names, sizes, and modification times, and reads again only the files that changed, a new or deleted file included. It loads the whole project again only when a project nested in its content root appears or goes, a local source's folder does, or `ascribe.toml` moves the content root. A call with bad arguments, or a path in no project, is a result marked as an error, with a sentence on what to call instead.
 
 The resources are `ascribe://directives`, each built-in directive's syntax (`ascribe agents skill references/directives.md`); `ascribe://model/<project>`, what a project's content model allows (`ascribe model <project>`); and `ascribe://instructions/<project>`, its rules (`ascribe agents rules <project>`). `<project>` is a file or folder in it, from the folder the server runs in. The prompts are `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them.
 

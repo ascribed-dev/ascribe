@@ -27,9 +27,9 @@ const HEADER: &str = "@memo: Generated from the help text in crates/ascribe-cli/
 
 /// Options newer than their command, as `(command, option, availability)`:
 /// the reference marks each with `@available: <availability>`. An option no
-/// release has yet is `ascribe planned`; when a release ships it, name the
-/// release, as `ascribe 0.2.0`. Remove an entry when the option's command section says
-/// the same, or when every live line has the option.
+/// release has yet is `ascribe planned`. Remove an entry when a release ships
+/// it, since before 1.0 the docs don't say which release a feature arrived in
+/// (decision #973), or when the option's command section says the same.
 const AVAILABLE: &[(&str, &str, &str)] = &[];
 
 fn repo() -> PathBuf {
@@ -334,9 +334,10 @@ fn the_first_ascribe_toml_links_to_permalinks_of_the_docs() {
 /// them, so a permalink they add is in it, and so is every one they had.
 #[test]
 fn the_docs_list_of_permalinks_is_current() {
-    let project = ascribe_check::Project::load(&repo().join("docs/ascribe.toml")).unwrap();
+    let workspace = ascribe_check::load(&repo().join("docs/ascribe.toml")).unwrap();
+    let project = ascribe_check::Project::new(workspace.snapshot());
     let synced = ascribe_query::permalinks::sync(
-        &project.index(),
+        project.index(),
         project.permalinks(),
         project.permalinks_text(),
     )
@@ -534,8 +535,9 @@ fn synopsis(commands: &[(String, &Command)]) -> String {
 }
 
 /// How an argument is written in the synopsis: `[--build <NAME>]...`,
-/// `[--format text|json]`, `[--check]`, `[PATHS]...`, and without brackets
-/// when it's required: `TARGET --from <PAGE>`.
+/// `[--format text|json]`, `[--exit-code[=error|warning]]`, `[--check]`,
+/// `[PATHS]...`, and without brackets when it's required: `TARGET --from
+/// <PAGE>`.
 fn usage(arg: &Arg) -> String {
     let values: Vec<String> = arg
         .get_possible_values()
@@ -551,6 +553,12 @@ fn usage(arg: &Arg) -> String {
     };
     let repeated = matches!(arg.get_action(), ArgAction::Append) && !delimited;
     let written = match arg.get_long() {
+        // A value that may be left out is given with `=`.
+        Some(long)
+            if takes_value(arg) && arg.get_num_args().is_some_and(|n| n.min_values() == 0) =>
+        {
+            format!("[--{long}[={value}]]")
+        }
         Some(long) if takes_value(arg) => format!("[--{long} {value}]"),
         Some(long) => format!("[--{long}]"),
         None => format!("[{}]", value_name(arg)),

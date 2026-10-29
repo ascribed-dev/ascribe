@@ -19,10 +19,10 @@ const HEADER: &str = "@memo: Generated from builtin_schemas() in crates/ascribe-
      by crates/ascribe-cli/src/docs/builtins.rs; edit the schema, then run \
      `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.\n";
 
-/// The release a built-in first shipped in, when it's newer than the
-/// reference: its row is marked `{available="<availability>"}`. A built-in no
-/// release has yet is `ascribe planned`; when a release ships it, name the
-/// release, as `ascribe 0.4.0`.
+/// The availability of a built-in newer than the reference: its row is marked
+/// `{available="<availability>"}`. A built-in no release has yet is `ascribe
+/// planned`; when a release ships it, it's `None`, since before 1.0 the docs
+/// don't say which release a feature arrived in (decision #973).
 fn available(builtin: Builtin) -> Option<&'static str> {
     match builtin {
         Builtin::Id
@@ -36,8 +36,8 @@ fn available(builtin: Builtin) -> Option<&'static str> {
         | Builtin::Intended
         | Builtin::Memo
         | Builtin::Term
-        | Builtin::Summary => None,
-        Builtin::Operation => Some("ascribe 0.4.4"),
+        | Builtin::Summary
+        | Builtin::Operation => None,
     }
 }
 

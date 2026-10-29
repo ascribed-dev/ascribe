@@ -1334,3 +1334,45 @@ fn a_change_to_a_sources_observations_reads_its_snippets_again() {
         set(&["index.md", "_shown.md", "guide.md", "other.md"])
     );
 }
+
+// -- A load that defers what only an update needs -----------------------------------
+
+#[test]
+fn a_deferred_load_updated_equals_a_full_load_updated_the_same_way() {
+    let sources = [
+        (
+            "index.md",
+            "---\ntitle: H\n---\n\n[a](a.md) [g](guide.md#start)\n",
+        ),
+        ("a.md", "---\ntitle: A\n---\n\n@include: _f.md\n"),
+        (
+            "guide.md",
+            "---\ntitle: G\n---\n\n# Start\n\n@include: _f.md\n",
+        ),
+        ("_f.md", "Some prose.\n"),
+    ];
+    let spec = ModelSpec::base();
+    let (mut full, world) = load(&spec, &sources);
+    let model = spec.model();
+    let layout = Layout::from_model(&model);
+    let mut deferred = IncrementalProject::load_deferred(model, layout.clone(), world.fs(&layout));
+    let dump = |inc: &IncrementalProject| incremental_support::dump(inc.snapshot().project());
+    assert_eq!(dump(&deferred), dump(&full));
+    assert_eq!(deferred.ids(), full.ids());
+    let batches = [
+        vec![edited("_f.md", "Different prose.\n")],
+        vec![edited("guide.md", "---\ntitle: G\n---\n\n# Begin\n")],
+        vec![created(
+            "b.md",
+            "---\ntitle: B\n---\n\n[g](guide.md#begin)\n",
+        )],
+        vec![deleted("a.md")],
+    ];
+    for batch in batches {
+        let from_full = full.apply(batch.clone()).unwrap();
+        let from_deferred = deferred.apply(batch).unwrap();
+        assert_eq!(from_deferred, from_full);
+        assert_eq!(dump(&deferred), dump(&full));
+        assert_eq!(deferred.stats(), full.stats());
+    }
+}

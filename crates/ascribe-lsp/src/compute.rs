@@ -26,14 +26,16 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::identity::Identity;
+use ascribe_check::side_files::SIDE_FILES;
 use ascribe_check::{
-    Acknowledgements, Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity,
-    SourceFile, apply_levels, check_file,
+    Acknowledgements, Diagnostic, PageChecker, Project, Registry, Severity, apply_levels,
+    check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
+use ascribe_workspace::WorkspaceSnapshot;
 use lsp_types::{
     CodeDescription, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString,
 };
@@ -46,13 +48,15 @@ use crate::uri::path_to_uri;
 /// What one round of diagnostics has to do.
 pub(crate) struct Job {
     pub epoch: u64,
+    /// The source index, at the version the round computes.
     pub snapshot: Snapshot,
+    /// The project at the same version, as the checks read it.
+    pub workspace: WorkspaceSnapshot,
     /// The files to compute.
     pub files: BTreeSet<RelPath>,
     pub root: PathBuf,
     pub model: Arc<ContentModel>,
     pub model_text: String,
-    pub fs: Arc<LayerFs>,
     pub encoding: Encoding,
     /// The version of each open document among `files`, when the job was
     /// taken: what the results are for.
@@ -178,7 +182,8 @@ impl Core {
         if loaded.dirty.is_empty() && !loaded.across_dirty {
             return None;
         }
-        let snapshot = loaded.inc.snapshot();
+        let snapshot = loaded.workspace.index_snapshot();
+        let workspace = loaded.workspace.snapshot();
         let files = with_included(
             &snapshot,
             &mut loaded.direct_includes,
@@ -194,11 +199,11 @@ impl Core {
         Some(Job {
             epoch: loaded.epoch,
             snapshot,
+            workspace,
             files,
             root: loaded.root.clone(),
-            model: loaded.model.clone(),
-            model_text: loaded.model_text.clone(),
-            fs: loaded.fs.clone(),
+            model: loaded.model().clone(),
+            model_text: loaded.model_text().to_owned(),
             encoding,
             versions,
             cache: loaded.cache.clone(),
@@ -272,7 +277,7 @@ impl Core {
         let mut ready = Vec::new();
         for (path, diagnostics, shown, held, matched) in results {
             let abs = loaded.source_path(&path);
-            let current = loaded.inc.is_file_current(&job.snapshot, &path);
+            let current = loaded.workspace.is_file_current(&job.snapshot, &path);
             let version = self.docs.get(&abs).map(|d| d.version);
             if current && version == job.versions.get(&path).copied() {
                 loaded.matched.insert(path, matched);
@@ -747,27 +752,39 @@ fn run_across(
     found
 }
 
-/// The checked project of a snapshot: its sources with the snapshot's ids, and
-/// the files the editor and the watcher reported over the disk.
+/// The checked project of a round: the project as it was when the round
+/// was taken, read through the files the editor and the watcher reported
+/// over the disk.
 fn check_project_of(job: &Job) -> Project {
-    checked_project(
-        &job.snapshot,
-        job.root.clone(),
-        &job.model,
-        &job.model_text,
-        &job.fs,
-        &[],
+    Project::new(job.workspace.clone())
+        .with_today(job.today)
+        .with_plain_markdown(ascribe_emit::plain_markdown)
+        // The editor reports a personal memo's problems as a team memo's.
+        .with_personal_memos()
+}
+
+/// The checks' snapshot of `snapshot`: its files and their ids, over `fs`,
+/// with `model`.
+fn snapshot_of(
+    snapshot: &Snapshot,
+    root: PathBuf,
+    model: &ContentModel,
+    model_text: &str,
+    fs: &Arc<LayerFs>,
+) -> WorkspaceSnapshot {
+    WorkspaceSnapshot::of_index(
+        root,
+        Arc::new(model.clone()),
+        model_text.to_owned(),
+        snapshot.shared_project(),
+        SIDE_FILES,
+        fs.clone(),
     )
-    .with_today(job.today)
-    // The editor reports a personal memo's problems as a team memo's.
-    .with_personal_memos()
-    // The snapshot's index is of the same files, with the same ids.
-    .with_link_index(job.snapshot.shared_project())
 }
 
 /// The checked project of `snapshot`, with each of `replaced`'s files holding
-/// the text given instead of its own: what `ascribe/edit` checks an edit's
-/// result in.
+/// the text given instead of its own, and indexed again: what `ascribe/edit`
+/// checks an edit's result in.
 pub(crate) fn checked_project(
     snapshot: &Snapshot,
     root: PathBuf,
@@ -776,45 +793,8 @@ pub(crate) fn checked_project(
     fs: &Arc<LayerFs>,
     replaced: &[(&RelPath, &str)],
 ) -> Project {
-    let mut sources: Vec<SourceFile> = snapshot
-        .files()
-        .map(|f| SourceFile {
-            id: f.file,
-            path: f.path.clone(),
-            text: match replaced.iter().find(|(path, _)| **path == f.path) {
-                Some((_, text)) => (*text).to_owned(),
-                None => f.source.to_string(),
-            },
-            unreadable: None,
-        })
-        .collect();
-    // Files the project couldn't read are still sources, reported and not
-    // checked, with ids past every other.
-    let first = snapshot
-        .files()
-        .map(|f| f.file.index())
-        .max()
-        .map_or(1, |max| max + 1);
-    for (id, unreadable) in (first..).zip(snapshot.unreadable()) {
-        sources.push(SourceFile {
-            id: FileId::new(id),
-            path: unreadable.path.clone(),
-            text: String::new(),
-            unreadable: Some(ReadFailure {
-                reason: unreadable.reason.clone(),
-                not_utf8: unreadable.reason.contains("valid UTF-8"),
-            }),
-        });
-    }
-    sources.sort_by(|a, b| a.path.cmp(&b.path));
-    Project::from_parts_with_fs(
-        root,
-        snapshot.layout().content_root.clone(),
-        model.clone(),
-        model_text.to_owned(),
-        sources,
-        fs.clone(),
-    )
+    Project::new(snapshot_of(snapshot, root, model, model_text, fs).with_texts(replaced))
+        .with_plain_markdown(ascribe_emit::plain_markdown)
 }
 
 /// Adds to `lsp`'s data the fixes of `d` that edit another file the project

@@ -1,6 +1,7 @@
-//! `init` in temporary folders: the `ascribe.toml` it writes and the content
-//! root it makes, with the templates and without, in a folder named by a
-//! path, in a folder of pages already there, and what it refuses, writing
+//! `init` in temporary folders: the `ascribe.toml` and `ascribe.addresses`
+//! it writes and the content root it makes, with the templates and
+//! without, in a folder named by a path, in a folder of pages already
+//! there, and what it refuses, writing
 //! nothing.
 
 #![allow(clippy::expect_used, clippy::panic)]
@@ -26,6 +27,7 @@ fn run_in(
         templates,
         content_root,
         ascribe_version: "9.9.9",
+        dry_run: false,
     })
 }
 
@@ -86,14 +88,27 @@ fn the_first_ascribe_toml_loads_with_nothing_to_say_and_a_page_type() {
 fn an_empty_folder_gets_ascribe_toml_and_its_content_root() {
     let dir = tempfile::tempdir().expect("a temporary folder");
     let answer = run(dir.path(), false).expect("started");
-    assert_eq!(answer.written, ["ascribe.toml"]);
+    assert_eq!(answer.written, ["ascribe.toml", "ascribe.addresses"]);
     assert_eq!(answer.content_root, "docs");
     assert!(answer.content_root_made);
     assert_eq!(answer.templates, None);
     assert_eq!(answer.next, "https://ascribed-dev.com/go/astro-guide/");
-    assert_eq!(entries(dir.path()), ["ascribe.toml", "docs/"]);
+    assert_eq!(
+        entries(dir.path()),
+        ["ascribe.addresses", "ascribe.toml", "docs/"]
+    );
     assert_eq!(read(dir.path(), "ascribe.toml"), MODEL_TEXT);
-    ascribe_check::Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    assert_eq!(
+        read(dir.path(), "ascribe.addresses"),
+        ascribe_model::AddressFile::default().to_toml()
+    );
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .expect("the project loads");
+    assert!(
+        project.addresses().is_some_and(Result::is_ok),
+        "the addresses are kept"
+    );
 }
 
 #[test]
@@ -107,10 +122,17 @@ fn with_the_templates_it_writes_what_eject_writes() {
         ejected.added.len(),
         ascribe_templates::set().templates.len()
     );
-    assert_eq!(answer.written, ejected.written);
+    assert_eq!(
+        answer.written[..answer.written.len() - 1],
+        ejected.written[..]
+    );
+    assert_eq!(
+        ejected.written.last().map(String::as_str),
+        Some("ascribe.toml")
+    );
     assert_eq!(
         answer.written.last().map(String::as_str),
-        Some("ascribe.toml")
+        Some("ascribe.addresses")
     );
     assert!(answer.content_root_made);
     let model = read(dir.path(), "ascribe.toml");
@@ -125,18 +147,21 @@ fn a_path_given_is_made_and_the_project_is_started_there() {
     let dir = tempfile::tempdir().expect("a temporary folder");
     let root = dir.path().join("handbook/docs-site");
     let answer = run(&root, false).expect("started");
-    assert_eq!(answer.written, ["ascribe.toml"]);
+    assert_eq!(answer.written, ["ascribe.toml", "ascribe.addresses"]);
     assert_eq!(
         entries(dir.path()),
         [
             "handbook/",
             "handbook/docs-site/",
+            "handbook/docs-site/ascribe.addresses",
             "handbook/docs-site/ascribe.toml",
             "handbook/docs-site/docs/"
         ]
     );
 }
 
+/// A folder that has pages already gets `ascribe.addresses` too, so the
+/// pages there are kept from the first commit.
 #[test]
 fn a_content_root_already_there_is_kept() {
     let dir = tempfile::tempdir().expect("a temporary folder");
@@ -144,6 +169,7 @@ fn a_content_root_already_there_is_kept() {
     std::fs::write(dir.path().join("docs/index.md"), "Hello.\n").expect("written");
     let answer = run(dir.path(), false).expect("started");
     assert!(!answer.content_root_made);
+    assert_eq!(answer.written, ["ascribe.toml", "ascribe.addresses"]);
     assert_eq!(read(dir.path(), "docs/index.md"), "Hello.\n");
 }
 
@@ -215,8 +241,11 @@ fn a_folder_of_pages_is_adopted_and_its_pages_counted() {
         "the fragment and the hidden file aren't pages"
     );
     assert!(!answer.content_root_made);
+    assert_eq!(answer.written, ["ascribe.toml", "ascribe.addresses"]);
     assert_eq!(read(dir.path(), "ascribe.toml"), model_text(None, true));
-    ascribe_check::Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .expect("the project loads");
 }
 
 #[test]
@@ -267,6 +296,15 @@ fn the_templates_are_refused_in_a_folder_of_pages_with_nothing_written() {
     let message = error.to_string();
     assert!(message.contains("`docs/` (1 found)"), "{message}");
     assert_eq!(entries(dir.path()), ["docs/", "docs/index.md"]);
+}
+
+#[test]
+fn an_ascribe_addresses_already_there_is_left_as_it_is() {
+    let dir = tempfile::tempdir().expect("a temporary folder");
+    std::fs::write(dir.path().join("ascribe.addresses"), "Mine.\n").expect("written");
+    let answer = run(dir.path(), false).expect("started");
+    assert_eq!(answer.written, ["ascribe.toml"]);
+    assert_eq!(read(dir.path(), "ascribe.addresses"), "Mine.\n");
 }
 
 #[test]

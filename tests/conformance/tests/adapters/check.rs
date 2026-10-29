@@ -9,12 +9,15 @@
 //! A `check` case that also carries `structure` or `parser` gets its
 //! diagnostics here, from the whole check, not from the parser alone.
 
+use std::sync::Arc;
+
 use ascribe_check::{Acknowledgements, Project, apply_levels, check_files};
 use ascribe_conformance::{
     AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic, RelatedPlace,
 };
 use ascribe_core::{RelPath, WideEncoding};
 use ascribe_resolve::{DiskFs, Layout};
+use ascribe_workspace::{ModelFile, Workspace};
 
 /// Handles the cases that expect file-level diagnostics.
 pub struct CheckAdapter;
@@ -57,8 +60,12 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
     let mut layout = Layout::from_model(&model);
     layout.content_root = content_root.clone();
     ascribe_check::type_files::from_lock(&mut model, &DiskFs::new(&case.dir, &layout));
-    let sources =
-        Project::read_sources(&case.dir, &content_root).map_err(|e| AdapterError(e.to_string()))?;
+    let fs = Arc::new(DiskFs::with_listing_cache(&case.dir, &layout));
+    let model = ModelFile {
+        root: case.dir.clone(),
+        text,
+        model,
+    };
     let today = match &case.expect.today {
         Some(day) => Some(
             ascribe_core::Date::parse(day)
@@ -66,7 +73,11 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
         ),
         None => None,
     };
-    Ok(Project::from_parts(case.dir.clone(), content_root, model, text, sources).with_today(today))
+    Ok(Project::new(
+        Workspace::load_with(ascribe_check::LOADER.side_files, model, content_root, fs).snapshot(),
+    )
+    .with_today(today)
+    .with_plain_markdown(ascribe_emit::plain_markdown))
 }
 
 /// `check_files` on the case's project, without what an acknowledgement

@@ -104,7 +104,9 @@ fn tree() -> tempfile::TempDir {
 type Found = BTreeSet<(String, String, usize, usize)>;
 
 fn from_check(root: &Path) -> (Found, Vec<(u32, String)>) {
-    let project = Project::load(&root.join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::load(&root.join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
     let found = check_files(&project)
         .into_iter()
         .filter(|d| REFERENCE_SLUGS.contains(&d.slug.to_string().as_str()))

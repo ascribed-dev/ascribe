@@ -132,7 +132,7 @@
           "type": "array"
         },
         "help": {
-          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode.",
+          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode, in Markdown, whose links are the docs' permalinks, such as\n`https://ascribed-dev.com/go/22-checks/`.",
           "type": "string"
         },
         "message": {
@@ -475,7 +475,7 @@
       "type": "integer"
     },
     "fixed": {
-      "description": "With `--fix`, the safe fixes it applied, in file order and, within a\nfile, in the order of their diagnostics; the rest of the report is\nthe check after them. Left out when none was applied.",
+      "description": "With `--fix`, the safe fixes it applied, in file order and, within a\nfile, in the order of their diagnostics; the rest of the report is\nthe check after them. With `--dry-run`, the fixes it would apply,\nnone of which was, and the check is of the files as they are. Left\nout when there's none.",
       "items": {
         "$ref": "#/$defs/FixedEntry"
       },

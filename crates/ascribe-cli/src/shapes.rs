@@ -61,6 +61,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::baseline::PruneJson>(),
     },
     Shape {
+        file: "vale-eject",
+        title: "ValeEjectReport",
+        written_by: "`ascribe vale eject --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::vale::EjectJson<'static>>(),
+    },
+    Shape {
         file: "diff",
         title: "DiffReport",
         written_by: "`ascribe diff --format json`",
@@ -80,6 +87,13 @@ const SHAPES: &[Shape] = &[
         written_by: "`ascribe sources status --format json`",
         command: true,
         schema: |g| g.root_schema_for::<crate::commands::sources::StatusJson<'static>>(),
+    },
+    Shape {
+        file: "sources-fetch",
+        title: "SourcesFetchReport",
+        written_by: "`ascribe sources fetch --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::sources::FetchJson<'static>>(),
     },
     Shape {
         file: "sources-update",
@@ -145,6 +159,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::addresses::ListJson>(),
     },
     Shape {
+        file: "templates-list",
+        title: "TemplatesListReport",
+        written_by: "`ascribe templates list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::templates::ListJson>(),
+    },
+    Shape {
         file: "templates-eject",
         title: "TemplatesEjectReport",
         written_by: "`ascribe templates eject --format json`",
@@ -157,6 +178,13 @@ const SHAPES: &[Shape] = &[
         written_by: "`ascribe templates status --format json`",
         command: true,
         schema: |g| g.root_schema_for::<ascribe_templates::StatusAnswer>(),
+    },
+    Shape {
+        file: "new",
+        title: "NewReport",
+        written_by: "`ascribe new --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::new::NewJson>(),
     },
     Shape {
         file: "init",
@@ -255,6 +283,27 @@ const SHAPES: &[Shape] = &[
         written_by: "`ascribe agents index --format json`",
         command: true,
         schema: |g| g.root_schema_for::<ascribe_query::AgentsIndex>(),
+    },
+    Shape {
+        file: "agents-sync",
+        title: "AgentsSyncReport",
+        written_by: "`ascribe agents sync --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::agents::SyncJson<'static>>(),
+    },
+    Shape {
+        file: "agents-prompt",
+        title: "AgentsPromptReport",
+        written_by: "`ascribe agents prompt --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::agents::PromptJson<'static>>(),
+    },
+    Shape {
+        file: "agents-prompt-list",
+        title: "AgentsPromptListReport",
+        written_by: "`ascribe agents prompt --list --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::agents::PromptListJson>(),
     },
     Shape {
         file: "report",
@@ -436,6 +485,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-agent-prompt",
             "lsp-addresses",
             "model",
+            "agents-sync",
         ],
     ),
 ];

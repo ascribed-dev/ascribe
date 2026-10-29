@@ -13,8 +13,8 @@ use std::process::ExitCode;
 use ascribe_core::availability::parse_version;
 use ascribe_core::{Coded, RelPath};
 use ascribe_diff::{DiffError, Repository};
+use ascribe_edit::{Redirect, RedirectWhy, Released, Releasing, RetiredLine, RetiringLine, Unused};
 use ascribe_emit::{ArchiveOptions, OutputDir};
-use ascribe_lsp::{Redirect, RedirectWhy, Released, Releasing, RetiredLine, RetiringLine, Unused};
 use ascribe_model::LineStatus;
 use ascribe_query::versions::{LineChange, VersionChanges, VersionsList};
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
@@ -22,7 +22,7 @@ use serde::Serialize;
 
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::context::load_project;
+use crate::context::{checked, load_project};
 use crate::exit;
 
 /// Arguments of `ascribe versions`.
@@ -109,6 +109,7 @@ pub struct ChangesArgs {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum ChangesFormat {
     /// What was added, removed, and changed, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -342,10 +343,10 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// Exit codes: 0 whatever the lists say; 2 when the project doesn't load.
 fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let listed = ascribe_query::versions::list(&project.index());
+    let listed = ascribe_query::versions::list(project.index());
     let result = match args.format {
         Format::Json => answer::write_json(out, &listed),
         Format::Text => write_list(out, &listed),
@@ -420,10 +421,10 @@ fn run_changes(
     err: &mut dyn Write,
 ) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let changes = match ascribe_query::versions::changes(&project.index(), &args.from, &args.to) {
+    let changes = match ascribe_query::versions::changes(project.index(), &args.from, &args.to) {
         Ok(changes) => changes,
         Err(e) => return answer::fail(err, &e),
     };
@@ -681,7 +682,7 @@ struct OutputJson {
 }
 
 impl OutputJson {
-    fn new(o: &ascribe_lsp::ChangedOutput) -> OutputJson {
+    fn new(o: &ascribe_edit::ChangedOutput) -> OutputJson {
         OutputJson {
             build: o.build.clone(),
             output: o.output.clone(),
@@ -785,7 +786,7 @@ fn run_release(
         Err(e) => return answer::fail(err, &e),
     };
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let (config, project, from) = match lines_project(config, project, &target) {
@@ -797,7 +798,7 @@ fn run_release(
         line: &line,
         next: next.as_ref(),
     };
-    let released = match ascribe_lsp::release(&project, &releasing) {
+    let released = match ascribe_edit::release(&project, &releasing) {
         Ok(released) => released,
         Err(e) => return answer::fail(err, &e),
     };
@@ -1001,7 +1002,7 @@ fn write_cleared(
     dry_run: bool,
     content: &Path,
 ) -> io::Result<()> {
-    let marks: Vec<(&ascribe_lsp::ClearedFile, &ascribe_lsp::ClearedMark)> = r
+    let marks: Vec<(&ascribe_edit::ClearedFile, &ascribe_edit::ClearedMark)> = r
         .cleared
         .iter()
         .flat_map(|f| f.marks.iter().map(move |m| (f, m)))
@@ -1116,7 +1117,7 @@ const EXPORT_SCHEMA_VERSION: u32 = 1;
 /// empty and isn't an archive Ascribe wrote.
 fn run_export(global: &Global, args: &ExportArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let index = project.index();
@@ -1189,7 +1190,7 @@ fn run_export(global: &Global, args: &ExportArgs, out: &mut dyn Write, err: &mut
     let options = ArchiveOptions {
         current: args.current.clone(),
     };
-    let archive = match ascribe_emit::archive(&index, project.root(), &build, &options) {
+    let archive = match ascribe_emit::archive(index, project.root(), &build, &options) {
         Ok(archive) => archive,
         Err(e) => return answer::fail(err, &e),
     };
@@ -1487,7 +1488,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         Err(e) => return answer::fail(err, &e),
     };
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let (config, project, from) = match lines_project(config, project, &target) {
@@ -1504,7 +1505,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
     if let Some(archived) = archived
         && (args.show_unused || args.remove_unused)
     {
-        let (unused, removals) = ascribe_lsp::unused_in(&project, &target, args.remove_unused);
+        let (unused, removals) = ascribe_edit::unused_in(&project, &target, args.remove_unused);
         if !args.dry_run
             && let Some(code) = write_files(
                 &project,
@@ -1551,7 +1552,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         force: args.force || args.dry_run,
         remove_unused: args.remove_unused,
     };
-    let retired = match ascribe_lsp::retire_line(&project, &retiring) {
+    let retired = match ascribe_edit::retire_line(&project, &retiring) {
         Ok(retired) => retired,
         Err(e) => return answer::fail(err, &e),
     };
@@ -1602,9 +1603,9 @@ fn lines_project(
         return Ok((config, project, None));
     };
     let holder = ascribe_core::path::normalize(&project.root().join(&taken.file));
-    let other = ascribe_check::Project::load(&holder)
-        .map_err(crate::context::Failure::Load)?
-        .with_today(crate::clock::today());
+    let other = crate::context::checked(
+        &ascribe_check::load(&holder).map_err(crate::context::Failure::Load)?,
+    );
     Ok((holder.clone(), other, Some(holder)))
 }
 
@@ -1819,7 +1820,7 @@ fn write_unused(
 }
 
 /// Each output, with the pages it adds, removes, and changes.
-fn write_outputs(out: &mut dyn Write, outputs: &[ascribe_lsp::ChangedOutput]) -> io::Result<()> {
+fn write_outputs(out: &mut dyn Write, outputs: &[ascribe_edit::ChangedOutput]) -> io::Result<()> {
     for o in outputs {
         let parts: Vec<String> = [
             ("adds", &o.added),

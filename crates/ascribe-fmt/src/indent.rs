@@ -23,23 +23,27 @@ pub(crate) enum Owner {
     Document,
     /// A block quote.
     Quote,
-    /// A list item. The number is the width in bytes, from the start of the
-    /// line, of everything before the item's content column (outer
-    /// containers' prefixes, the marker, and the spaces after it), or `None`
-    /// when a tab makes it unknown.
+    /// A list item. The number is the width in bytes of everything before the
+    /// item's content column, counted from where the innermost block quote's
+    /// content starts (the line's start, outside a quote): outer items'
+    /// indentation, the marker, and the spaces after it. It's `None` when a
+    /// tab makes it unknown.
     Item(Option<usize>),
 }
 
 /// The width of the prefix of a list item whose marker is `marker`, up to its
 /// content column (CommonMark: the marker and one to four spaces, or one space
-/// when the marker is followed by no text or by five or more spaces).
+/// when the marker is followed by no text or by five or more spaces), counted
+/// from where the innermost block quote's content starts, as [`Owner::Item`]
+/// says.
 pub(crate) fn content_width(source: &str, marker: Span) -> Option<usize> {
-    let start = source[..marker.start()]
+    let line = source[..marker.start()]
         .rfind(['\n', '\r'])
         .map_or(0, |i| i + 1);
-    if source[start..marker.start()].contains('\t') {
+    if source[line..marker.start()].contains('\t') {
         return None;
     }
+    let start = line + quote_content(&source[line..marker.start()]);
     let rest = &source[marker.end()..];
     let rest = &rest[..rest.find(['\n', '\r']).unwrap_or(rest.len())];
     let spaces = rest.bytes().take_while(|b| *b == b' ').count();
@@ -53,6 +57,18 @@ pub(crate) fn content_width(source: &str, marker: Span) -> Option<usize> {
         spaces
     };
     Some(marker.end() - start + width)
+}
+
+/// Where the innermost block quote's content starts in `prefix`, the part of a
+/// line before a directive or a list marker: after its last `>` and the one
+/// space that belongs to that marker, if there is one, or 0 with no `>`.
+/// Measuring an item's column from there, not from the line's start, is what
+/// keeps `>-` and `> -` on the next line apart: the space after `>` is the
+/// quote's either way.
+fn quote_content(prefix: &str) -> usize {
+    prefix.rfind('>').map_or(0, |marker| {
+        marker + 1 + usize::from(prefix[marker + 1..].starts_with(' '))
+    })
 }
 
 // Block quotes keep the marker and one space; a
@@ -80,8 +96,11 @@ pub(crate) fn rule(ctx: &mut Ctx<'_>, at: usize, owner: Owner) {
             Some(marker) => (marker + 2).min(prefix.len()),
             None => return,
         },
-        Owner::Item(Some(width)) if width <= prefix.len() => width,
-        Owner::Item(_) => return,
+        Owner::Item(Some(width)) => match quote_content(prefix) + width {
+            keep if keep <= prefix.len() => keep,
+            _ => return,
+        },
+        Owner::Item(None) => return,
     };
     if prefix[keep..].bytes().any(|b| b != b' ') {
         return;

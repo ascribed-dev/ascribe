@@ -1,7 +1,8 @@
 ---
 type: how-to
 title: Prose, through Vale
-description: Checking your pages' prose with Vale, from Ascribe's quiet preset or your own Vale configuration, in the editor and in ascribe check.
+description: "Checking your pages' prose with Vale, from Ascribe's quiet preset or your own Vale configuration, in the editor and in `ascribe check`."
+permalink: vale
 ---
 
 [Vale](https://vale.sh) checks prose: a word written twice, a misspelling, a term spelled two ways, and whatever else its rules look for. Ascribe runs it for you and reports what it finds as Ascribe diagnostics, at the right place in your source, beside the rest of your problems in the editor and in `ascribe check`.
@@ -108,12 +109,17 @@ Sets up Vale for a project. Vale itself is run by `ascribe check --vale` and the
 
 Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments.
 
-It takes no options but the ones every command accepts ([command reference](../command/index.md#options-every-command-accepts)). It lists each file it wrote, `ascribe.toml` last.
+It lists each file it wrote, `ascribe.toml` last. It changes `ascribe.toml` only when git could put it back, as every [command that writes](../command/index.md#commands-that-write) does: with changes not committed, it's refused, and named, unless you pass `--force`. With `--dry-run`, it says what it would write, and writes nothing.
+
+@include: ../_generated/cli-vale-eject-options.md
+
+@available: ascribe planned
+With `--format json`, it writes the preset and the files in the document its [schema](../contracts/json-reports.md#ascribe-vale-eject) describes.
 
 | Code | Meaning |
 |---|---|
 | `0` | The preset is the project's own now |
-| `2` | It wrote nothing: no `ascribe.toml`, a content model with errors, a `[checks.vale]` that names no preset, or a `.vale.ini` or `.vale` that's there already. Or a file couldn't be written; the files it wrote before that stay. |
+| `2` | It wrote nothing: no `ascribe.toml`, a content model with errors, a `[checks.vale]` that names no preset, a `.vale.ini` or `.vale` that's there already, or, without `--force`, an `ascribe.toml` git couldn't put back. Or a file couldn't be written; the files it wrote before that stay. |
 
 ## See also
 

@@ -52,18 +52,22 @@ fn model() -> ascribe_model::ContentModel {
 
 /// A project of in-memory pages under `docs/`, whose root is `root`.
 fn project_in(root: PathBuf, files: &[(&str, &str)]) -> Project {
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            root,
+            RelPath::parse("docs").expect("a relative path"),
+            model(),
+            MODEL.to_owned(),
+            sources,
         )
-    }));
-    Project::from_parts(
-        root,
-        RelPath::parse("docs").expect("a relative path"),
-        model(),
-        MODEL.to_owned(),
-        sources,
+        .snapshot(),
     )
 }
 
@@ -626,12 +630,15 @@ fn model_warnings_are_part_of_the_list() {
     );
     let model = ascribe_model::load_str(&text, FileId::new(0)).expect("loads with a warning");
     assert!(!model.warnings.is_empty());
-    let p = Project::from_parts(
-        PathBuf::from("/x"),
-        RelPath::parse("docs").expect("path"),
-        model,
-        text,
-        Vec::new(),
+    let p = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/x"),
+            RelPath::parse("docs").expect("path"),
+            model,
+            text,
+            Vec::new(),
+        )
+        .snapshot(),
     );
     let all = check_files(&p);
     assert!(!all.is_empty());
@@ -918,18 +925,22 @@ fn described(agents: bool, files: &[(&str, &str)]) -> Project {
         "{MODEL}\n[consumer]\nsite = \"https://docs.example.com\"\nagents = {agents}\n\n[types.page.frontmatter]\ntitle = \"string\"\ndescription = {{ type = \"string?\", role = \"description\" }}\n"
     );
     let model = ascribe_model::load_str(&text, FileId::new(0)).expect("the model loads");
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            text,
+            sources,
         )
-    }));
-    Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        text,
-        sources,
+        .snapshot(),
     )
 }
 
@@ -965,16 +976,19 @@ fn a_page_looser_than_its_rule_quotes_the_rule_and_its_line() {
         .expect("the rule")
         + 1;
     let model = ascribe_model::load_str(&text, FileId::new(0)).expect("the model loads");
-    let sources = Project::from_sources([(
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
         RelPath::parse("internal/plan.md").expect("a relative path"),
         "---\ntitle: Plan\nlisting: listed\n---\n".to_owned(),
     )]);
-    let project = Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        text.clone(),
-        sources,
+    let project = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            text.clone(),
+            sources,
+        )
+        .snapshot(),
     );
     let d = one(&project);
     assert_eq!(d.slug.as_str(), "listing-loosened");
@@ -1065,6 +1079,66 @@ fn an_empty_memo_s_fix_removes_it() {
         Some(page("> Text.\n>\n> The block.").as_str())
     );
     assert_eq!(empty_memo_removed("- @memo:\n  @end\n  The block."), None);
+}
+
+/// The text of `body`'s page after its one diagnostic's one fix, which must
+/// be `github-alert`'s and safe, and leave nothing to report; `None` when it
+/// has no fix.
+fn alert_rewritten(body: &str) -> Option<String> {
+    let text = page(body);
+    let d = one(&project(&[("a.md", &text)]));
+    assert_eq!(d.slug.as_str(), "github-alert");
+    let fix = d.fixes.first()?;
+    assert_eq!(fix.applicability, Applicability::Safe);
+    let fixed = apply_edits(&text, &fix.edits).expect("edits apply");
+    assert_eq!(found(&project(&[("a.md", &fixed)])), []);
+    Some(fixed)
+}
+
+/// A GitHub alert's fix writes the `@note` of its type: the line form for
+/// one paragraph, the container for several blocks. One in a list item, and
+/// one with nothing after its marker, have none.
+#[test]
+fn a_github_alert_s_fix_writes_a_note() {
+    assert_eq!(
+        alert_rewritten("> [!NOTE]\n> Widgetly is in beta.\n> Mind the gaps.").as_deref(),
+        Some(page("@note {type=note}: Widgetly is in beta.\nMind the gaps.").as_str())
+    );
+    assert_eq!(
+        alert_rewritten("Text.\n\n> [!tip]\n>\n> The app runs in the browser.\n\nMore.").as_deref(),
+        Some(page("Text.\n\n@note {type=tip}: The app runs in the browser.\n\nMore.").as_str())
+    );
+    assert_eq!(
+        alert_rewritten("> [!Warning]\n> Back up first.\n>\n> - The database\n> - The keys")
+            .as_deref(),
+        Some(
+            page("@note {type=warning}:\nBack up first.\n\n- The database\n- The keys\n@end")
+                .as_str()
+        )
+    );
+    assert_eq!(
+        alert_rewritten("> [!CAUTION]\n>\n> ```sh\n> rm -rf data\n> ```").as_deref(),
+        Some(page("@note {type=caution}:\n```sh\nrm -rf data\n```\n@end").as_str())
+    );
+    // A line that continued the marker's paragraph would start a list or
+    // a code block at the start of the container.
+    assert_eq!(alert_rewritten("> [!NOTE]\n> 2. first\n>\n> More."), None);
+    assert_eq!(alert_rewritten("> [!NOTE]\n>     code\n>\n> More."), None);
+    assert_eq!(
+        alert_rewritten("> [!NOTE]\n> Back up first.\n>\n> More.").as_deref(),
+        Some(page("@note {type=note}:\nBack up first.\n\nMore.\n@end").as_str())
+    );
+    assert_eq!(alert_rewritten("- > [!IMPORTANT]\n  > Read this."), None);
+    assert_eq!(alert_rewritten("> [!NOTE]"), None);
+}
+
+/// A block quote that mentions a marker after its first line, or writes
+/// text beside it, isn't an alert.
+#[test]
+fn only_a_marker_on_a_quote_s_first_line_is_an_alert() {
+    let text =
+        page("> Write [!NOTE] to make an alert.\n\n> [!NOTE] Inline.\n\n> \\[!NOTE]\n> Escaped.");
+    assert_eq!(found(&project(&[("a.md", &text)])), []);
 }
 
 /// The messages of each problem the memo files in `memos` have, beside a
@@ -1159,7 +1233,7 @@ fn a_missing_include_is_offered_the_file_with_its_name() {
 #[test]
 fn a_dimension_with_none_declared_gets_the_table_to_add() {
     const BARE: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n";
-    let sources = Project::from_sources([
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([
         (
             RelPath::parse("a.md").expect("a path"),
             page("@variant {os=mac}:\nMac.\n@variant {os=linux|windows}:\nOther.\n@end"),
@@ -1169,12 +1243,15 @@ fn a_dimension_with_none_declared_gets_the_table_to_add() {
             page("@variant {os=bsd}:\nBSD.\n@end"),
         ),
     ]);
-    let p = Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(BARE, FileId::new(0)).expect("the model loads"),
-        BARE.to_owned(),
-        sources,
+    let p = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(BARE, FileId::new(0)).expect("the model loads"),
+            BARE.to_owned(),
+            sources,
+        )
+        .snapshot(),
     );
     let all: Vec<String> = check_files(&p)
         .into_iter()
@@ -1271,4 +1348,65 @@ fn a_pair_first_is_named_in_the_missing_language() {
     );
     let p = project(&[("index.md", &page("```\nlet x;\n```"))]);
     assert!(!one(&p).message.contains("is a pair"));
+}
+
+/// A phrase's value written out is advice, whose fix writes the phrase: safe
+/// for a value that can't be an ordinary word, such as a URL, and unsafe for
+/// one that can, which may mean the word.
+#[test]
+fn a_phrase_value_written_out_is_offered_the_phrase() {
+    let p = project(&[(
+        "index.md",
+        &page("Quill answers at https://api.quill.dev/v1."),
+    )]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["phrase-text-written", "phrase-text-written"]);
+    assert!(all.iter().all(|d| d.severity == Severity::Advice));
+    assert_eq!(
+        all[0].message,
+        "`Quill` is the value of the phrase `{product}`; write `{product}`, so the page changes with the value"
+    );
+    let applicability: Vec<Applicability> = all.iter().map(|d| d.fixes[0].applicability).collect();
+    assert_eq!(applicability, [Applicability::Unsafe, Applicability::Safe]);
+    let file = p
+        .source_at(&RelPath::parse("index.md").expect("path"))
+        .expect("a source");
+    let edits: Vec<_> = all.iter().flat_map(|d| d.fixes[0].edits.clone()).collect();
+    let fixed = apply_edits(&file.text, &edits).expect("edits apply");
+    assert_eq!(fixed, page("{product} answers at {api}v1."));
+    let fixed = project(&[("index.md", &fixed)]);
+    assert!(check_files(&fixed).is_empty());
+}
+
+/// In a heading with no `@id`, the fix would leave a phrase in a heading
+/// with no `@id`, so it's unsafe, and the message says to give it one.
+#[test]
+fn a_phrase_value_in_a_heading_asks_for_an_id() {
+    let p = project(&[(
+        "index.md",
+        &page(
+            "## Call https://api.quill.dev/\n\nText.\n\n## Use https://api.quill.dev/\n@id: use\n\nText.",
+        ),
+    )]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["phrase-text-written", "phrase-text-written"]);
+    assert!(
+        all[0].message.contains("give the heading an `@id`"),
+        "{}",
+        all[0].message
+    );
+    assert_eq!(all[0].fixes[0].applicability, Applicability::Unsafe);
+    assert!(!all[1].message.contains("`@id`"), "{}", all[1].message);
+    assert_eq!(all[1].fixes[0].applicability, Applicability::Safe);
+}
+
+/// Text Ascribe writes into a page has a phrase's value written as the
+/// phrase, by the check's own rules.
+#[test]
+fn text_written_into_a_page_has_its_phrases() {
+    let model = model();
+    assert_eq!(
+        ascribe_check::with_phrases("Quill and Quills at https://api.quill.dev/", &model),
+        "{product} and Quills at {api}"
+    );
 }

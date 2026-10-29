@@ -205,6 +205,25 @@ impl DiskFs {
         }
     }
 
+    /// Forgets the listings and files kept ([`DiskFs::with_listing_cache`]),
+    /// in this value and every clone of it, so each is read from the disk
+    /// again when it's next asked for: a value kept while the disk changes,
+    /// told when it has.
+    pub fn forget(&self) {
+        if let Some(listings) = &self.listings {
+            listings
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clear();
+        }
+        if let Some(files) = &self.files {
+            files
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clear();
+        }
+    }
+
     fn content_dir(&self) -> PathBuf {
         self.project_root.join(self.content_root.as_str())
     }

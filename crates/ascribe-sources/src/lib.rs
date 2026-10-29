@@ -20,20 +20,22 @@
 mod copies;
 mod remote;
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use ascribe_core::RelPath;
 use ascribe_model::examples::{Status, is_examples_file};
-use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedFile, LockedSource, Source, file_hash};
+use ascribe_model::{LOCK_FILE, Lock, LockedFile, LockedSource, Source, file_hash};
 use ascribe_resolve::{DiskFs, FileSystem, Layout};
+use ascribe_workspace::WorkspaceSnapshot;
 use serde::Serialize;
 
 pub use ascribe_model::short_commit as short;
 pub use copies::SIZE_LIMIT;
 pub use remote::{CommitLine, Commits, NEWEST, cache_root};
 
-use copies::{Folder, not_text};
+use copies::{Change, Folder, not_text};
 use remote::{Cache, History, Remote};
 
 /// Why a command couldn't do its work.
@@ -131,7 +133,7 @@ impl Options {
 /// A project, as these commands see it: its folder, its sources, its lock,
 /// and the files its snippets name.
 #[derive(Clone, Debug)]
-pub struct Workspace {
+pub struct SourcesView {
     root: PathBuf,
     /// The project's files.
     files: DiskFs,
@@ -142,21 +144,24 @@ pub struct Workspace {
     lock_text: Option<String>,
     /// For each source, the paths snippets name in it.
     used: BTreeMap<String, BTreeSet<String>>,
+    /// Whether `fetch` and `update` plan their changes, to make with
+    /// [`SourcesView::apply`], in place of making them as they go.
+    planning: bool,
+    /// When planning, the changes `fetch` or `update` would make, in order.
+    planned: RefCell<Vec<Change>>,
 }
 
-impl Workspace {
-    /// The project whose content model is `model`, in `root`, with the
-    /// snippets of `project` (its source index).
+impl SourcesView {
+    /// The sources' view of the project `snapshot` holds: its folder, its
+    /// content model's sources, and the paths its source index's snippets
+    /// name.
     ///
     /// # Errors
     ///
     /// [`SourcesError::Lock`] when `ascribe.lock` is there and can't be
     /// read.
-    pub fn new(
-        root: &Path,
-        model: &ContentModel,
-        project: &ascribe_resolve::Project,
-    ) -> Result<Workspace, SourcesError> {
+    pub fn new(snapshot: &WorkspaceSnapshot) -> Result<SourcesView, SourcesError> {
+        let (root, model, project) = (snapshot.root(), snapshot.model(), snapshot.index());
         let files = DiskFs::new(root, &Layout::from_model(model));
         let lock_text = RelPath::parse(LOCK_FILE)
             .ok()
@@ -183,14 +188,59 @@ impl Workspace {
                 }
             }
         }
-        Ok(Workspace {
+        Ok(SourcesView {
             root: root.to_path_buf(),
             files,
             sources: model.sources.clone(),
             lock,
             lock_text,
             used,
+            planning: false,
+            planned: RefCell::new(Vec::new()),
         })
+    }
+
+    /// The same view, where, when `planning`, `fetch` and `update` write
+    /// nothing, and plan what they'd write instead: the copies they'd copy
+    /// and remove, and the lock. Their reports are as they'd be. The plan is
+    /// asked about with [`SourcesView::planned`], and made with
+    /// [`SourcesView::apply`], so the repository is reached once.
+    #[must_use]
+    pub fn planning(mut self, planning: bool) -> SourcesView {
+        self.planning = planning;
+        self.planned = RefCell::new(Vec::new());
+        self
+    }
+
+    /// The files the plan would write or remove, absolute, in the order it
+    /// would change them: the copies, then `ascribe.lock`.
+    pub fn planned(&self) -> Vec<PathBuf> {
+        self.planned
+            .borrow()
+            .iter()
+            .map(|c| c.path().to_path_buf())
+            .collect()
+    }
+
+    /// Makes the changes planned, in order, and empties the plan.
+    ///
+    /// # Errors
+    ///
+    /// [`SourcesError::Write`] when a file can't be written or removed. The
+    /// changes made before it stay.
+    pub fn apply(&self) -> Result<(), SourcesError> {
+        let changes = std::mem::take(&mut *self.planned.borrow_mut());
+        for change in changes {
+            change.make(&self.root).map_err(|e| SourcesError::Write {
+                path: shown(&self.root, change.path()),
+                message: e.to_string(),
+            })?;
+        }
+        Ok(())
+    }
+
+    fn planned_list(&self) -> Option<&RefCell<Vec<Change>>> {
+        self.planning.then_some(&self.planned)
     }
 
     /// The sources in other repositories that `names` names, in declaration
@@ -226,11 +276,12 @@ impl Workspace {
             .unwrap_or_default()
     }
 
-    fn folder(&self, source: &Source) -> Folder {
+    fn folder(&self, source: &Source) -> Folder<'_> {
         Folder::new(
             &self.root,
             &self.files,
             RelPath::parse(&source.path).unwrap_or_default(),
+            self.planned_list(),
         )
     }
 
@@ -381,10 +432,14 @@ impl Workspace {
                 message: "it's a link; replace it with a file, or remove it".into(),
             });
         }
-        std::fs::write(&path, text).map_err(|e| SourcesError::Write {
-            path: LOCK_FILE.into(),
-            message: e.to_string(),
-        })?;
+        let change = Change::Lock { path, text };
+        match self.planned_list() {
+            Some(planned) => planned.borrow_mut().push(change),
+            None => change.make(&self.root).map_err(|e| SourcesError::Write {
+                path: LOCK_FILE.into(),
+                message: e.to_string(),
+            })?,
+        }
         Ok(true)
     }
 }
@@ -512,17 +567,17 @@ impl FetchReport {
 /// fails or isn't there, or a file can't be written. The pins of the sources
 /// done before it are written.
 pub fn fetch(
-    workspace: &Workspace,
+    view: &SourcesView,
     names: &[String],
     options: &Options,
 ) -> Result<FetchReport, SourcesError> {
-    let selected = workspace.selected(names)?;
+    let selected = view.selected(names)?;
     let cache = Cache::new(options.cache.clone());
-    let mut lock = workspace.lock.clone();
+    let mut lock = view.lock.clone();
     let mut report = FetchReport::default();
     let mut outcome = Ok(());
     for source in selected {
-        match fetch_one(workspace, source, &cache) {
+        match fetch_one(view, source, &cache) {
             Ok(Some((fetched, pin))) => {
                 replace(&mut lock, pin);
                 report.sources.push(fetched);
@@ -540,7 +595,7 @@ pub fn fetch(
             .sources
             .iter()
             .filter(|l| {
-                !workspace
+                !view
                     .sources
                     .iter()
                     .any(|s| s.name == l.name && s.git.is_some())
@@ -550,11 +605,12 @@ pub fn fetch(
         for locked in stale {
             let folder = Source::copies_folder(&locked.name);
             // A source in this repository may use that folder itself.
-            if !workspace.sources.iter().any(|s| s.path == folder) {
+            if !view.sources.iter().any(|s| s.path == folder) {
                 let folder = Folder::new(
-                    &workspace.root,
-                    &workspace.files,
+                    &view.root,
+                    &view.files,
                     RelPath::parse(&folder).unwrap_or_default(),
+                    view.planned_list(),
                 );
                 for path in locked.files.keys() {
                     folder.remove(path).map_err(|e| SourcesError::Write {
@@ -567,20 +623,20 @@ pub fn fetch(
             report.unpinned.push(locked.name);
         }
     }
-    report.lock_written = workspace.write_lock(&lock)?;
+    report.lock_written = view.write_lock(&lock)?;
     outcome.map(|()| report)
 }
 
 fn fetch_one(
-    workspace: &Workspace,
+    view: &SourcesView,
     source: &Source,
     cache: &Cache,
 ) -> Result<Option<(SourceFetch, LockedSource)>, SourcesError> {
     let Some(git) = &source.git else {
         return Ok(None);
     };
-    let previous = workspace.pin(source);
-    if previous.is_none() && workspace.needed(source).is_empty() {
+    let previous = view.pin(source);
+    if previous.is_none() && view.needed(source).is_empty() {
         // Nothing to copy, and nothing to pin it to yet.
         return Ok(None);
     }
@@ -597,7 +653,7 @@ fn fetch_one(
             (remote.get()?.fetch(rev, true)?, true)
         }
     };
-    let synced = workspace.sync(source, &commit, previous, &mut remote)?;
+    let synced = view.sync(source, &commit, previous, &mut remote)?;
     let had_files = previous.is_some_and(|p| !p.files.is_empty());
     let pin = synced.locked(source, &git.url, &commit);
     Ok(Some((
@@ -736,12 +792,12 @@ pub enum FileChange {
 /// an unknown revision), or a file can't be written. The pins of the
 /// sources done before it are written.
 pub fn update(
-    workspace: &Workspace,
+    view: &SourcesView,
     names: &[String],
     to: Option<&str>,
     options: &Options,
 ) -> Result<UpdateReport, SourcesError> {
-    let selected = workspace.selected(names)?;
+    let selected = view.selected(names)?;
     if let Some(to) = to {
         if selected.len() != 1 {
             return Err(SourcesError::ToNeedsOneSource);
@@ -754,11 +810,11 @@ pub fn update(
         }
     }
     let cache = Cache::new(options.cache.clone());
-    let mut lock = workspace.lock.clone();
+    let mut lock = view.lock.clone();
     let mut report = UpdateReport::default();
     let mut outcome = Ok(());
     for source in selected {
-        match update_one(workspace, source, to, &cache) {
+        match update_one(view, source, to, &cache) {
             Ok(Some((updated, pin))) => {
                 report.changed |= !updated.files.is_empty();
                 replace(&mut lock, pin);
@@ -771,12 +827,12 @@ pub fn update(
             }
         }
     }
-    report.changed |= workspace.write_lock(&lock)?;
+    report.changed |= view.write_lock(&lock)?;
     outcome.map(|()| report)
 }
 
 fn update_one(
-    workspace: &Workspace,
+    view: &SourcesView,
     source: &Source,
     to: Option<&str>,
     cache: &Cache,
@@ -784,7 +840,7 @@ fn update_one(
     let Some(git) = &source.git else {
         return Ok(None);
     };
-    let previous = workspace.pin(source);
+    let previous = view.pin(source);
     let followed = to.or(git.branch.as_deref()).unwrap_or("HEAD").to_owned();
     let mut remote = Lazy {
         cache,
@@ -795,10 +851,10 @@ fn update_one(
     // Without a pin to count from, the history isn't needed.
     let commit = remote.get()?.fetch(&followed, previous.is_none())?;
     let moved = previous.is_none_or(|p| p.commit != commit);
-    let folder = workspace.folder(source);
-    let needed = workspace.needed(source);
+    let folder = view.folder(source);
+    let needed = view.needed(source);
     let examples_before = example_states(&folder, &needed);
-    let synced = workspace.sync(source, &commit, previous.filter(|_| !moved), &mut remote)?;
+    let synced = view.sync(source, &commit, previous.filter(|_| !moved), &mut remote)?;
     let examples_after = example_states(&folder, &needed);
     let examples = needed
         .iter()
@@ -871,7 +927,7 @@ fn update_one(
 /// copies in `folder`: its config, every observation, and the file, as the
 /// pages have it. A path that isn't an example, or has no copy, isn't
 /// listed. Read only: nothing in the config is run.
-fn example_states(folder: &Folder, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
+fn example_states(folder: &Folder<'_>, paths: &BTreeSet<String>) -> BTreeMap<String, ExampleState> {
     let examples = folder.examples();
     let Some(Ok(config)) = &examples.config else {
         return BTreeMap::new();
@@ -885,6 +941,15 @@ fn example_states(folder: &Folder, paths: &BTreeSet<String>) -> BTreeMap<String,
             Some((path.clone(), ExampleState::from(status)))
         })
         .collect()
+}
+
+/// A file's path from the project root, `/`-separated, as an error names it.
+fn shown(root: &Path, path: &Path) -> String {
+    let rel = path.strip_prefix(root).unwrap_or(path);
+    rel.iter()
+        .map(|s| s.to_string_lossy())
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 /// Each source's pin and the state of its copies, read from the files alone.
@@ -954,15 +1019,15 @@ impl StatusReport {
 
 /// Each source's pin and the state of its copies. Reads only the project's
 /// files: no `git`, no network.
-pub fn status(workspace: &Workspace) -> StatusReport {
+pub fn status(view: &SourcesView) -> StatusReport {
     let mut report = StatusReport::default();
-    for source in &workspace.sources {
+    for source in &view.sources {
         let Some(git) = &source.git else {
             continue;
         };
-        let pin = workspace.pin(source);
-        let folder = workspace.folder(source);
-        let needed = workspace.needed(source);
+        let pin = view.pin(source);
+        let folder = view.folder(source);
+        let needed = view.needed(source);
         let on_disk: BTreeSet<String> = folder.files().into_iter().collect();
         let mut files: BTreeMap<String, CopyState> = BTreeMap::new();
         if let Some(pin) = pin {

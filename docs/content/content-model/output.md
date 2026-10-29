@@ -1,10 +1,10 @@
 ---
 type: reference
-title: "`ascribe.toml`: consumer, builds, and sources"
-description: "How the content model sets the site's consumer, the builds, the editor's build, and the source repositories."
+title: "`ascribe.toml`: where pages are published"
+description: "How the content model sets the site's consumer, the builds, how pages are listed, what crawlers are told, and where retired permalinks went."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section.
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [where pages are published](../contracts/content-model/output.md).
 
 ## 15. `[consumer]`
 @id {permalink=true}: consumer
@@ -25,8 +25,8 @@ A later profile that offers a choice will add a key for it.
 
 **The outputs for agents** (`agents`, on by default when `site` is set) change what the plain-markdown output is, and add to the site output:
 
-- **The plain-markdown output is laid out by URL,** so it can be copied as it is to `base-path` beside the site: each page at its route with `.md` (`Guides/My Setup.md` → `guides/my-setup.md`, the root `index.md` → `index.md`), each opening with a line pointing at `llms.txt`; the files they link to under `_ascribe/files/`, linked by absolute URL; and `llms.txt`. A link to a page the build publishes, a glossary link included, leads to that page's Markdown, so an agent that follows it stays in Markdown, and its `#fragment` to the heading's anchor there: the slug of the heading as the Markdown writes it. That's the heading's id on the page, unless it has an `@id`, or is in a variant arm, whose label it ends with in the Markdown.
-- **`llms.txt`** lists every page the build publishes as `- [Title](../url): description`, linking to its Markdown. Its heading is the title of the page at `base-path`, and its summary that page's description. Its sections are the project's [navigation](../navigation/index.md)'s: the content root's pages first, under its label, **Start** unless `ascribe.nav` gives another, then each top section, in order, named by its label, with the pages of the sections nested in it in reading order. A page is listed by its title, not its `nav-label`. An index over 50,000 characters is split into one `llms.txt` per top section, which the root file links to. A page's description is the field its type marks [`role = "description"`](index.md#54-field-roles), as plain text, or the field's `default` when the page leaves the field out or empty; a type without one lists its pages without descriptions.
+- **The plain-markdown output is laid out by URL,** so it can be copied as it is to `base-path` beside the site: each page at its route with `.md` (`Guides/My Setup.md` → `guides/my-setup.md`, the root `index.md` → `index.md`), each opening with a line pointing at `llms.txt`, and after its title saying what the page is for, its type and its description (`> Reference · Every option.`); the files they link to under `_ascribe/files/`, linked by absolute URL; and `llms.txt`. A link to a page the build publishes, a glossary link included, leads to that page's Markdown, so an agent that follows it stays in Markdown, and its `#fragment` to the heading's anchor there: the slug of the heading as the Markdown writes it. That's the heading's id on the page, unless it has an `@id`, or is in a variant arm, whose label it ends with in the Markdown.
+- **`llms.txt`** lists every page the build publishes as `- [Title](../url): description`, linking to its Markdown. Its heading is the title of the page at `base-path`, and its summary that page's description. Its sections are the project's [navigation](../navigation/index.md)'s: the content root's pages first, under its label, **Start** unless `ascribe.nav` gives another, then each top section, in order, named by its label, with the pages of the sections nested in it in reading order. A page is listed by its title, not its `nav-label`. With `[releases]`, its summary, and each page's opening line, end with the releases the build describes: a versioned build's line, the version a build filters for, or else each target's live lines, adding that what's marked planned is in none of them yet ([output-layout contract](../contracts/output-layout.md)). An index over 50,000 characters is split into one `llms.txt` per top section, which the root file links to. A page's description is the field its type marks [`role = "description"`](index.md#54-field-roles), as plain text, or the field's `default` when the page leaves the field out or empty; a type without one lists its pages without descriptions.
 - **Each page of the site output** opens with a pointer to `llms.txt` and the page's Markdown, which the element library hides from sight ([element contract §8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents)).
 
 **The headers of a Markdown version.** Each build lists the response headers each Markdown version needs, `X-Robots-Tag` and a canonical `Link`, in `_ascribe/headers.json` in the site output ([output-layout contract](../contracts/output-layout.md#14-the-headers)), and with `host = "netlify"`, the build writes them in Netlify's `_headers` too, which `@ascribed/astro` places at the site's root, beside the `_redirects` that [`ascribe.addresses`](../publishing/redirects.md) gives. Why a host sends them is in [Publishing](../publishing/index.md#the-markdown-versions-headers).
@@ -47,41 +47,44 @@ A versioned build's outputs, their names and addresses, and what each line keeps
 
 ---
 
-## 17. `[editor]`
+## 17. `[listing]`
 
-@include: ../_fragments/content-model/editor.md
+@include: ../_fragments/content-model/listing.md
+
+What each value tells search engines and agents is in [Publishing](../publishing/index.md#how-a-page-is-listed).
+
+In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says whether a page is listed, and which rule says so; choosing the row opens the rule.
+
+In the editor, `listing:` in a page's frontmatter completes its three values, and hovering it says which rule the page is under. A page looser than its rule has a quick fix that removes its `listing`.
+
+**Rules.** Each value is one of the three (`model-invalid-value`). A folder is a path from the content root ending in `/`, with no `.` or `..` part or pattern characters, of a folder that's there, with its name's case as on disk (`model-listing-folder`). A type is one the project declares, or `page` when it declares none (`model-listing-type`). A rule isn't looser than a folder's it's under, or than `default` (`model-listing-looser`). A page isn't looser than a rule it's under (`listing-loosened`). No other key is allowed in `[listing]` (`model-unknown-key`).
+
+In an older line of a versioned build, a page isn't looser than `older-lines` either (`listing-loosened-in-line`).
 
 ---
 
-## 18. `[sources.<name>]`
+## 18. `[crawlers]`
 
-A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with [`@snippet`](../writing/directives.md#snippet) ([SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)). It's the only way a page can read a file outside the project's folder.
+@include: ../_fragments/content-model/crawlers.md
 
-```toml
-[sources.code]
-path = ".."                               # relative to the folder ascribe.toml is in
-include = ["crates/**", "examples/**"]    # what's readable; everything else isn't
-ignore = ["**/target/**"]
+What each purpose's choice costs, and why a page is kept out of search by its listing and not by `robots.txt`, is in [Publishing](../publishing/index.md#what-crawlers-are-told).
 
-[sources.api]
-git = "https://github.com/acme/api.git"   # another repository
-branch = "main"                           # what `ascribe sources update` follows
-include = ["src/**", "examples/**"]
-```
+`ascribe check` reads each search crawler the way it reads the file: the one group that applies to it. A page that isn't listed is reported when a search crawler may not fetch it, whether the lines for every crawler say so, a group of `lines` that names that crawler, or `search = "disallow"` (`listing-disallowed`).
 
-A page names a file through its source as `<source>:<path>`, with the path relative to the source's folder: `@snippet: code:examples/quill/ascribe.toml#dimensions`. Both kinds of source are addressed the same way, so moving code to another repository, or back, changes `ascribe.toml` and no page.
+### Crawlers by purpose
 
-@include: ../_generated/content-model-sources.md
+Each operator below runs a bot for each purpose, or a token that says what it may do with what its other bots fetch, and says on its own page which is which. A purpose's group names each of them. A bot whose operator states no single purpose isn't here, such as Common Crawl's `CCBot`, whose archive many train on, or Meta's `meta-externalagent`, which gathers for training and for indexing both; name such a bot in `lines`, in a group of its own. Each row says what its operator said on the day in its last column, linked to the page.
 
-`<name>` follows the rules for keys (§1.2). A project can declare several sources, of either kind.
+@include: ../_generated/crawlers.md
 
-**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). With no repository, as in a copy made with `git archive`, `ascribe build` and the other commands read a source wherever `path` leads, but the editor reads one only inside a folder of the workspace it opened, and `ascribe mcp` only inside the folder it was started in: open the folder that contains the source. A source has `path` or `git`, never both, and `branch` only with `git` (`model-source-remote`).
+The list changes, as operators add bots and rename them. Ascribe's release process rereads every source, and a newer Ascribe may name more crawlers for a purpose than an older one did.
 
-### A source in another repository
+**Rules.** Each line is one line (`model-crawlers-line`) and not empty (`model-empty-text`). A purpose is `allow` or `disallow` (`model-invalid-value`). A crawler is named in one group: not in a group of `lines` that a disallowed purpose names, and not in two groups of `lines` (`model-crawlers-named-twice`). Projects that build one site must agree on each purpose, since it has one `robots.txt`: one that allows a purpose and one that disallows it fail the site's build, naming both. No other key is allowed in `[crawlers]` (`model-unknown-key`).
 
-`check` and `build` never fetch anything. A source with `git` is read from copies kept in the project:
+---
 
-- `ascribe.lock`, beside `ascribe.toml`, pins each such source to a commit, and records the hash of each file copied from it, and which files snippets name that aren't in the repository at that commit.
-- The files the project's snippets use are copied, whole, into `sources/<name>/` beside `ascribe.toml`, at the paths they have in their repository. Only those files are copied, not the repository, and not everything `include` matches. `sources/` can't be inside the content root.
+## 19. `[permalinks]`
 
-Both are written by [`ascribe sources fetch` and `ascribe sources update`](../examples/sources.md#cli-sources), and committed with the rest of the docs. `check` reports a copy that was changed by hand, a copy the lock doesn't list, a copy no snippet uses any more, and a snippet whose file hasn't been copied yet, or isn't in the repository at the pinned commit because it was moved or deleted there. The copies are published to everyone who can read the docs repository: for a private code repository and public docs, that's a decision to make knowingly.
+`ascribe.toml` has no `[permalinks]` any more. What happened to a [permalink](../writing/directives.md#permalinks) that no heading or page declares now, retired with a reason, or moved to another permalink or to a page, is recorded in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), keyed `go:<name>`, with the rest of where the docs' addresses went (SPEC §7.10). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
+
+[`ascribe addresses init`](../publishing/redirects.md#cli-addresses-init) moves a project's `[permalinks.retired]` and `[permalinks.aliases]` into `ascribe.addresses`, and removes the table. Until it does, the table is an error at the key that says so (`model-unknown-key`).

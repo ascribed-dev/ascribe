@@ -13,9 +13,9 @@
 //!   what every reader that isn't a person is told about each page, sorted
 //!   by address;
 //! - **links**: the external links a link checker finds broken or moved
-//!   ([`ascribe_check::links`]);
+//!   ([`ascribe_report::links`]);
 //! - **delivery**: the delivery spec's checks on a built site
-//!   ([`ascribe_check::site`]).
+//!   ([`ascribe_report::site`]).
 //!
 //! The first four need nothing outside the project. Each section is
 //! independent: one that can't run says why ([`NotRun`]), and the others
@@ -26,10 +26,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
 use ascribe_check::identity::{self, Identity};
-use ascribe_check::links::{self, LinkChecker};
-use ascribe_check::report_history::{self, ReportHistory, SiteChecks};
-use ascribe_check::site::{self, CheckResult, SiteChecker};
-use ascribe_check::tool::ToolError;
 use ascribe_check::{
     Acknowledged, Acknowledgements, DiagnoseError, Diagnostic, Project, Request, apply_levels,
     diagnose_with, select_builds,
@@ -37,6 +33,10 @@ use ascribe_check::{
 use ascribe_core::{DiagnosticSlug, FileId, Location, RelPath, diagnostics};
 use ascribe_emit::labels::removal_detail;
 use ascribe_model::{FieldRole, Listing};
+use ascribe_report::links::{self, LinkChecker};
+use ascribe_report::report_history::{self, ReportHistory, SiteChecks};
+use ascribe_report::site::{self, CheckResult, SiteChecker};
+use ascribe_report::tool::ToolError;
 use ascribe_resolve::pages::{self, PageRecord};
 use ascribe_resolve::{AstroRouter, DropReason, ExampleStatus, FileKind, Removal, Scope};
 
@@ -592,7 +592,7 @@ fn delivery_since(delivery: &mut Delivery, history: &ReportHistory) -> SiteCheck
 /// `inventory`, from the project's pages and what `ascribe check` found.
 fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let mut by_type: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut by_owner: BTreeMap<Option<String>, usize> = BTreeMap::new();
     let mut pages = 0;
@@ -625,8 +625,8 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
         overdue: listed(&[diagnostics::RECHECK_OVERDUE]),
         orphans: listed(&[diagnostics::PAGE_ORPHAN]),
         unused: listed(UNUSED),
-        examples: examples(project, &index),
-        apis: apis(&index),
+        examples: examples(project, index),
+        apis: apis(index),
     }
 }
 
@@ -710,7 +710,7 @@ fn most_first(counts: BTreeMap<Option<String>, usize>) -> Vec<(Option<String>, u
 /// content it takes out that another build of the project keeps.
 fn builds(project: &Project, names: &[String]) -> Builds {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let all = &model.builds;
     let pages: Vec<&RelPath> = index
         .files()
@@ -806,7 +806,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                     }
                     continue;
                 }
-                let mut heading = heading_over(&index, mark_file, mark_span.start());
+                let mut heading = heading_over(index, mark_file, mark_span.start());
                 if heading.is_none() && mark_file == r.file {
                     // A mark in a fragment, above its headings: the heading
                     // of the place it's included.
@@ -814,7 +814,7 @@ fn builds(project: &Project, names: &[String]) -> Builds {
                         .via
                         .iter()
                         .rev()
-                        .find_map(|site| heading_over(&index, site.file, site.span.start()));
+                        .find_map(|site| heading_over(index, site.file, site.span.start()));
                 }
                 seen.push(location);
                 left.content.push(LeftContent {
@@ -857,6 +857,9 @@ fn page_mark(
 ) -> (&'static str, String) {
     let front = file.and_then(|f| f.frontmatter.as_ref());
     match reason {
+        // No build publishes a draft, so no other build keeps one and the
+        // report never lists it.
+        DropReason::Draft => ("draft", "true".to_owned()),
         DropReason::Unavailable => (
             "availability",
             front
@@ -915,7 +918,7 @@ fn heading_over(index: &ascribe_resolve::Project, file: FileId, at: usize) -> Op
 /// the pages that aren't `listed`.
 fn page_records(project: &Project, names: &[String], not_listed: bool) -> Pages {
     let model = project.model();
-    let index = project.held_index();
+    let index = project.index();
     let router = AstroRouter::from_consumer(&model.consumer);
     let builds = model
         .builds

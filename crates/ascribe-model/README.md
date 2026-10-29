@@ -32,7 +32,7 @@ Warnings (`model-name-case`, `model-build-filter-excluded`) don't stop loading; 
 
 - **It depends only on `ascribe-core`.** It doesn't parse sources, so it doesn't use `ascribe-syntax`; the availability-spec parser is in `ascribe-core`, and this crate checks a spec's names against the model.
 - **It reads one file,** `ascribe.toml`, in `load` (`src/lib.rs`), and touches the disk otherwise only for the rules that need it. Everything else about a project's files is `ascribe-resolve`'s.
-- **Every rule is a registry diagnostic** (`tests/conformance/diagnostics.toml`), reported as an `Issue` at the offending key or value.
+- **Every rule is a registry diagnostic** (`crates/ascribe-core/data/diagnostics.toml`), reported as an `Issue` at the offending key or value.
 - **A key is in the registry.** The loader takes a table's keys from `settings.toml` (`check_table`), never from a list of its own, and its defaults too; a key reported apart with a message of its own is in `settings::REPORTED_APART`.
 - **Declaration order is kept** (`toml`'s `preserve_order`): the order a model declares builds, dimensions, and attributes in is the order the other crates use them in.
 

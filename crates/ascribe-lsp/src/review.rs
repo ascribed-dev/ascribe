@@ -140,7 +140,7 @@ pub(crate) struct ReviewBase {
     pub info: BaseInfo,
     /// The project's source index at the base; `None` when the project
     /// didn't exist there, so every page is new.
-    pub project: Option<Project>,
+    pub project: Option<Arc<Project>>,
     /// The content model's text there.
     pub model_text: String,
     /// The pages git saw renamed since the base when it was read. A move
@@ -169,7 +169,7 @@ struct ChangesKey {
 impl ReviewBase {
     /// The base's side of a comparison.
     pub fn side(&self) -> Option<Side<'_>> {
-        self.project.as_ref().map(|project| Side {
+        self.project.as_deref().map(|project| Side {
             project,
             model_text: &self.model_text,
         })
@@ -182,7 +182,7 @@ impl ReviewBase {
         let mut pages = self.pages.lock().unwrap_or_else(PoisonError::into_inner);
         pages
             .entry(key)
-            .or_insert_with(|| ascribe_diff::html::page_html(self.project.as_ref()?, build, path))
+            .or_insert_with(|| ascribe_diff::html::page_html(self.project.as_deref()?, build, path))
             .clone()
     }
 }
@@ -212,7 +212,10 @@ pub(crate) fn info_of(base: &Base) -> BaseInfo {
 pub(crate) fn read_base(repo: &Repository, base: &Base) -> Result<ReviewBase, BaseError> {
     let revision = Revision::read(repo, base.compared()).map_err(BaseError)?;
     let (project, model_text) = match revision {
-        Some(revision) => (Some(revision.project()), revision.model_text),
+        Some(revision) => (
+            Some(revision.workspace().snapshot().index().clone()),
+            revision.model_text,
+        ),
         None => (None, String::new()),
     };
     // Renames that can't be listed leave a moved page as removed and added,
@@ -290,9 +293,9 @@ impl Core {
         let loaded = self.loaded.as_ref()?;
         Some(ChangesTarget {
             epoch: loaded.epoch,
-            snapshot: loaded.inc.snapshot(),
-            model: loaded.model.clone(),
-            model_text: loaded.model_text.clone(),
+            snapshot: loaded.workspace.index_snapshot(),
+            model: loaded.model().clone(),
+            model_text: loaded.model_text().to_owned(),
             content_root: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             review: self.review.clone(),
         })
@@ -426,7 +429,7 @@ pub(crate) fn changes(target: Option<&ChangesTarget>, build_name: Option<&str>) 
                 .map(title_of)
                 .filter(|t| t.plain.is_some());
             now.or_else(|| {
-                let project = review.project.as_ref()?;
+                let project = review.project.as_deref()?;
                 let build = project.model().build(&build.name)?;
                 project
                     .resolve_page(path, build, base_router.as_ref()?)

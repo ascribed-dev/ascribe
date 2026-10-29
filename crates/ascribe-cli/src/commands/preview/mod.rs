@@ -167,7 +167,7 @@ fn render(
         .map_err(|e| answer::fail(err, &e))?;
     let index = project.index();
     let preview =
-        ascribe_emit::preview(&index, project.root(), build).map_err(|e| exit::fail(err, &e))?;
+        ascribe_emit::preview(index, project.root(), build).map_err(|e| exit::fail(err, &e))?;
     let folder = project.root().join(FOLDER);
     OutputDir::lock_archive(&folder)
         .and_then(|dir| dir.replace_archive(&build.name, &preview.files))
@@ -209,11 +209,13 @@ fn check_args(args: &Args) -> check::Args {
         summary: false,
         format: check::Format::Text,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
         addresses: check::Addresses::NotCompared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         no_baseline: false,
         vale_timeout: None,

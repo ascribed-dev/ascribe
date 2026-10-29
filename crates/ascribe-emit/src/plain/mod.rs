@@ -29,7 +29,10 @@
 //! agents, laid out by URL so that it's copied as it is to the site's base
 //! path: each page at its Markdown version's path
 //! ([`ascribe_resolve::AstroRouter::markdown_path`]), opening with a
-//! blockquote that points at the index; `llms.txt`, and a file per section
+//! blockquote that points at the index and says which releases the build
+//! describes ([`llms::releases_described`]), and with a blockquote after its
+//! title and availability line that gives its type and description
+//! ([`about_line`], decision #1028); `llms.txt`, and a file per section
 //! when it's split ([`ascribe_resolve::llms`]); and every asset under
 //! `_ascribe/files/`, referred to by its absolute URL.
 //!
@@ -180,7 +183,7 @@ impl PlainEmitter {
                 .insert(agents.router.route(&page.path), page.path.clone());
             let page_cx = PageContext::new(cx, self.page_path(&page.path), self);
             let r = Renderer::new(&page_cx, false, None);
-            let _ = r.page(page);
+            let _ = r.page(page, None);
             let mut scope = GithubSlugger.scope();
             let mut anchors = HashMap::new();
             for (id, line) in r.headings.take() {
@@ -241,16 +244,28 @@ impl Emitter for PlainEmitter {
 
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {
         let agents = self.agents.as_ref().filter(|_| !self.html_links);
-        let text = Renderer::new(cx, false, agents).page(page);
-        let text = match version_line(cx.emit, page) {
+        let about = self
+            .agents
+            .as_ref()
+            .and_then(|_| about_line(cx.emit.model, page));
+        let text = Renderer::new(cx, false, agents).page(page, about);
+        let version = version_line(cx.emit, page);
+        // The pointer says which releases the build describes, unless the
+        // version line, right after it, already does.
+        let releases = match version {
+            Some(_) => None,
+            None => llms::releases_described(cx.emit.model, cx.emit.build),
+        };
+        let text = match version {
             Some(line) => format!("{line}\n\n{text}"),
             None => text,
         };
         Ok(match &self.agents {
             Some(agents) => {
                 let index = agents.absolute(&agents.router.url_of("llms.txt"));
+                let releases = releases.map(|r| format!(" {r}")).unwrap_or_default();
                 format!(
-                    "> For the complete documentation index, see [llms.txt]({index}).\n\n{text}"
+                    "> For the complete documentation index, see [llms.txt]({index}).{releases}\n\n{text}"
                 )
             }
             None => text,
@@ -321,6 +336,33 @@ impl Emitter for PlainEmitter {
     }
 }
 
+/// What a page is for, as the Markdown for agents writes it after the
+/// page's title and availability line, where the site shows its
+/// description (decision #1028): a blockquote with the page's type,
+/// `Reference`, and its description ([`llms::description`]), joined by
+/// ` · `. The type is left out when it's the implicit `page` type of a
+/// project that declares none, and `None` when that leaves nothing.
+fn about_line(model: &ContentModel, page: &ResolvedPage) -> Option<String> {
+    let ty = model
+        .type_of(page.frontmatter.as_ref())
+        .found()
+        .filter(|ty| !ty.implicit)
+        .map(|ty| {
+            let mut chars = ty.name.chars();
+            chars.next().map_or_else(String::new, |first| {
+                first.to_uppercase().chain(chars).collect::<String>()
+            })
+        });
+    let description = llms::description(model, page);
+    let text = match (ty, description) {
+        (Some(ty), Some(description)) => format!("{ty} · {description}"),
+        (Some(ty), None) => ty,
+        (None, Some(description)) => description,
+        (None, None) => return None,
+    };
+    Some(quote(&escape(&text, true)))
+}
+
 /// In a line of a versioned build, the blockquote that says which version a
 /// page documents: the target's label and the line, the day its support
 /// ends when the list says, and in an older line, the current line and the
@@ -388,8 +430,9 @@ impl<'a> Renderer<'a> {
         }
     }
 
-    /// Renders a page as plain markdown.
-    fn page(&self, page: &ResolvedPage) -> String {
+    /// Renders a page as plain markdown, with `about` after its title and
+    /// availability line ([`about_line`]).
+    fn page(&self, page: &ResolvedPage, about: Option<String>) -> String {
         let mut chunks = Vec::new();
         if let Some(segments) = page.formatted_title() {
             chunks.push(self.recorded(format!("# {}", formatted_heading(segments)), None));
@@ -401,6 +444,7 @@ impl<'a> Renderer<'a> {
         if let Some(availability) = &page.availability {
             chunks.push(self.availability_line(&availability.spec));
         }
+        chunks.extend(about);
         chunks.extend(self.blocks(&page.blocks));
         let mut out = chunks.join("\n\n");
         if !out.is_empty() {
@@ -514,6 +558,28 @@ pub(crate) fn render_section(
         .map(|ids| ids.page_id.as_str());
     let summary = summary_with(&r, page, anchor);
     Rendered { text, summary }
+}
+
+/// One page's plain Markdown in `build`, as the build writes it: what
+/// `ascribe-check`'s `page-size` measures, which it's given as
+/// `ascribe_check::page::PlainMarkdown`. `None` when the page can't be rendered,
+/// which its other problems say.
+///
+/// With the outputs for agents on, the pointer to llms.txt is part of the
+/// page. One page alone doesn't learn the build's pages
+/// ([`PlainEmitter::learn_pages`]), so a link's fragment is its page id and
+/// a glossary link keeps its HTML address: a few characters off, the same
+/// for every caller, the editor's included.
+pub fn plain_markdown(
+    index: &ascribe_resolve::Project,
+    root: &std::path::Path,
+    build: &ascribe_model::Build,
+    page: &ResolvedPage,
+) -> Option<String> {
+    let cx = EmitContext::new(index, root, build);
+    crate::emit_page(&PlainEmitter::new(index.model()), &cx, page)
+        .ok()
+        .map(|page| page.text)
 }
 
 /// The summary of the section of `page` whose heading's page id is

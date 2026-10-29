@@ -103,7 +103,7 @@
       "type": "integer"
     },
     "written": {
-      "description": "Whether the files were written and the file moved: the MCP server's\n`ascribe_rename` writes nothing, and gives the changes to make.",
+      "description": "Whether the files were written and the file moved: `--dry-run`, and\nthe MCP server's `ascribe_rename`, write nothing, and give the\nchanges to make.",
       "type": "boolean"
     }
   },

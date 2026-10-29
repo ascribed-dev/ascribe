@@ -1,7 +1,8 @@
 ---
 type: how-to
 title: Serve the Markdown versions
-description: Configure your host to serve the Markdown versions of an Astro site's pages and llms.txt as the Web Documentation Delivery Spec asks, with their type, their response headers, and content negotiation.
+description: "Configure your host to serve the Markdown versions of an Astro site's pages and `llms.txt` as the Web Documentation Delivery Spec asks, with their type, their response headers, and content negotiation."
+permalink: serve-markdown
 ---
 
 The outputs for agents are static files, so any host serves them, but a few things the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) asks are the server's, not the build's. This guide sets them on your host, once the site [publishes for AI agents](agents.md).

@@ -1,8 +1,7 @@
 ---
 type: how-to
 title: Link to your API reference
-description: "Declare your OpenAPI spec in ascribe.toml, link a guide to an operation by its operationId, and have the link checked against the spec and written as the operation's address in Redoc or another renderer."
-available: ascribe 0.4.4
+description: "Declare your OpenAPI spec in `ascribe.toml`, link a guide to an operation by its `operationId`, and have the link checked against the spec and written as the operation's address in Redoc or another renderer."
 ---
 
 A guide that says "call `getUser`" should link to `getUser` in the API reference, and the link should break the build when the spec loses it. Declare the spec in `ascribe.toml`, and a link to it with an `operationId` as its fragment is a link to that operation: `ascribe check` checks the spec has it, the editor completes it after `#` and shows it on hover ([in the editor](editor.md)), and the build writes the operation's address in your published reference.
@@ -73,14 +72,14 @@ import spec from "../../api/openapi.yaml?url&no-inline";
 
 Redoc 3 sends usage data to Redocly unless `disable-telemetry` is `"true"`.
 
-**Another renderer.** Write `reference` as a template of an operation's address, with `{operationId}` where the id goes and `{tag}` for its first tag. Each is filled in percent-encoded.
+**Another renderer.** Write `reference` as an address pattern: an operation's address, with `{operationId}` where the id goes and `{tag}` for its first tag. Each is filled in percent-encoded.
 
 | Renderer | `reference` |
 |---|---|
 | Stoplight Elements, with `router="hash"` | `"/api/#/operations/{operationId}"` |
 | Swagger UI, with deep linking | `"/api/#/{tag}/{operationId}"` |
 
-A renderer whose address is a slug of the id, such as starlight-openapi's or Docusaurus OpenAPI docs', or that addresses an operation by its method and path, such as Scalar, can't be written as a template, and isn't supported.
+A renderer whose address is a slug of the id, such as starlight-openapi's or Docusaurus OpenAPI docs', or that addresses an operation by its method and path, such as Scalar, can't be written as an address pattern, and isn't supported.
 
 ## Give each operation an id
 

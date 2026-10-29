@@ -1,28 +1,31 @@
 //! `ascribe check`: report every file-level and page-level problem, without
 //! building; with paths, only what counts for them.
 
+use std::collections::HashSet;
 use std::io::{self, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use ascribe_check::fix;
 use ascribe_check::prompt::{self, Builds};
-use ascribe_check::prose;
 use ascribe_check::{
-    Acknowledged, BaselineError, Diagnostic, Found, LoadError, Project, Reported, Request, Scope,
-    ScopeError, Severity, locate_for,
+    Acknowledged, BaselineError, Diagnostic, Found, Project, Reported, Request, Scope, ScopeError,
+    Severity, locate_for,
 };
 use ascribe_core::{Coded, diagnostics};
+use ascribe_report::prose;
+use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::answer::{FromDisk, Loaded, Projects};
 use crate::cli::Global;
 use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
+use crate::guard;
 use crate::report::json::About;
-use crate::report::{Counts, FileTable, concise, json, tally, text};
+use crate::report::{Counts, FileTable, concise, github, json, tally, text};
 use crate::shell::quote;
 
 /// Arguments of `ascribe check`.
@@ -101,8 +104,23 @@ pub struct Args {
     #[arg(long, value_name = "N", conflicts_with = "summary")]
     pub limit: Option<concise::Limit>,
 
-    /// Make warnings fail the command too (exit code 1), for CI.
-    #[arg(long)]
+    /// Exit with 1 on problems at this level or above: `error`, the
+    /// default, or `warning`, for CI.
+    ///
+    /// Errors fail the command without it. Advice never fails it.
+    #[arg(
+        long,
+        value_enum,
+        num_args = 0..=1,
+        require_equals = true,
+        default_missing_value = "error",
+        value_name = "LEVEL",
+        overrides_with = "deny_warnings"
+    )]
+    pub exit_code: Option<FailOn>,
+
+    /// Make warnings fail the command too: `--exit-code=warning`.
+    #[arg(long, overrides_with = "exit_code")]
     pub deny_warnings: bool,
 
     /// The revision whose addresses the check compares the project's with,
@@ -143,6 +161,11 @@ pub struct Args {
     /// The report, and the exit code, are the check after the fixes.
     #[arg(long, conflicts_with = "stdin")]
     pub fix: bool,
+
+    /// With `--fix`, `--dry-run`, which lists the fixes it would apply and
+    /// reports the check as it is, and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// Check the prose with Vale too, as `[checks.vale]` in `ascribe.toml`
     /// sets it up.
@@ -214,10 +237,36 @@ pub enum Format {
     Concise,
     /// One JSON document, for tools.
     Json,
+    /// A GitHub Actions workflow command per problem, which shows it on the
+    /// pull request's lines, with the path from the repository's root, then
+    /// the summary line: for CI.
+    Github,
     /// A prompt for an agent that fixes the problems: about the file, when
     /// the paths name one file, else about the project or the paths. Nothing
     /// when there are no problems.
     Prompt,
+}
+
+/// The least problem that fails the command, as `--exit-code` names it.
+/// Advice never does.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum FailOn {
+    /// An error.
+    Error,
+    /// A warning or an error.
+    Warning,
+}
+
+impl Args {
+    /// The least problem that fails the command: `--exit-code`'s level, or a
+    /// warning under `--deny-warnings`, or else an error.
+    fn fail_on(&self) -> FailOn {
+        match self.exit_code {
+            Some(level) => level,
+            None if self.deny_warnings => FailOn::Warning,
+            None => FailOn::Error,
+        }
+    }
 }
 
 /// Why the paths, or standard input, can't be checked.
@@ -235,6 +284,9 @@ pub enum CheckError {
     /// `--fix` couldn't write a file it fixed.
     #[error(transparent)]
     Fix(#[from] fix::FixError),
+    /// The git guard refused to let `--fix` change a file.
+    #[error(transparent)]
+    Guard(#[from] guard::GuardError),
     /// `--code` names no diagnostic.
     #[error("--code: {0}")]
     Code(ascribe_query::QueryError),
@@ -253,6 +305,7 @@ impl Coded for CheckError {
             CheckError::Stdin(_) => "stdin_unreadable",
             CheckError::NoVale => "vale_not_set_up",
             CheckError::Fix(e) => e.code(),
+            CheckError::Guard(e) => e.code(),
             CheckError::Code(e) => e.code(),
             CheckError::Baseline(e) => e.code(),
             CheckError::LimitNotConcise => "limit_not_concise",
@@ -261,7 +314,7 @@ impl Coded for CheckError {
 }
 
 /// Runs the command. Exit codes: 0 with no errors, 1 with errors (or with
-/// warnings under `--deny-warnings`), 2 when the project can't be checked.
+/// warnings under `--exit-code=warning`), 2 when the project can't be checked.
 /// Advice never changes the exit code.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     // Buffered: a report is many small writes, and a locked stdout flushes
@@ -355,8 +408,15 @@ fn check(
             &outcome.config,
             outcome.reported.iter().map(|r| &r.diagnostic),
         );
-        if !files.is_empty() {
-            if let Err(e) = fix::write(&files) {
+        if !files.is_empty() && args.guard.dry_run {
+            outcome.fixed = json::FixedEntry::of(&files);
+        } else if !files.is_empty() {
+            let paths: Vec<&Path> = files.iter().map(|f| f.path.as_path()).collect();
+            if let Err(e) = args.guard.allow(&paths) {
+                let stopped = Stopped::Failure(Failure::Check(CheckError::Guard(e)));
+                return report_stopped(stopped, args, color, out, err);
+            }
+            if let Err(e) = write_fixes(&files) {
                 let stopped = Stopped::Failure(Failure::Check(CheckError::Fix(e)));
                 return report_stopped(stopped, args, color, out, err);
             }
@@ -375,13 +435,13 @@ fn check(
             return exit::FAILURE;
         }
     }
-    exit_code(outcome.counts, args.deny_warnings)
+    exit_code(outcome.counts, args.fail_on())
 }
 
 /// The exit code for what a check reports: 1 with errors, or with warnings
-/// under `--deny-warnings`; 0 otherwise. Advice never fails the check.
-fn exit_code(counts: Counts, deny_warnings: bool) -> u8 {
-    if counts.errors > 0 || (deny_warnings && counts.warnings > 0) {
+/// when they fail it; 0 otherwise. Advice never fails the check.
+fn exit_code(counts: Counts, fail_on: FailOn) -> u8 {
+    if counts.errors > 0 || (fail_on == FailOn::Warning && counts.warnings > 0) {
         exit::PROBLEMS
     } else {
         exit::OK
@@ -423,7 +483,7 @@ pub fn run_check(
     };
     let mut found = if args.editor_build {
         request
-            .find(project, Some(loaded.page_index()))
+            .find(project)
             .map(Found::from)
             .map_err(Stopped::Build)?
     } else {
@@ -443,12 +503,20 @@ pub fn run_check(
         let (found, base) = std::thread::scope(|threads| {
             let base = compared.then(|| {
                 threads.spawn(|| match project.addresses() {
-                    Some(_) => BaseRead::Addresses(Box::new(ascribe_diff::base_addresses(
+                    Some(_) => match ascribe_diff::base_addresses(
                         project.root(),
                         &project.layout().content_root,
                         args.base.as_deref(),
                         args.base_exact,
-                    ))),
+                    ) {
+                        Err(_)
+                            if args.base.is_none()
+                                && ascribe_diff::before_history(project.root()) =>
+                        {
+                            BaseRead::BeforeHistory
+                        }
+                        read => BaseRead::Addresses(Box::new(read)),
+                    },
                     None => BaseRead::FileEntries(ascribe_diff::base_file_entries(
                         project.root(),
                         args.base.as_deref(),
@@ -457,7 +525,7 @@ pub fn run_check(
                 })
             });
             let found = loaded.diagnosed(&args.build, |project| {
-                request.find(project, None).map(Found::from)
+                request.find(project).map(Found::from)
             });
             let base = base.map(|thread| {
                 thread
@@ -481,7 +549,7 @@ pub fn run_check(
         {
             let based = project.clone().with_base_apis(Arc::new(apis));
             found = request
-                .find(&based, None)
+                .find(&based)
                 .map(Found::from)
                 .map_err(Stopped::Build)?;
         }
@@ -555,6 +623,10 @@ enum BaseRead {
     Addresses(Box<Result<ascribe_diff::BaseAddresses, ascribe_diff::DiffError>>),
     /// How many entries the base's file had, for a project without one.
     FileEntries(Option<usize>),
+    /// No base was named, and there's no history it could be read from: no
+    /// repository, or no commit yet. Nothing can have been published, so
+    /// nothing is compared, and that isn't reported (decision #1016).
+    BeforeHistory,
 }
 
 /// The addresses the base published that the project has lost, compared
@@ -563,8 +635,11 @@ enum BaseRead {
 /// and the problems found without it. For a project without the file, that
 /// the base had one.
 fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec<Diagnostic> {
+    // `None` before the history: nothing is compared, and only the
+    // entries are checked.
     let base = match base {
-        BaseRead::Addresses(base) => *base,
+        BaseRead::Addresses(base) => Some(*base),
+        BaseRead::BeforeHistory => None,
         BaseRead::FileEntries(entries) => {
             return entries
                 .map(ascribe_check::addresses::file_deleted)
@@ -590,6 +665,9 @@ fn compared_addresses(loaded: &Loaded, builds: &[String], base: BaseRead) -> Vec
         text,
         index,
         builds: &now,
+    };
+    let Some(base) = base else {
+        return ascribe_check::addresses::entries(&here, None);
     };
     let base = match base {
         Ok(base) => base,
@@ -667,6 +745,15 @@ fn with_prose(
     Ok(about_vale)
 }
 
+/// How many files the problems reported are in.
+fn with_problems(reported: &[Reported]) -> usize {
+    let files: HashSet<_> = reported
+        .iter()
+        .map(|r| r.diagnostic.location.file)
+        .collect();
+    files.len()
+}
+
 /// Writes what a check found in `args.format`, as `ascribe check` does.
 ///
 /// # Errors
@@ -709,14 +796,15 @@ pub fn write(
             *counts,
             checked,
             &covered,
-            files_reported.unwrap_or(checked),
+            files_reported,
+            with_problems(reported),
             codes,
         ) + &text::acknowledged(acknowledged.len())
             + &text::baselined(*baselined)
     };
     let command = Command::new(global, args, codes);
-    if matches!(args.format, Format::Text | Format::Concise) {
-        write_fixed(out, fixed)?;
+    if matches!(args.format, Format::Text | Format::Concise | Format::Github) {
+        write_fixed(out, fixed, args.guard.dry_run)?;
     }
     match (args.format, args.summary) {
         (Format::Json, summary_only) => json::write(
@@ -735,7 +823,7 @@ pub fn write(
             },
         ),
         (Format::Prompt, _) => write_prompt(out, project, args, codes, scope.as_ref(), reported),
-        (Format::Text | Format::Concise, true) => {
+        (Format::Text | Format::Concise | Format::Github, true) => {
             let (by_code, by_file) = tally(files, reported);
             let first = by_code.first().map(|c| command.of_code(c.code));
             text::write_tally(out, &by_code, &by_file, &command.tally(), first.as_deref())
@@ -750,7 +838,16 @@ pub fn write(
             args.limit.unwrap_or_default(),
             &command.concise_all(),
         ),
+        (Format::Github, false) => {
+            github::write(out, files, reported, &summary, &repository_prefix(project))
+        }
     }
+}
+
+/// The path from the repository's root to the project's, as
+/// `git rev-parse --show-prefix` prints it; empty outside a repository.
+fn repository_prefix(project: &Project) -> String {
+    ascribe_diff::Repository::discover(project.root()).map_or_else(|_| String::new(), |r| r.prefix)
 }
 
 /// What `ascribe check` says in place of its summary when the project has
@@ -765,9 +862,11 @@ fn no_pages(project: &Project) -> String {
     }
 }
 
-/// Writes a line for each file `--fix` changed, with how many problems it
-/// fixed there, before what's left is reported.
-fn write_fixed(out: &mut dyn Write, fixed: &[json::FixedEntry]) -> io::Result<()> {
+/// Writes a line for each file `--fix` changed, or with `--dry-run` would
+/// change, with how many problems it fixed there, before what's left is
+/// reported.
+fn write_fixed(out: &mut dyn Write, fixed: &[json::FixedEntry], dry_run: bool) -> io::Result<()> {
+    let fixed_word = if dry_run { "would fix" } else { "fixed" };
     let mut i = 0;
     while let Some(first) = fixed.get(i) {
         let n = fixed[i..]
@@ -775,7 +874,7 @@ fn write_fixed(out: &mut dyn Write, fixed: &[json::FixedEntry]) -> io::Result<()
             .take_while(|f| f.file == first.file)
             .count();
         let problems = if n == 1 { "problem" } else { "problems" };
-        writeln!(out, "fixed {n} {problems} in {}", first.file)?;
+        writeln!(out, "{fixed_word} {n} {problems} in {}", first.file)?;
         i += n;
     }
     Ok(())
@@ -814,7 +913,7 @@ fn write_prompt(
     let index = std::cell::OnceCell::new();
     let shown_on = |fragment: &ascribe_core::RelPath| {
         index
-            .get_or_init(|| project.held_index())
+            .get_or_init(|| project.index())
             .including_pages(fragment)
     };
     let text = match one {
@@ -867,14 +966,13 @@ fn load(
             stdin
                 .read_to_string(&mut text)
                 .map_err(|e| Failure::Check(CheckError::Stdin(e)))?;
-            let project = project.with_source(&content_path, text);
             let scope = project
                 .content_root()
                 .join(content_path.as_str())
                 .map(|p| Scope::new([p]))
                 .ok();
             Ok(Checked {
-                loaded: Rc::new(Loaded::new(project)),
+                loaded: Rc::new(loaded.with_source(&content_path, text)),
                 config,
                 scope,
             })
@@ -986,8 +1084,10 @@ impl<'a> Command<'a> {
         let mut words = self.on_paths();
         words.extend(self.checked());
         words.extend(["--code".to_owned(), quote(code)]);
-        if self.args.format == Format::Concise {
-            words.extend(["--format".to_owned(), "concise".to_owned()]);
+        match self.args.format {
+            Format::Concise => words.extend(["--format".to_owned(), "concise".to_owned()]),
+            Format::Github => words.extend(["--format".to_owned(), "github".to_owned()]),
+            Format::Text | Format::Json | Format::Prompt => {}
         }
         words.join(" ")
     }
@@ -1039,13 +1139,13 @@ fn report_failure(
             FileTable::of_model(String::new()),
             Vec::new(),
         ),
-        Failure::Load(LoadError::Model { text, diagnostics }) => (
+        Failure::Load(LoadError::Model { text, issues }) => (
             format!(
                 "{} has errors, so nothing can be checked",
                 ascribe_check::MODEL_FILE
             ),
             FileTable::of_model(text),
-            diagnostics,
+            issues.iter().map(Diagnostic::from_issue).collect(),
         ),
         Failure::Load(e @ LoadError::Read { .. }) => (
             e.to_string(),
@@ -1065,6 +1165,13 @@ fn report_failure(
             }
             writeln!(err, "error: {message}")
         }
+        Format::Github => {
+            for r in Reported::all(diagnostics) {
+                // The project's place in the repository isn't known.
+                let _ = writeln!(out, "{}", github::annotation(&files, &r, None));
+            }
+            writeln!(err, "{}", github::command("error", &[], &message))
+        }
         Format::Json => json::write(
             out,
             &files,
@@ -1073,6 +1180,22 @@ fn report_failure(
         ),
     };
     exit::FAILURE
+}
+
+/// Writes each fixed file's new text: the library returns it, and the CLI
+/// writes it.
+///
+/// # Errors
+///
+/// A file couldn't be written. The files before it in the list were.
+fn write_fixes(files: &[fix::FixedFile]) -> Result<(), fix::FixError> {
+    for file in files {
+        std::fs::write(&file.path, &file.text).map_err(|source| fix::FixError {
+            path: file.path.clone(),
+            source,
+        })?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -1105,14 +1228,14 @@ mod tests {
             advice: 3,
             ..Counts::default()
         };
-        assert_eq!(exit_code(advice, false), exit::OK);
-        assert_eq!(exit_code(advice, true), exit::OK);
+        assert_eq!(exit_code(advice, FailOn::Error), exit::OK);
+        assert_eq!(exit_code(advice, FailOn::Warning), exit::OK);
         let warning = Counts {
             warnings: 1,
             ..advice
         };
-        assert_eq!(exit_code(warning, false), exit::OK);
-        assert_eq!(exit_code(warning, true), exit::PROBLEMS);
+        assert_eq!(exit_code(warning, FailOn::Error), exit::OK);
+        assert_eq!(exit_code(warning, FailOn::Warning), exit::PROBLEMS);
     }
 
     #[test]
@@ -1121,12 +1244,12 @@ mod tests {
         let reported = reported();
         let counts = Counts::of_reported(&reported);
         assert_eq!(
-            text::check_summary(counts, 1, &text::Covered::Every, 1, &[]),
-            "checked 1 file for every build, reported on 1: 0 errors, 1 warning, 1 advice"
+            text::check_summary(counts, 1, &text::Covered::Every, None, 1, &[]),
+            "checked 1 file for every build, 1 with problems: 0 errors, 1 warning, 1 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 1, &text::Covered::Every, 1, &[]),
-            "checked 1 file for every build, reported on 1: 0 errors, 0 warnings, 0 advice",
+            text::check_summary(Counts::default(), 1, &text::Covered::Every, None, 0, &[]),
+            "checked 1 file for every build, 0 with problems: 0 errors, 0 warnings, 0 advice",
             "the summary counts advice even when there is none"
         );
         let builds = ["cloud".to_owned(), "site".to_owned(), "v2".to_owned()];
@@ -1135,21 +1258,29 @@ mod tests {
                 Counts::default(),
                 3,
                 &text::Covered::Named(&builds[..n]),
-                1,
+                Some(1),
+                0,
                 &[],
             )
         };
         assert_eq!(
             named(1),
-            "checked 3 files for build `cloud`, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 3 files for build `cloud`, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
         assert_eq!(
             named(3),
-            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1: 0 errors, 0 warnings, 0 advice"
+            "checked 3 files for builds `cloud`, `site` and `v2`, reported on 1 file in the paths, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
         assert_eq!(
-            text::check_summary(Counts::default(), 3, &text::Covered::Editor("site"), 1, &[]),
-            "checked 3 files with the page-level checks of build `site` only, reported on 1: 0 errors, 0 warnings, 0 advice"
+            text::check_summary(
+                Counts::default(),
+                3,
+                &text::Covered::Editor("site"),
+                None,
+                0,
+                &[]
+            ),
+            "checked 3 files with the page-level checks of build `site` only, 0 with problems: 0 errors, 0 warnings, 0 advice"
         );
 
         let order = concise::order(&files, &reported);

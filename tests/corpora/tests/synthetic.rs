@@ -17,7 +17,9 @@ use ascribe_synthetic::Synthetic;
 fn check(project: Synthetic, advice: bool) -> usize {
     let dir = tempfile::tempdir().expect("temp dir");
     project.write_to(dir.path()).expect("writes");
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("loads");
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("loads");
     let diagnostics: Vec<_> = check_all_builds(&project)
         .into_iter()
         .filter(|d| advice || d.severity != Severity::Advice)

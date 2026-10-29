@@ -19,8 +19,9 @@ use clap::{Args as ClapArgs, Subcommand};
 
 use crate::answer::{self, Format};
 use crate::cli::Global;
-use crate::context::load_project;
+use crate::context::{checked, load_project};
 use crate::exit;
+use crate::guard;
 
 /// Arguments of `ascribe permalinks`.
 #[derive(Debug, ClapArgs)]
@@ -56,9 +57,14 @@ pub enum Command {
 /// Arguments of `ascribe permalinks sync`.
 #[derive(Debug, ClapArgs)]
 pub struct SyncArgs {
-    /// Write nothing, and exit with 1 when the list would change: for CI.
+    /// Write nothing, print how the list would change as a unified diff,
+    /// and exit with 1 when it would: for CI.
     #[arg(long)]
     pub check: bool,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what changed.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -128,6 +134,10 @@ pub struct RetireArgs {
     /// the content root.
     #[arg(long, value_name = "FOLDER")]
     pub under: Option<String>,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what was retired.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -199,27 +209,37 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// the list can't be read or written.
 fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let synced = match ascribe_query::permalinks::sync(
-        &project.index(),
+    let mut synced = match ascribe_query::permalinks::sync(
+        project.index(),
         project.permalinks(),
         project.permalinks_text(),
     ) {
         Ok(synced) => synced,
         Err(e) => return answer::fail(err, &e),
     };
-    if synced.changed
-        && !args.check
-        && let Err(error) = write_permalinks(project.root(), &synced.text)
-    {
-        return answer::fail(err, &error);
+    if synced.changed && !args.check {
+        if let Err(e) = args.guard.allow(&[project.root().join(PERMALINKS_FILE)]) {
+            return answer::fail(err, &e);
+        }
+        if !args.guard.dry_run {
+            if let Err(error) = write_permalinks(project.root(), &synced.text) {
+                return answer::fail(err, &error);
+            }
+            synced.written = true;
+        }
     }
     let result = match args.format {
         Format::Json => answer::write_json(out, &synced),
-        Format::Text if args.check => write_sync_check(out, err, &synced),
-        Format::Text => write_sync(out, err, &synced),
+        Format::Text if args.check => write_sync_check(
+            out,
+            err,
+            &synced,
+            project.permalinks_text().unwrap_or_default(),
+        ),
+        Format::Text => write_sync(out, err, &synced, args.guard.dry_run),
     };
     if let Some(code) = answer::written(result, err) {
         return code;
@@ -231,7 +251,19 @@ fn run_sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn
     }
 }
 
-fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::Result<()> {
+/// What `sync` says it did, or with `--dry-run`, would do.
+fn write_sync(
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+    s: &SyncAnswer,
+    dry_run: bool,
+) -> io::Result<()> {
+    let would = if dry_run { "would " } else { "" };
+    let (wrote, add, recorded) = if dry_run {
+        ("would write", "add", "record")
+    } else {
+        ("wrote", "added", "recorded")
+    };
     if s.created {
         let count = s.added.len();
         let permalinks = if count == 1 {
@@ -239,25 +271,37 @@ fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::R
         } else {
             "permalinks"
         };
+        let commit = if dry_run {
+            ""
+        } else {
+            "; commit it with the docs"
+        };
         return writeln!(
             out,
-            "wrote {PERMALINKS_FILE}, with {count} {permalinks}; commit it with the docs"
+            "{wrote} {PERMALINKS_FILE}, with {count} {permalinks}{commit}"
         );
     }
     for name in &s.added {
-        writeln!(out, "added {name}")?;
+        writeln!(out, "{would}{add} {name}")?;
     }
     for moved in &s.moved {
-        writeln!(out, "moved {}: {} to {}", moved.name, moved.from, moved.to)?;
+        writeln!(
+            out,
+            "{would}{} {}: {} to {}",
+            if dry_run { "move" } else { "moved" },
+            moved.name,
+            moved.from,
+            moved.to
+        )?;
     }
     for name in &s.aliased {
-        writeln!(out, "recorded the alias {name}")?;
+        writeln!(out, "{would}{recorded} the alias {name}")?;
     }
     for name in &s.retired {
-        writeln!(out, "recorded {name} as retired")?;
+        writeln!(out, "{would}{recorded} {name} as retired")?;
     }
     if s.changed {
-        writeln!(out, "wrote {PERMALINKS_FILE}")?;
+        writeln!(out, "{wrote} {PERMALINKS_FILE}")?;
     } else {
         writeln!(out, "{PERMALINKS_FILE} is up to date.")?;
     }
@@ -270,30 +314,21 @@ fn write_sync(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::R
     Ok(())
 }
 
-/// What `sync --check` says: what `sync` would write, without writing it.
-fn write_sync_check(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) -> io::Result<()> {
+/// What `sync --check` says: how `sync` would change the list, as a
+/// unified diff of `old`, its text now, without writing it.
+fn write_sync_check(
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+    s: &SyncAnswer,
+    old: &str,
+) -> io::Result<()> {
     if s.created {
         return writeln!(
             err,
             "error: there's no {PERMALINKS_FILE}; run `ascribe permalinks sync` to make one"
         );
     }
-    for name in &s.added {
-        writeln!(out, "would add {name}")?;
-    }
-    for moved in &s.moved {
-        writeln!(
-            out,
-            "would move {}: {} to {}",
-            moved.name, moved.from, moved.to
-        )?;
-    }
-    for name in &s.aliased {
-        writeln!(out, "would record the alias {name}")?;
-    }
-    for name in &s.retired {
-        writeln!(out, "would record {name} as retired")?;
-    }
+    answer::write_unified_diff(out, PERMALINKS_FILE, old, &s.text)?;
     for name in &s.removed {
         writeln!(
             err,
@@ -314,10 +349,10 @@ fn write_sync_check(out: &mut dyn Write, err: &mut dyn Write, s: &SyncAnswer) ->
 /// or its list can't be read.
 fn run_list(global: &Global, args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
-    let listed = match ascribe_query::permalinks::list(&project.index(), project.permalinks()) {
+    let listed = match ascribe_query::permalinks::list(project.index(), project.permalinks()) {
         Ok(listed) => listed,
         Err(e) => return answer::fail(err, &e),
     };
@@ -482,7 +517,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         return answer::fail(err, &PermalinksError::NoReason);
     }
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let index = project.index();
@@ -504,7 +539,7 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             under: place.as_deref().filter(|_| args.under.is_some()),
             named: given,
         };
-        match ascribe_query::permalinks::retiring(&index, project.permalinks(), &retire) {
+        match ascribe_query::permalinks::retiring(index, project.permalinks(), &retire) {
             Ok(names) => {
                 found = Some(Ok(names));
                 break;
@@ -563,12 +598,9 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
             (None, None) => {}
         }
     }
-    if let Err(e) = crate::commands::addresses::write_file(project.root(), &file.to_toml()) {
-        return answer::fail(err, &PermalinksError::from(e));
-    }
     let list = match project.permalinks() {
         Some(Ok(list)) => ascribe_query::permalinks::record_retired(
-            &index,
+            index,
             list,
             &names,
             reason.unwrap_or_default(),
@@ -576,12 +608,31 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
         ),
         _ => None,
     };
-    if let Some(text) = &list
-        && let Err(error) = write_permalinks(project.root(), text)
-    {
-        return answer::fail(err, &error);
+    let mut changing = vec![project.root().join(ADDRESSES_FILE)];
+    if list.is_some() {
+        changing.push(project.root().join(PERMALINKS_FILE));
     }
-    let done = RetireAnswer::new(names, reason, to.as_deref(), created, list.is_some());
+    if let Err(e) = args.guard.allow(&changing) {
+        return answer::fail(err, &e);
+    }
+    if !args.guard.dry_run {
+        if let Err(e) = crate::commands::addresses::write_file(project.root(), &file.to_toml()) {
+            return answer::fail(err, &PermalinksError::from(e));
+        }
+        if let Some(text) = &list
+            && let Err(error) = write_permalinks(project.root(), text)
+        {
+            return answer::fail(err, &error);
+        }
+    }
+    let done = RetireAnswer::new(
+        names,
+        reason,
+        to.as_deref(),
+        created,
+        list.is_some(),
+        !args.guard.dry_run,
+    );
     let result = match args.format {
         Format::Json => answer::write_json(out, &done),
         Format::Text => write_retire(out, &done, project.permalinks().is_some()),
@@ -590,15 +641,20 @@ fn run_retire(global: &Global, args: &RetireArgs, out: &mut dyn Write, err: &mut
 }
 
 fn write_retire(out: &mut dyn Write, r: &RetireAnswer, has_list: bool) -> io::Result<()> {
+    let (moved, retired, wrote) = if r.written {
+        ("moved", "retired", "wrote")
+    } else {
+        ("would move", "would retire", "would write")
+    };
     for name in &r.retired {
         match &r.to {
-            Some(to) => writeln!(out, "moved {name} to {to}")?,
-            None => writeln!(out, "retired {name}")?,
+            Some(to) => writeln!(out, "{moved} {name} to {to}")?,
+            None => writeln!(out, "{retired} {name}")?,
         }
     }
-    writeln!(out, "wrote {ADDRESSES_FILE}")?;
+    writeln!(out, "{wrote} {ADDRESSES_FILE}")?;
     if r.list_changed {
-        writeln!(out, "wrote {PERMALINKS_FILE}")?;
+        writeln!(out, "{wrote} {PERMALINKS_FILE}")?;
     } else if has_list {
         writeln!(
             out,

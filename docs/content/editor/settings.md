@@ -16,7 +16,7 @@ Some folders hold an `ascribe.toml` that isn't a project to work on, and the edi
 
 - **What git ignores.** In a workspace folder that's a git repository, an `ascribe.toml` git ignores isn't a project, such as one a test run writes into a build folder. One git tracks is, whatever the ignore rules say. Without git, or outside a repository, the folders below are still left out.
 - **Output, dependencies, and caches,** in every folder with one of these names, whether or not git ignores it: `.ascribe`, each project's outputs and caches; `node_modules`, `bower_components`, `vendor`, `.venv`, `venv`, and `__pypackages__`; and `target`, `dist`, `.output`, `.next`, `.nuxt`, `.svelte-kit`, `.astro`, `.turbo`, `.vercel`, `.netlify`, `.cache`, `coverage`, `.gradle`, `.vscode-test`, `.tox`, and `.nox`. Not `build`, `out`, or `bin`, which are also names of folders people write in: where they're output, git ignores them.
-- **A source's copies.** The copies of a [source in another repository](../content-model/output.md#18-sourcesname), `sources/<name>/` in a project's folder, can hold that repository's own `ascribe.toml`: it's code the project shows, not a project.
+- **A source's copies.** The copies of a [source in another repository](../content-model/sources.md#20-sourcesname), `sources/<name>/` in a project's folder, can hold that repository's own `ascribe.toml`: it's code the project shows, not a project.
 - **Folders that `files.exclude` hides.**
 
 Anything else whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`.

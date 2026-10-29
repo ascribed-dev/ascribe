@@ -59,7 +59,9 @@ pub(crate) struct Report<'a> {
     acknowledged: Vec<AcknowledgedEntry>,
     /// With `--fix`, the safe fixes it applied, in file order and, within a
     /// file, in the order of their diagnostics; the rest of the report is
-    /// the check after them. Left out when none was applied.
+    /// the check after them. With `--dry-run`, the fixes it would apply,
+    /// none of which was, and the check is of the files as they are. Left
+    /// out when there's none.
     #[serde(skip_serializing_if = "<[_]>::is_empty")]
     fixed: &'a [FixedEntry],
     /// How many errors, warnings, and advice.
@@ -248,7 +250,8 @@ pub(crate) struct Entry {
     /// Whether it's in content that no build publishes.
     unpublished: bool,
     /// How to fix it, in general: the diagnostics reference's advice for its
-    /// code.
+    /// code, in Markdown, whose links are the docs' permalinks, such as
+    /// `https://ascribed-dev.com/go/22-checks/`.
     help: String,
     /// The address of its entry in the diagnostics reference: the docs'
     /// permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,

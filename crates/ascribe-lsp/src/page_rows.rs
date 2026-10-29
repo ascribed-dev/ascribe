@@ -98,6 +98,8 @@ pub enum LeftOut {
     Variant,
     /// The page's `available` makes it unavailable for the build.
     Availability,
+    /// The page is a draft, which no build publishes.
+    Draft,
 }
 
 /// Whether search engines list a page, and what sets that.
@@ -306,6 +308,7 @@ pub(crate) fn builds(ctx: &Ctx, file: &FileIndex) -> Vec<PageBuild> {
                 |reason| match reason {
                     DropReason::Variant => LeftOut::Variant,
                     DropReason::Unavailable => LeftOut::Availability,
+                    DropReason::Draft => LeftOut::Draft,
                 },
             ),
         })
@@ -401,8 +404,13 @@ fn resolved_rows(
         if listing.is_none() || build.name == editor.name {
             listing = Some(listing_of(ctx, file, build, &resolved));
         }
-        let Some(characters) = ascribe_check::page::markdown_size(index, root, build, &resolved)
-        else {
+        let Some(characters) = ascribe_check::page::markdown_size(
+            ascribe_emit::plain_markdown,
+            index,
+            root,
+            build,
+            &resolved,
+        ) else {
             continue;
         };
         // The first of the largest, as `page-size` names it.

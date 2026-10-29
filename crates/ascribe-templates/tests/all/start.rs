@@ -19,7 +19,9 @@ fn project() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("a temporary folder");
     std::fs::write(dir.path().join("ascribe.toml"), MODEL).expect("written");
     std::fs::create_dir(dir.path().join("docs")).expect("made");
-    let file = Project::load_model(&dir.path().join("ascribe.toml")).expect("the model loads");
+    let file = ascribe_check::LOADER
+        .load_model(&dir.path().join("ascribe.toml"))
+        .expect("the model loads");
     let fs = DiskFs::new(dir.path(), &Layout::from_model(&file.model));
     let names = ["how-to".to_owned()];
     let answer = eject(
@@ -31,6 +33,7 @@ fn project() -> tempfile::TempDir {
             to: &RelPath::parse("templates").expect("a relative path"),
             ascribe_version: "9.9.9",
             keep_type: false,
+            dry_run: false,
         },
         &fs,
     )
@@ -45,9 +48,11 @@ fn run(
     title: &str,
     path: Option<&str>,
 ) -> Result<NewPage, StartError> {
-    let project = Project::load(&dir.join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::load(&dir.join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
     let path = path.map(|p| RelPath::parse(p).expect("a relative path"));
-    start(&project, type_name, title, path.as_ref())
+    start(&project, type_name, Some(title), path.as_ref())
 }
 
 #[test]
@@ -64,9 +69,12 @@ fn a_type_with_a_template_starts_from_it_with_the_title_set() {
     let template = how_to.text(&how_to.template);
     // The template names its type already.
     assert!(template.starts_with("---\ntype: how-to\n"), "{template}");
+    // It starts as a draft.
     assert_eq!(
         page.text,
-        template.replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
+        template
+            .replacen("title: \"Title\"", "title: \"Rotate keys\"", 1)
+            .replacen("\n---\n", "\ndraft: true\n---\n", 1)
     );
     assert_eq!(page.template.as_deref(), Some("templates/how-to.md"));
     assert_eq!(
@@ -82,7 +90,7 @@ fn a_type_without_a_template_starts_with_its_frontmatter() {
     assert_eq!(page.path.as_str(), "keys-why.md");
     assert_eq!(
         page.text,
-        "---\ntype: guide\ntitle: \"Keys: \\\"why\\\"\"\naudience:\n---\n"
+        "---\ntype: guide\ntitle: \"Keys: \\\"why\\\"\"\naudience:\ndraft: true\n---\n"
     );
     assert_eq!(page.template, None);
     assert!(page.guide.is_empty());
@@ -175,7 +183,9 @@ fn an_unknown_type_or_a_title_with_no_name_in_it_is_refused() {
 #[test]
 fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
     let dir = project();
-    let project = Project::load(&dir.path().join("ascribe.toml")).expect("the project loads");
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
     let model = project.model();
     let takes = |folder: &str| -> Vec<&str> {
         let folder = RelPath::parse(folder).expect("a relative path");
@@ -190,4 +200,32 @@ fn a_folder_takes_the_types_a_page_started_in_it_would_be_of() {
     assert_eq!(takes("how-to/keys"), ["guide", "how-to"]);
     assert_eq!(takes(""), ["guide", "how-to"]);
     assert!(takes("../elsewhere").is_empty());
+}
+
+#[test]
+fn with_no_title_the_page_keeps_the_templates_and_needs_a_path() {
+    let dir = project();
+    let project = ascribe_check::load(&dir.path().join("ascribe.toml"))
+        .map(|w| Project::new(w.snapshot()))
+        .expect("the project loads");
+    let path = RelPath::parse("rotate.md").expect("a relative path");
+    let page = start(&project, "how-to", None, Some(&path)).expect("started");
+    let how_to = set()
+        .templates
+        .into_iter()
+        .find(|t| t.name == "how-to")
+        .expect("the set has the how-to");
+    assert_eq!(
+        page.text,
+        how_to
+            .text(&how_to.template)
+            .replacen("\n---\n", "\ndraft: true\n---\n", 1)
+    );
+    // A type with no template has an empty title.
+    let page = start(&project, "guide", None, Some(&path)).expect("started");
+    assert!(page.text.contains("\ntitle:\n"), "{}", page.text);
+    // A folder's page is named for its title, so there's none to name.
+    let folder = RelPath::parse("guides").expect("a relative path");
+    let error = start(&project, "how-to", None, Some(&folder)).expect_err("refused");
+    assert_eq!(error.code(), "page_path_needed");
 }

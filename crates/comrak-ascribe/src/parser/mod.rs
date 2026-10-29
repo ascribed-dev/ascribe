@@ -1401,13 +1401,16 @@ where
             let mut ast = container.data_mut();
             let ast = &mut *ast;
             // ASCRIBE: definitions taken from the start of the heading's text
-            // move its first line down (see `finalize_borrowed`).
+            // move its first line down, and its line offsets with it (see
+            // `finalize_borrowed`).
             let lines_before = ascribe::line_endings(&ast.content);
             let has_content = self.resolve_reference_link_definitions(
                 &mut ast.content,
                 (ast.sourcepos.start.line, &ast.line_offsets),
             );
-            ast.sourcepos.start.line += lines_before - ascribe::line_endings(&ast.content);
+            let taken = lines_before - ascribe::line_endings(&ast.content);
+            ast.sourcepos.start.line += taken;
+            ast.line_offsets.drain(..taken.min(ast.line_offsets.len()));
             has_content
         };
         if has_content {
@@ -2211,8 +2214,13 @@ where
                 }
                 // ASCRIBE: definitions taken from the start of a paragraph
                 // move its first line down, so the inline positions (and the
-                // paragraph's) are right.
-                ast.sourcepos.start.line += lines_before - ascribe::line_endings(content);
+                // paragraph's) are right. Its line offsets, which the inline
+                // parser indexes from that first line, lose the definitions'
+                // lines too: kept, an indented line of a definition gave its
+                // indent to the paragraph's line at the same index (#1209).
+                let taken = lines_before - ascribe::line_endings(content);
+                ast.sourcepos.start.line += taken;
+                ast.line_offsets.drain(..taken.min(ast.line_offsets.len()));
             }
             NodeValue::CodeBlock(ref mut ncb) => {
                 if !ncb.fenced {

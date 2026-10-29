@@ -50,7 +50,7 @@ pub struct Expect {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExpectedDiagnostic {
-    /// The diagnostic's slug from `tests/conformance/diagnostics.toml`.
+    /// The diagnostic's slug from `crates/ascribe-core/data/diagnostics.toml`.
     pub slug: String,
     /// The file, relative to the content root. Defaults to `input.md` in
     /// single-file cases; required in project cases.

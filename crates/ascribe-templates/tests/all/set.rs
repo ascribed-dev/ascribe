@@ -47,12 +47,15 @@ fn project(name: &str, page: &str) -> Project {
         "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.{name}.frontmatter]\ntitle = \"string\"\ndescription = \"string\"\n"
     );
     let path = RelPath::parse(&format!("{name}/page.md")).expect("a relative path");
-    Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(&model, FileId::new(0)).expect("the model loads"),
-        model,
-        Project::from_sources([(path, page.to_owned())]),
+    Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(&model, FileId::new(0)).expect("the model loads"),
+            model,
+            Vec::<(ascribe_core::RelPath, String)>::from_iter([(path, page.to_owned())]),
+        )
+        .snapshot(),
     )
 }
 
@@ -136,12 +139,18 @@ fn ascribe_s_notes_check_clean_read_as_pages() {
             .strip_prefix("# ")
             .unwrap_or_else(|| panic!("{} doesn't open with a level-1 heading", note.name));
         let page = format!("---\ntitle: \"{title}\"\n---\n{body}");
-        let project = Project::from_parts(
-            PathBuf::from("/nonexistent-ascribe-project"),
-            RelPath::parse("docs").expect("a relative path"),
-            ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
-            model.to_owned(),
-            Project::from_sources([(RelPath::parse("page.md").expect("a path"), page)]),
+        let project = Project::new(
+            ascribe_check::in_memory(
+                PathBuf::from("/nonexistent-ascribe-project"),
+                RelPath::parse("docs").expect("a relative path"),
+                ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
+                model.to_owned(),
+                Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+                    RelPath::parse("page.md").expect("a path"),
+                    page,
+                )]),
+            )
+            .snapshot(),
         );
         let found: Vec<_> = check_all_builds(&project)
             .into_iter()

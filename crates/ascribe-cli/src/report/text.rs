@@ -260,15 +260,17 @@ pub enum Covered<'a> {
 }
 
 /// The summary line of `ascribe check`, in one form whatever was asked: the
-/// files checked, the builds covered, the files reported on, the codes
-/// `--code` narrowed it to (`for code `ASC036``), and all three counts, as
-/// `checked 12 files for every build, reported on 1: 1 error, 0 warnings,
-/// 0 advice`.
+/// files checked, the builds covered, the files the paths named when there
+/// were paths (`reported on 2 files in the paths`), how many files have a
+/// problem reported, the codes `--code` narrowed it to (`for code
+/// `ASC036``), and all three counts, as `checked 12 files for every build,
+/// 1 with problems: 1 error, 0 warnings, 0 advice`.
 pub fn check_summary(
     counts: Counts,
     files_checked: usize,
     covered: &Covered<'_>,
-    files_reported: usize,
+    files_named: Option<usize>,
+    with_problems: usize,
     codes: &[String],
 ) -> String {
     let builds = match covered {
@@ -277,13 +279,16 @@ pub fn check_summary(
         Covered::Named(names) => format!("for builds {}", listed(names)),
         Covered::Editor(build) => format!("with the page-level checks of build `{build}` only"),
     };
+    let named = files_named.map_or_else(String::new, |n| {
+        format!(", reported on {} in the paths", plural(n, "file"))
+    });
     let only = match codes {
         [] => String::new(),
         [one] => format!(" for code `{one}`"),
         codes => format!(" for codes {}", listed(codes)),
     };
     format!(
-        "checked {} {builds}, reported on {files_reported}{only}: {}, {}, {} advice",
+        "checked {} {builds}{named}, {with_problems} with problems{only}: {}, {}, {} advice",
         plural(files_checked, "file"),
         plural(counts.errors, "error"),
         plural(counts.warnings, "warning"),

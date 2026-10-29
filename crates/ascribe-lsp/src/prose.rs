@@ -3,7 +3,7 @@
 //! Vale is a program of its own and can take seconds, so it never runs on the
 //! request path or in the worker that computes the other diagnostics: a
 //! thread of its own takes one open document at a time ([`Core::take_prose`])
-//! and runs [`ascribe_check::prose::lint_pages`] on its text, without the
+//! and runs [`ascribe_report::prose::lint_pages`] on its text, without the
 //! lock. What it finds is kept for the file and published with the file's
 //! other diagnostics ([`Core::publish`] adds it), so a round of those never
 //! drops it, and Vale's results never wait for one.
@@ -24,9 +24,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use ascribe_check::prose::{self, FILE_TIMEOUT, Linter, Page};
 use ascribe_core::{FileId, LineIndex, diagnostics};
 use ascribe_model::{ContentModel, ValeSettings};
+use ascribe_report::prose::{self, FILE_TIMEOUT, Linter, Page};
 use lsp_server::{Request, RequestId, Response};
 use lsp_types::{
     MessageActionItem, MessageType, Position, ShowMessageRequestParams,
@@ -174,7 +174,7 @@ impl Core {
         let Some(loaded) = self.loaded.as_ref() else {
             return;
         };
-        if loaded.model.checks.vale.is_none()
+        if loaded.model().checks.vale.is_none()
             || !self.docs.contains_key(path)
             || !matches!(loaded.classify(path), Some(crate::core::Kind::Source(..)))
         {
@@ -201,7 +201,12 @@ impl Core {
                 continue;
             };
             let root = loaded.root.clone();
-            let command = loaded.model.checks.vale.as_ref().map(|v| v.command.clone());
+            let command = loaded
+                .model()
+                .checks
+                .vale
+                .as_ref()
+                .map(|v| v.command.clone());
             let refused = match self.permission(&root, command.as_deref()) {
                 Permission::Run => None,
                 Permission::Refused(why) => Some(why),
@@ -218,15 +223,15 @@ impl Core {
             let Some(crate::core::Kind::Source(content, project)) = loaded.classify(&path) else {
                 continue;
             };
-            let snapshot = loaded.inc.snapshot();
+            let snapshot = loaded.workspace.index_snapshot();
             let id = snapshot.file(&content).map_or(FileId::new(1), |f| f.file);
             let terms = prose::glossary_words(&snapshot.glossary());
             self.prose.running = true;
             return Some(Job {
                 epoch: loaded.epoch,
                 root: loaded.root.clone(),
-                model: loaded.model.clone(),
-                model_text: loaded.model_text.clone(),
+                model: loaded.model().clone(),
+                model_text: loaded.model_text().to_owned(),
                 terms,
                 config: config.clone(),
                 path,
@@ -324,7 +329,7 @@ impl Core {
     ) {
         self.prose.running = false;
         let current = self.loaded.as_ref().is_some_and(|loaded| {
-            loaded.epoch == job.epoch && Arc::ptr_eq(&loaded.model, &job.model)
+            loaded.epoch == job.epoch && Arc::ptr_eq(loaded.model(), &job.model)
         }) && self.encoding == job.encoding
             && self.docs.get(&job.path).map(|d| d.version) == Some(job.version);
         if !current {
@@ -393,7 +398,7 @@ impl Core {
         let now = self
             .loaded
             .as_ref()
-            .and_then(|l| l.model.checks.vale.as_ref());
+            .and_then(|l| l.model().checks.vale.as_ref());
         if same_settings(before, now) {
             if before.map(|b| b.span) != now.map(|n| n.span)
                 && let Some(config) = self.config.clone()

@@ -1,7 +1,7 @@
 //! `ascribe rename`: what the editor's rename does, from the command line.
 //! A phrase, a dimension's value, a heading's id, or a page or fragment
 //! that moves, renamed everywhere it's used, through
-//! [`ascribe_lsp::rename`], which makes the editor's own edits.
+//! [`ascribe_edit::rename`], which makes the editor's own edits.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use ascribe_check::Project;
 use ascribe_core::path::normalize;
 use ascribe_core::{Coded, FileId, RelPath};
-use ascribe_lsp::{RenameError, Renamed, Renaming};
+use ascribe_edit::{RenameError, Renamed, Renaming};
 use ascribe_model::{ADDRESSES_FILE, AddressFile};
 use clap::Args as ClapArgs;
 use serde::Serialize;
@@ -19,6 +19,7 @@ use crate::answer::{self, Format, Projects};
 use crate::cli::Global;
 use crate::commands::addresses::MoveJson;
 use crate::exit;
+use crate::guard;
 
 /// The version of the command's JSON. It changes only when a field is
 /// removed or changes meaning.
@@ -40,6 +41,10 @@ pub struct Args {
     /// directory, or from the content root.
     #[arg(value_name = "NEW")]
     pub new: String,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what changed. `json` gives each changed file's whole
     /// text, the file that moves, and the entries recorded in
@@ -92,7 +97,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn rename(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let answer = match answer(&answer::FromDisk, global, args, true) {
+    let answer = match answer(&answer::FromDisk, global, args, Some(args.guard)) {
         Ok(answer) => answer,
         Err(stopped) => {
             let _ = writeln!(err, "error: {}", stopped.message);
@@ -101,7 +106,7 @@ fn rename(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
     };
     let result = match args.format {
         Format::Json => answer::write_json(out, &answer.json),
-        Format::Text => write_text(out, &answer.renamed),
+        Format::Text => write_text(out, &answer.renamed, args.guard.dry_run),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
@@ -133,14 +138,15 @@ impl Stopped {
 }
 
 /// Renames `args.target` to `args.new`, in the project `projects` loads,
-/// and writes the files and moves the one that moves when `write`: what
-/// `ascribe rename` does, and with `write` false what the MCP server's
-/// `ascribe_rename` gives.
+/// and writes the files and moves the one that moves when `write` gives the
+/// guard, which allows it, and it isn't a dry run: what `ascribe rename`
+/// does, and with `write` `None` what the MCP server's `ascribe_rename`
+/// gives.
 pub(crate) fn answer(
     projects: &dyn Projects,
     global: &Global,
     args: &Args,
-    write: bool,
+    write: Option<guard::Options>,
 ) -> Result<Answer, Stopped> {
     let entry = entry(&args.target, args.new.trim());
     let entry_given = entry.is_some();
@@ -188,7 +194,7 @@ pub(crate) fn answer(
         }
     };
     let renaming = renaming.map_err(|e| Stopped::failed(&e))?;
-    let renamed = match ascribe_lsp::rename(&config, &renaming) {
+    let renamed = match ascribe_edit::rename(&config, &renaming) {
         Ok(renamed) => renamed,
         Err(RenameError::Missing(message)) => {
             return Err(missing(if entry_given {
@@ -208,8 +214,17 @@ pub(crate) fn answer(
         ),
         None => Vec::new(),
     };
-    if write {
-        self::write(&renamed).map_err(|e| Stopped::failed(&e))?;
+    if let Some(guard) = write {
+        let changing: Vec<&Path> = renamed
+            .files
+            .iter()
+            .map(|f| f.path.as_path())
+            .chain(renamed.moved.as_ref().map(|(from, _)| from.as_path()))
+            .collect();
+        guard.allow(&changing).map_err(|e| Stopped::failed(&e))?;
+        if !guard.dry_run {
+            self::write(&renamed).map_err(|e| Stopped::failed(&e))?;
+        }
     }
     let json = RenameJson {
         schema_version: SCHEMA_VERSION,
@@ -228,7 +243,7 @@ pub(crate) fn answer(
             to: answer::path_from_here(to),
         }),
         recorded,
-        written: write,
+        written: write.is_some_and(|guard| !guard.dry_run),
     };
     Ok(Answer { renamed, json })
 }
@@ -278,8 +293,9 @@ pub(crate) struct RenameJson {
     /// records nothing, as for a phrase, a fragment, or a project with no
     /// `ascribe.addresses`.
     recorded: Vec<MoveJson>,
-    /// Whether the files were written and the file moved: the MCP server's
-    /// `ascribe_rename` writes nothing, and gives the changes to make.
+    /// Whether the files were written and the file moved: `--dry-run`, and
+    /// the MCP server's `ascribe_rename`, write nothing, and give the
+    /// changes to make.
     written: bool,
 }
 
@@ -429,8 +445,14 @@ fn write(renamed: &Renamed) -> Result<(), RenameCommandError> {
     Ok(())
 }
 
-/// What the rename changed, a line for each file, as the command writes it.
-fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
+/// What the rename changed, or with `--dry-run` would change, a line for
+/// each file, as the command writes it.
+fn write_text(out: &mut dyn Write, renamed: &Renamed, dry_run: bool) -> io::Result<()> {
+    let (changed, moved, record) = if dry_run {
+        ("would change", "would move", "would record")
+    } else {
+        ("changed", "moved", "recorded")
+    };
     // `ascribe.addresses` is said last: the move it records.
     let mut recorded = false;
     for file in &renamed.files {
@@ -441,7 +463,7 @@ fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
         let places = if file.edits == 1 { "place" } else { "places" };
         writeln!(
             out,
-            "changed {} ({} {places})",
+            "{changed} {} ({} {places})",
             answer::path_from_here(&file.path),
             file.edits
         )?;
@@ -449,13 +471,13 @@ fn write_text(out: &mut dyn Write, renamed: &Renamed) -> io::Result<()> {
     if let Some((from, to)) = &renamed.moved {
         writeln!(
             out,
-            "moved {} to {}",
+            "{moved} {} to {}",
             answer::path_from_here(from),
             answer::path_from_here(to)
         )?;
     }
     if recorded {
-        writeln!(out, "recorded the move in {}", ADDRESSES_FILE)?;
+        writeln!(out, "{record} the move in {}", ADDRESSES_FILE)?;
     }
     Ok(())
 }

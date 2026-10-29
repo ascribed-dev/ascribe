@@ -130,7 +130,7 @@ A line of a release target, one with `[releases.<target>]`, is written `release:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs-release.txt
 
-An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/content-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
+An image under the content root is a target too, named as a page is: `ascribe refs images/keys.png`. Its places are each file that shows it (`image`), links to it (`link`), names it in raw HTML such as `<img src>` (`html`), or names it in a frontmatter field such as `cover` (`frontmatter`): the uses that keep [`image-unused`](../checks/diagnostics/project-checks.md#ASC159) from reporting it. An image nothing uses has no places, and exits with `0`, as any target that exists does.
 
 A [memo file](../writing/memo-files.md) about the target is a place too, with the use `memo`, at its `about` line, after the uses. One whose `about` names a target that doesn't exist is listed under that target, so `ascribe refs` finds the memos a rename left behind.
 
@@ -165,7 +165,7 @@ What it renames, written as `ascribe refs` writes a target:
 | `keys.md#rotate-keys` | A heading's id, and each link and include that names it, each `[moved]` value in `ascribe.addresses` that names it, and each [memo file](../writing/memo-files.md)'s `about` that names it, in `memos/` and `.ascribe/memos/`. A heading with an `@id` has it changed. One whose id is made from its text gets an `@id` line under it, so its text stays, and links to the headings after it that were numbered after it follow. |
 | `keys.md` | The page or fragment moves to the new path, and each link and include to it, or in it, whose path changes is changed. So is what `ascribe.toml` names it by: its path in `[glossary] pages`, and a phrase that's a link to it; and each `[moved]` value in `ascribe.addresses` that leads to it, keeping its `#id`. So is each memo file's `about` that names it or a heading in it, keeping its `#id`, and its entry in its section's `pages` in [`ascribe.nav`](../navigation/index.md#the-file), which is taken out when it moves to another folder. A section written inline, as `sections = [{ … }]`, isn't followed: the file is left as it is, and `ascribe check` reports the name that's gone. The new path is read as the target was: from the current folder, or from the content root. A new path that changes only the file's case, such as `Keys.md`, renames it on a file system that matches names without case too, as macOS's and Windows' do. |
 
-A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder.
+A path is from the current folder, or from the content root, and the project is found from it; for a phrase or a value, the project is found from the current folder. `--config` names the project for any target, so `ascribe rename keys.md guides/keys.md --config docs` works from the repository's root. A page that isn't found is named with both places it was looked for. It writes the files it changes, then moves the page, and prints each file it changed, from the current folder. It changes only files git could put back, as every [command that writes](index.md#commands-that-write) does: a file with changes not committed is refused, and named, unless you pass `--force`. With `--dry-run`, it says what it would change and move, and changes nothing.
 
 Some things aren't renamed or moved:
 
@@ -177,10 +177,10 @@ Some things aren't renamed or moved:
 |---|---|
 | `0` | It renamed |
 | `1` | What it names doesn't exist: a phrase, a value, a page, or a heading |
-| `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, or a file it can't write |
+| `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, a file it can't write, or, without `--force`, a file git couldn't put back |
 
 @available: ascribe planned
-With `--format json`, it writes what it changed as one document, instead of a line for each file: `files`, each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was; `moved`, the page's `from` and `to`, when one moved; and `recorded`, each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/redirects.md#cli-addresses-move) writes one. `written` is `true`: the MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing. Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.
+With `--format json`, it writes what it changed as one document, instead of a line for each file: `files`, each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was; `moved`, the page's `from` and `to`, when one moved; and `recorded`, each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/redirects.md#cli-addresses-move) writes one. `written` is `true`, and `false` with `--dry-run`: the MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing. Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.
 
 ## `ascribe resolve`
 @id {permalink=true}: cli-resolve
@@ -198,12 +198,10 @@ When the build doesn't publish the page, it writes nothing to standard output, s
 
 A line of a [versioned build](../versions/index.md), such as `--build site@3.4`, resolves the page as that line publishes it, its route and links under the line's folder.
 
-@available: ascribe 0.4.4
 `--emit site` writes the page as the site output writes it, as `ascribe build --emit site` writes its file and `@ascribed/astro` receives it: Markdown with Ascribe's elements, such as `<ascribe-tabs>`, `<ascribe-note>`, and availability badges, from the code the build and the editor's preview use. It's what a site's integration is given, which the plain form can't show: what a switcher, a badge, or a glossary link becomes before a site draws it. `--emit plain`, the default, is the plain form above. `--emit` takes one output, not a list as `ascribe build --emit` does; a list is an error, exit `2`. From `examples/quill`, `ascribe resolve install-agent.md --build site --emit site` writes its Connect section as tabs, where the plain form writes a section for each arm:
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/resolve-site-connect.txt
 
-@available: ascribe 0.4.4
 The site form's frontmatter, under `--frontmatter`, is the site output's, a line of a versioned build writes the line's links, and its elements read without their script as [a page in the site output](site-output.md) says.
 
 `go:` and a permalink's name, in place of the page, shows the help a [product shows](../permalinks/in-your-product.md) for that permalink: its entry in the build's `_ascribe/help.json`, from the code that writes the file. The project is the current directory's, or `--config`'s. The text is the entry's title, its summary when the text doesn't start with it, its text, and "Read more" with its address, which needs [`[consumer] site`](../content-model/output.md#consumer):
@@ -224,7 +222,6 @@ With `--format json`, the document is as follows, and its [schema](../contracts/
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/resolve.json
 
-@available: ascribe 0.4.4
 `emit` says which output `text` is written as: `plain`, or `site` under `--emit site`, where `text` is the site output's file, with its frontmatter under `--frontmatter`.
 
 For `go:<name>`, the document is the entry as `help.json` writes it, with the file's `version`, `build`, and `line`, and the `name` asked for, after `schema_version` and `ascribe_version`. `version` is `help.json`'s format version, which a reader checks as it checks the file's. Its [schema](../contracts/json-reports/questions.md#ascribe-resolve-go) has every field:

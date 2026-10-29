@@ -880,13 +880,17 @@ mod tests {
                 limit: None,
             })
             .collect();
-        let sources = ascribe_check::Project::from_sources([(page, "# A\n".to_owned())]);
-        ascribe_check::Project::from_parts(
-            std::path::PathBuf::from("/nonexistent"),
-            RelPath::root(),
-            model,
-            String::new(),
-            sources,
+        let sources =
+            Vec::<(ascribe_core::RelPath, String)>::from_iter([(page, "# A\n".to_owned())]);
+        ascribe_check::Project::new(
+            ascribe_check::in_memory(
+                std::path::PathBuf::from("/nonexistent"),
+                RelPath::root(),
+                model,
+                String::new(),
+                sources,
+            )
+            .snapshot(),
         )
     }
 

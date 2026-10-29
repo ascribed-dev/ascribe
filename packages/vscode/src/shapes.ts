@@ -20,6 +20,7 @@
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
 // - AddressesParams (the language server, sending `ascribe/addresses`)
 // - ModelReport (`ascribe model --format json`)
+// - AgentsSyncReport (`ascribe agents sync --format json`)
 
 /** A problem acknowledged as intended. */
 export interface AcknowledgedEntry {
@@ -71,6 +72,9 @@ export interface AddressesParams {
   diagnostics: unknown[];
 }
 
+/** An agent that reads a file `sync` writes, as `sync` names it. */
+export type Agent = "claude_code" | "codex" | "copilot" | "copilot_cloud" | "cursor" | "gemini_cli";
+
 /**
  * The answer to `ascribe/agentPrompt`, or `null` when there's nothing to
  * prompt about: the file has no problem, the diagnostic is no longer
@@ -82,6 +86,41 @@ export interface AgentPromptResult {
    * link to carry.
    */
   prompt: string;
+}
+
+/**
+ * What `ascribe agents sync --format json` writes: each file it writes,
+ * and what it has to say.
+ */
+export interface AgentsSyncReport {
+  /**
+   * The version of this schema. It changes only when a field is removed
+   * or changes meaning.
+   */
+  schema_version: number;
+  /** The version of Ascribe that wrote it. */
+  ascribe_version: string;
+  /** Whether it ran with `--check`, which writes nothing. */
+  check: boolean;
+  /** Whether it wrote the files: false with `--check` or `--dry-run`. */
+  written: boolean;
+  /** Each file, in the order it was first planned. */
+  files: SyncFile[];
+  /**
+   * The notes for the person running it, which it also writes to
+   * standard error.
+   */
+  notes: string[];
+  /**
+   * What an agent doesn't read of what's written, and the target that
+   * adds it, a sentence each.
+   */
+  unread: string[];
+  /**
+   * With `--cloud` and no `--agent`, the MCP server's JSON to paste into
+   * the repository's settings for Copilot's cloud agent; else `null`.
+   */
+  mcp_settings: unknown;
 }
 
 /**
@@ -419,7 +458,9 @@ export interface CheckReport {
   /**
    * With `--fix`, the safe fixes it applied, in file order and, within a
    * file, in the order of their diagnostics; the rest of the report is
-   * the check after them. Left out when none was applied.
+   * the check after them. With `--dry-run`, the fixes it would apply,
+   * none of which was, and the check is of the files as they are. Left
+   * out when there's none.
    */
   fixed?: FixedEntry[];
 }
@@ -797,7 +838,8 @@ export interface Entry {
   unpublished: boolean;
   /**
    * How to fix it, in general: the diagnostics reference's advice for its
-   * code.
+   * code, in Markdown, whose links are the docs' permalinks, such as
+   * `https://ascribed-dev.com/go/22-checks/`.
    */
   help: string;
   /**
@@ -1080,7 +1122,7 @@ export interface InventoryValue {
 }
 
 /** Why a build leaves a page out (SPEC §9.3). */
-export type LeftOut = "variant" | "availability";
+export type LeftOut = "variant" | "availability" | "draft";
 
 /** A file to create, empty. */
 export interface LspCreateFile {
@@ -1170,13 +1212,13 @@ export interface ModelApi {
   /** The spec's file, from the folder `ascribe.toml` is in. */
   spec: string;
   /**
-   * Where its reference is: the renderer's page, or the template of an
-   * operation's address, as written.
+   * Where its reference is: the renderer's page, or an address
+   * pattern, as written.
    */
   reference: string;
   /**
    * The renderer its reference is published with, `redoc`; absent when
-   * `reference` is a template of an operation's address.
+   * `reference` is an address pattern.
    */
   renderer?: string;
 }
@@ -2672,6 +2714,16 @@ export interface Summary {
   by_code?: CodeCount[];
   /** With `--summary`: how many diagnostics are in each file, most first. */
   by_file?: FileCount[];
+}
+
+/** A file in `ascribe agents sync --format json`. */
+export interface SyncFile {
+  /** Its path, from the current directory, `/`-separated. */
+  path: string;
+  /** Whether it changed: with `check`, whether it's out of date. */
+  changed: boolean;
+  /** The agents that read it. */
+  read_by: Agent[];
 }
 
 /** An attribute a widget accepts. */

@@ -138,7 +138,7 @@ fn an_unplaced_page_is_advice_on_it_and_fix_places_it() {
             )]
         )]
     );
-    let fixed = ascribe(dir.path(), &["check", "--fix"]);
+    let fixed = ascribe(dir.path(), &["check", "--fix", "--force"]);
     assert!(
         stdout(&fixed).contains("fixed 1 problem in ascribe.nav"),
         "{}",
@@ -168,7 +168,7 @@ fn sections_written_inline_get_the_advice_without_a_fix() {
         "{problems:?}"
     );
     // Tables appended after the inline list would be a second `sections`.
-    ascribe(dir.path(), &["check", "--fix"]);
+    ascribe(dir.path(), &["check", "--fix", "--force"]);
     assert_eq!(read(&nav), text);
     assert_eq!(nav_problems(dir.path()), problems);
 }
@@ -233,7 +233,7 @@ fn fix_leaves_the_order_a_reader_sees_as_it_was() {
     };
     let before = built();
 
-    let fixed = ascribe(root, &["check", "--fix"]);
+    let fixed = ascribe(root, &["check", "--fix", "--force"]);
     assert!(
         stdout(&fixed).contains("in ascribe.nav"),
         "{}",

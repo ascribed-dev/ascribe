@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Show an example from the code
-description: Declare a folder of code as a source, mark a region in a file, and show it on a page with @snippet, so the example changes when the code does.
+description: "Declare a folder of code as a source, mark a region in a file, and show it on a page with `@snippet`, so the example changes when the code does."
 ---
 
 With `@snippet`, a page takes a code example from the file itself, and Ascribe reads the file whenever it checks, builds, or diffs, so changing the code changes every page that shows it. [Examples and drift](index.md) says what Ascribe reports when the code changes.
@@ -17,7 +17,7 @@ include = ["service/**", "examples/**"]
 ignore = ["**/node_modules/**"]
 ```
 
-The folder must be in the same git repository as the project. When the code is in another repository, see [Keep the docs in another repository](docs-repository.md). See [`[sources.<name>]`](../content-model/output.md#18-sourcesname) for every key.
+The folder must be in the same git repository as the project. When the code is in another repository, see [Keep the docs in another repository](docs-repository.md). See [`[sources.<name>]`](../content-model/sources.md#20-sourcesname) for every key.
 
 ## 2. Mark a region in the code
 

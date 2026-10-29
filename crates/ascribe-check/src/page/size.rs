@@ -1,17 +1,24 @@
 //! `page-size`: a page whose plain Markdown, in a build, is as long as the
 //! limit or longer. The plain output is what an agent reads when a site
 //! serves a page's Markdown, so the check measures it, rendered as the build
-//! renders it.
+//! renders it. Rendering is `ascribe-emit`'s, which this crate doesn't use:
+//! the caller gives the renderer, a [`PlainMarkdown`], with
+//! [`Project::with_plain_markdown`](crate::Project::with_plain_markdown).
 
 use std::ops::Range;
 use std::path::Path;
 
 use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
-use ascribe_emit::{EmitContext, PlainEmitter, emit_page};
 use ascribe_model::Build;
 use ascribe_resolve::{Project, ResolvedPage};
 
 use super::collect::Found;
+
+/// Renders one page's plain Markdown in a build, as the build writes it:
+/// `ascribe_emit::plain_markdown`. `None` when the page can't be rendered,
+/// which its other problems say.
+pub type PlainMarkdown =
+    fn(index: &Project, root: &Path, build: &Build, page: &ResolvedPage) -> Option<String>;
 
 /// The size a page passes under when no limit is set: the Web Documentation
 /// Delivery Spec's (0.6.0), in characters of Markdown.
@@ -40,13 +47,14 @@ pub fn limit(index: &Project) -> Option<u64> {
 /// The page's `page-size` problem in `build`, if its plain Markdown has
 /// `limit` characters or more. It's reported at the page's first line.
 pub(super) fn page_size(
+    render: PlainMarkdown,
     index: &Project,
     root: &Path,
     build: &Build,
     page: &ResolvedPage,
     limit: u64,
 ) -> Option<Found> {
-    let text = markdown(index, root, build, page)?;
+    let text = render(index, root, build, page)?;
     let size = text.chars().count() as u64;
     if size < limit {
         return None;
@@ -57,7 +65,7 @@ pub(super) fn page_size(
         .with_arg("limit", thousands(limit))
         .with_arg("build", build.name.clone())
         .with_arg("sections", sections(&text));
-    for (at, size) in largest_parts(index, root, build, page) {
+    for (at, size) in largest_parts(render, index, root, build, page) {
         let label = format!("`{}`: {} characters", line_at(index, at), thousands(size));
         issue = issue.with_related(at, label);
     }
@@ -68,28 +76,16 @@ pub(super) fn page_size(
 }
 
 /// The size `page-size` measures: the characters of the page's plain
-/// Markdown in `build`, as the build writes it. `None` when the page can't
+/// Markdown in `build`, as `render` writes it. `None` when the page can't
 /// be rendered, which its other problems say.
 pub fn markdown_size(
+    render: PlainMarkdown,
     index: &Project,
     root: &Path,
     build: &Build,
     page: &ResolvedPage,
 ) -> Option<u64> {
-    markdown(index, root, build, page).map(|text| text.chars().count() as u64)
-}
-
-/// The page's plain Markdown in `build`.
-fn markdown(index: &Project, root: &Path, build: &Build, page: &ResolvedPage) -> Option<String> {
-    let cx = EmitContext::new(index, root, build);
-    // As the build writes it: with the outputs for agents on, the pointer
-    // to llms.txt is part of the page. One page alone doesn't learn the
-    // build's pages (`PlainEmitter::learn_pages`), so a link's fragment is
-    // its page id and a glossary link keeps its HTML address: a few
-    // characters off, the same for every caller, the editor's included.
-    emit_page(&PlainEmitter::new(index.model()), &cx, page)
-        .ok()
-        .map(|page| page.text)
+    render(index, root, build, page).map(|text| text.chars().count() as u64)
 }
 
 /// The page's largest parts, largest first, at most [`MAX_PARTS`]: its
@@ -99,6 +95,7 @@ fn markdown(index: &Project, root: &Path, build: &Build, page: &ResolvedPage) ->
 /// the `@include` line. An include that's exactly one section is named as
 /// the section. Each part's size is what it adds to the page's Markdown.
 fn largest_parts(
+    render: PlainMarkdown,
     index: &Project,
     root: &Path,
     build: &Build,
@@ -134,13 +131,13 @@ fn largest_parts(
         blocks: Vec::new(),
         ..page.clone()
     };
-    let empty = markdown_size(index, root, build, &part).unwrap_or(0);
+    let empty = markdown_size(render, index, root, build, &part).unwrap_or(0);
     let mut parts: Vec<(Location, u64)> = sections
         .into_iter()
         .chain(includes)
         .filter_map(|(at, range)| {
             part.blocks = blocks[range].to_vec();
-            let size = markdown_size(index, root, build, &part)?;
+            let size = markdown_size(render, index, root, build, &part)?;
             Some((at, size.saturating_sub(empty)))
         })
         .collect();

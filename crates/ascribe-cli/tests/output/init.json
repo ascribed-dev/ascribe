@@ -2,8 +2,10 @@
   "schema_version": 2,
   "ascribe_version": "{version}",
   "written": [
-    "ascribe.toml"
+    "ascribe.toml",
+    "ascribe.addresses"
   ],
+  "dry_run": false,
   "content_root": "docs",
   "content_root_made": true,
   "pages": 0,

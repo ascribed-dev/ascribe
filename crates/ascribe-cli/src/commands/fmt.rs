@@ -15,7 +15,9 @@
 //! - **Without `--check`** files are rewritten in place, and each file that
 //!   changed is listed. **With `--check`** nothing is written, and each file
 //!   that would change is listed. **With `--format json`** the list is one
-//!   JSON document with each file's edits.
+//!   JSON document with each file's edits. **With `--format github`**, only
+//!   with `--check`, each file that would change is a GitHub Actions
+//!   workflow command, with its path from the repository's root.
 //! - **Exit status.** `0` when nothing needed formatting (`--check`) or every
 //!   file was formatted; `1` under `--check` when a file would change; `2` for a
 //!   problem: no project, an invalid model, an unreadable path or file, or a
@@ -25,19 +27,22 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{Diagnostic, LoadError, LocateError, Project};
+use ascribe_check::Diagnostic;
 use ascribe_core::diagnostics::{MODEL_TOML_SYNTAX, SOURCE_UNREADABLE};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, FileId, Issue, LineIndex, Location, Span, TextEdit};
 use ascribe_fmt::{FormatFilesError, Formatted};
 use ascribe_resolve::{DiskFs, Layout};
-use clap::Args as ClapArgs;
+use ascribe_workspace::{LoadError, LocateError};
+use clap::{Args as ClapArgs, ValueEnum};
 use serde::Serialize;
 
-use crate::answer::{self, Format};
+use crate::answer;
 use crate::cli::Global;
 use crate::context::locate;
 use crate::exit;
+use crate::guard;
+use crate::report::github;
 use crate::report::json::Edit;
 
 mod changes;
@@ -48,19 +53,21 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// Arguments of `ascribe fmt`.
 #[derive(Debug, Default, ClapArgs)]
 pub struct Args {
-    /// Change nothing, and list each change it would make: the file and
-    /// line, and the lines as they are and as they'd be.
+    /// Change nothing, and show what would change as a unified diff, which
+    /// `git apply` applies.
     ///
     /// Exits with 1 if any file would change. Use it in CI.
     #[arg(long)]
     pub check: bool,
 
-    /// Change nothing, and show what would change as a unified diff, which
-    /// `git apply` applies.
-    ///
-    /// Implies `--check`, and exits as it does.
-    #[arg(long, conflicts_with = "format")]
+    /// `--check`'s old spelling, kept for a release.
+    #[arg(long, hide = true, conflicts_with = "format")]
     pub diff: bool,
+
+    /// `--dry-run`, which lists each change it would make, the file and
+    /// line and the lines as they are and as they'd be, and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// Files and directories to format: the `.md` files among them.
     ///
@@ -77,19 +84,47 @@ pub struct Args {
     /// How to show what changed.
     ///
     /// `json` lists each file with the edits that format it; with
-    /// `--check`, that's the edits without writing them.
-    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    /// `--check`, that's the edits without writing them. `github`, only with
+    /// `--check`, is for GitHub Actions.
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = Format::Text,
+        value_name = "FORMAT",
+        requires_if("github", "check")
+    )]
     pub format: Format,
 }
 
+/// How `ascribe fmt` shows what changed.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum Format {
+    /// Short text, for people and agents to read.
+    #[default]
+    #[value(alias = "concise")]
+    Text,
+    /// One JSON document, for tools.
+    Json,
+    /// A GitHub Actions workflow command per file that would change, which
+    /// shows it on the pull request at its first change, with the path from
+    /// the repository's root: for CI.
+    Github,
+}
+
 impl Args {
-    /// Whether it only checks, writing nothing: `--check`, or `--diff`.
+    /// Whether it fails when a file would change: `--check`, or its old
+    /// spelling, `--diff`.
     fn checks(&self) -> bool {
         self.check || self.diff
     }
+
+    /// Whether it writes nothing: `--check`, `--diff`, or `--dry-run`.
+    fn writes_nothing(&self) -> bool {
+        self.checks() || self.guard.dry_run
+    }
 }
 
-/// A file as `--check` and `--diff` name it: from the current directory
+/// A file as `--check` and `--dry-run` name it: from the current directory
 /// when it's inside it, with `/` separators, so `git apply` run there finds
 /// it; otherwise in full.
 fn shown(file: &Path) -> String {
@@ -99,6 +134,53 @@ fn shown(file: &Path) -> String {
         .and_then(|here| relative_path(&normalize(&here), &path))
         .filter(ascribe_core::RelPath::is_inside)
         .map_or_else(|| path.display().to_string(), |rel| rel.to_string())
+}
+
+/// A file as `--format github` names it: from the repository's root, when
+/// it's in the project and the project is in a repository; otherwise as
+/// `--check` names it.
+fn in_repository(global: &Global) -> impl Fn(&Path) -> String {
+    let project = locate(global)
+        .ok()
+        .map(|config| normalize(&std::path::absolute(&config).unwrap_or(config)))
+        .and_then(|config| config.parent().map(Path::to_owned));
+    let prefix = project
+        .as_deref()
+        .and_then(|dir| ascribe_diff::Repository::discover(dir).ok())
+        .map(|repo| repo.prefix);
+    move |file| {
+        let path = normalize(&std::path::absolute(file).unwrap_or(file.to_owned()));
+        match (&project, &prefix) {
+            (Some(project), Some(prefix)) => relative_path(project, &path)
+                .filter(ascribe_core::RelPath::is_inside)
+                .map_or_else(
+                    || shown(file),
+                    |rel| github::in_repository(prefix, rel.as_str()),
+                ),
+            _ => shown(file),
+        }
+    }
+}
+
+/// The workflow command for a file that would change: an error at its first
+/// change, which says how many there are.
+fn annotation(file: &str, found: &[changes::Change]) -> String {
+    let line = found.first().map_or(1, |c| c.line + 1);
+    let places = match found.len() {
+        1 => "1 place".to_owned(),
+        n => format!("{n} places"),
+    };
+    github::command(
+        "error",
+        &[
+            ("file", file.to_owned()),
+            ("line", line.to_string()),
+            ("title", "ascribe fmt".to_owned()),
+        ],
+        &format!(
+            "`ascribe fmt` would change this file in {places}; run `ascribe fmt` to format it"
+        ),
+    )
 }
 
 /// What `ascribe fmt --format json` writes: one document. Fields can be
@@ -112,10 +194,10 @@ pub(crate) struct FmtReport {
     schema_version: u32,
     /// The version of Ascribe that wrote it.
     ascribe_version: &'static str,
-    /// Whether the files were rewritten: `false` with `--check`, which
-    /// writes nothing.
+    /// Whether the files were rewritten: `false` with `--check` or
+    /// `--dry-run`, which write nothing.
     written: bool,
-    /// Each file that changed, or with `--check` would change, in path
+    /// Each file that changed, or with `--check` or `--dry-run` would change, in path
     /// order, with the edits that format it.
     files: Vec<FmtFile>,
     /// The files left alone because a symbolic link on the way to them
@@ -150,18 +232,30 @@ struct RefusedFile {
 pub fn run(global: &Global, args: Args) -> ExitCode {
     let mut out = std::io::stdout().lock();
     let mut err = std::io::stderr().lock();
+    if let Err(e) = guarded(global, &args) {
+        return exit::code(exit::fail(&mut err, &e));
+    }
     let formatted = match args.format {
-        Format::Text if args.diff => format_all(global, &args, &mut |file, source, edits| {
+        Format::Text if args.checks() => format_all(global, &args, &mut |file, source, edits| {
             let found = changes::changes(source, edits);
             let _ = changes::write_diff(&mut out, &shown(file), source, &found);
         }),
-        Format::Text if args.check => format_all(global, &args, &mut |file, source, edits| {
-            let found = changes::changes(source, edits);
-            let _ = changes::write_lines(&mut out, &shown(file), &found);
-        }),
+        Format::Text if args.guard.dry_run => {
+            format_all(global, &args, &mut |file, source, edits| {
+                let found = changes::changes(source, edits);
+                let _ = changes::write_lines(&mut out, &shown(file), &found);
+            })
+        }
         Format::Text => format_all(global, &args, &mut |file, _, _| {
             let _ = writeln!(out, "formatted {}", file.display());
         }),
+        Format::Github => {
+            let in_repository = in_repository(global);
+            format_all(global, &args, &mut |file, source, edits| {
+                let found = changes::changes(source, edits);
+                let _ = writeln!(out, "{}", annotation(&in_repository(file), &found));
+            })
+        }
         Format::Json => answer(global, &args).and_then(|(done, report)| {
             match answer::written(answer::write_json(&mut out, &report), &mut err) {
                 Some(code) => Err(FmtError::Written(code)),
@@ -190,7 +284,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
         );
     }
     let changed = done.changed.len();
-    if args.checks() && changed > 0 {
+    if args.writes_nothing() && changed > 0 {
         let _ = writeln!(
             err,
             "{changed} file{} would be reformatted",
@@ -229,6 +323,9 @@ pub enum FmtError {
     /// A file couldn't be read, written, or formatted.
     #[error(transparent)]
     Format(#[from] FormatFilesError),
+    /// The git guard refused to change a file.
+    #[error(transparent)]
+    Guard(#[from] guard::GuardError),
     /// The report couldn't be written; it's been reported, with this exit
     /// code.
     #[error("the report couldn't be written")]
@@ -241,6 +338,7 @@ impl Coded for FmtError {
             FmtError::Locate(e) => e.code(),
             FmtError::Model { error, .. } => error.code(),
             FmtError::Format(e) => e.code(),
+            FmtError::Guard(e) => e.code(),
             FmtError::Written(_) => "report_unwritable",
         }
     }
@@ -249,13 +347,25 @@ impl Coded for FmtError {
 /// The slugs of the content model's problems.
 fn model_slugs(error: &LoadError) -> Vec<&str> {
     match error {
-        LoadError::Model { diagnostics, .. } => {
-            diagnostics.iter().map(|d| d.slug.as_str()).collect()
-        }
+        LoadError::Model { issues, .. } => issues.iter().map(|i| i.slug.as_str()).collect(),
         // The file couldn't be read, or isn't UTF-8: the content model's
         // syntax error.
         LoadError::Read { .. } => vec![MODEL_TOML_SYNTAX.as_str()],
     }
+}
+
+/// Whether the git guard lets `ascribe fmt` change the files it would:
+/// always with `--force`, or when it writes nothing; otherwise, a pass that
+/// writes nothing lists them first, and git must be able to put back each.
+fn guarded(global: &Global, args: &Args) -> Result<(), FmtError> {
+    if args.guard.force || args.writes_nothing() {
+        return Ok(());
+    }
+    let mut changing = Vec::new();
+    format_files(global, args, true, &mut |file, _, _| {
+        changing.push(file.to_owned());
+    })?;
+    Ok(args.guard.allow(&changing)?)
 }
 
 /// Formats every file, listing each that changed (or would have), and
@@ -265,18 +375,31 @@ fn format_all(
     options: &Args,
     on_changed: &mut dyn FnMut(&Path, &str, &[TextEdit]),
 ) -> Result<Formatted, FmtError> {
+    format_files(global, options, options.writes_nothing(), on_changed)
+}
+
+/// Formats every file, writing each that changed unless `nothing`, and
+/// listing it.
+fn format_files(
+    global: &Global,
+    options: &Args,
+    nothing: bool,
+    on_changed: &mut dyn FnMut(&Path, &str, &[TextEdit]),
+) -> Result<Formatted, FmtError> {
     let config = locate(global)?;
-    let file = Project::load_model(&config).map_err(|error| FmtError::Model {
-        config: config.clone(),
-        error,
-    })?;
+    let file = ascribe_check::LOADER
+        .load_model(&config)
+        .map_err(|error| FmtError::Model {
+            config: config.clone(),
+            error,
+        })?;
     let model = file.model;
     let boundary = DiskFs::new(file.root, &Layout::from_model(&model));
     Ok(ascribe_fmt::format_files(
         &config,
         &model,
         &options.paths,
-        options.checks(),
+        nothing,
         &boundary,
         on_changed,
     )?)
@@ -317,7 +440,7 @@ pub(crate) fn answer(global: &Global, options: &Args) -> Result<(Formatted, FmtR
     let report = FmtReport {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
-        written: !options.checks(),
+        written: !options.writes_nothing(),
         files,
         refused,
     };

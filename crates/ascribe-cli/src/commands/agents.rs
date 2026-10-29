@@ -9,8 +9,10 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{LocateError, MODEL_FILE, Project};
+use ascribe_check::MODEL_FILE;
+use ascribe_workspace::LocateError;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
+use serde::Serialize;
 
 use crate::agents::sync::{self, Agent, Plan};
 use crate::agents::{checker, command, copilot, hook, index as index_file, prompts, skill};
@@ -18,6 +20,7 @@ use crate::answer::{self, Format, FromDisk};
 use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
+use crate::guard;
 
 /// Arguments of `ascribe agents`.
 #[derive(Debug, ClapArgs)]
@@ -128,6 +131,10 @@ pub struct IndexArgs {
     #[arg(long, value_name = "DIR")]
     pub pages: Option<PathBuf>,
 
+    /// `--dry-run` and `--force`, for what `--into` and `--pages` write.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// How to show the answer.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -157,6 +164,10 @@ pub struct PromptArgs {
     /// List the prompts, with their arguments, instead.
     #[arg(long, conflicts_with = "name")]
     pub list: bool,
+
+    /// How to show the prompt, or the list.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
 }
 
 /// `key=value`, split at the first `=`.
@@ -170,9 +181,14 @@ fn key_value(given: &str) -> Result<(String, String), String> {
 /// Arguments of `ascribe agents sync`.
 #[derive(Debug, ClapArgs)]
 pub struct SyncArgs {
-    /// Write nothing, and exit with 1 when a file is out of date: for CI.
+    /// Write nothing, print how each file out of date would change as a
+    /// unified diff, and exit with 1 when one is: for CI.
     #[arg(long)]
     pub check: bool,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// Also write this target's files.
     ///
@@ -211,6 +227,111 @@ pub struct SyncArgs {
     /// --check, a file written with another command is out of date.
     #[arg(long, value_name = "COMMAND", value_parser = project_command)]
     pub command: Option<String>,
+
+    /// How to show what was written, or with --check what's out of date.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
+}
+
+/// The version of `sync --format json`'s schema.
+const SYNC_SCHEMA_VERSION: u32 = 1;
+
+/// The version of `prompt --format json`'s schema, and of `prompt --list
+/// --format json`'s.
+const PROMPT_SCHEMA_VERSION: u32 = 1;
+
+/// What `ascribe agents sync --format json` writes: each file it writes,
+/// and what it has to say.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct SyncJson<'a> {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// Whether it ran with `--check`, which writes nothing.
+    check: bool,
+    /// Whether it wrote the files: false with `--check` or `--dry-run`.
+    written: bool,
+    /// Each file, in the order it was first planned.
+    files: Vec<SyncFile<'a>>,
+    /// The notes for the person running it, which it also writes to
+    /// standard error.
+    notes: Vec<&'a str>,
+    /// What an agent doesn't read of what's written, and the target that
+    /// adds it, a sentence each.
+    unread: Vec<&'a str>,
+    /// With `--cloud` and no `--agent`, the MCP server's JSON to paste into
+    /// the repository's settings for Copilot's cloud agent; else `null`.
+    mcp_settings: Option<serde_json::Value>,
+}
+
+/// A file in `ascribe agents sync --format json`.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct SyncFile<'a> {
+    /// Its path, from the current directory, `/`-separated.
+    path: String,
+    /// Whether it changed: with `check`, whether it's out of date.
+    changed: bool,
+    /// The agents that read it.
+    read_by: &'a [Agent],
+}
+
+/// What `ascribe agents prompt <NAME> --format json` writes: the prompt.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct PromptJson<'a> {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// The prompt's name.
+    name: &'a str,
+    /// The prompt, as `--format text` prints it.
+    text: &'a str,
+}
+
+/// What `ascribe agents prompt --list --format json` writes: every prompt,
+/// with its arguments.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct PromptListJson {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// The prompts, in order.
+    prompts: Vec<PromptListed>,
+}
+
+/// A prompt in `ascribe agents prompt --list --format json`.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct PromptListed {
+    /// Its name, which `ascribe agents prompt` takes.
+    name: &'static str,
+    /// A short name for people.
+    title: &'static str,
+    /// What it asks an agent to do.
+    description: &'static str,
+    /// Its arguments, which `--arg key=value` gives.
+    arguments: Vec<PromptArgument>,
+}
+
+/// An argument of a prompt.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct PromptArgument {
+    /// Its name, the `key` of `--arg key=value`.
+    name: &'static str,
+    /// What it is.
+    description: &'static str,
+    /// Whether the prompt needs it.
+    required: bool,
 }
 
 /// What `sync` can write.
@@ -266,7 +387,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
             let text = if args.file == skill::DIRECTIVES {
                 skill::directives_md()
             } else {
-                skill::skill_md(None, command::PLAIN)
+                skill::skill_md(None, command::PLAIN, None)
             };
             let result = out.write_all(text.as_bytes());
             answer::written(result, &mut err).unwrap_or(exit::OK)
@@ -309,7 +430,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         Ok(config) => vec![config],
         // Above several projects and in none: each project's files.
         Err(LocateError::NotFound { dir, below }) if !below.is_empty() => {
-            let below = Project::find_below(&dir, usize::MAX);
+            let below = ascribe_workspace::find_below(&dir, usize::MAX);
             let names: Vec<String> = below.iter().map(|d| shown(d)).collect();
             let _ = writeln!(
                 err,
@@ -329,8 +450,8 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     };
     let mut projects = Vec::new();
     for config in &configs {
-        match Project::load(config) {
-            Ok(project) => projects.push(project.with_today(crate::clock::today())),
+        match ascribe_check::load(config) {
+            Ok(workspace) => projects.push(crate::context::checked(&workspace)),
             Err(e) => return answer::report_failure(err, &Failure::Load(e)),
         }
     }
@@ -343,16 +464,26 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
             Err(e) => return exit::fail(err, &e),
         }
     }
-    let mut notes: Vec<&String> = Vec::new();
+    let mut notes: Vec<String> = Vec::new();
     for note in plans.iter().flat_map(|plan| &plan.notes) {
-        if !notes.contains(&note) {
+        if !notes.contains(note) {
             let _ = writeln!(err, "note: {note}");
-            notes.push(note);
+            notes.push(note.clone());
         }
     }
     if args.check {
-        return check(&plans, out, err);
+        return check(&plans, &notes, args.format, out, err);
     }
+    let changed: Vec<&Path> = plans
+        .iter()
+        .flat_map(|plan| &plan.files)
+        .filter(|file| file.changes())
+        .map(|file| file.path.as_path())
+        .collect();
+    if let Err(e) = args.guard.allow(&changed) {
+        return exit::fail(err, &e);
+    }
+    let dry_run = args.guard.dry_run;
     // Several projects share files at the root, so each is planned again
     // once the one before it is written.
     let mut written: Vec<Recorded> = Vec::new();
@@ -361,7 +492,10 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     // setup steps is written, so its settings carry every server.
     let mut mcp_settings: Option<String> = None;
     for (i, project) in projects.iter().enumerate() {
-        let plan = if i == 0 {
+        // A dry run writes nothing, so the plans made first are the ones.
+        let plan = if dry_run {
+            plans.remove(0)
+        } else if i == 0 {
             plans.swap_remove(0)
         } else {
             match sync::plan(project, &targets, &options) {
@@ -369,7 +503,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
                 Err(e) => return exit::fail(err, &e),
             }
         };
-        if let Err(e) = plan.write() {
+        if !dry_run && let Err(e) = plan.write() {
             return exit::fail(err, &e);
         }
         record(&mut written, &plan);
@@ -382,14 +516,34 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
             mcp_settings = plan.mcp_settings;
         }
     }
+    if args.format == Format::Json {
+        let json = sync_json(
+            (false, !dry_run),
+            &written,
+            &notes,
+            &unread,
+            mcp_settings.as_deref(),
+        );
+        let result = answer::write_json(out, &json);
+        return answer::written(result, err).unwrap_or(exit::OK);
+    }
     let paths: Vec<String> = written.iter().map(|(path, ..)| shown(path)).collect();
     let width = paths.iter().map(|p| p.chars().count()).max().unwrap_or(0);
     let result = written
         .iter()
         .zip(&paths)
         .try_for_each(|((_, changed, readers), path)| {
-            let done = if *changed { "wrote" } else { "unchanged" };
-            writeln!(out, "{done:<9} {path:<width$}  read by {}", list(readers))
+            let done = match (*changed, dry_run) {
+                (false, _) => "unchanged",
+                (true, false) => "wrote",
+                (true, true) => "would write",
+            };
+            let pad = if dry_run { 11 } else { 9 };
+            writeln!(
+                out,
+                "{done:<pad$} {path:<width$}  read by {}",
+                list(readers)
+            )
         });
     let result = result.and_then(|()| {
         unread
@@ -410,6 +564,34 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         )
     });
     answer::written(result, err).unwrap_or(exit::OK)
+}
+
+/// What `sync --format json` writes about `files`: with `--check` or not,
+/// and written or not.
+fn sync_json<'a>(
+    (check, written): (bool, bool),
+    files: &'a [Recorded],
+    notes: &'a [String],
+    unread: &[&'a str],
+    mcp_settings: Option<&str>,
+) -> SyncJson<'a> {
+    SyncJson {
+        schema_version: SYNC_SCHEMA_VERSION,
+        ascribe_version: env!("CARGO_PKG_VERSION"),
+        check,
+        written,
+        files: files
+            .iter()
+            .map(|(path, changed, readers)| SyncFile {
+                path: shown(path),
+                changed: *changed,
+                read_by: readers,
+            })
+            .collect(),
+        notes: notes.iter().map(String::as_str).collect(),
+        unread: unread.to_vec(),
+        mcp_settings: mcp_settings.and_then(|json| serde_json::from_str(json).ok()),
+    }
 }
 
 /// A file `sync` writes: where, whether it changes, and who reads it.
@@ -483,10 +665,17 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
     let mut written = index_file::Written::default();
     if file.is_some() || folder.is_some() {
         let content = absolute(&project.root().join(project.content_root().as_str()));
-        written = match index_file::write(&answer, file.as_deref(), folder.as_deref(), &content) {
+        written = match index_file::write(
+            &answer,
+            file.as_deref(),
+            folder.as_deref(),
+            &content,
+            args.guard,
+        ) {
             Ok(written) => written,
             Err(e) => return exit::fail(err, &e),
         };
+        answer.written = !args.guard.dry_run;
     }
     answer.file = file.as_deref().map(shown);
     answer.changed = written.changed;
@@ -497,16 +686,22 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
     }
     // The index goes to standard output unless it's written into a file;
     // then what was written does.
+    let wrote = if args.guard.dry_run {
+        "would write"
+    } else {
+        "wrote"
+    };
+    let pad = wrote.len().max(9);
     let pages = answer.folder.as_deref().map(|folder| {
         let done = if written.pages_changed > 0 {
-            "wrote"
+            wrote
         } else {
             "unchanged"
         };
         let count = answer.pages.len();
         let noun = if count == 1 { "page" } else { "pages" };
         format!(
-            "{done:<9} {folder}  {count} {noun}, {} changed",
+            "{done:<pad$} {folder}  {count} {noun}, {} changed",
             written.pages_changed
         )
     });
@@ -517,12 +712,8 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
             }
         }),
         Some(file) => {
-            let done = if written.changed {
-                "wrote"
-            } else {
-                "unchanged"
-            };
-            writeln!(out, "{done:<9} {file}")
+            let done = if written.changed { wrote } else { "unchanged" };
+            writeln!(out, "{done:<pad$} {file}")
                 .and_then(|()| pages.map_or(Ok(()), |pages| writeln!(out, "{pages}")))
         }
     };
@@ -551,6 +742,30 @@ fn index(global: &Global, args: &IndexArgs, out: &mut dyn Write, err: &mut dyn W
 }
 
 fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    if args.list && args.format == Format::Json {
+        let list = PromptListJson {
+            schema_version: PROMPT_SCHEMA_VERSION,
+            ascribe_version: env!("CARGO_PKG_VERSION"),
+            prompts: prompts::PROMPTS
+                .iter()
+                .map(|p| PromptListed {
+                    name: p.name,
+                    title: p.title,
+                    description: p.description,
+                    arguments: p
+                        .arguments
+                        .iter()
+                        .map(|(name, description, required)| PromptArgument {
+                            name,
+                            description,
+                            required: *required,
+                        })
+                        .collect(),
+                })
+                .collect(),
+        };
+        return answer::written(answer::write_json(out, &list), err).unwrap_or(exit::OK);
+    }
     if args.list {
         let result = prompts::PROMPTS.iter().try_for_each(|p| {
             let arguments: Vec<String> = p
@@ -581,7 +796,21 @@ fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     };
     let arguments: prompts::Arguments = args.arguments.iter().cloned().collect();
     match named.text(&FromDisk, &arguments) {
-        Ok(text) => answer::written(out.write_all(text.as_bytes()), err).unwrap_or(exit::OK),
+        Ok(text) => {
+            let result = match args.format {
+                Format::Text => out.write_all(text.as_bytes()),
+                Format::Json => answer::write_json(
+                    out,
+                    &PromptJson {
+                        schema_version: PROMPT_SCHEMA_VERSION,
+                        ascribe_version: env!("CARGO_PKG_VERSION"),
+                        name: named.name,
+                        text: &text,
+                    },
+                ),
+            };
+            answer::written(result, err).unwrap_or(exit::OK)
+        }
         Err(message) => {
             let _ = writeln!(err, "error: {message}");
             exit::FAILURE
@@ -589,15 +818,47 @@ fn prompt(args: &PromptArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     }
 }
 
-fn check(plans: &[Plan], out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+fn check(
+    plans: &[Plan],
+    notes: &[String],
+    format: Format,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> u8 {
     let mut files = Vec::new();
     for plan in plans {
         record(&mut files, plan);
     }
-    let result = files.iter().try_for_each(|(path, changed, _)| {
-        let state = if *changed { "stale" } else { "up to date" };
-        writeln!(out, "{state:<10} {}", shown(path))
-    });
+    let result = match format {
+        Format::Text => {
+            let mut shown_once: Vec<&Path> = Vec::new();
+            plans
+                .iter()
+                .flat_map(|plan| &plan.files)
+                .filter(|file| file.changes())
+                .try_for_each(|file| {
+                    if shown_once.contains(&file.path.as_path()) {
+                        return Ok(());
+                    }
+                    shown_once.push(&file.path);
+                    let old = file.old.as_deref().unwrap_or_default();
+                    answer::write_unified_diff(out, &shown(&file.path), old, &file.new)
+                })
+        }
+        Format::Json => {
+            let mut unread: Vec<&str> = Vec::new();
+            for line in plans.iter().flat_map(|plan| &plan.unread) {
+                if !unread.contains(line) {
+                    unread.push(line);
+                }
+            }
+            let mcp_settings = plans.iter().rev().find_map(|p| p.mcp_settings.as_deref());
+            answer::write_json(
+                out,
+                &sync_json((true, false), &files, notes, &unread, mcp_settings),
+            )
+        }
+    };
     if let Some(code) = answer::written(result, err) {
         return code;
     }

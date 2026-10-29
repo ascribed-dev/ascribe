@@ -8,11 +8,13 @@ use std::cell::{OnceCell, RefCell};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 
-use ascribe_check::{Found, LoadError, LocateError, MODEL_FILE, Project};
+use ascribe_check::{Found, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, RelPath, diagnostics};
 use ascribe_query::QueryError;
+use ascribe_workspace::{LoadError, LocateError, WorkspaceSnapshot};
 use clap::ValueEnum;
 use serde::Serialize;
 
@@ -20,11 +22,14 @@ use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
 
-/// How to show an answer.
+/// How to show an answer: text, which `concise` names too, since an answer
+/// has no one-line form of its own, as CONTRIBUTING.md's command-line
+/// conventions say, or JSON.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Short text, for people and agents to read.
     #[default]
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -42,19 +47,21 @@ pub fn locate(global: &Global, path: Option<&Path>) -> Result<PathBuf, LocateErr
     };
     let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
     let start = normalize(&cwd.join(path));
-    Project::find_config(&start).ok_or_else(|| LocateError::not_found(start))
+    ascribe_workspace::find_config(&start).ok_or_else(|| LocateError::not_found(start))
 }
 
-/// A loaded project, and its source index once something asks for it.
+/// A snapshot of a loaded project, and what's kept with it between
+/// questions: what's kept belongs to the snapshot, and the next snapshot of
+/// the same project starts without it.
 pub struct Loaded {
-    /// The project.
+    /// The project as it was when this was made.
+    snapshot: WorkspaceSnapshot,
+    /// The checks' view of it, on today, with any text laid over it
+    /// ([`Loaded::with_source`]).
     pub project: Project,
-    index: OnceCell<ascribe_resolve::Project>,
     /// The source index with the base's specs, once a link to a missing
     /// operation asks for it; `None` inside when the base can't be read.
-    based_index: OnceCell<Option<ascribe_resolve::Project>>,
-    /// The index the page-level checks read, once a check asks for it.
-    page_index: OnceCell<ascribe_check::PageIndex>,
+    based_index: OnceCell<Option<Arc<ascribe_resolve::Project>>>,
     /// Each build's readings of its pages, once a search asks for the
     /// build.
     readings: ascribe_query::Readings,
@@ -71,13 +78,30 @@ struct Checked {
 }
 
 impl Loaded {
-    /// A project, not yet indexed.
-    pub fn new(project: Project) -> Loaded {
+    /// A snapshot of a project, checked as on today.
+    pub fn new(snapshot: WorkspaceSnapshot) -> Loaded {
+        let project = crate::context::checked_snapshot(snapshot.clone());
+        Loaded::over(snapshot, project)
+    }
+
+    /// Whether this is what's kept with `snapshot`.
+    pub fn is_of(&self, snapshot: &WorkspaceSnapshot) -> bool {
+        self.snapshot.same_as(snapshot)
+    }
+
+    /// The same project with the source file at `path` (a content path)
+    /// holding `text`: a file checked before it's saved
+    /// ([`Project::with_source`]). Nothing kept is shared.
+    pub fn with_source(&self, path: &RelPath, text: String) -> Loaded {
+        let project = self.project.with_source(path, text);
+        Loaded::over(self.snapshot.clone(), project)
+    }
+
+    fn over(snapshot: WorkspaceSnapshot, project: Project) -> Loaded {
         Loaded {
             project,
-            index: OnceCell::new(),
+            snapshot,
             based_index: OnceCell::new(),
-            page_index: OnceCell::new(),
             readings: ascribe_query::Readings::default(),
             checks: RefCell::new(Vec::new()),
         }
@@ -105,22 +129,15 @@ impl Loaded {
         Ok(found)
     }
 
-    /// The index the page-level checks read ([`ascribe_check::PageIndex`]),
-    /// made on first use.
-    pub fn page_index(&self) -> &ascribe_check::PageIndex {
-        self.page_index
-            .get_or_init(|| ascribe_check::PageIndex::new(&self.project))
-    }
-
     /// Each build's readings of its pages that searches have made, kept
     /// with the project.
     pub fn readings(&self) -> &ascribe_query::Readings {
         &self.readings
     }
 
-    /// The project's source index ([`Project::index`]), made on first use.
+    /// The project's source index ([`Project::index`]).
     pub fn index(&self) -> &ascribe_resolve::Project {
-        self.index.get_or_init(|| self.project.index())
+        self.project.index()
     }
 
     /// The project's source index keeping where each `operationId` was in
@@ -132,11 +149,10 @@ impl Loaded {
         self.based_index
             .get_or_init(|| {
                 let apis = ascribe_diff::base_apis(self.project.root(), None, false)?;
-                let mut index = self.project.index();
-                index.remember_base_apis(&apis);
-                Some(index)
+                let based = self.project.clone().with_base_apis(Arc::new(apis));
+                Some(Arc::clone(based.index()))
             })
-            .as_ref()
+            .as_deref()
     }
 }
 
@@ -156,8 +172,7 @@ pub struct FromDisk;
 
 impl Projects for FromDisk {
     fn load(&self, config: &Path) -> Result<Rc<Loaded>, LoadError> {
-        Project::load(config)
-            .map(|project| Rc::new(Loaded::new(project.with_today(crate::clock::today()))))
+        ascribe_check::load(config).map(|workspace| Rc::new(Loaded::new(workspace.snapshot())))
     }
 }
 
@@ -214,19 +229,17 @@ impl Stop {
 /// What a project that couldn't be loaded is reported as.
 fn failure_message(failure: &Failure) -> String {
     match failure {
-        Failure::Load(LoadError::Model {
-            diagnostics: found, ..
-        }) => {
+        Failure::Load(LoadError::Model { issues, .. }) => {
             let mut text = format!("{MODEL_FILE} has errors; `ascribe check` lists them");
             // An unknown key's message names this Ascribe's version, which
             // says when the project is written for a newer one: so the
             // first is quoted, where `ascribe check` isn't run.
-            if let Some(unknown) = found
+            if let Some(unknown) = issues
                 .iter()
-                .find(|d| d.slug == diagnostics::MODEL_UNKNOWN_KEY)
+                .find(|i| i.slug == diagnostics::MODEL_UNKNOWN_KEY)
             {
                 text.push_str(", among them: ");
-                text.push_str(&unknown.message);
+                text.push_str(&ascribe_check::Diagnostic::from_issue(unknown).message);
             }
             text
         }
@@ -289,7 +302,10 @@ pub fn content_paths(project: &Project, given: &Path) -> Vec<RelPath> {
 /// The two readings of [`content_paths`], in its order, each `None` where
 /// it reads nothing: so a second path can be read the way a first was.
 pub fn content_path_readings(project: &Project, given: &Path) -> [Option<RelPath>; 2] {
-    let content = normalize(&project.root().join(project.content_root().as_str()));
+    // Absolute, as the current folder is: `--config docs` makes a root
+    // that's relative, and no path from `/` is relative to it.
+    let content = project.root().join(project.content_root().as_str());
+    let content = normalize(&std::path::absolute(&content).unwrap_or(content));
     let from_cwd = std::env::current_dir()
         .ok()
         .and_then(|cwd| relative_path(&content, &normalize(&cwd.join(given))))
@@ -305,6 +321,24 @@ pub fn content_path_readings(project: &Project, given: &Path) -> [Option<RelPath
 pub fn write_json(out: &mut dyn Write, answer: &impl Serialize) -> io::Result<()> {
     serde_json::to_writer_pretty(&mut *out, answer).map_err(io::Error::other)?;
     writeln!(out)
+}
+
+/// Writes how `file`'s text would change from `old` to `new`, as a unified
+/// diff with three lines of context, as `diff -u` and `git diff` write it:
+/// what `--check` prints. A file that isn't there yet is `old`, empty, and
+/// nothing is written when the two are the same.
+pub fn write_unified_diff(out: &mut dyn Write, file: &str, old: &str, new: &str) -> io::Result<()> {
+    if old == new {
+        return Ok(());
+    }
+    let diff = similar::TextDiff::from_lines(old, new);
+    let mut unified = diff.unified_diff();
+    unified.context_radius(3);
+    write!(
+        out,
+        "{}",
+        unified.header(&format!("a/{file}"), &format!("b/{file}"))
+    )
 }
 
 /// The exit code for an answer that couldn't be written: none for a closed

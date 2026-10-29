@@ -8,7 +8,6 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{LoadError, LocateError, Project};
 use ascribe_core::Coded;
 use ascribe_core::RelPath;
 use ascribe_core::path::{normalize, relative_path};
@@ -17,12 +16,14 @@ use ascribe_templates::{
     Change, EjectAnswer, FileStatus, Record, SectionChangeKind, StatusAnswer, TEMPLATES_DIR,
     TemplateStatus, Upstream, UpstreamChange,
 };
+use ascribe_workspace::{LoadError, LocateError};
 use clap::{Args as ClapArgs, Subcommand};
+use serde::Serialize;
 
 use crate::answer::{self, Format, from_here};
 use crate::cli::Global;
 use crate::context::{Failure, locate};
-use crate::exit;
+use crate::{exit, guard};
 
 /// Arguments of `ascribe templates`.
 #[derive(Debug, ClapArgs)]
@@ -57,7 +58,46 @@ pub enum Command {
 
 /// Arguments of `ascribe templates list`.
 #[derive(Debug, ClapArgs)]
-pub struct ListArgs {}
+pub struct ListArgs {
+    /// How to show the templates.
+    #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
+    pub format: Format,
+}
+
+/// The version of `list --format json`'s schema.
+const LIST_SCHEMA_VERSION: u32 = 1;
+
+/// What `ascribe templates list --format json` writes: the templates
+/// Ascribe carries, and where they're from.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct ListJson {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
+    schema_version: u32,
+    /// The version of Ascribe that wrote it.
+    ascribe_version: &'static str,
+    /// The repository of The Good Docs Project's templates.
+    repository: String,
+    /// The tag of theirs the templates were converted from.
+    tag: String,
+    /// The tag's commit.
+    commit: String,
+    /// Their license.
+    license: String,
+    /// The templates, in the set's order.
+    templates: Vec<ListTemplate>,
+}
+
+/// A template in `ascribe templates list --format json`.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct ListTemplate {
+    /// Its name, which `ascribe templates eject` takes, and its type's.
+    name: String,
+    /// What it's for.
+    summary: String,
+}
 
 /// Arguments of `ascribe templates eject`.
 #[derive(Debug, ClapArgs)]
@@ -80,6 +120,10 @@ pub struct EjectArgs {
     /// or that names a template or guide already.
     #[arg(long)]
     pub keep_type: bool,
+
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
 
     /// How to show what was written.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
@@ -149,7 +193,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let stderr = io::stderr();
     let mut err = stderr.lock();
     let code = match args.command {
-        Command::List(_) => run_list(&mut out, &mut err),
+        Command::List(args) => run_list(&args, &mut out, &mut err),
         Command::Eject(args) => run_eject(global, &args, &mut out, &mut err),
         Command::Status(args) => run_status(global, &args, &mut out, &mut err),
     };
@@ -158,25 +202,48 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 /// Exit codes: 0, or 2 when the list can't be written.
-fn run_list(out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+fn run_list(args: &ListArgs, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let set = ascribe_templates::set();
+    let result = match args.format {
+        Format::Text => write_list(out, &set),
+        Format::Json => answer::write_json(
+            out,
+            &ListJson {
+                schema_version: LIST_SCHEMA_VERSION,
+                ascribe_version: env!("CARGO_PKG_VERSION"),
+                templates: set
+                    .templates
+                    .iter()
+                    .map(|t| ListTemplate {
+                        name: t.name.clone(),
+                        summary: t.summary.clone(),
+                    })
+                    .collect(),
+                repository: set.repository,
+                tag: set.tag,
+                commit: set.commit,
+                license: set.license,
+            },
+        ),
+    };
+    answer::written(result, err).unwrap_or(exit::OK)
+}
+
+fn write_list(out: &mut dyn Write, set: &ascribe_templates::Set) -> io::Result<()> {
     let width = set
         .templates
         .iter()
         .map(|t| t.name.len())
         .max()
         .unwrap_or(0);
-    let result = (|| {
-        for template in &set.templates {
-            writeln!(out, "{:width$}  {}", template.name, template.summary)?;
-        }
-        writeln!(
-            out,
-            "From The Good Docs Project's templates, {}, at {}, under the {}.",
-            set.repository, set.tag, set.license
-        )
-    })();
-    answer::written(result, err).unwrap_or(exit::OK)
+    for template in &set.templates {
+        writeln!(out, "{:width$}  {}", template.name, template.summary)?;
+    }
+    writeln!(
+        out,
+        "From The Good Docs Project's templates, {}, at {}, under the {}.",
+        set.repository, set.tag, set.license
+    )
 }
 
 /// Exit codes: 0 when every template named was written and its type added;
@@ -189,7 +256,7 @@ fn run_eject(global: &Global, args: &EjectArgs, out: &mut dyn Write, err: &mut d
         }
         Err(e) => return answer::fail(err, &Failure::Config(e)),
     };
-    let file = match Project::load_model(&config) {
+    let file = match ascribe_check::LOADER.load_model(&config) {
         Ok(file) => file,
         Err(e) => return answer::report_failure(err, &Failure::Load(e)),
     };
@@ -215,14 +282,30 @@ fn run_eject(global: &Global, args: &EjectArgs, out: &mut dyn Write, err: &mut d
         to: &to,
         ascribe_version: env!("ASCRIBE_VERSION"),
         keep_type: args.keep_type,
+        dry_run: true,
     };
-    let ejected = match ascribe_templates::eject(&request, &fs) {
+    // A dry run first: what it would write, which the guard is asked about.
+    let mut ejected = match ascribe_templates::eject(&request, &fs) {
         Ok(ejected) => ejected,
         Err(e) => return answer::fail(err, &e),
     };
+    let paths: Vec<_> = ejected.written.iter().map(|p| file.root.join(p)).collect();
+    if let Err(e) = args.guard.allow(&paths) {
+        return answer::fail(err, &e);
+    }
+    if !args.guard.dry_run && ejected.refused.is_empty() {
+        let request = ascribe_templates::Eject {
+            dry_run: false,
+            ..request
+        };
+        ejected = match ascribe_templates::eject(&request, &fs) {
+            Ok(ejected) => ejected,
+            Err(e) => return answer::fail(err, &e),
+        };
+    }
     let result = match args.format {
         Format::Json => answer::write_json(out, &ejected),
-        Format::Text => write_eject(out, err, &file.root, &ejected),
+        Format::Text => write_eject(out, err, &file.root, &ejected, args.guard.dry_run),
     };
     if let Some(code) = answer::written(result, err) {
         return code;
@@ -247,12 +330,17 @@ fn write_eject(
     err: &mut dyn Write,
     root: &Path,
     ejected: &EjectAnswer,
+    dry_run: bool,
 ) -> io::Result<()> {
     if !ejected.refused.is_empty() {
         return write_refused(err, ejected);
     }
+    let wrote = if dry_run { "would write" } else { "wrote" };
     for path in &ejected.written {
-        writeln!(out, "wrote {}", from_here(root, path))?;
+        writeln!(out, "{wrote} {}", from_here(root, path))?;
+    }
+    if dry_run {
+        return Ok(());
     }
     write_added(out, root, ejected, true)
 }
@@ -357,10 +445,9 @@ pub(crate) fn write_added(
             }
         )?;
     }
-    let start = |template: &str, guide: &[String]| {
+    let start = |name: &str, guide: &[String]| {
         format!(
-            "To start a page, copy {} to where the page goes, and read {} first. The page names its type in its frontmatter, as the template does.",
-            from_here(root, template),
+            "To start a page, run `ascribe new {name} <PATH>`, which writes the template there as a draft, and read {} first.",
             guide
                 .iter()
                 .map(|g| from_here(root, g))
@@ -370,11 +457,11 @@ pub(crate) fn write_added(
     };
     match (ejected.added.as_slice(), ejected.kept.as_slice()) {
         ([], []) => {}
-        ([], [one]) => writeln!(out, "{}", start(&one.template, &one.guide))?,
-        ([one], []) => writeln!(out, "{}", start(&one.template, &one.guide))?,
+        ([], [one]) => writeln!(out, "{}", start(&one.name, &one.guide))?,
+        ([one], []) => writeln!(out, "{}", start(&one.name, &one.guide))?,
         _ => writeln!(
             out,
-            "To start a page, copy its type's template to where the page goes, and read its guide and Ascribe's notes on it first. The page names its type in its frontmatter, as the template does."
+            "To start a page, run `ascribe new <TYPE> <PATH>`, which writes its type's template there as a draft, and read its guide and Ascribe's notes on it first."
         )?,
     }
     Ok(())
@@ -408,9 +495,9 @@ fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut
     // A template or guide that's gone is something status reports, so the
     // check of the types' files (`type_files::check`) doesn't stop it; every
     // other rule of the loader, the folders it names included, still does.
-    let model = match Project::load_model(&config) {
+    let model = match ascribe_check::LOADER.load_model(&config) {
         Ok(file) => file.model,
-        Err(LoadError::Model { text, diagnostics }) => {
+        Err(LoadError::Model { text, issues }) => {
             let taking = DiskFs::new(
                 &root,
                 &Layout {
@@ -427,7 +514,7 @@ fn run_status(global: &Global, args: &StatusArgs, out: &mut dyn Write, err: &mut
             ) {
                 Ok(model) => model,
                 Err(_) => {
-                    let failure = Failure::Load(LoadError::Model { text, diagnostics });
+                    let failure = Failure::Load(LoadError::Model { text, issues });
                     return answer::report_failure(err, &failure);
                 }
             }

@@ -23,6 +23,7 @@ use crate::cli::Cli;
 /// `.ascribe/`, or standard output, isn't writing.
 const WRITES: &[&str] = &[
     "init",
+    "new",
     "check",
     "fmt",
     "rename",
@@ -97,7 +98,9 @@ const OTHER_REVISIONS: &[(&str, &str)] = &[("sources update", "to")];
 
 /// The values every `--format` draws from (`project-docs/checklists.md`, "A
 /// new command or option").
-const FORMATS: &[&str] = &["text", "concise", "json", "prompt", "html", "markdown"];
+const FORMATS: &[&str] = &[
+    "text", "concise", "json", "prompt", "html", "markdown", "github",
+];
 
 /// The conventions, each one a rule [`check`] holds a command to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -136,108 +139,10 @@ impl fmt::Display for Rule {
 }
 
 /// Today's exceptions: each rule, with the commands that don't follow it
-/// yet. The pull requests that follow #965 remove them, a group of commands
-/// at a time; a renamed option keeps its old spelling as a hidden alias for
-/// a release.
-const EXCEPTIONS: &[(Rule, &[&str])] = &[
-    (
-        Rule::DryRun,
-        &[
-            "init",
-            "check",
-            "fmt",
-            "rename",
-            "baseline write",
-            "baseline prune",
-            "permalinks sync",
-            "permalinks retire",
-            "addresses init",
-            "addresses move",
-            "addresses retire",
-            "sources fetch",
-            "sources update",
-            "observe",
-            "templates eject",
-            "vale eject",
-            "agents sync",
-            "agents index",
-        ],
-    ),
-    (
-        Rule::Force,
-        &[
-            "init",
-            "check",
-            "fmt",
-            "rename",
-            "baseline write",
-            "baseline prune",
-            "permalinks sync",
-            "permalinks retire",
-            "addresses init",
-            "addresses move",
-            "addresses retire",
-            "sources fetch",
-            "sources update",
-            "observe",
-            "templates eject",
-            "vale eject",
-            "agents sync",
-            "agents index",
-        ],
-    ),
-    (Rule::ExitCode, &["check"]),
-    (
-        Rule::Json,
-        &[
-            "sources fetch",
-            "templates list",
-            "vale eject",
-            "agents sync",
-            "agents prompt",
-        ],
-    ),
-    (
-        Rule::FormatValues,
-        &[
-            "init",
-            "fmt",
-            "build",
-            "diff",
-            "drift",
-            "report",
-            "explain",
-            "model",
-            "outline",
-            "link",
-            "refs",
-            "search",
-            "resolve",
-            "rename",
-            "baseline write",
-            "baseline prune",
-            "versions list",
-            "versions changes",
-            "versions release",
-            "versions export",
-            "versions retire",
-            "permalinks sync",
-            "permalinks list",
-            "permalinks verify",
-            "permalinks retire",
-            "addresses init",
-            "addresses move",
-            "addresses retire",
-            "addresses list",
-            "sources update",
-            "sources status",
-            "observe",
-            "templates eject",
-            "templates status",
-            "agents index",
-        ],
-    ),
-];
+/// yet. There are none: the pull requests that followed #965 brought every
+/// command into line. A command added that can't follow a rule yet is
+/// listed here, with the issue that will bring it into line.
+const EXCEPTIONS: &[(Rule, &[&str])] = &[];
 
 fn excepted(name: &str) -> BTreeSet<Rule> {
     EXCEPTIONS
@@ -276,6 +181,9 @@ fn long<'a>(command: &'a Command, name: &str) -> Option<&'a Arg> {
         .find(|arg| arg.get_long() == Some(name))
 }
 
+/// Whether `arg` takes a git revision: its value name is `REV`. Every
+/// option or argument that takes one names it `REV`, which is how this test
+/// finds them, so one named otherwise gets past [`Rule::Base`].
 fn takes_revision(arg: &Arg) -> bool {
     arg.get_value_names()
         .is_some_and(|names| names.iter().any(|name| name.as_str() == "REV"))

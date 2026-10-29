@@ -110,7 +110,7 @@
       "type": "string"
     },
     "files": {
-      "description": "Each file that changed, or with `--check` would change, in path\norder, with the edits that format it.",
+      "description": "Each file that changed, or with `--check` or `--dry-run` would change, in path\norder, with the edits that format it.",
       "items": {
         "$ref": "#/$defs/FmtFile"
       },
@@ -129,7 +129,7 @@
       "type": "integer"
     },
     "written": {
-      "description": "Whether the files were rewritten: `false` with `--check`, which\nwrites nothing.",
+      "description": "Whether the files were rewritten: `false` with `--check` or\n`--dry-run`, which write nothing.",
       "type": "boolean"
     }
   },

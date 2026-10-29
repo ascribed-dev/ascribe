@@ -1,5 +1,7 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
-- `--check`: Write nothing, and exit with 1 when a file is out of date: for CI.
+- `--check`: Write nothing, print how each file out of date would change as a unified diff, and exit with 1 when one is: for CI.
+- `--dry-run`: Say what it would change, and change nothing.
+- `--force`: Change files even when git couldn't put them back as they are: ones with changes not committed, ones git doesn't track, or ones in no repository.
 - `--target <TARGET>`: Also write this target's files. Repeat it for several. `agents-md` and `skills` are always written, and each other target whose files already exist is kept up to date.
   - `agents-md`: AGENTS.md beside ascribe.toml, and a short block in the repository root's.
   - `skills`: The skill, in the repository root's .agents/skills/ascribe/.
@@ -11,3 +13,6 @@
 - `--cloud`: Also write what Copilot's cloud agent needs on GitHub: steps in .github/workflows/copilot-setup-steps.yml that install Ascribe, and print the MCP server's JSON for the repository's settings. Implies `--target copilot`. Steps written before are kept up to date without it.
 - `--agent`: With --cloud, write the MCP server into a custom agent, .github/agents/ascribe-docs.md, instead of printing its JSON: for a repository whose settings you can't change.
 - `--command <COMMAND>`: The command the project runs Ascribe with, which the files name in the commands they give: `npx ascribe`, for example. By default, `npx ascribe`, `pnpm exec ascribe`, or `yarn ascribe` when a package.json depends on @ascribed/cli or @ascribed/astro, by its lockfile; else `ascribe`. Give it again each time: with --check, a file written with another command is out of date.
+- `--format <FORMAT>`: How to show what was written, or with --check what's out of date.
+  - `text` (the default): Short text, for people and agents to read.
+  - `json`: One JSON document, for tools.

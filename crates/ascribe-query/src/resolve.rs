@@ -262,7 +262,9 @@ mod tests {
     #[test]
     fn the_site_form_is_the_site_outputs_file() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
-        let loaded = ascribe_check::Project::load(&root.join("ascribe.toml")).expect("Quill loads");
+        let loaded = ascribe_check::load(&root.join("ascribe.toml"))
+            .map(|w| ascribe_check::Project::new(w.snapshot()))
+            .expect("Quill loads");
         let index = loaded.index();
         let mut compared = 0;
         for build in &loaded.model().builds {
@@ -273,8 +275,8 @@ mod tests {
             let emitter = SiteEmitter::new(project.model());
             let paths: Vec<RelPath> = index.pages().map(|file| file.path.clone()).collect();
             for path in paths {
-                let whole = resolve(&index, &root, &path, build, Emit::Site, true).unwrap();
-                let body = resolve(&index, &root, &path, build, Emit::Site, false).unwrap();
+                let whole = resolve(index, &root, &path, build, Emit::Site, true).unwrap();
+                let body = resolve(index, &root, &path, build, Emit::Site, false).unwrap();
                 assert_eq!(whole.emit, Emit::Site);
                 if whole.not_published.is_some() {
                     assert!(whole.text.is_empty() && body.text.is_empty());
@@ -302,12 +304,13 @@ mod tests {
     #[test]
     fn the_plain_form_links_to_pages_by_their_html_address() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/astro-site");
-        let loaded =
-            ascribe_check::Project::load(&root.join("ascribe.toml")).expect("the example loads");
+        let loaded = ascribe_check::load(&root.join("ascribe.toml"))
+            .map(|w| ascribe_check::Project::new(w.snapshot()))
+            .expect("the example loads");
         let index = loaded.index();
         let build = &loaded.model().builds[0];
         let path = RelPath::parse("Reference/Options.md").unwrap();
-        let text = resolve(&index, &root, &path, build, Emit::Plain, false)
+        let text = resolve(index, &root, &path, build, Emit::Plain, false)
             .unwrap()
             .text;
         assert!(

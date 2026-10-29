@@ -821,6 +821,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
             check::Format::Concise
         },
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
@@ -828,6 +829,7 @@ fn call_check(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> 
         // default branch, as `ascribe check` compares them.
         addresses: check::Addresses::Compared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         // What `ascribe.baseline` holds back, the project's backlog, isn't
         // the agent's to fix now: the summary counts it (#790).
@@ -1010,8 +1012,9 @@ fn call_fmt(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let args = fmt::Args {
         check: true,
         diff: false,
+        guard: crate::guard::Options::default(),
         paths,
-        format: Format::Json,
+        format: fmt::Format::Json,
     };
     let (_, report) = fmt::answer(&global, &args).map_err(|e| e.to_string())?;
     json_result(&report)
@@ -1036,16 +1039,18 @@ fn call_rename(server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String>
     let args = rename::Args {
         target: a.string("target")?.unwrap_or_default(),
         new: a.string("new")?.unwrap_or_default(),
+        guard: crate::guard::Options::default(),
         format: Format::Json,
     };
     let global = global_at(a.path("project")?.as_deref())?;
-    let answer = rename::answer(&server.cache, &global, &args, false).map_err(|s| s.message)?;
+    let answer = rename::answer(&server.cache, &global, &args, None).map_err(|s| s.message)?;
     json_result(&answer.json)
 }
 
 fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let global = global_at(a.path("project")?.as_deref())?;
-    let project = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let workspace = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let project = crate::context::checked(&workspace);
     let from_git = a.boolean("from_git")?;
     let (old, new) = (a.string("old")?, a.string("new")?);
     if from_git == (old.is_some() || new.is_some()) || old.is_some() != new.is_some() {
@@ -1057,9 +1062,11 @@ fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult
         from_git,
         base: a.string("base")?,
         base_exact: a.boolean("base_exact")?,
+        // The tool writes nothing, so the guard has nothing to refuse.
+        guard: crate::guard::Options::default(),
         format: Format::Json,
     };
-    match addresses::answer_move(&project, &args, false).map_err(|e| e.to_string())? {
+    match addresses::answer_move(&project, &args, None).map_err(|e| e.to_string())? {
         addresses::Moved::One(json) => json_result(&json),
         addresses::Moved::FromGit(json) => json_result(&json),
     }
@@ -1067,12 +1074,14 @@ fn call_addresses_move(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult
 
 fn call_addresses_retire(_server: &Server, a: &Arguments<'_>) -> Result<ToolResult, String> {
     let global = global_at(a.path("project")?.as_deref())?;
-    let project = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let workspace = crate::context::load_project(&global).map_err(|f| f.to_string())?;
+    let project = crate::context::checked(&workspace);
     let args = addresses::RetireArgs {
         old: a.string("old")?.unwrap_or_default(),
         reason: a.string("reason")?.unwrap_or_default(),
+        guard: crate::guard::Options::default(),
         format: Format::Json,
     };
-    let json = addresses::answer_retire(&project, &args, false).map_err(|e| e.to_string())?;
+    let json = addresses::answer_retire(&project, &args, None).map_err(|e| e.to_string())?;
     json_result(&json)
 }

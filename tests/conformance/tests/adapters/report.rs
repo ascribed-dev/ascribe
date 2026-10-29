@@ -35,17 +35,18 @@
 //! other check passes.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use ascribe_check::Project;
-use ascribe_check::links::{self, Answer, LinkChecker};
-use ascribe_check::site::{self, CheckResult, SiteChecker, Status};
-use ascribe_check::tool::ToolError;
 use ascribe_conformance::{
     AdapterError, AdapterResult, BuildResult, Case, ConformanceAdapter, Diagnostic,
 };
 use ascribe_query::report::{Options, Ran, Section, Tools};
+use ascribe_report::links::{self, Answer, LinkChecker};
+use ascribe_report::site::{self, CheckResult, SiteChecker, Status};
+use ascribe_report::store::{MemoryStore, Store};
+use ascribe_report::tool::ToolError;
 
 /// Handles the cases that expect the report's problems.
 pub struct ReportAdapter;
@@ -101,28 +102,24 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
     };
     let site = project.model().consumer.site.clone();
     let cached = case.dir.join("link-cache");
-    let store = match project.today() {
+    let cache = match project.today() {
         Some(today) if cached.is_dir() => {
-            let dir = tempfile::tempdir().map_err(|e| AdapterError(e.to_string()))?;
-            copy(&cached, &dir.path().join(links::cache::FOLDER))?;
-            let cache = links::Cache::open(&project, dir.path(), today, false);
-            Some((dir, cache))
+            let store = Arc::new(MemoryStore::new());
+            load(&cached, links::cache::FOLDER, &store)?;
+            Some(links::Cache::open(&project, store, today, false))
         }
         _ => None,
     };
     let remembered = case.dir.join("link-history.json");
     let history = match project.today() {
         Some(today) if remembered.is_file() => {
-            let dir = tempfile::tempdir().map_err(|e| AdapterError(e.to_string()))?;
-            let to = dir.path().join(links::history::FILE);
-            let failed = |e: std::io::Error| {
-                AdapterError(format!("couldn't copy {}: {e}", remembered.display()))
-            };
-            std::fs::create_dir_all(to.parent().unwrap_or(dir.path())).map_err(failed)?;
-            std::fs::copy(&remembered, &to).map_err(failed)?;
+            let text = std::fs::read_to_string(&remembered).map_err(|e| {
+                AdapterError(format!("couldn't read {}: {e}", remembered.display()))
+            })?;
+            let store = Arc::new(MemoryStore::new());
+            let _ = store.write(links::history::FILE, &text);
             let confirm_days = project.model().checks.links.confirm_days;
-            let history = links::History::open(dir.path(), today, confirm_days, false);
-            Some((dir, history))
+            Some(links::History::open(store, today, confirm_days, false))
         }
         _ => None,
     };
@@ -133,8 +130,8 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
         not_listed: false,
         site: site.as_deref(),
         tools: &tools,
-        link_cache: store.as_ref().map(|(_, cache)| cache),
-        link_history: history.as_ref().map(|(_, history)| history),
+        link_cache: cache.as_ref(),
+        link_history: history.as_ref(),
         history: None,
     };
     let report =
@@ -154,18 +151,20 @@ fn found(case: &Case) -> Result<(Project, Vec<ascribe_check::Diagnostic>), Adapt
 }
 
 /// Copies the folder `from` to `to`, with what's in it.
-fn copy(from: &std::path::Path, to: &std::path::Path) -> Result<(), AdapterError> {
-    let failed = |e: std::io::Error| AdapterError(format!("couldn't copy {}: {e}", from.display()));
-    std::fs::create_dir_all(to).map_err(failed)?;
+/// Puts each file under `from` into `store`, under `folder`.
+fn load(from: &std::path::Path, folder: &str, store: &MemoryStore) -> Result<(), AdapterError> {
+    let failed = |e: std::io::Error| AdapterError(format!("couldn't read {}: {e}", from.display()));
     for entry in std::fs::read_dir(from).map_err(failed)? {
         let path = entry.map_err(failed)?.path();
-        let Some(name) = path.file_name() else {
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
             continue;
         };
+        let at = format!("{folder}/{name}");
         if path.is_dir() {
-            copy(&path, &to.join(name))?;
+            load(&path, &at, store)?;
         } else {
-            std::fs::copy(&path, to.join(name)).map_err(failed)?;
+            let text = std::fs::read_to_string(&path).map_err(failed)?;
+            let _ = store.write(&at, &text);
         }
     }
     Ok(())

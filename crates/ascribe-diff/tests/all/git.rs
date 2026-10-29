@@ -107,7 +107,7 @@ fn a_project_at_the_root_of_the_repository() {
     assert_eq!(revision.model_text, MODEL);
     assert_eq!(sources(&revision), ["guides/install.md", "index.md"]);
     assert_eq!(revision.fs.read(&rel("index.md")).unwrap(), "# Home\n");
-    let project = revision.project();
+    let project = revision.workspace().snapshot().index().clone();
     assert_eq!(project.pages().count(), 2);
 }
 
@@ -169,7 +169,7 @@ fn a_snippet_reads_its_code_at_the_revision_through_its_source() {
         Probe::Missing
     );
     assert_eq!(revision.fs.probe(&rel("../other/big.txt")), Probe::Missing);
-    let project = revision.project();
+    let project = revision.workspace().snapshot().index().clone();
     let page = project.expand(&rel("index.md")).expect("the page");
     let mut code_found = Vec::new();
     page.visit(&mut |block| {
@@ -228,7 +228,7 @@ fn a_snippet_of_a_tested_example_is_tested_at_the_revision() {
         revision.fs.probe(&rel("../service/README.md")),
         Probe::Missing
     );
-    let project = revision.project();
+    let project = revision.workspace().snapshot().index().clone();
     let page = project.expand(&rel("index.md")).expect("the page");
     let mut snippets = Vec::new();
     page.visit(&mut |block| {
@@ -410,6 +410,20 @@ fn no_default_branch() {
         found.base(None, false),
         Err(DiffError::NoDefaultBranch)
     ));
+    assert!(!ascribe_diff::before_history(&repo.root()));
+}
+
+/// No repository, or one with no commit, has no history a base could be
+/// read from; one commit is history.
+#[test]
+fn before_history_is_no_repository_or_no_commit() {
+    let outside = tempfile::tempdir().unwrap();
+    assert!(ascribe_diff::before_history(outside.path()));
+    let repo = Repo::new();
+    repo.write("ascribe.toml", MODEL);
+    assert!(ascribe_diff::before_history(&repo.root()));
+    repo.commit("first");
+    assert!(!ascribe_diff::before_history(&repo.root()));
 }
 
 #[test]

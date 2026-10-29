@@ -1118,6 +1118,11 @@ fn every_fix_diagnostic_has_a_quick_fix() {
             "\n[listing]\ndefault = \"unquoted\"\n",
         ),
         ("memo-empty", "\n@memo:\n@end\nText.\n", ""),
+        (
+            "github-alert",
+            "\n> [!TIP]\n> Quill runs in the browser too.\n",
+            "",
+        ),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()
@@ -1349,7 +1354,9 @@ fn fix_all_makes_the_edits_check_fix_makes() {
     let fixed = apply_edit(FIX_ME, edits);
 
     // `ascribe check --editor-build --fix`, as the command takes them.
-    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).expect("a project");
+    let project = ascribe_check::load(&f.path("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .expect("a project");
     let mut diagnostics = ascribe_check::diagnose_editor_build(&project, None).diagnostics;
     diagnostics.sort_by_key(|d| d.severity == ascribe_check::Severity::Advice);
     let files = ascribe_check::fix::safe_fixes(&project, &f.path("ascribe.toml"), &diagnostics);
@@ -1452,7 +1459,9 @@ fn every_safe_fix_in_the_project_is_one_edit_over_unsaved_text() {
     let answer = project_edit(&mut client, &f, "fixAll");
 
     // check --fix's edits to the page on disk, as the editor's build has it.
-    let project = ascribe_check::Project::load(&f.path("ascribe.toml")).expect("a project");
+    let project = ascribe_check::load(&f.path("ascribe.toml"))
+        .map(|w| ascribe_check::Project::new(w.snapshot()))
+        .expect("a project");
     let mut diagnostics = ascribe_check::diagnose_editor_build(&project, None).diagnostics;
     diagnostics.sort_by_key(|d| d.severity == ascribe_check::Severity::Advice);
     let files = ascribe_check::fix::safe_fixes(&project, &f.path("ascribe.toml"), &diagnostics);

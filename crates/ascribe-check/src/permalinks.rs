@@ -23,12 +23,10 @@ use crate::{Diagnostic, Project};
 /// reading the list under the list's id, each name `ascribe.addresses`
 /// records that the list is behind on under the file's id, and each
 /// permalink the list is behind on under the file it's declared in, each
-/// list in source order. `index` is the project's source index; `file`
-/// gives the project's id of one of its files.
+/// list in source order. `index` is the project's source index.
 pub(crate) fn check(
     project: &Project,
     index: &ascribe_resolve::Project,
-    file: &dyn Fn(FileId) -> FileId,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
     let mut issues: Vec<Issue> = Vec::new();
     match project.permalinks() {
@@ -38,7 +36,7 @@ pub(crate) fn check(
             let declared = index.declared_permalinks();
             let recorded = index.recorded_permalinks();
             let current = Current::new(DeclaredPermalink::places(&declared), &recorded);
-            against_list(list, &current, &recorded, &declared, file, &mut issues);
+            against_list(list, &current, &recorded, &declared, &mut issues);
         }
     }
     let mut out: BTreeMap<FileId, Vec<Diagnostic>> = BTreeMap::new();
@@ -61,7 +59,6 @@ fn against_list(
     current: &Current,
     recorded: &RecordedPermalinks,
     declared: &[DeclaredPermalink],
-    file: &dyn Fn(FileId) -> FileId,
     out: &mut Vec<Issue>,
 ) {
     let mut reported: Vec<&str> = Vec::new();
@@ -70,7 +67,7 @@ fn against_list(
         if reported.contains(&name) {
             continue;
         }
-        let at = Location::new(file(permalink.at.file), permalink.at.span);
+        let at = Location::new(permalink.at.file, permalink.at.span);
         let issue = match list.permalinks.get(name) {
             Some(entry) if current.declared[name].contains(&entry.place) => continue,
             Some(entry) => Issue::new(diagnostics::PERMALINKS_LIST_BEHIND, at)

@@ -1,6 +1,8 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `[NAME]...`: The sources to update. By default, every source in another repository.
 - `--to <REV>`: Move the pin to this revision instead of the head of the source's branch: a commit's full hash, a branch, or a tag. Only for one source: name it.
+- `--dry-run`: Say what it would change, and change nothing.
+- `--force`: Change files even when git couldn't put them back as they are: ones with changes not committed, ones git doesn't track, or ones in no repository.
 - `--format <FORMAT>`: How to show what changed.
   - `text` (the default): Each source's commits and copies, then the pages, for people.
   - `json`: One JSON document, for tools.

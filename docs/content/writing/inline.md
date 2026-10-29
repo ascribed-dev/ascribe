@@ -22,6 +22,7 @@ See the [streaming API reference]({api}streaming).
 - In a fenced code block, only when its info string has `phrases=true`: ` ```yaml phrases=true `. Never in code spans, indented code, or raw HTML.
 - Values are inserted as literal text.
 - `{{key}}` puts the value between literal braces, which is usually a leftover from another tool's templates; Ascribe warns.
+- A phrase's value written out, `Quill 3.4.1` where `{product} {version}` would do, goes stale when the value changes: [`phrase-text-written`](../checks/diagnostics/content-checks.md#ASC288) reports it, with a fix that writes the phrase. Acknowledge text meant as written, such as a changelog's version, with `@intended {check=phrase-text-written}` above its block.
 
 ## Links
 
@@ -70,4 +71,4 @@ Every heading has an id: its [`@id`](directives.md#id) if it has one, and otherw
 
 ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms))
 
-A glossary is a page, or several, that `[glossary] pages` in `ascribe.toml` lists, and each of its headings marked [`@term`](directives.md#term) is a term, defined by the paragraph under it. Ascribe links terms to their definitions in each built page, and authors don't mark terms where they're used. A link you write to a term's heading, as `[build](glossary.md#build)`, is a use of the term too: it's how you link a `marked` term, which isn't linked automatically. See [`[glossary]`](../content-model/content.md#12-glossary).
+A glossary is a page, or several, that `[glossary] pages` in `ascribe.toml` lists, and each of its headings marked [`@term`](directives.md#term) is a term, defined by the paragraph under it. Ascribe links terms to their definitions in each built page, and authors don't mark terms where they're used. A link you write to a term's heading, as `[build](glossary.md#build)`, is a use of the term too: it's how you link a `marked` term, which isn't linked automatically. See [`[glossary]`](../content-model/content.md#8-glossary).

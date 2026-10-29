@@ -1,7 +1,7 @@
 //! The adapter for the prose checks: Vale's alerts, through `[checks.vale]`.
 //!
 //! It handles the `prose` tag. Its diagnostics are the case's file-level
-//! diagnostics with `ascribe_check::prose::lint`'s, as the editor reports
+//! diagnostics with `ascribe_report::prose::lint`'s, as the editor reports
 //! them: Vale runs whenever there's `[checks.vale]`, and that it couldn't is
 //! said only with `in-check` (`prose::said`). Vale itself isn't run: a stand-in for it flags each word
 //! written twice in a row outside code spans, as `Ascribe.Repeated` with the
@@ -16,8 +16,8 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::time::Duration;
 
-use ascribe_check::prose::{self, Action, Alert, Linter, Request, ValeError};
 use ascribe_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic};
+use ascribe_report::prose::{self, Action, Alert, Linter, Request, ValeError};
 
 /// Handles the cases that expect Vale's alerts.
 pub struct ProseAdapter;

@@ -12,15 +12,25 @@ The commands that write the page templates into a project and say what's changed
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, which takes them as its [template and guide](../content-model/index.md#41-page-types) from `templates/templates.lock`. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
 
-The set has six templates, which `ascribe templates list` names. A page is started by copying the template's file to where the page goes; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../install.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
+The set has six templates, which `ascribe templates list` names. A page is started from a template with [`ascribe new`](index.md#cli-new), or the editor's **New Page**; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../install.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
 
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list
 
 @summary
-Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. It reads only what the binary carries, so it works anywhere, in a project or not. It takes no options, and exits with `0`.
+Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. It reads only what the binary carries, so it works anywhere, in a project or not. It exits with `0`.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/templates-list.txt
+
+@include: ../_generated/cli-templates-list-options.md
+
+@available: ascribe planned
+With `--format json`, it writes the same in the document its [schema](../contracts/json-reports/templates.md#ascribe-templates-list) describes, with the commit of theirs the set is from.
+
+.The JSON for this example
+@details:
+@snippet {lang=json}: code:crates/ascribe-cli/tests/output/templates-list.json
+@end
 
 ### `ascribe templates eject`
 @id {permalink=true}: cli-templates-eject
@@ -69,7 +79,7 @@ ascribe templates eject reference --keep-type
 
 It writes the same files and `templates.lock`, and leaves `ascribe.toml` as it is: the type takes its template and guide from the lock. With `--to` another folder, it adds only `template` and `guide` to the type's table, after its last entry, leaving its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already, or takes them from the lock; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
 
-It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
+It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. So is an `ascribe.toml` or a `templates.lock` git couldn't put back, as every [command that writes](../command/index.md#commands-that-write) does, unless you pass `--force`. With `--dry-run`, it says what it would write, and writes nothing. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
 
 It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the fields it declared as the project's other types do; the pages that name no type, up to ten, which `ascribe check` reports until each has its `type:`; each type it kept, with the keys it left as they were; and how to start a page. In a project `ascribe init` started:
 
@@ -85,7 +95,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 | Code | Meaning |
 |---|---|
 | `0` | Every template named was written, and its type added, or kept, taking its template and guide from the lock |
-| `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, or the types can't be added to `ascribe.toml`. Or a file couldn't be written; the files it wrote before that stay. |
+| `2` | It wrote nothing: a template was refused, there's no `ascribe.toml`, the content model has errors, the folder can't hold templates, `templates.lock` isn't one it can add to, the types can't be added to `ascribe.toml`, or, without `--force`, a file git couldn't put back. Or a file couldn't be written; the files it wrote before that stay. |
 
 ### `ascribe templates status`
 @id {permalink=true}: cli-templates-status

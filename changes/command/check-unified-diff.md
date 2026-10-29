@@ -1,0 +1,1 @@
+- **Behavior change: `--check` writes a unified diff in `permalinks sync`, `agents sync`, and `observe`.** Each still exits with `1` when something would change. See [The `ascribe` command](docs/content/command/index.md).

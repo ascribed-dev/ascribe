@@ -1,7 +1,7 @@
 ---
 type: reference
 title: The permalinks list
-description: The format of ascribe.permalinks, the list of a project's permalinks that something outside the docs can check its links against.
+description: "The format of `ascribe.permalinks`, the list of a project's permalinks that something outside the docs can check its links against."
 ---
 
 A project can commit a list of its [permalinks](../writing/directives.md#permalinks), `ascribe.permalinks`, beside `ascribe.toml` (SPEC §7.5), with the names `ascribe.addresses` moves or retires (§7.6). With it, `ascribe check` warns when a permalink goes away, and something outside the docs, such as a product's CI, can check the names it links to against a copy of the file, without the docs. This contract says what the file holds, how Ascribe reads and writes it, and what a reader of a copy can rely on.
@@ -58,9 +58,9 @@ The list is the project's, not one build's. Each permalink the content declares,
 
 | Diagnostic | When |
 |---|---|
-| [`permalinks-list-behind`](../checks/diagnostics/pages.md#ASC176) | A declared name has no entry, or its entry is at a place that doesn't declare it any more. It's reported where the name is declared. A name `ascribe.addresses` moves or retires without its entry, or with an entry that says otherwise, is reported on it in `ascribe.addresses`. |
-| [`permalink-lost`](../checks/diagnostics/pages.md#ASC177) | An entry's name isn't declared anywhere, and `ascribe.addresses` neither moves nor retires it. It's reported on the entry, in `ascribe.permalinks`. The editor's quick fix retires it. |
-| [`permalinks-list-invalid`](../checks/diagnostics/pages.md#ASC175) | The file isn't a list this version reads. The list isn't used until it's fixed. |
+| [`permalinks-list-behind`](../checks/diagnostics/sources.md#ASC176) | A declared name has no entry, or its entry is at a place that doesn't declare it any more. It's reported where the name is declared. A name `ascribe.addresses` moves or retires without its entry, or with an entry that says otherwise, is reported on it in `ascribe.addresses`. |
+| [`permalink-lost`](../checks/diagnostics/sources.md#ASC177) | An entry's name isn't declared anywhere, and `ascribe.addresses` neither moves nor retires it. It's reported on the entry, in `ascribe.permalinks`. The editor's quick fix retires it. |
+| [`permalinks-list-invalid`](../checks/diagnostics/sources.md#ASC175) | The file isn't a list this version reads. The list isn't used until it's fixed. |
 
 Moving a permalink to another heading or page makes the list behind, and doesn't lose it: the address still works. Retiring or moving a lost permalink, with [`ascribe permalinks retire`](../permalinks/command.md#cli-permalinks-retire), ends the warning: the name moves to `[retired]`, `[moved]`, or `[aliases]`.
 

@@ -19,6 +19,7 @@ pages = ["syntax.md", "directives.md", "frontmatter.md", "inline.md", "memo-file
 [[sections]]
 folder = "content-model/"
 label = "The content model"
+pages = ["content.md", "variation.md", "output.md", "sources.md", "checks.md", "glossary.md"]
 
 [[sections]]
 folder = "checks/"
@@ -121,8 +122,8 @@ pages = [
 
 [[sections]]
 folder = "contracts/content-model/"
-pages = ["content.md", "output.md", "checks.md", "validation.md"]
+pages = ["content.md", "variation.md", "output.md", "sources.md", "checks.md", "validation.md"]
 
 [[sections]]
 folder = "contracts/json-reports/"
-pages = ["diff.md", "report.md", "sources.md", "addresses.md", "templates.md", "model.md", "questions.md", "versions.md"]
+pages = ["model.md", "templates.md", "versions.md", "addresses.md", "sources.md", "report.md", "diff.md", "questions.md", "agents.md"]

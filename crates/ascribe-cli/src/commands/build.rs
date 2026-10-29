@@ -14,13 +14,14 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{Checked, LoadError, Project, Reported, Request, Severity, diagnose_with};
+use ascribe_check::{Checked, Project, Reported, Request, Severity, diagnose_with};
 use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions, Written};
 use ascribe_model::Build;
+use ascribe_workspace::LoadError;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
+use crate::context::{Failure, checked, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::json::About;
 use crate::report::{Counts, FileTable, json, text};
@@ -85,6 +86,7 @@ pub enum Emit {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Diagnostics with source snippets, for people.
+    #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.
     Json,
@@ -108,8 +110,8 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 
 fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
     let color = use_color(global, stdout_is_terminal());
-    let mut project = match load_project(global) {
-        Ok(project) => project,
+    let project = match load_project(global) {
+        Ok(workspace) => checked(&workspace),
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
     // The checks, for every build asked for, before anything is written.
@@ -182,7 +184,6 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         .filter_map(|name| project.model().build(name))
         .cloned()
         .collect();
-    project.release_link_index();
     let builds: Vec<&Build> = builds.iter().collect();
     match write_outputs(&project, &builds, &args.emit, args.anchors, err) {
         Ok(()) => exit::OK,
@@ -226,7 +227,7 @@ fn write_outputs(
             pending.push(w.clone());
         }
     };
-    let result = ascribe_emit::write_outputs(&index, project.root(), builds, &options, &mut report)
+    let result = ascribe_emit::write_outputs(index, project.root(), builds, &options, &mut report)
         .map(|_| ());
     flush(&mut pending, err);
     result
@@ -319,13 +320,16 @@ fn report_failure(
             FileTable::of_model(String::new()),
             Vec::new(),
         ),
-        Failure::Load(LoadError::Model { text, diagnostics }) => (
+        Failure::Load(LoadError::Model { text, issues }) => (
             format!(
                 "{} has errors, so nothing can be built",
                 ascribe_check::MODEL_FILE
             ),
             FileTable::of_model(text),
-            diagnostics,
+            issues
+                .iter()
+                .map(ascribe_check::Diagnostic::from_issue)
+                .collect(),
         ),
         Failure::Load(e @ LoadError::Read { .. }) => (
             e.to_string(),

@@ -1,0 +1,10 @@
+description: >-
+  A phrase's value in a heading is reported too; in a heading with no `@id`,
+  whose link would change with the value once it's the phrase, the message
+  says to give it one.
+spec: ["5.1", "5.5"]
+tags: [check]
+
+diagnostics:
+  - {slug: phrase-text-written, line: 5, column: 18}
+  - {slug: phrase-text-written, line: 9, column: 4}

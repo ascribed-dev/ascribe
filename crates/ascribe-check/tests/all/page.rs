@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 
 use ascribe_check::{
-    Diagnostic, Project, SourceFile, check_all_builds, check_builds, check_files, check_project,
+    Diagnostic, Project, check_all_builds, check_builds, check_files, check_project,
 };
 use ascribe_core::{FileId, RelPath};
 
@@ -70,18 +70,22 @@ build = "cloud"
 "#;
 
 fn project_with(model: &str, files: &[(&str, &str)]) -> Project {
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
+            model.to_owned(),
+            sources,
         )
-    }));
-    Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(model, FileId::new(0)).expect("the model loads"),
-        model.to_owned(),
-        sources,
+        .snapshot(),
     )
 }
 
@@ -459,6 +463,41 @@ fn a_page_every_build_drops_is_checked_as_unpublished() {
 }
 
 #[test]
+fn a_draft_is_checked_as_unpublished_even_beside_a_build_that_keeps_everything() {
+    // `site` keeps every arm, but no build publishes a draft.
+    let p = project(&[
+        ("index.md", &page("Text.")),
+        (
+            "upcoming.md",
+            "---\ntitle: T\ndraft: true\n---\n\n## A\n@id: same\n\n## B\n@id: same\n",
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("id-duplicate", "upcoming.md", 10)]);
+    assert!(found[0].unpublished);
+    assert!(found[0].builds.is_empty());
+}
+
+#[test]
+fn a_link_to_a_draft_says_it_is_one_once_for_every_build() {
+    let p = project(&[
+        ("index.md", &page("See [what's next](upcoming.md).")),
+        (
+            "upcoming.md",
+            "---\ntitle: T\ndraft: true\n---\n\nNot yet.\n",
+        ),
+    ]);
+    let found = page_level(&p);
+    assert_eq!(at(&p, &found), [row("link-page-dropped", "index.md", 5)]);
+    assert_eq!(found[0].builds, ["site", "cloud", "self-managed"]);
+    assert_eq!(
+        found[0].message,
+        "`upcoming.md` is a draft, which no build publishes, so this link would be broken; \
+         take the link out until the page is published, or publish it by removing its `draft: true`"
+    );
+}
+
+#[test]
 fn a_build_that_keeps_everything_needs_no_extra_pass() {
     // `site` is a switch with badges: nothing is unpublished, so nothing is
     // marked so, even in an arm no selecting build keeps.
@@ -477,27 +516,26 @@ fn a_build_that_keeps_everything_needs_no_extra_pass() {
 
 #[test]
 fn locations_use_the_projects_file_ids_whatever_order_the_sources_came_in() {
-    // Sources given in reverse path order, numbered as given.
+    // Sources given in reverse path order.
     let sources = vec![
-        SourceFile {
-            id: FileId::new(1),
-            path: RelPath::parse("index.md").expect("a path"),
-            text: page("@include: _f.md"),
-            unreadable: None,
-        },
-        SourceFile {
-            id: FileId::new(2),
-            path: RelPath::parse("_f.md").expect("a path"),
-            text: "See [it](index.md#gone).\n".to_owned(),
-            unreadable: None,
-        },
+        (
+            RelPath::parse("index.md").expect("a path"),
+            page("@include: _f.md"),
+        ),
+        (
+            RelPath::parse("_f.md").expect("a path"),
+            "See [it](index.md#gone).\n".to_owned(),
+        ),
     ];
-    let p = Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads"),
-        MODEL.to_owned(),
-        sources,
+    let p = Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads"),
+            MODEL.to_owned(),
+            sources,
+        )
+        .snapshot(),
     );
     let found = page_level(&p);
     assert_eq!(at(&p, &found), [row("link-id-missing", "index.md", 5)]);

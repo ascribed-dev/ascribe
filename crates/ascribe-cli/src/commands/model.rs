@@ -4,8 +4,8 @@
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
 
-use ascribe_check::Project;
 use ascribe_model::ContentModel;
 use ascribe_query::{ModelReport, Section as QuerySection};
 use ascribe_resolve::{DiskFs, Layout};
@@ -139,10 +139,12 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 /// errors still has one to show.
 fn load(global: &Global, args: &Args) -> Result<Loaded, Failure> {
     let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
-    let file = Project::load_model(&config).map_err(Failure::Load)?;
+    let file = ascribe_check::LOADER
+        .load_model(&config)
+        .map_err(Failure::Load)?;
     let fs = DiskFs::new(&file.root, &Layout::from_model(&file.model));
-    let project = Project::load(&config).map_err(Failure::Load)?;
-    let index = project.index();
+    let workspace = ascribe_check::load(&config).map_err(Failure::Load)?;
+    let index = workspace.snapshot().index().clone();
     Ok(Loaded {
         model: file.model,
         config: file.text,
@@ -158,7 +160,7 @@ struct Loaded {
     config: String,
     fs: DiskFs,
     terms: Vec<ascribe_query::ModelTerm>,
-    index: ascribe_resolve::Project,
+    index: Arc<ascribe_resolve::Project>,
 }
 
 /// What `--format json` writes: without `--section`, with the project's

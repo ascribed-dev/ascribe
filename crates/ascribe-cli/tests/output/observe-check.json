@@ -6,6 +6,7 @@
   "environment": [],
   "test": null,
   "observation": "examples.observations/default.toml",
+  "written": false,
   "current": false,
   "changes": {
     "added": [],

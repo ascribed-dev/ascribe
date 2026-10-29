@@ -2,6 +2,7 @@
 type: reference
 title: The baseline
 description: "Put a project's existing advice off for now with `ascribe.baseline`, so `ascribe check` reports only what's new: the commands that keep it, and its syntax."
+permalink: baseline
 ---
 
 A project that turns on the [content checks](diagnostics/content-checks.md) can meet thousands of advice at once. The baseline puts them off for now: `ascribe baseline write` lists every advice the project has in `ascribe.baseline`, beside `ascribe.toml`, and from then on `ascribe check` holds those back, counts them, and reports only the advice that's new. The team fixes the backlog at its own pace, and `ascribe baseline prune` takes each fixed one out of the file.
@@ -10,14 +11,14 @@ A project that turns on the [content checks](diagnostics/content-checks.md) can 
 $ npx ascribe baseline write
 wrote ascribe.baseline: 3412 problems in 1906 files, 3412 added; commit it with the docs
 $ npx ascribe check
-checked 2061 files for every build, reported on 2061: 0 errors, 0 warnings, 2 advice, 3412 in the baseline
+checked 2061 files for every build, 2 with problems: 0 errors, 0 warnings, 2 advice, 3412 in the baseline
 ```
 
 Commit `ascribe.baseline` with the docs: a reviewer sees in its diff what a change puts off, one line a problem.
 
 ## What it holds back
 
-- **Advice only.** An error makes a page wrong, and a warning is something the project has decided matters, so neither is ever put off: `ascribe baseline write` leaves them out and says how many. To put off a check's warnings, lower the check to `"advice"` in [`[checks]`](../content-model/checks.md#19-checks), then run `ascribe baseline write` again. That's a change to `ascribe.toml` a reviewer sees.
+- **Advice only.** An error makes a page wrong, and a warning is something the project has decided matters, so neither is ever put off: `ascribe baseline write` leaves them out and says how many. To put off a check's warnings, lower the check to `"advice"` in [`[checks]`](../content-model/checks.md#22-checks), then run `ascribe baseline write` again. That's a change to `ascribe.toml` a reviewer sees.
 - **By the problem, not its line.** An entry names the problem's check, its file, the text it's reported at, and its order among problems alike in all three, as [the project report](report.md#whats-new-since-the-last-report) tells one problem from another. A problem stays held back when lines are added above it, and is new, and reported, when the text it's about is edited, which is usually what someone should look at.
 - **Until the check is raised.** An entry whose check the project has since raised to a warning or an error doesn't hide it: the problem is reported at its level, and the entry stays, matched.
 - **Not what `@intended` does.** An [acknowledgement](../writing/directives.md#intended) is one problem, kept for good, with a reason, beside its block. A baseline is many, kept for now, with none. A problem the team means to keep is acknowledged, and pruned from the baseline. [Quieting a problem](check.md#quieting-a-problem) compares the four ways to quiet one.

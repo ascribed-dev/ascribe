@@ -1,21 +1,26 @@
 //! Starting a project: `ascribe init`.
 //!
 //! It writes a project's first `ascribe.toml`, [`MODEL_TEXT`], in a folder
-//! with none at or above it, and makes its content root. With the templates,
-//! it calls [`eject()`] with that text, as `ascribe templates eject` would
-//! in a project that had it, so the two can't differ; eject then writes the
-//! file, with the six types added at its end. It asks nothing, and writes
-//! over nothing: where there's a project already, it refuses.
+//! with none at or above it, an empty `ascribe.addresses` beside it, so the
+//! addresses the pages publish are kept from the first commit, and makes its
+//! content root. With the templates, it calls [`eject()`] with that text,
+//! as `ascribe templates eject` would in a project that had it, so the two
+//! can't differ; eject then writes the file, with the six types added at
+//! its end. It asks nothing, and writes over nothing: where there's a
+//! project already, it refuses, and an `ascribe.addresses` already there is
+//! left as it is.
 //!
 //! A content root that holds pages already is adopted: the file declares no
 //! page types, so the pages are of the implicit type `page` and none of them
 //! needs `type:` (SPEC §7.2), and the templates, which declare types, are
-//! refused.
+//! refused. It gets `ascribe.addresses` too, so those pages are kept from
+//! the first commit.
 
 use std::path::{Path, PathBuf};
 
-use ascribe_check::{MODEL_FILE, Project};
+use ascribe_check::MODEL_FILE;
 use ascribe_core::RelPath;
+use ascribe_model::{ADDRESSES_FILE, AddressFile};
 use ascribe_resolve::{DiskFs, FileSystem as _, Layout};
 use serde::Serialize;
 
@@ -90,12 +95,16 @@ pub struct InitAnswer {
     pub ascribe_version: &'static str,
     /// The files written, from the new project's folder, `/`-separated, in
     /// the order they were written: with the templates, eject's files, then
-    /// `ascribe.toml`. Empty when the templates were refused.
+    /// `ascribe.toml`, then `ascribe.addresses`, unless one was there
+    /// already. Empty when the templates were refused. With `--dry-run`,
+    /// the files it would write.
     pub written: Vec<String>,
+    /// Whether it ran with `--dry-run`, and wrote and made nothing.
+    pub dry_run: bool,
     /// The content root, from the new project's folder.
     pub content_root: String,
-    /// Whether the content root was made: false when the folder was there
-    /// already, or nothing was written.
+    /// Whether the content root was made, or with `--dry-run` would be:
+    /// false when the folder was there already, or nothing was written.
     pub content_root_made: bool,
     /// How many pages the content root held already. When it held any,
     /// `ascribe.toml` declares no page types, so none of them needs `type:`.
@@ -185,12 +194,14 @@ pub struct Init<'a> {
     pub content_root: Option<&'a str>,
     /// The version of Ascribe `templates.lock` records.
     pub ascribe_version: &'a str,
+    /// Whether to write nothing, and answer with what would be written.
+    pub dry_run: bool,
 }
 
 /// Starts a project in `request.root`: writes its first `ascribe.toml`, with
-/// the templates when they're asked for, and makes its content root. A
-/// content root with pages in it already gets an `ascribe.toml` that declares
-/// no page types.
+/// the templates when they're asked for, and `ascribe.addresses`, and makes
+/// its content root. A content root with pages in it already gets an
+/// `ascribe.toml` that declares no page types.
 ///
 /// # Errors
 ///
@@ -201,7 +212,7 @@ pub struct Init<'a> {
 /// nothing is written.
 pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
     let root = request.root;
-    if let Some(found) = Project::find_config(root) {
+    if let Some(found) = ascribe_workspace::find_config(root) {
         return Err(InitError::Project { found });
     }
     // Outside FileSystem: the folder a project is to start in, before there's
@@ -245,6 +256,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
         written: Vec::new(),
+        dry_run: request.dry_run,
         content_root: shown,
         content_root_made: false,
         pages,
@@ -263,6 +275,7 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
                 to: &to,
                 ascribe_version: request.ascribe_version,
                 keep_type: false,
+                dry_run: request.dry_run,
             },
             &fs,
         )?;
@@ -273,14 +286,31 @@ pub fn init(request: &Init<'_>) -> Result<InitAnswer, InitError> {
             return Ok(answer);
         }
     } else {
-        write(root, MODEL_FILE, |file| std::fs::write(file, &text))?;
+        if !request.dry_run {
+            // Library write: the first `ascribe.toml`, through `write`.
+            write(root, MODEL_FILE, |file| std::fs::write(file, &text))?;
+        }
         answer.written.push(MODEL_FILE.to_owned());
+    }
+    // Outside FileSystem: a file of the project just written, which is
+    // written only where there's none. Library write: the first
+    // `ascribe.addresses`, through `write`.
+    if !root.join(ADDRESSES_FILE).exists() {
+        if !request.dry_run {
+            write(root, ADDRESSES_FILE, |file| {
+                std::fs::write(file, AddressFile::default().to_toml())
+            })?;
+        }
+        answer.written.push(ADDRESSES_FILE.to_owned());
     }
     let content_root = layout.content_root.as_str();
     // Outside FileSystem: the content root of a project just written, which
     // must exist for the project to load.
     answer.content_root_made = !root.join(content_root).is_dir();
-    write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
+    if !request.dry_run {
+        // Library write: as above.
+        write(root, content_root, |dir| std::fs::create_dir_all(dir))?;
+    }
     Ok(answer)
 }
 
@@ -317,6 +347,8 @@ fn write(
         path: path.to_owned(),
         reason: e.to_string(),
     };
+    // Library write: the project `ascribe init` makes, which has no
+    // project to return its files to before it exists.
     if let Some(dir) = target.parent() {
         std::fs::create_dir_all(dir).map_err(failed)?;
     }

@@ -6,9 +6,9 @@ use std::process::ExitCode;
 
 use ascribe_core::Coded;
 
-/// Everything passed: no errors (and, with `--deny-warnings`, no warnings).
+/// Everything passed: no errors (and, with `--exit-code=warning`, no warnings).
 pub const OK: u8 = 0;
-/// The documentation set has errors (or warnings under `--deny-warnings`).
+/// The documentation set has errors (or warnings under `--exit-code=warning`).
 pub const PROBLEMS: u8 = 1;
 /// The command couldn't do its work: a usage error, no `ascribe.toml`, a
 /// content model that doesn't load, or a file that can't be read.
@@ -40,18 +40,18 @@ mod tests {
     use std::io;
     use std::path::PathBuf;
 
-    use ascribe_check::prose::EjectError;
-    use ascribe_check::{
-        BaselineError, DiagnoseError, LoadError, LocateError, ScopeError, UnknownBuild,
-    };
+    use ascribe_check::{BaselineError, DiagnoseError, ScopeError, UnknownBuild};
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
+    use ascribe_edit::{ReleaseError, RenameError, RetireError};
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
-    use ascribe_lsp::{ReleaseError, RenameError, RetireError, ServeError};
+    use ascribe_lsp::ServeError;
     use ascribe_query::QueryError;
+    use ascribe_report::prose::EjectError;
     use ascribe_resolve::reading::BadQuery;
     use ascribe_sources::SourcesError;
+    use ascribe_workspace::{LoadError, LocateError};
 
     use crate::agents::markers::Damage;
     use crate::agents::sync::SyncError;
@@ -66,6 +66,7 @@ mod tests {
     use crate::commands::templates::TemplatesError;
     use crate::commands::versions::VersionsError;
     use crate::context::Failure;
+    use crate::guard::GuardError;
 
     /// Every error code, once, with what it means. A tool that wraps a
     /// command tells failures apart by these, so don't rename one.
@@ -370,6 +371,14 @@ mod tests {
             "preview_port_unavailable",
             "preview can't listen on its port",
         ),
+        (
+            "guard_unrestorable",
+            "a command would change a file git can't put back as it was",
+        ),
+        (
+            "guard_no_git",
+            "a command would change a file in no git repository",
+        ),
     ];
 
     fn path() -> PathBuf {
@@ -476,7 +485,8 @@ mod tests {
                 | CheckError::Fix(_)
                 | CheckError::Code(_)
                 | CheckError::Baseline(_)
-                | CheckError::LimitNotConcise => {}
+                | CheckError::LimitNotConcise
+                | CheckError::Guard(_) => {}
             }
         }
         fn report(e: &ReportError) {
@@ -530,7 +540,8 @@ mod tests {
                 | SyncError::Git(_)
                 | SyncError::Read { .. }
                 | SyncError::Settings { .. }
-                | SyncError::Write { .. } => {}
+                | SyncError::Write { .. }
+                | SyncError::Guard(_) => {}
             }
         }
         fn baseline(e: &BaselineCommandError) {
@@ -690,7 +701,7 @@ mod tests {
         };
         let model_invalid = || LoadError::Model {
             text: text(),
-            diagnostics: Vec::new(),
+            issues: Vec::new(),
         };
         let not_a_repository = || DiffError::NotARepository {
             dir: text(),
@@ -875,6 +886,19 @@ mod tests {
                 below: Vec::new(),
             })),
             Box::new(Failure::Load(model_invalid())),
+            Box::new(GuardError::NotRestorable {
+                files: vec![text()],
+            }),
+            Box::new(GuardError::NoGit {
+                why: text(),
+                files: vec![text()],
+            }),
+            Box::new(CheckError::Guard(GuardError::NotRestorable {
+                files: vec![text()],
+            })),
+            Box::new(SyncError::Guard(GuardError::NotRestorable {
+                files: vec![text()],
+            })),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),
             Box::new(FmtError::Model {
                 config: path(),

@@ -38,9 +38,13 @@ impl Project {
         std::fs::read_to_string(self.dir.join(path)).expect("read a file")
     }
 
+    /// Runs `ascribe fmt` with `--force`: the project is in no repository
+    /// of its own, so the git guard would refuse every file. `tests/all/
+    /// guard.rs` has the guard.
     fn fmt(&self, args: &[&str]) -> Output {
         Command::new(env!("CARGO_BIN_EXE_ascribe"))
             .arg("fmt")
+            .arg("--force")
             .args(args)
             .current_dir(&self.dir)
             .output()
@@ -70,11 +74,25 @@ fn stderr(output: &Output) -> String {
 }
 
 #[test]
-fn check_exits_1_on_unformatted_input_and_changes_nothing() {
+fn check_exits_1_on_unformatted_input_shows_a_unified_diff_and_changes_nothing() {
     let p = Project::new("check-messy");
     p.write("docs/a.md", MESSY);
     let out = p.fmt(&["--check"]);
     assert_eq!(code(&out), 1, "{}", stderr(&out));
+    assert_eq!(
+        stdout(&out),
+        "--- a/docs/a.md\n+++ b/docs/a.md\n@@ -1,1 +1,1 @@\n-@note{ type = tip }:Text.\n+@note {type=tip}: Text.\n"
+    );
+    assert!(stderr(&out).contains("1 file would be reformatted"));
+    assert_eq!(p.read("docs/a.md"), MESSY);
+}
+
+#[test]
+fn dry_run_lists_each_change_exits_0_and_changes_nothing() {
+    let p = Project::new("dry-run-messy");
+    p.write("docs/a.md", MESSY);
+    let out = p.fmt(&["--dry-run"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
     assert_eq!(
         stdout(&out),
         "docs/a.md:1\n- @note{ type = tip }:Text.\n+ @note {type=tip}: Text.\n\n"

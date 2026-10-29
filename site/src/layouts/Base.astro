@@ -210,5 +210,18 @@ const canonical = new URL(Astro.url.pathname, site).href;
         if (event.key === "Escape" && sidebar?.classList.contains("open")) close();
       });
     </script>
+    <script>
+      // A table wider than the page scrolls sideways in its own box (site.css).
+      // While it does, it takes focus, so a keyboard can scroll it too; one
+      // that fits stays out of the tab order.
+      const tables = document.querySelectorAll<HTMLTableElement>(".page table");
+      const scrollable = new ResizeObserver((entries) => {
+        for (const { target } of entries) {
+          if (target.scrollWidth > target.clientWidth) target.setAttribute("tabindex", "0");
+          else target.removeAttribute("tabindex");
+        }
+      });
+      for (const table of tables) scrollable.observe(table);
+    </script>
   </body>
 </html>

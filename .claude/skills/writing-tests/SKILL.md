@@ -29,7 +29,7 @@ The conformance suite's format and adapters are in [tests/conformance/README.md]
 
 ## Where a kind of change is tested
 
-- **A new or changed diagnostic:** `tests/conformance/diagnostics.toml` and `crates/ascribe-core/src/diagnostics.rs` in the same order (a test compares them); a conformance case that expects the slug; a `[[diagnostic]].example` with a wrong page and a right page, which `crates/ascribe-query/tests/explain_examples.rs` runs; the file-level or page-level check's own test in `crates/ascribe-check/tests/all/`; and the generated reference, rewritten with `ASCRIBE_BLESS=1`.
+- **A new or changed diagnostic:** its entry in `crates/ascribe-core/data/diagnostics.toml`, which generates its slug constant; a conformance case that expects the slug; a `[[diagnostic]].example` with a wrong page and a right page, which `crates/ascribe-query/tests/explain_examples.rs` runs; the file-level or page-level check's own test in `crates/ascribe-check/tests/all/`; and the generated reference, rewritten with `ASCRIBE_BLESS=1`.
 - **The site output's markup:** a fixture in `tests/render/` (both renderers run them: `crates/ascribe-emit/tests/all/render_fixtures.rs` and `packages/astro/test/render-fixtures.test.ts`), the element contract if a name or attribute is new, `ascribe_core::names` for the name, and the Quill snapshots in `crates/ascribe-emit/tests/all/snapshots/`.
 - **The plain or JSON output:** `crates/ascribe-emit/tests/all/plain.rs` or the JSON assertions in `quill.rs`, construct by construct, and the snapshots.
 - **A command's output or JSON:** the command's file in `crates/ascribe-cli/tests/all/`, the JSON Schema (`crates/ascribe-cli/src/shapes.rs`, blessed), and `tests/output.rs`'s fixtures if the docs show the output.
@@ -100,7 +100,7 @@ A test that takes more than a few seconds in debug needs a reason in its doc com
 
 ## Generated files and blessing
 
-Some tests write the file they check when run with `ASCRIBE_BLESS=1`: the diagnostics reference, each command's options and JSON Schemas, the command output the docs show, what `agents sync` writes, the names each package imports, the render fixtures' inputs, the Zod fixtures, the extension's settings and commands, the design specimen and tokens. The table of which test rewrites what is in [ARCHITECTURE.md](../../../ARCHITECTURE.md#ascribe_bless1); run the one named, then read the diff before committing it. A generated file is never edited by hand.
+Some tests write the file they check when run with `ASCRIBE_BLESS=1`: the diagnostics reference, each command's options and JSON Schemas, the command output the docs show, what `agents sync` writes, the names each package imports, the render fixtures' inputs, the Zod fixtures, the extension's settings and commands, the design specimen and tokens. The table of which test rewrites what is in [ARCHITECTURE.md](../../../ARCHITECTURE.md#ascribe_bless1); run the one named, or `pnpm bless` to run all of them in order, then read the diff before committing it. A generated file is never edited by hand.
 
 ## Before you finish
 

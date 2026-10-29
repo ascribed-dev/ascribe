@@ -14,7 +14,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use crate::support::{Client, Fixture};
-use ascribe_check::{Project, SourceFile, check_project};
+use ascribe_check::{Project, check_project};
 use ascribe_core::{FileId, LineIndex, RelPath, WideEncoding, WideLineCol};
 use lsp_types::FileChangeType;
 
@@ -112,13 +112,15 @@ impl World {
                 texts.push((RelPath::parse(rel).unwrap(), text));
             }
         }
-        let sources: Vec<SourceFile> = Project::from_sources(texts);
-        let project = Project::from_parts(
-            root.clone(),
-            RelPath::parse("docs").unwrap(),
-            m.clone(),
-            model_text,
-            sources,
+        let project = Project::new(
+            ascribe_check::in_memory(
+                root.clone(),
+                RelPath::parse("docs").unwrap(),
+                m.clone(),
+                model_text,
+                texts,
+            )
+            .snapshot(),
         );
         let build = m.editor_default_build().clone();
         let mut out: BTreeMap<String, Vec<(String, usize, usize, String)>> = BTreeMap::new();

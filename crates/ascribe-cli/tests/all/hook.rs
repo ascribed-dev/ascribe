@@ -871,3 +871,87 @@ fn a_baseline_that_cant_be_read_is_named_after_an_edit() {
         );
     }
 }
+
+#[test]
+fn an_edit_that_leaves_a_templates_placeholder_names_it() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("ascribe.toml"),
+        format!("{MODEL}\n[types.how-to]\ntemplate = \"templates/how-to.md\"\n\n[types.how-to.frontmatter]\ndescription = \"string\"\n"),
+    )
+    .unwrap();
+    fs::create_dir_all(root.join("templates")).unwrap();
+    let template = "---\ntype: how-to\ntitle: Title\ndescription: \"\\\\{One sentence.}\"\n---\n\nThis guide explains how to \\{insert the task}.\n";
+    fs::write(root.join("templates/how-to.md"), template).unwrap();
+    fs::write(
+        root.join("docs/rotate.md"),
+        template.replace("title: Title", "title: Rotate keys\ndraft: true"),
+    )
+    .unwrap();
+    let cache = tempfile::tempdir().unwrap();
+    // In a draft, they're advice, which the hook passes on.
+    let said = "`ascribe check docs/rotate.md` reports 2 of what the page's template left to fill in, which you write now, while the page is yours:\n\
+                docs/rotate.md:5: [ASC195] `description` is still the template's `\\{One sentence.}`; write this page's own\n\
+                docs/rotate.md:8: [ASC195] this page still has its template's placeholder `{insert the task}`; write what it asks for in its place\n\
+                Checked build `site` only. Run `ascribe explain <code>` for any you don't recognize.\n";
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/rotate.md");
+        let here = hook(&[harness], &input, None);
+        assert_eq!(context(harness, &here), said, "{harness}");
+        // The check server says the same.
+        let out = served(&[harness], &input, cache.path());
+        assert_eq!(context(harness, &out), said, "{harness}");
+    }
+    // In a page that publishes, they're errors.
+    fs::write(
+        root.join("docs/rotate.md"),
+        template.replace("title: Title", "title: Rotate keys"),
+    )
+    .unwrap();
+    let input = edit_input("claude-code", root, "docs/rotate.md");
+    let text = context("claude-code", &hook(&["claude-code"], &input, None));
+    assert!(
+        text.starts_with(
+            "`ascribe check docs/rotate.md` reports 2 errors:\ndocs/rotate.md:4: [ASC286]"
+        ),
+        "{text}"
+    );
+    // Filled in, the hook goes quiet.
+    fs::write(
+        root.join("docs/rotate.md"),
+        "---\ntype: how-to\ntitle: Rotate keys\ndescription: Rotate the signing keys.\n---\n\nThis guide explains how to rotate the keys.\n",
+    )
+    .unwrap();
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/rotate.md");
+        assert_quiet(harness, "edit", &hook(&[harness], &input, None));
+    }
+}
+
+/// A phrase's value written out is named with its fix when the fix is safe,
+/// as a version's is, and left out when it isn't, as a word's is.
+#[test]
+fn an_edit_that_writes_a_phrases_value_names_the_safe_fix() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("ascribe.toml"),
+        format!("{MODEL}\n[phrases]\nproduct = \"Quill\"\nversion = \"3.4.1\"\n"),
+    )
+    .unwrap();
+    fs::write(
+        root.join("docs/index.md"),
+        "---\ntitle: Home\n---\n\nSee [the guide](guide.md), and install Quill 3.4.1.\n",
+    )
+    .unwrap();
+    let said = "`ascribe check docs/index.md` reports 1 advice with a safe fix, which you make:\n\
+                docs/index.md:5: [ASC288] `3.4.1` is the value of the phrase `{version}`; write `{version}`, so the page changes with the value\n  \
+                Fix: Replace with `{version}`.\n\
+                Checked build `site` only. Run `ascribe explain <code>` for any you don't recognize.\n";
+    for harness in HARNESSES {
+        let input = edit_input(harness, root, "docs/index.md");
+        let here = hook(&[harness], &input, None);
+        assert_eq!(context(harness, &here), said, "{harness}");
+    }
+}

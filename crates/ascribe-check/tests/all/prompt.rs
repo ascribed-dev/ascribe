@@ -35,18 +35,22 @@ summary-missing = "advice"
 
 fn project(files: &[(&str, &str)]) -> Project {
     let model = ascribe_model::load_str(MODEL, FileId::new(0)).expect("the model loads");
-    let sources = Project::from_sources(files.iter().map(|(path, text)| {
-        (
-            RelPath::parse(path).expect("a relative path"),
-            (*text).to_owned(),
+    let sources =
+        Vec::<(ascribe_core::RelPath, String)>::from_iter(files.iter().map(|(path, text)| {
+            (
+                RelPath::parse(path).expect("a relative path"),
+                (*text).to_owned(),
+            )
+        }));
+    Project::new(
+        ascribe_check::in_memory(
+            PathBuf::from("/nonexistent-ascribe-project"),
+            RelPath::parse("docs").expect("a relative path"),
+            model,
+            MODEL.to_owned(),
+            sources,
         )
-    }));
-    Project::from_parts(
-        PathBuf::from("/nonexistent-ascribe-project"),
-        RelPath::parse("docs").expect("a relative path"),
-        model,
-        MODEL.to_owned(),
-        sources,
+        .snapshot(),
     )
 }
 
@@ -86,7 +90,7 @@ fn id(project: &Project, content: &str) -> FileId {
 }
 
 fn shown_on(project: &Project) -> impl Fn(&RelPath) -> Vec<RelPath> + '_ {
-    let index = project.held_index();
+    let index = project.index();
     move |fragment| index.including_pages(fragment)
 }
 

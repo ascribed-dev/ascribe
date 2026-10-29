@@ -4,22 +4,25 @@
 //! run says why, and the others still run.
 
 pub mod json;
+mod store;
 mod text;
 
 use std::io::{self, Write};
 use std::process::ExitCode;
+use std::sync::Arc;
 use std::time::Duration;
 
-use ascribe_check::links::{Cache, History};
 use ascribe_check::prompt::{self, Builds as PromptBuilds};
-use ascribe_check::report_history::ReportHistory;
 use ascribe_check::{Diagnostic, Project, Reported, Severity};
 use ascribe_core::Coded;
 use ascribe_query::report::{Options, Ran, Report, Section, Tools};
+use ascribe_report::links::{Cache, History};
+use ascribe_report::report_history::ReportHistory;
+use ascribe_report::store::Store;
 use clap::{Args as ClapArgs, ValueEnum};
 
 use crate::cli::Global;
-use crate::context::{Failure, load_project};
+use crate::context::{Failure, checked, load_project};
 use crate::exit;
 use crate::report::FileTable;
 use crate::shell::quote;
@@ -162,6 +165,7 @@ impl SectionArg {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
     /// Each section, for people.
+    #[value(alias = "concise")]
     Text,
     /// Markdown, for a CI job's summary or an issue's body.
     Markdown,
@@ -263,7 +267,7 @@ pub(crate) fn report(
         return exit::fail(err, &ReportError::PromptSection);
     }
     let project = match load_project(global) {
-        Ok(project) => project,
+        Ok(workspace) => checked(&workspace),
         Err(failure) => {
             let message = failure_message(failure);
             if args.format == Format::Json {
@@ -273,16 +277,18 @@ pub(crate) fn report(
             return exit::FAILURE;
         }
     };
+    // The files the report keeps between runs, in the project's folder.
+    let store: Arc<dyn Store> = Arc::new(store::DiskStore::new(project.root()));
     // The store of answers `links` reuses, in the project's `.ascribe/`,
     // on the day the binary gives.
     let link_cache = project
         .today()
         .filter(|_| sections.contains(&Section::Links))
-        .map(|today| Cache::open(&project, project.root(), today, args.recheck));
+        .map(|today| Cache::open(&project, store.clone(), today, args.recheck));
     // What `links` remembers from earlier runs, beside it.
     let link_history = link_cache.as_ref().and(project.today()).map(|today| {
         let confirm_days = project.model().checks.links.confirm_days;
-        History::open(project.root(), today, confirm_days, args.no_history)
+        History::open(store.clone(), today, confirm_days, args.no_history)
     });
     // What the other sections remember from the last report, beside it;
     // with `--no-history`, it's neither read nor written.
@@ -295,7 +301,7 @@ pub(crate) fn report(
         .and_then(|today| {
             let builds = ascribe_check::select_builds(&project, &args.build).ok()?;
             let names: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
-            Some(ReportHistory::open(project.root(), today, &names))
+            Some(ReportHistory::open(store.clone(), today, &names))
         });
     let options = Options {
         sections: &sections,
@@ -344,17 +350,17 @@ pub(crate) fn report(
 fn failure_message(failure: Failure) -> String {
     match failure {
         Failure::Config(e) => e.to_string(),
-        Failure::Load(ascribe_check::LoadError::Model { diagnostics, .. }) => {
+        Failure::Load(ascribe_workspace::LoadError::Model { issues, .. }) => {
             let mut text = format!(
                 "{} has errors, so nothing can be reported",
                 ascribe_check::MODEL_FILE
             );
-            for d in diagnostics {
+            for d in issues.iter().map(ascribe_check::Diagnostic::from_issue) {
                 text.push_str(&format!("\n  {}", d.message));
             }
             text
         }
-        Failure::Load(e @ ascribe_check::LoadError::Read { .. }) => e.to_string(),
+        Failure::Load(e @ ascribe_workspace::LoadError::Read { .. }) => e.to_string(),
     }
 }
 

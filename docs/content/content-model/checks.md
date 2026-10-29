@@ -1,12 +1,13 @@
 ---
 type: reference
-title: "`ascribe.toml`: checks, permalinks, and listing"
-description: "How the content model sets the checks' levels, permalinks, crawlers, and listing, its defaults, and how it's validated."
+title: "`ascribe.toml`: checks and the editor"
+description: "How the content model sets the checks' levels and the editor's build, what an absent section means, and how the file is validated."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [checks, permalinks, and listing](../contracts/content-model/checks.md).
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [checks and the editor](../contracts/content-model/checks.md).
 
-## 19. `[checks]`
+## 22. `[checks]`
+@id {permalink=true}: 22-checks
 
 How loudly each check about your content's quality speaks: whether it's reported as advice, a warning, or an error, or not at all. A diagnostic about whether the project is valid, such as a broken link, can't be set here: it's always reported at its own severity.
 
@@ -45,7 +46,7 @@ In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a pa
 **Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`). `page-size`'s, `memo-long`'s, and `summary-long`'s `limit` is a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### `[[intended]]`: acknowledgements
-@id: intended-acknowledgements
+@id {permalink=true}: intended-acknowledgements
 
 Says that a check's problem with a content model entry or an image is intended, as [`@intended`](../writing/directives.md#intended) does for a block and the `intended` frontmatter key for a page. Each table names one check, one entry, and why.
 
@@ -99,58 +100,9 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 
 ---
 
-## 20. `[permalinks]`
+## 23. `[editor]`
 
-`ascribe.toml` has no `[permalinks]` any more. What happened to a [permalink](../writing/directives.md#permalinks) that no heading or page declares now, retired with a reason, or moved to another permalink or to a page, is recorded in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), keyed `go:<name>`, with the rest of where the docs' addresses went (SPEC §7.10). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
-
-[`ascribe addresses init`](../publishing/redirects.md#cli-addresses-init) moves a project's `[permalinks.retired]` and `[permalinks.aliases]` into `ascribe.addresses`, and removes the table. Until it does, the table is an error at the key that says so (`model-unknown-key`).
-
----
-
-## 21. `[crawlers]`
-
-@include: ../_fragments/content-model/crawlers.md
-
-What each purpose's choice costs, and why a page is kept out of search by its listing and not by `robots.txt`, is in [Publishing](../publishing/index.md#what-crawlers-are-told).
-
-`ascribe check` reads each search crawler the way it reads the file: the one group that applies to it. A page that isn't listed is reported when a search crawler may not fetch it, whether the lines for every crawler say so, a group of `lines` that names that crawler, or `search = "disallow"` (`listing-disallowed`).
-
-### Crawlers by purpose
-
-Each operator below runs a bot for each purpose, or a token that says what it may do with what its other bots fetch, and says on its own page which is which. A purpose's group names each of them. A bot whose operator states no single purpose isn't here, such as Common Crawl's `CCBot`, whose archive many train on, or Meta's `meta-externalagent`, which gathers for training and for indexing both; name such a bot in `lines`, in a group of its own. Each row says what its operator said on the day in its last column, linked to the page.
-
-@include: ../_generated/crawlers.md
-
-The list changes, as operators add bots and rename them. Ascribe's release process rereads every source, and a newer Ascribe may name more crawlers for a purpose than an older one did.
-
-**Rules.** Each line is one line (`model-crawlers-line`) and not empty (`model-empty-text`). A purpose is `allow` or `disallow` (`model-invalid-value`). A crawler is named in one group: not in a group of `lines` that a disallowed purpose names, and not in two groups of `lines` (`model-crawlers-named-twice`). Projects that build one site must agree on each purpose, since it has one `robots.txt`: one that allows a purpose and one that disallows it fail the site's build, naming both. No other key is allowed in `[crawlers]` (`model-unknown-key`).
-
----
-
-## 22. `[listing]`
-
-@include: ../_fragments/content-model/listing.md
-
-What each value tells search engines and agents is in [Publishing](../publishing/index.md#how-a-page-is-listed).
-
-In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says whether a page is listed, and which rule says so; choosing the row opens the rule.
-
-In the editor, `listing:` in a page's frontmatter completes its three values, and hovering it says which rule the page is under. A page looser than its rule has a quick fix that removes its `listing`.
-
-**Rules.** Each value is one of the three (`model-invalid-value`). A folder is a path from the content root ending in `/`, with no `.` or `..` part or pattern characters, of a folder that's there, with its name's case as on disk (`model-listing-folder`). A type is one the project declares, or `page` when it declares none (`model-listing-type`). A rule isn't looser than a folder's it's under, or than `default` (`model-listing-looser`). A page isn't looser than a rule it's under (`listing-loosened`). No other key is allowed in `[listing]` (`model-unknown-key`).
-
-In an older line of a versioned build, a page isn't looser than `older-lines` either (`listing-loosened-in-line`).
-
----
-
-## 23. `[apis.<name>]`
-@available: ascribe 0.4.4
-
-@include: ../_fragments/content-model/apis.md
-
-How to publish a reference and link to it is in [Link to your API reference](../openapi/index.md).
-
-**Rules.** `spec` is a path from the project root, relative (`model-path-absolute`), inside the git repository the project is in, when it's in one (`model-api-outside-repository`). A file that isn't there, that can't be read, or that isn't YAML or JSON is an error at `spec` (`api-spec-unreadable`), and one with no operations is advice (`api-spec-empty`). `reference` is a table with `renderer` and `at`, or a template with `{operationId}` and no placeholder but `{operationId}` and `{tag}` (`model-api-reference`). A link to an operation the spec doesn't have is an error at the link, with the closest ids as its fixes (`link-operation-missing`). An operation no link names, unless the spec marks it `deprecated`, is advice at `spec` (`api-operation-unreferenced`): see [Find the operations no guide links to](../openapi/coverage.md). No other key is allowed (`model-unknown-key`).
+@include: ../_fragments/content-model/editor.md
 
 ---
 

@@ -31,6 +31,9 @@ name: CI
 #   label `outputs changed` too, and lists the files it accepts in the
 #   description (see the job): those still show, but only another difference
 #   fails.
+# - A pull request's change record (the `record` job) fails when a contract
+#   changed with no decision, and warns when the source changed with no
+#   changelog entry (CONTRIBUTING.md, "What CI checks a pull request records").
 # - The install script and the Homebrew formula install the last release, on
 #   every night and when either changed.
 # - A pull request or a push to `main` that changes the crates or the corpora
@@ -122,7 +125,7 @@ jobs:
           # nightly run don't use this: their platforms are set below.
           windows=false
           if [ "$files" = all ] ||
-            printf '%s\n' "$files" | grep -qE '^(crates/(ascribe-(core|resolve|emit|fmt|sources|lsp))/|crates/ascribe-model/src/loader\.rs$|crates/ascribe-check/src/(scope|tool)\.rs$|crates/ascribe-check/src/prose/|crates/ascribe-cli/src/(agents/(checker|hook)|commands/observe)\.rs$|packages/vscode/(src/projects\.ts|test/integration/)|\.github/workflows/|rust-toolchain\.toml$|\.nvmrc$|Cargo\.lock$)'; then
+            printf '%s\n' "$files" | grep -qE '^(crates/(ascribe-(core|resolve|emit|fmt|sources|lsp))/|crates/ascribe-model/src/loader\.rs$|crates/ascribe-check/src/scope\.rs$|crates/ascribe-report/src/(tool\.rs$|prose/)|crates/ascribe-cli/src/(agents/(checker|hook)|commands/observe)\.rs$|packages/vscode/(src/projects\.ts|test/integration/)|\.github/workflows/|rust-toolchain\.toml$|\.nvmrc$|Cargo\.lock$)'; then
             windows=true
           fi
 
@@ -296,6 +299,35 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+  # What a pull request records besides its code (scripts/ci/change-record.ts):
+  # a contract changed with no decision fails, and a change to the source with
+  # no changelog entry warns in the summary, unless the description says it's
+  # not user-visible. The description is read here rather than from the
+  # event, so a re-run sees an edit.
+  record:
+    name: change record
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # To read the description.
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The merge commit and its first parent, the base it was made on.
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '.body // ""' > "$RUNNER_TEMP/description.md"
+          node scripts/ci/change-record.ts --base HEAD^1 --description "$RUNNER_TEMP/description.md"
+
   # The install script (site/public/install.sh) installs the last release on
   # Linux, in a container with no Node and the oldest glibc the binaries run
   # on, and on macOS; and the formula scripts/release/formula.ts writes for it
@@ -364,7 +396,7 @@ jobs:
   # passed or was skipped, and fails when one failed or was cancelled.
   gate:
     name: all checks
-    needs: [changes, prose, rust, js, site, compare, install]
+    needs: [changes, prose, rust, js, site, compare, record, install]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 30

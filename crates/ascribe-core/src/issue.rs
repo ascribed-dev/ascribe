@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::{FileId, Location, TextEdit};
 
-/// The slug of a diagnostic in the registry, `tests/conformance/diagnostics.toml`.
+/// The slug of a diagnostic in the registry, `crates/ascribe-core/data/diagnostics.toml`.
 ///
 /// The only values are the constants in [`diagnostics`](crate::diagnostics):
 /// the field is private, so no other crate can make up a slug.

@@ -17,6 +17,7 @@ use crate::answer::{self, Format, FromDisk};
 use crate::cli::Global;
 use crate::commands::check;
 use crate::exit;
+use crate::guard;
 
 /// Arguments of `ascribe baseline`.
 #[derive(Debug, ClapArgs)]
@@ -42,6 +43,10 @@ pub enum Command {
 /// Arguments of `ascribe baseline write`.
 #[derive(Debug, ClapArgs)]
 pub struct WriteArgs {
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// How to show what was written.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -50,6 +55,10 @@ pub struct WriteArgs {
 /// Arguments of `ascribe baseline prune`.
 #[derive(Debug, ClapArgs)]
 pub struct PruneArgs {
+    /// `--dry-run` and `--force`.
+    #[command(flatten)]
+    pub guard: guard::Options,
+
     /// How to show what was removed.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
@@ -84,8 +93,11 @@ pub(crate) struct WriteJson {
     file: &'static str,
     /// Whether the project had no baseline, so this made one.
     created: bool,
-    /// Whether the file changed: it's new, or its text differs.
+    /// Whether the file changed: it's new, or its text differs. With
+    /// `--dry-run`, whether it would.
     changed: bool,
+    /// Whether the file was written: it changed, without `--dry-run`.
+    written: bool,
     /// How many problems the baseline holds, after this.
     entries: usize,
     /// How many files they're in.
@@ -121,8 +133,11 @@ pub(crate) struct PruneJson {
     /// Whether the project has a baseline. Without one, there's nothing to
     /// prune, and nothing is written.
     found: bool,
-    /// Whether the file changed: some entry was removed.
+    /// Whether the file changed: some entry was removed. With `--dry-run`,
+    /// whether it would.
     changed: bool,
+    /// Whether the file was written: it changed, without `--dry-run`.
+    written: bool,
     /// How many problems the baseline holds, after this.
     entries: usize,
     /// How many files they're in.
@@ -162,11 +177,13 @@ fn checked(global: &Global, err: &mut dyn Write) -> Result<(check::Outcome, Vec<
         summary: false,
         format: check::Format::Text,
         limit: None,
+        exit_code: None,
         deny_warnings: false,
         base: None,
         base_exact: false,
         addresses: check::Addresses::NotCompared,
         fix: false,
+        guard: crate::guard::Options::default(),
         vale: false,
         no_baseline: true,
         vale_timeout: None,
@@ -216,8 +233,8 @@ fn run_write(global: &Global, args: &WriteArgs, out: &mut dyn Write, err: &mut d
     };
     let written = baseline::write(project, existing.as_ref(), &diagnostics);
     let changed = project.baseline_text() != Some(written.text.as_str());
-    if changed && let Err(e) = write_file(project.root(), &written.text) {
-        return answer::fail(err, &e);
+    if changed && let Err(code) = write_file(project.root(), &written.text, args.guard, err) {
+        return code;
     }
     let result = match args.format {
         Format::Json => answer::write_json(
@@ -228,6 +245,7 @@ fn run_write(global: &Global, args: &WriteArgs, out: &mut dyn Write, err: &mut d
                 file: BASELINE_FILE,
                 created: existing.is_none(),
                 changed,
+                written: changed && !args.guard.dry_run,
                 entries: written.entries,
                 files: written.files,
                 added: written.added,
@@ -237,18 +255,24 @@ fn run_write(global: &Global, args: &WriteArgs, out: &mut dyn Write, err: &mut d
                 },
             },
         ),
-        Format::Text => write_written(out, &written, changed),
+        Format::Text => write_written(out, &written, changed, args.guard.dry_run),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-fn write_written(out: &mut dyn Write, w: &Written, changed: bool) -> io::Result<()> {
+fn write_written(out: &mut dyn Write, w: &Written, changed: bool, dry_run: bool) -> io::Result<()> {
     let held = format!(
         "{} in {}",
         plural(w.entries, "problem"),
         plural(w.files, "file")
     );
-    if changed {
+    if changed && dry_run {
+        writeln!(
+            out,
+            "would write {BASELINE_FILE}: {held}, {} added",
+            w.added
+        )?;
+    } else if changed {
         writeln!(
             out,
             "wrote {BASELINE_FILE}: {held}, {} added; commit it with the docs",
@@ -290,9 +314,9 @@ fn run_prune(global: &Global, args: &PruneArgs, out: &mut dyn Write, err: &mut d
         .map(|b| baseline::prune(project, b, &diagnostics));
     let changed = pruned.as_ref().is_some_and(|p| p.removed > 0);
     if let Some(pruned) = pruned.as_ref().filter(|_| changed)
-        && let Err(e) = write_file(project.root(), &pruned.text)
+        && let Err(code) = write_file(project.root(), &pruned.text, args.guard, err)
     {
-        return answer::fail(err, &e);
+        return code;
     }
     let result = match args.format {
         Format::Json => answer::write_json(
@@ -303,17 +327,18 @@ fn run_prune(global: &Global, args: &PruneArgs, out: &mut dyn Write, err: &mut d
                 file: BASELINE_FILE,
                 found: pruned.is_some(),
                 changed,
+                written: changed && !args.guard.dry_run,
                 entries: pruned.as_ref().map_or(0, |p| p.entries),
                 files: pruned.as_ref().map_or(0, |p| p.files),
                 removed: pruned.as_ref().map_or(0, |p| p.removed),
             },
         ),
-        Format::Text => write_pruned(out, pruned.as_ref()),
+        Format::Text => write_pruned(out, pruned.as_ref(), args.guard.dry_run),
     };
     answer::written(result, err).unwrap_or(exit::OK)
 }
 
-fn write_pruned(out: &mut dyn Write, pruned: Option<&Pruned>) -> io::Result<()> {
+fn write_pruned(out: &mut dyn Write, pruned: Option<&Pruned>, dry_run: bool) -> io::Result<()> {
     let Some(p) = pruned else {
         return writeln!(
             out,
@@ -329,6 +354,12 @@ fn write_pruned(out: &mut dyn Write, pruned: Option<&Pruned>) -> io::Result<()> 
         writeln!(
             out,
             "{BASELINE_FILE} is up to date: every entry matches a problem; {held}"
+        )
+    } else if dry_run {
+        writeln!(
+            out,
+            "would remove {} that matched nothing from {BASELINE_FILE}: {held} left",
+            plural(p.removed, "entry")
         )
     } else {
         writeln!(
@@ -348,15 +379,35 @@ fn plural(n: usize, word: &str) -> String {
     }
 }
 
-/// Writes `ascribe.baseline` in the project's folder.
-fn write_file(root: &Path, text: &str) -> Result<(), BaselineCommandError> {
+/// Writes `ascribe.baseline` in the project's folder, unless the guard
+/// refuses or it's a dry run; a failure is reported on `err`, and its exit
+/// code returned.
+fn write_file(
+    root: &Path,
+    text: &str,
+    guard: guard::Options,
+    err: &mut dyn Write,
+) -> Result<(), u8> {
     let path: PathBuf = root.join(BASELINE_FILE);
+    guard.allow(&[&path]).map_err(|e| answer::fail(err, &e))?;
+    if guard.dry_run {
+        return Ok(());
+    }
+    writable(&path)
+        .and_then(|()| {
+            std::fs::write(&path, text).map_err(|e| BaselineCommandError::Unwritable(e.to_string()))
+        })
+        .map_err(|e| answer::fail(err, &e))
+}
+
+/// Whether `ascribe.baseline` at `path` can be written.
+fn writable(path: &Path) -> Result<(), BaselineCommandError> {
     // Outside FileSystem: writing the project's own file beside
     // ascribe.toml, as `ascribe permalinks sync` writes its list.
-    if ascribe_resolve::is_link(&path) {
+    if ascribe_resolve::is_link(path) {
         return Err(BaselineCommandError::Unwritable(
             "it's a link; replace it with a file, or remove it".to_owned(),
         ));
     }
-    std::fs::write(&path, text).map_err(|e| BaselineCommandError::Unwritable(e.to_string()))
+    Ok(())
 }

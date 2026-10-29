@@ -17,14 +17,19 @@ fn project(text: &str, builds: &[&str]) -> Project {
         model_text.push_str(&format!("\n[editor]\nbuild = \"{first}\"\n"));
     }
     let model = ascribe_model::load_str(&model_text, FileId::new(0)).expect("a model");
-    let sources =
-        Project::from_sources([(RelPath::parse("index.md").expect("a path"), text.into())]);
-    Project::from_parts(
-        std::env::temp_dir(),
-        RelPath::root(),
-        model,
-        model_text,
-        sources,
+    let sources = Vec::<(ascribe_core::RelPath, String)>::from_iter([(
+        RelPath::parse("index.md").expect("a path"),
+        text.into(),
+    )]);
+    Project::new(
+        ascribe_check::in_memory(
+            std::env::temp_dir(),
+            RelPath::root(),
+            model,
+            model_text,
+            sources,
+        )
+        .snapshot(),
     )
 }
 

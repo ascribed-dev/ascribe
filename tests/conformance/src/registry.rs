@@ -1,4 +1,4 @@
-//! The diagnostics registry, `tests/conformance/diagnostics.toml`.
+//! The diagnostics registry, `crates/ascribe-core/data/diagnostics.toml`.
 //!
 //! The harness reads it to check the slugs cases expect: every slug must be
 //! registered, file-level slugs belong in a case's top-level `diagnostics`

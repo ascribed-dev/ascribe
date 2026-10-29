@@ -29,6 +29,10 @@
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
       "type": "integer"
+    },
+    "written": {
+      "description": "Whether a file was written: one made, or moved into, without\n`--dry-run`.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -36,7 +40,8 @@
     "ascribe_version",
     "file",
     "created",
-    "moved"
+    "moved",
+    "written"
   ],
   "title": "AddressesInitReport",
   "type": "object"

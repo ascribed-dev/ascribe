@@ -1,0 +1,26 @@
+[package]
+name = "ascribe-edit"
+description = "The edits Ascribe's commands share with its language server: renames, releases, and retiring a line."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ascribe-core.workspace = true
+ascribe-syntax.workspace = true
+ascribe-model.workspace = true
+ascribe-check.workspace = true
+ascribe-resolve.workspace = true
+ascribe-workspace.workspace = true
+ascribe-emit.workspace = true
+lsp-types = "0.97"
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+thiserror.workspace = true
+toml_edit.workspace = true
+
+[lints]
+workspace = true

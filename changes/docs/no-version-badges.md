@@ -1,0 +1,1 @@
+- **The docs no longer badge features with the release that added them.** Every reader is on the live release, so only what's in `main` but not yet released, or a lifecycle state such as deprecated, is marked. See [`@available`](docs/content/writing/directives.md#available).

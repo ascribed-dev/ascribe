@@ -10,7 +10,7 @@ title = "string"
 description = "string?"
 order = "number?"
 updated = "date?"
-draft = "boolean?"
+featured = "boolean?"
 level = "enum(beginner, intermediate, advanced)?"
 tags = "list(string)?"
 

@@ -1,0 +1,1 @@
+- **A template's placeholder in a page that publishes is an error.** `template-placeholder-published` fails `check` and `build`; in a draft, `template-placeholder-left` stays advice. See [What's left to fill in](docs/content/templates/index.md).

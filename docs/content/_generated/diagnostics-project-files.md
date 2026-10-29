@@ -1,11 +1,11 @@
 ## Addresses file
-@memo: Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
+@memo: Generated from crates/ascribe-core/data/diagnostics.toml by tests/conformance/tests/docs.rs; edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs` to rewrite it.
 
 ### ASC254 `addresses-file-invalid`
 @id {permalink=true}: ASC254
 @summary: `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** `ascribe.addresses` isn't valid TOML, or doesn't have the shape §7.10 gives it.
 
@@ -19,7 +19,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC255
 @summary: A page's address, or its Markdown version's, that the base published and nothing accounts for.
 
-Warning · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Warning](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A page's address, or its Markdown version's, that the base published and nothing accounts for.
 
@@ -33,7 +33,7 @@ Warning · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC
 @id {permalink=true}: ASC256
 @summary: A heading's explicit id that the base published on a page still published, and nothing accounts for.
 
-Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A heading's explicit id that the base published on a page still published, and nothing accounts for.
 
@@ -47,7 +47,7 @@ Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC258
 @summary: A build the base has and the working tree doesn't, other than a line archived now.
 
-Advice · file level · next step: outside · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A build the base has and the working tree doesn't, other than a line archived now.
 
@@ -61,7 +61,7 @@ Advice · file level · next step: outside · [SPEC §7.10]({repo}/blob/main/SPE
 @id {permalink=true}: ASC265
 @summary: A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares.
 
-Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A `[moved]` value that isn't a page, or a heading on one, in every build that published its key, or, for a permalink, a permalink the content declares.
 
@@ -75,7 +75,7 @@ Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC266
 @summary: A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares.
 
-Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A key of `[moved]` or `[retired]` whose source is back: a page, a heading's `@id`, or a permalink the content declares.
 
@@ -89,7 +89,7 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC267
 @summary: A key of `[moved]` or `[retired]` whose address another source publishes now.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A key of `[moved]` or `[retired]` whose address another source publishes now.
 
@@ -103,7 +103,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC268
 @summary: An entry the base's `ascribe.addresses` doesn't have, whose key the base never published.
 
-Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** An entry the base's `ascribe.addresses` doesn't have, whose key the base never published.
 
@@ -117,7 +117,7 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC269
 @summary: A key written twice in a table, or in both `[moved]` and `[retired]`.
 
-Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A key written twice in a table, or in both `[moved]` and `[retired]`.
 
@@ -131,7 +131,7 @@ Error · file level · next step: choose · [SPEC §7.10]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC270
 @summary: A `[moved]` value that's another entry's key.
 
-Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [fix](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** A `[moved]` value that's another entry's key.
 
@@ -145,7 +145,7 @@ Advice · file level · next step: fix · [SPEC §7.10]({repo}/blob/main/SPEC.md
 @id {permalink=true}: ASC271
 @summary: An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** An `#id` entry from a page that's gone whose id is live on the page its page's addresses lead to.
 
@@ -159,7 +159,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC272
 @summary: `ascribe.addresses` deleted while the base has it.
 
-Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** `ascribe.addresses` deleted while the base has it.
 
@@ -173,7 +173,7 @@ Error · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC273
 @summary: Many addresses forwarded to one index page or the home page.
 
-Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
 **When:** Many addresses forwarded to one index page or the home page.
 
@@ -189,7 +189,7 @@ Advice · file level · next step: write · [SPEC §7.10]({repo}/blob/main/SPEC.
 @id {permalink=true}: ASC261
 @summary: A declared spec that doesn't exist, can't be read, or isn't YAML or JSON.
 
-Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A declared spec that doesn't exist, can't be read, or isn't YAML or JSON.
 
@@ -197,13 +197,13 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 
 **Fix:** Fix `spec`, which is relative to the folder ascribe.toml is in, or fix the file. A spec generated from code has to be on disk when Ascribe runs, as it does for the renderer: generate it first. Ascribe reads one file, in YAML or JSON, as the renderer is given it: for a spec split across files, point `spec` at the bundled one.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ### ASC262 `api-spec-empty`
 @id {permalink=true}: ASC262
 @summary: A declared spec with no operations.
 
-Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A declared spec with no operations.
 
@@ -211,7 +211,7 @@ Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPE
 
 **Fix:** Check that `spec` names the spec you mean, and that it has a `paths` object with operations in it. A path item that's a `$ref` isn't followed: point `spec` at the bundled spec your renderer is given.
 
-**Read more:** [`[apis.<name>]`](../content-model/checks.md#23-apisname) in the `ascribe.toml` reference.
+**Read more:** [`[apis.<name>]`](../content-model/sources.md#21-apisname) in the `ascribe.toml` reference.
 
 ## Examples
 
@@ -219,7 +219,7 @@ Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPE
 @id {permalink=true}: ASC277
 @summary: A marked example that disagrees with its body's schema.
 
-Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A marked example that disagrees with its body's schema.
 
@@ -233,7 +233,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC278
 @summary: A marked example that isn't JSON, or isn't a `json` block.
 
-Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A marked example that isn't JSON, or isn't a `json` block.
 
@@ -247,7 +247,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC279
 @summary: A marked example whose operation has no body it names.
 
-Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A marked example whose operation has no body it names.
 
@@ -261,7 +261,7 @@ Error · file level · next step: write · [SPEC §7.11]({repo}/blob/main/SPEC.m
 @id {permalink=true}: ASC280
 @summary: A marked example whose schema can't all be checked.
 
-Advice · file level · next step: outside · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [outside](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.11]({repo}/blob/main/SPEC.md#711-apis)
 
 **When:** A marked example whose schema can't all be checked.
 

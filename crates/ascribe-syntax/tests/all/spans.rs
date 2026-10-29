@@ -101,6 +101,15 @@ fn directives_in_every_container() {
         "@note:\ntext\n\n  \n",
         "> @note:\n> text\n>\n",
         "@details: x\n@memo:\n",
+        // An unclosed container or group ends where its last block does,
+        // whitespace and all (#1194).
+        "@note:\n~~~\n \n",
+        "@note:\n    code\n \n",
+        "@note:\n- a \n",
+        "@note:\n> ~~~\n> \n",
+        "@note:\n| a |\n| - |\n| b | \n",
+        "@variant {pm=npm}:\nA.\n@variant {pm=yarn}:\n- b \n",
+        "@note {t\u{19}pe=tip}  \nA paragraph.\n\n@steps  \n1. \0\0\0\0\0\0\0\rO\nPne.\n\n@note:\nTe-\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0 ph---\ntitrue\nnd {product}\n~~~\n \n",
         // A table takes its header line back out of a paragraph after any line ending (#1139).
         "cc8\r\n8\n:-",
         "cc8\r\n8\r\n:-",
@@ -108,6 +117,24 @@ fn directives_in_every_container() {
         "a\r\nb\r\nc | d\r\n- | -\r\n",
         "a\rb\rc | d\r- | -\r",
         "> a\r\n> c | d\r\n> - | -\r\n",
+        // A body row's cells are measured from the row's own indent, not the header's (#1149).
+        " s\n:-\nc\n",
+        " s\n:-\ncc\n",
+        " \x0b\n:-\nc",
+        "  a | b\n:- | -:\nc | d\n   e | f\n",
+        "> s\n>:-\n>  cc\n",
+        // A code span that starts on an indented continuation line and ends on the next (#1159).
+        "x\n `\n`c",
+        "\x0b\n `\na`c",
+        "\0\r `\n`D",
+        "x\n  ``a\n   b``c\n",
+        "> x\n>  `a\n>   b` c\n",
+        // A paragraph after a definition with an indented line takes none of
+        // its indent (#1209).
+        "[\n d]:g\ng\ns\n.",
+        "[a]:\n   /x\nb\nc\nd\n",
+        "[\n d]:g\ng\ns\n===\n",
+        "> [\n>  d]:g\n> g\n> s\n> .\n",
     ] {
         assert_exact("container case", source);
     }

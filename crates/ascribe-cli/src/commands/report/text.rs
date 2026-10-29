@@ -5,13 +5,13 @@
 
 use std::io::{self, Write};
 
-use ascribe_check::links::{Answer, Unconfirmed};
 use ascribe_check::{Acknowledged, Diagnostic, Next};
 use ascribe_core::Date;
 use ascribe_model::{ListingFrom, ListingLevel};
 use ascribe_query::report::{
     Builds, Delivery, Inventory, Links, NotRun, Pages, Problems, Ran, Report,
 };
+use ascribe_report::links::{Answer, Unconfirmed};
 use ascribe_resolve::pages::PageRecord;
 
 use crate::commands::drift::escape;
@@ -710,8 +710,8 @@ impl Writer<'_> {
             .filter(|r| {
                 r.status.is_finding()
                     && matches!(
-                        ascribe_check::site::owner(&r.id),
-                        ascribe_check::site::Owner::Pages(_)
+                        ascribe_report::site::owner(&r.id),
+                        ascribe_report::site::Owner::Pages(_)
                     )
             })
             .map(|r| self.code(&r.id))
@@ -739,7 +739,7 @@ impl Writer<'_> {
         let results = &delivery.results;
         let passing = results
             .iter()
-            .filter(|r| r.status == ascribe_check::site::Status::Pass)
+            .filter(|r| r.status == ascribe_report::site::Status::Pass)
             .count();
         let failing = results.iter().filter(|r| r.status.is_finding()).count();
         if failing == 0 && resolved == 0 {

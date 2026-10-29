@@ -110,14 +110,13 @@ name = "ascribe-check"
 version = "0.4.4"
 dependencies = [
  "ascribe-core",
- "ascribe-emit",
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "insta",
  "proptest",
  "serde",
- "serde_json",
  "serde_yaml_ng",
  "sha2",
  "tempfile",
@@ -135,21 +134,25 @@ dependencies = [
  "ascribe-check",
  "ascribe-core",
  "ascribe-diff",
+ "ascribe-edit",
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-lsp",
  "ascribe-mcp",
  "ascribe-model",
  "ascribe-query",
+ "ascribe-report",
  "ascribe-resolve",
  "ascribe-sources",
  "ascribe-templates",
+ "ascribe-workspace",
  "clap",
  "insta",
  "schemars",
  "serde",
  "serde_json",
  "serde_yaml_ng",
+ "similar 3.2.0",
  "tempfile",
  "thiserror",
 ]
@@ -172,11 +175,14 @@ version = "0.4.4"
 dependencies = [
  "ascribe-check",
  "ascribe-core",
+ "ascribe-emit",
  "ascribe-fmt",
  "ascribe-model",
  "ascribe-query",
+ "ascribe-report",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "insta",
  "serde",
  "serde_json",
@@ -224,6 +230,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "insta",
  "proptest",
  "schemars",
@@ -233,6 +240,24 @@ dependencies = [
  "similar 3.2.0",
  "tempfile",
  "thiserror",
+]
+
+[[package]]
+name = "ascribe-edit"
+version = "0.4.4"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-emit",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "ascribe-workspace",
+ "lsp-types",
+ "serde_json",
+ "serde_yaml_ng",
+ "thiserror",
+ "toml_edit",
 ]
 
 [[package]]
@@ -276,14 +301,17 @@ dependencies = [
  "ascribe-check",
  "ascribe-core",
  "ascribe-diff",
+ "ascribe-edit",
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-model",
  "ascribe-query",
+ "ascribe-report",
  "ascribe-resolve",
  "ascribe-syntax",
  "ascribe-synthetic",
  "ascribe-templates",
+ "ascribe-workspace",
  "crossbeam-channel",
  "lsp-server",
  "lsp-types",
@@ -323,6 +351,7 @@ dependencies = [
  "ascribe-core",
  "ascribe-emit",
  "ascribe-model",
+ "ascribe-report",
  "ascribe-resolve",
  "ascribe-templates",
  "schemars",
@@ -331,6 +360,23 @@ dependencies = [
  "serde_yaml_ng",
  "thiserror",
  "toml",
+]
+
+[[package]]
+name = "ascribe-report"
+version = "0.4.4"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "toml_edit",
 ]
 
 [[package]]
@@ -356,6 +402,7 @@ dependencies = [
  "ascribe-core",
  "ascribe-model",
  "ascribe-resolve",
+ "ascribe-workspace",
  "schemars",
  "serde",
  "tempfile",
@@ -386,6 +433,7 @@ dependencies = [
  "ascribe-model",
  "ascribe-resolve",
  "ascribe-syntax",
+ "ascribe-workspace",
  "schemars",
  "serde",
  "serde_yaml_ng",
@@ -394,6 +442,18 @@ dependencies = [
  "thiserror",
  "toml",
  "toml_edit",
+]
+
+[[package]]
+name = "ascribe-workspace"
+version = "0.4.4"
+dependencies = [
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-resolve",
+ "proptest",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]

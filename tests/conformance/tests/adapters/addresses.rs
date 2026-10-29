@@ -16,12 +16,15 @@
 //! `crates/ascribe-cli/tests/all/addresses.rs`.
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use ascribe_check::Project;
 use ascribe_check::addresses::{Base, Here};
 use ascribe_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic};
 use ascribe_core::RelPath;
 use ascribe_resolve::addresses::every_build;
+use ascribe_resolve::{DiskFs, Layout};
+use ascribe_workspace::{ModelFile, Workspace};
 
 use super::check::{project, to_conformance};
 
@@ -58,11 +61,11 @@ impl ConformanceAdapter for AddressesAdapter {
             }
         };
         let index = now.index();
-        let builds = every_build(&index);
+        let builds = every_build(index);
         let here = Here {
             file,
             text,
-            index: &index,
+            index,
             builds: &builds,
         };
         // A case without `base/` is one whose base has no project.
@@ -71,7 +74,7 @@ impl ConformanceAdapter for AddressesAdapter {
             found.extend(ascribe_check::addresses::entries(&here, None));
             return to_conformance(&now, found).map(Some);
         }
-        let mut base = Base::of(&base(case)?.index());
+        let mut base = Base::of(base(case)?.index());
         base.renames = renames(case)?;
         let mut found = ascribe_check::addresses::compare(&here, &base);
         found.extend(ascribe_check::addresses::entries(&here, Some(&base)));
@@ -109,7 +112,16 @@ fn base(case: &Case) -> Result<Project, AdapterError> {
     let model = super::model::load_model(case, &text)
         .map_err(|_| AdapterError(format!("{} doesn't load", model_path.display())))?;
     let content_root = RelPath::parse("files").map_err(|e| AdapterError(e.to_string()))?;
-    let sources =
-        Project::read_sources(&dir, &content_root).map_err(|e| AdapterError(e.to_string()))?;
-    Ok(Project::from_parts(dir, content_root, model, text, sources))
+    let layout = Layout {
+        content_root: content_root.clone(),
+        ..Layout::from_model(&model)
+    };
+    let fs = Arc::new(DiskFs::with_listing_cache(&dir, &layout));
+    let model = ModelFile {
+        root: dir,
+        text,
+        model,
+    };
+    let workspace = Workspace::load_with(ascribe_check::LOADER.side_files, model, content_root, fs);
+    Ok(Project::new(workspace.snapshot()).with_plain_markdown(ascribe_emit::plain_markdown))
 }

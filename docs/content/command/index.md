@@ -1,7 +1,7 @@
 ---
 type: reference
 title: Command reference
-description: "The ascribe commands: their options, outputs, and exit codes."
+description: "The `ascribe` commands: their options, outputs, and exit codes."
 permalink: cli-reference
 ---
 
@@ -29,6 +29,7 @@ Each command links to its section, with its options, output, and exit codes, on 
 | [`ascribe lsp`](../editor/language-server.md#cli-lsp) | Runs the language server, for an editor. |
 | [`ascribe mcp`](../agents/commands.md#cli-mcp) | Runs an MCP server, for an agent that has no shell, or a host that approves tools one by one. |
 | [`ascribe model`](questions.md#cli-model) | Shows the content model as `ascribe` reads it, with the defaults filled in. |
+| [`ascribe new`](../templates/index.md#cli-new) | Starts a page from its type's template, with its type and title set. |
 | [`ascribe observe`](../examples/sources.md#cli-observe) | Runs the test of a folder of tested examples, and records what it passed with. |
 | [`ascribe outline`](questions.md#cli-outline) | Shows a page's title and type, and the headings a link to it can name. |
 | [`ascribe permalinks`](../permalinks/command.md#cli-permalinks) | Keeps the list of permalinks, checks a product's names against it, and retires a permalink. |
@@ -46,6 +47,23 @@ Each command links to its section, with its options, output, and exit codes, on 
 ### Every command's synopsis
 
 @include: ../_generated/cli-synopsis.md
+
+### Output formats
+@available: ascribe planned
+
+`--format` takes the same words on every command that has it. Every command that takes `text` takes `concise` too: `ascribe check` lists one line a problem, and a command with no one-line form writes its text.
+
+### Commands that write
+@available: ascribe planned
+
+Every command that changes a file you commit, such as `ascribe fmt`, `ascribe check --fix`, `ascribe rename`, `ascribe init`, `ascribe sources update`, `ascribe templates eject`, `ascribe vale eject`, `ascribe agents sync`, or `ascribe observe`, takes `--dry-run`, which says what it would change and changes nothing. It also refuses to change a file git couldn't put back as it was: one with changes not committed, one git doesn't track, or one in no repository. The error names the files; commit or stash them, or pass `--force` to write them anyway. A file that isn't there yet is only added, so it's never refused.
+
+```console
+$ ascribe addresses move guides/old.md guides/new.md
+error: this would change files git can't put back as they are: ascribe.addresses; commit or stash them, or pass --force
+```
+
+One that takes `--check`, such as `ascribe fmt`, `ascribe permalinks sync`, `ascribe agents sync`, or `ascribe observe`, changes nothing with it either, and is for CI: it prints each change as a unified diff, and exits with `1` when something would change.
 
 ## Options every command accepts
 

@@ -2,6 +2,7 @@
 type: tutorial
 title: "Learn"
 description: "Learn it."
+draft: true
 ---
 
 ## Install \{product}

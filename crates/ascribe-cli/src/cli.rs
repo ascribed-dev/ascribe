@@ -58,7 +58,7 @@ pub(crate) const GROUPS: &[(&str, &[&str])] = &[
     (
         "Write and check",
         &[
-            "init", "check", "fmt", "build", "preview", "diff", "drift", "report",
+            "init", "new", "check", "fmt", "build", "preview", "diff", "drift", "report",
         ],
     ),
     (
@@ -175,10 +175,16 @@ pub enum Color {
 pub enum Command {
     /// Start a project: write its first ascribe.toml and its pages' folder.
     ///
-    /// With --templates, take the page templates too. Writes nothing where
-    /// there's an ascribe.toml at or above the folder.
+    /// It writes ascribe.addresses too, so a page's move is recorded from
+    /// the first commit. With --templates, take the page templates too.
+    /// Writes nothing where there's an ascribe.toml at or above the folder.
     #[command(after_help = docs_link!("cli-init"))]
     Init(commands::init::Args),
+    /// Start a page from its type's template, its type and title set.
+    ///
+    /// Writes nothing where a file is, and makes the folders PATH names.
+    #[command(after_help = docs_link!("cli-new"))]
+    New(commands::new::Args),
     /// Check every source file for problems, without building anything.
     #[command(after_help = docs_link!("cli-check"))]
     Check(commands::check::Args),
@@ -335,6 +341,7 @@ impl Command {
             Command::Lsp(args) => commands::lsp::run(global, args),
             Command::Mcp(args) => commands::mcp::run(global, args),
             Command::Model(args) => commands::model::run(global, args),
+            Command::New(args) => commands::new::run(global, args),
             Command::Observe(args) => commands::observe::run(global, args),
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Permalinks(args) => commands::permalinks::run(global, args),

@@ -193,15 +193,15 @@ pub(crate) struct Job {
 impl Job {
     /// The job for the project loaded, when there is one.
     pub(crate) fn of(core: &mut crate::core::Core) -> Option<Job> {
-        let declares_apis = !core.loaded.as_ref()?.model.apis.is_empty();
+        let declares_apis = !core.loaded.as_ref()?.model().apis.is_empty();
         let read_apis = declares_apis && !core.addresses.apis_read;
         core.addresses.apis_read |= read_apis;
         let loaded = core.loaded.as_ref()?;
         Some(Job {
             root: loaded.root.clone(),
             content_root: loaded.layout.content_root.clone(),
-            snapshot: loaded.inc.snapshot(),
-            model: loaded.model.clone(),
+            snapshot: loaded.workspace.index_snapshot(),
+            model: loaded.model().clone(),
             fs: loaded.fs.clone(),
             baseline: loaded.baseline.clone(),
             encoding: core.encoding,
@@ -299,6 +299,11 @@ pub(crate) fn compare(job: &Job, listed: &dyn Fn(&str)) -> Outcome {
         builds: &now,
     };
     let (found, base, kept) = match base(job, listed) {
+        // Nothing can have been published yet, so nothing is compared, as
+        // `ascribe check` does (decision #1016).
+        Err(_) if ascribe_diff::before_history(&job.root) => {
+            (ascribe_check::addresses::entries(&here, None), None, None)
+        }
         Err(problem) => {
             let mut out = vec![ascribe_check::addresses::base_unreadable(&problem)];
             out.extend(ascribe_check::addresses::entries(&here, None));
@@ -415,7 +420,7 @@ fn base(job: &Job, listed: &dyn Fn(&str)) -> Result<ReadBase, String> {
             listed(base.compared());
             let published = Revision::read(&repo, base.compared())
                 .map_err(|e| e.to_string())?
-                .map(|revision| Published::of(&revision.project()));
+                .map(|revision| Published::of(revision.workspace().snapshot().index()));
             Arc::new(Kept { key, published })
         }
     };
