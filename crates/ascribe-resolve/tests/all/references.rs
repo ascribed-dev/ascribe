@@ -596,3 +596,48 @@ fn an_image_with_no_path_is_missing_but_a_fragment_only_link_is_not() {
     assert_eq!(problems[0].arg("path"), Some("(no source)"));
     assert_eq!(problems[1].arg("path"), Some("#top"));
 }
+
+/// A symbolic link in the content root to a file outside the project is
+/// reported as outside, not copied; one to a file inside the project is the
+/// file it points to (the assets contract, §2 step 5 and §5).
+#[cfg(unix)]
+#[test]
+fn an_asset_that_is_a_link_out_of_the_project_does_not_exist() {
+    use ascribe_resolve::{DiskFs, Layout, Project};
+    use std::fs;
+
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let root = dir.path().join("project");
+    let outside = dir.path().join("outside");
+    fs::create_dir_all(root.join("docs")).expect("the content root");
+    fs::create_dir_all(root.join("shared")).expect("a folder in the project");
+    fs::create_dir_all(outside.join("dir")).expect("a folder outside");
+    fs::write(outside.join("secret.png"), b"secret").expect("a file outside");
+    fs::write(outside.join("dir/inner.png"), b"secret").expect("a file outside");
+    fs::write(root.join("shared/logo.png"), b"logo").expect("a file inside");
+    fs::write(
+        root.join("docs/index.md"),
+        format!("{PAGE}![a](leak.png)\n\n![b](linked/inner.png)\n\n![c](inside.png)\n"),
+    )
+    .expect("a page");
+    std::os::unix::fs::symlink("../../outside/secret.png", root.join("docs/leak.png"))
+        .expect("a link out");
+    std::os::unix::fs::symlink("../../outside/dir", root.join("docs/linked")).expect("a link out");
+    std::os::unix::fs::symlink("../shared/logo.png", root.join("docs/inside.png"))
+        .expect("a link in");
+
+    let model = support::model();
+    let layout = Layout::from_model(&model);
+    let fs = DiskFs::new(&root, &layout);
+    let p = Project::load(model, layout, &fs);
+    let problems = p.problems(&path("index.md"));
+    assert_eq!(
+        slugs(&p, "index.md", &problems),
+        [
+            ("image-source-missing".to_owned(), 5),
+            ("image-source-missing".to_owned(), 7),
+        ]
+    );
+    assert!(problems.iter().all(|i| i.variant == Some("outside")));
+    assert_eq!(asset_paths(&p, "index.md"), ["inside.png"]);
+}

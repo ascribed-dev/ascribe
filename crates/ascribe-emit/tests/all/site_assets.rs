@@ -200,3 +200,72 @@ fn the_manifest_lists_each_copy_with_its_source_and_published_ones_with_their_ur
     assert_eq!(entry("_ascribe/schema.ts")["kind"], "generated");
     assert_eq!(entry("guides/install.md")["kind"], "page");
 }
+
+/// A symbolic link in the content root to a file outside the project isn't
+/// an asset: nothing is copied for it, and the reference is reported as
+/// outside (the assets contract, §2 step 5). A link to a file inside the
+/// project is copied as the file it points to (§5).
+#[cfg(unix)]
+#[test]
+fn a_link_out_of_the_project_is_not_copied() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let root = dir.path().join("project");
+    let outside = dir.path().join("outside");
+    let write = |path: &Path, bytes: &[u8]| {
+        fs::create_dir_all(path.parent().expect("a parent")).expect("directories");
+        fs::write(path, bytes).expect("a file");
+    };
+    write(&root.join("ascribe.toml"), MODEL.as_bytes());
+    write(
+        &root.join("docs/index.md"),
+        b"---\ntitle: Home\n---\n\n![Leak](leak.png)\n\n![Dir](linked/inner.png)\n\n![Inside](inside.png)\n",
+    );
+    write(&outside.join("secret.png"), b"secret-bytes");
+    write(&outside.join("dir/inner.png"), b"secret-bytes");
+    write(&root.join("shared/logo.png"), b"logo-bytes");
+    std::os::unix::fs::symlink("../../outside/secret.png", root.join("docs/leak.png"))
+        .expect("a link out");
+    std::os::unix::fs::symlink("../../outside/dir", root.join("docs/linked")).expect("a link out");
+    std::os::unix::fs::symlink("../shared/logo.png", root.join("docs/inside.png"))
+        .expect("a link in");
+
+    let project = support::load(&root);
+    let problems = project.problems(&ascribe_core::RelPath::parse("index.md").expect("a path"));
+    assert_eq!(problems.len(), 2, "{problems:?}");
+    assert!(
+        problems.iter().all(|p| p.variant == Some("outside")),
+        "{problems:?}"
+    );
+
+    let emitter_root = build_into(&root);
+    assert!(!emitter_root.join("leak.png").exists());
+    assert!(!emitter_root.join("linked").exists());
+    assert_eq!(
+        fs::read(emitter_root.join("inside.png")).expect("the linked file inside is copied"),
+        b"logo-bytes"
+    );
+    let copied: Vec<String> = walk(&emitter_root)
+        .into_iter()
+        .filter(|p| p.ends_with(".png"))
+        .collect();
+    assert_eq!(copied, ["inside.png"]);
+}
+
+/// Every file under `dir`, relative to it, sorted.
+#[cfg(unix)]
+fn walk(dir: &Path) -> Vec<String> {
+    fn go(base: &Path, dir: &Path, out: &mut Vec<String>) {
+        for entry in fs::read_dir(dir).expect("a directory").flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                go(base, &path, out);
+            } else if let Ok(rel) = path.strip_prefix(base) {
+                out.push(rel.to_string_lossy().replace('\\', "/"));
+            }
+        }
+    }
+    let mut out = Vec::new();
+    go(dir, dir, &mut out);
+    out.sort();
+    out
+}
