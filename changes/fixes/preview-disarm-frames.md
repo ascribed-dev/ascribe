@@ -1,0 +1,1 @@
+- **Fixed:** the page preview and the HTML report drop a page's inline frames, objects, embeds, and form actions along with its scripts, so a page's raw HTML can't load a script through a frame.

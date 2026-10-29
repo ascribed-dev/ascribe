@@ -415,7 +415,7 @@ fn page_shell(title: &str, json: &str) -> String {
          <head>\n\
          <meta charset=\"utf-8\">\n\
          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
-         <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-{SCRIPT_HASH}'\">\n\
+         <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-{SCRIPT_HASH}'; form-action 'none'; base-uri 'none'\">\n\
          <meta name=\"generator\" content=\"Ascribe {version}\">\n\
          <title>{title}</title>\n\
          <style>\n{STYLE}</style>\n\

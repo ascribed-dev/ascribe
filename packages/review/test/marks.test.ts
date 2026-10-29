@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   clearMarks,
   describeSource,
+  disarm,
   findBlock,
   markChanges,
   parseSource,
@@ -399,5 +400,43 @@ describe("a marked block's text, for quoting", () => {
     expect(blockText(block("guide.md:3-3"))).toBe("Run the installer now.");
     expect(blockText(block("guide.md:5-5"))).toBe("A brand new paragraph.");
     expect(blockText(block("guide.md:7-8"))).toBe("Linux\nmacOS");
+  });
+});
+
+describe("disarm", () => {
+  /** A page's raw HTML, parsed inertly and disarmed, as the preview does. */
+  function disarmed(html: string): DocumentFragment {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    disarm(template.content);
+    return template.content;
+  }
+
+  it("removes scripts, metadata, and documents of their own", () => {
+    const fragment = disarmed(
+      `<p>Text</p><script>1</script><meta http-equiv="refresh" content="0"><base href="https://x.example/">` +
+        `<iframe srcdoc="<script src='x.js'></script>"></iframe><frame src="x.html"></frame>` +
+        `<object data="x.pdf"></object><embed src="x.svg"><p>More</p>`,
+    );
+    expect(
+      fragment.querySelectorAll("script, meta, base, iframe, frame, object, embed"),
+    ).toHaveLength(0);
+    expect(Array.from(fragment.querySelectorAll("p"), (p) => p.textContent)).toEqual([
+      "Text",
+      "More",
+    ]);
+  });
+
+  it("drops event handlers, script URLs, and form actions", () => {
+    const fragment = disarmed(
+      `<img src="x.png" onerror="1"><a href="javascript:1">a</a><a href="JAVA\tSCRIPT:1">b</a>` +
+        `<form action="https://x.example/submit" method="post"><button formaction="https://x.example/">Go</button></form>`,
+    );
+    expect(fragment.querySelector("img")?.hasAttribute("onerror")).toBe(false);
+    for (const a of Array.from(fragment.querySelectorAll("a")))
+      expect(a.hasAttribute("href")).toBe(false);
+    expect(fragment.querySelector("form")?.hasAttribute("action")).toBe(false);
+    expect(fragment.querySelector("button")?.hasAttribute("formaction")).toBe(false);
+    expect(fragment.querySelector("form")?.getAttribute("method")).toBe("post");
   });
 });
