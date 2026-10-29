@@ -1021,7 +1021,7 @@ messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and pa
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
 messages.git = "`{path}` is in a `.git` folder, which is never copied into the output: it can hold the repository's credentials"
 messages.closest = "`{path}` doesn't exist; did you mean `{closest}`?"
-fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder."
+fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."
 example.wrong = '''
 ---
 title: Install Quill
@@ -1174,7 +1174,7 @@ messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in ca
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
 messages.git = "the image `{path}` is in a `.git` folder, which is never copied into the output: it can hold the repository's credentials"
 messages.empty = "this image has no source; put the image's path between the parentheses"
-fix = "Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder."
+fix = "Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project."
 example.wrong = '''
 ---
 title: Install Quill

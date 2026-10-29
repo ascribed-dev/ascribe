@@ -25,7 +25,7 @@
       "message": "`{path}` is outside the project, so it can't be copied into the output"
     }
   ],
-  "fix": "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder.",
+  "fix": "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.",
   "docs": "https://ascribed-dev.com/go/ASC036/",
   "example": {
     "wrong": "---\ntitle: Install Quill\n---\n\nTo get a key, see [API keys](api-key.md).\n",

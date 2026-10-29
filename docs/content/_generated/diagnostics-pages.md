@@ -11,7 +11,7 @@
 
 **Message:** `{path}` doesn't exist
 
-**Fix:** Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder.
+**Fix:** Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
 
 **Read more:** [Links](../writing/inline.md#links) in the phrases and links reference.
 
@@ -181,7 +181,7 @@
 
 **Message:** the image `{path}` doesn't exist
 
-**Fix:** Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder.
+**Fix:** Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project.
 
 **Read more:** [Images](../writing/inline.md#images) in the phrases and links reference.
 
