@@ -1,0 +1,11 @@
+description: >-
+  A build matched by its pages to an older line, whose base is under the
+  line's folder with no setting changed, loses each page's addresses: the
+  build's rename is one warning, and each page is its own, since no setting
+  moved them.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}
+  - {slug: address-lost, file: ascribe.addresses, line: 1}
