@@ -8786,9 +8786,26 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1221"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In review",
+      "title": "Fuzz: parse crashes (c1c7dcdaf4bd)"
+    },
+    {
+      "content": {
+        "body": "The assets contract (docs/content/contracts/assets.md, §2 step 5) lets a page reference any file inside the project root, so a link such as `[config](../.git/config)` is an asset: a build copies the checkout's `.git/config` to `_ascribe/up/.git/config`, the HTML report inlines it, and an archive carries it. On a CI runner, with `actions/checkout`'s default `persist-credentials`, that file holds the job's token.\n\nDecision, from the security review's phase 6 (the maintainer, 29 October 2026): a file under a `.git` folder is never an asset. The reference is reported as `link-target-missing` or `image-source-missing`, with a message of its own, and nothing copies it. The contract's step 5 says so; this issue numbers the decision file.",
+        "number": 1222,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Refuse a file under `.git` as an asset",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1222"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhEeKz4",
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Fuzz: parse crashes (c1c7dcdaf4bd)"
+      "title": "Refuse a file under `.git` as an asset"
     }
   ]
 }
