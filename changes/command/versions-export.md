@@ -1,1 +1,0 @@
-- **`ascribe versions archive` is now `ascribe versions export`.** It writes a copy of a line and doesn't archive it, which `retire` does. The old name still works, with a warning, for one more release. See [`ascribe versions export`](docs/content/versions/release.md#cli-versions-export).

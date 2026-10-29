@@ -1,1 +1,0 @@
-- **A permalink's address gives an agent its section in one fetch.** Its section is at `go/<name>.md`, and with `host = "netlify"` the address answers `301`. See [Permalinks](docs/content/permalinks/index.md).

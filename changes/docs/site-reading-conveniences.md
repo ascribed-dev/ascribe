@@ -1,1 +1,0 @@
-- **The docs site links each page to the ones before and after it.** On this page marks the section in view, and the phone menu dims the page behind it. See [Navigation](docs/content/navigation/index.md).

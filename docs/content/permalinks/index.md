@@ -34,7 +34,6 @@ A parameter that names a dimension, with one of its values, sets the reader's ch
 
 ## What an agent gets
 @id: permalinks-for-agents
-@available: ascribe planned
 
 An agent given a permalink, by `ascribe --help`, `ascribe explain`, or a diagnostic's link, gets the section it names in one fetch:
 

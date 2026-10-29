@@ -1,1 +1,0 @@
-- **A draft isn't reported as left out of `ascribe.nav`.** `nav-page-unplaced` passes over a page with `draft: true`, which no sidebar shows yet. See [A draft](docs/content/writing/frontmatter.md).

@@ -1,1 +1,0 @@
-- **Review marks the changed words in a one-line note and in a short sentence that grew.** A sentence that keeps its old words at one end is a change, not a removal and an addition. See [`ascribe diff`](docs/content/review/diff.md).

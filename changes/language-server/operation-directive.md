@@ -1,1 +1,0 @@
-- **`@operation`'s link completes, hovers, and opens as a link to an operation does.** It gets the safe fix when the spec renames the operation, too. See [Show an operation in a page](docs/content/openapi/operation.md#operation-editor).

@@ -1,12 +1,12 @@
 # Written by `ascribe observe`. Don't edit it by hand.
 version = 1
-ascribe = "0.4.4"
+ascribe = "0.4.5"
 command = "cargo test --locked -p ascribe-cli --test all -- output:: agents:: && cargo test --locked -p ascribe-model --test load"
 
 [environment]
 os = "linux"
 arch = "x64"
-ascribe = "ascribe 0.4.4+dev"
+ascribe = "ascribe 0.4.5+dev"
 
 [files]
 "crates/ascribe-cli/tests/output/agents-index.json" = "sha256-lf:0dc03f1beb3ea3241a3fe86394f55addc20f944705f0e08a1e5a04026bc6442c"

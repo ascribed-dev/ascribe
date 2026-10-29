@@ -1,1 +1,0 @@
-- **`ascribe check --format concise` keeps the first fix.** A problem with one ends its line with `→` and what the fix does, such as `→ Link to setup.md`. See [Output for agents](docs/content/checks/check.md).

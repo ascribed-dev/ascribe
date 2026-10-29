@@ -1,1 +1,0 @@
-- **Fixed:** a code span that runs from an indented line onto the next ends where its text does. The text after it overlapped it.

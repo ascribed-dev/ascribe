@@ -1,1 +1,0 @@
-- **Behavior change: the OpenAPI example checks are `api-example-*`.** They were `example-schema-mismatch`, `example-not-json`, `example-body-missing`, and `example-schema-unsupported`, and keep their codes, ASC277 to ASC280, which `ascribe explain` still finds them by ([Check a JSON example against its schema](docs/content/openapi/examples.md)).

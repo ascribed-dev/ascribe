@@ -49,12 +49,10 @@ Each command links to its section, with its options, output, and exit codes, on 
 @include: ../_generated/cli-synopsis.md
 
 ### Output formats
-@available: ascribe planned
 
 `--format` takes the same words on every command that has it. Every command that takes `text` takes `concise` too: `ascribe check` lists one line a problem, and a command with no one-line form writes its text.
 
 ### Commands that write
-@available: ascribe planned
 
 Every command that changes a file you commit, such as `ascribe fmt`, `ascribe check --fix`, `ascribe rename`, `ascribe init`, `ascribe sources update`, `ascribe templates eject`, `ascribe vale eject`, `ascribe agents sync`, or `ascribe observe`, takes `--dry-run`, which says what it would change and changes nothing. It also refuses to change a file git couldn't put back as it was: one with changes not committed, one git doesn't track, or one in no repository. The error names the files; commit or stash them, or pass `--force` to write them anyway. A file that isn't there yet is only added, so it's never refused.
 

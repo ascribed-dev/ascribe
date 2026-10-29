@@ -1,1 +1,0 @@
-- **`ascribe_resolve` says to leave out `project` when `page` is a path.** The page's project is found from it, and the error gives the call to make instead. See [the MCP tools](docs/content/agents/commands.md).

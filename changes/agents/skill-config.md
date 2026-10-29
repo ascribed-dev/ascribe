@@ -1,1 +1,0 @@
-- **The skill's commands work from the root when the only project is in a folder.** `ascribe agents sync` gives the commands that check or read the whole project `--config` with the project's folder. See [the skill](docs/content/agents/instructions.md#the-skill).

@@ -1,1 +1,0 @@
-- **`ascribe diff` lists the pages an API spec's change reaches.** A page whose `@operation` or operation link writes something new is listed through the operation, `api/openapi.yaml#createWidget`, in the text, JSON, prompt, and review. See [When the spec changes](docs/content/openapi/index.md).

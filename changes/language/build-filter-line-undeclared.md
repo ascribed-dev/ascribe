@@ -1,1 +1,0 @@
-- **A build filtered for a version older than every declared line is advice.** `build-filter-line-undeclared` reports a filter whose version is in no live, planned, or archived line: declare the line in `archived`, or use `versions =`. See [`[builds.<name>]`](docs/content/content-model/output.md).

@@ -1,1 +1,0 @@
-- **The edit hook names the placeholders a page's template left.** After an edit, the agent hears each `template-placeholder-left` and `template-section-empty` in the files it wrote, so it fills them in while the page is its own. See [Hooks](docs/content/agents/hooks.md).

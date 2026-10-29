@@ -36,7 +36,6 @@ It merges its entries into a file it shares: it updates the entries it wrote bef
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
-@available: ascribe planned
 With `--format json`, it writes the same list in the document its [schema](../contracts/json-reports/agents.md#ascribe-agents-sync) describes: each file's path, whether it `changed` (with `--check`, whether it's out of date), and the agents that read it; the notes and what an agent doesn't read; and with `--cloud`, the MCP server's JSON. The exit codes are the same. With `--check`, after a sync:
 
 .The JSON for this example
@@ -125,7 +124,6 @@ Without a `path` in the content root, `new-page` says the page goes where the re
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
 ```
 
-@available: ascribe planned
 With `--format json`, it writes the prompt's name and text, or with `--list` each prompt with its arguments, in the documents their [schemas](../contracts/json-reports/agents.md#ascribe-agents-prompt) describe.
 
 | Code | Meaning |
@@ -197,7 +195,6 @@ Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextpr
 | `ascribe_addresses_move` | `ascribe addresses move --format json`, with `old` and `new`, or `from_git` with `base` and `base_exact`: the `edits` that record the move in `ascribe.addresses`, and nothing written |
 | `ascribe_addresses_retire` | `ascribe addresses retire --format json`, with `old` and `reason`: the `edits` that retire it, and nothing written |
 
-@available: ascribe planned
 Each tool is named for its command. `ascribe_fmt` and `ascribe_diff` were `ascribe_format` and `ascribe_changes` until this release: the old names are listed after the tools, and call them, for one more release, so a host or an agent's settings that name them keep working until you change them.
 
 Every tool is read-only: `ascribe_rename` gives the files' text and the move for the agent to make, and `ascribe_addresses_move` and `ascribe_addresses_retire` the edit to apply, and none writes a file or starts a program the project names, and each is marked read-only, idempotent, and closed-world. `ascribe_check`, and the `fix` prompt, never run Vale, even with `in-check = true` in `[checks.vale]`: they report one `prose-not-checked` advice instead, and `ascribe check --vale` in a shell checks the prose.

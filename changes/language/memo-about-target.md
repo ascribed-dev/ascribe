@@ -1,1 +1,0 @@
-- **Behavior change: a memo file's `about` has a grammar of its own in SPEC.md.** A path is percent-decoded as a link's is, and a malformed one is now `memo-invalid`; the editor and `ascribe rename` write it the same way. See [Memo files](docs/content/writing/memo-files.md).

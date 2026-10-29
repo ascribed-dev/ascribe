@@ -1,1 +1,0 @@
-- **Snippets take regions from `Dockerfile`, `Makefile`, `.env`, CSS, SCSS, Less, and GraphQL files.** A file is matched by its name before its extension, and CSS takes tags in `/* */` comments. See [Snippets](docs/content/examples/snippets.md).

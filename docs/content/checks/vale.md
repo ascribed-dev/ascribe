@@ -113,7 +113,6 @@ It lists each file it wrote, `ascribe.toml` last. It changes `ascribe.toml` only
 
 @include: ../_generated/cli-vale-eject-options.md
 
-@available: ascribe planned
 With `--format json`, it writes the preset and the files in the document its [schema](../contracts/json-reports.md#ascribe-vale-eject) describes.
 
 | Code | Meaning |

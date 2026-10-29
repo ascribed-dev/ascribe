@@ -1,1 +1,0 @@
-- **`sources fetch`, `templates list`, `vale eject`, `agents sync`, and `agents prompt` take `--format json`.** Each writes one document, and takes `concise` as text. See [JSON report contract](docs/content/contracts/json-reports.md).

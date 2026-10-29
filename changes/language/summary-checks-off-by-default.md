@@ -1,1 +1,0 @@
-- **Behavior change: `summary-missing` and `summary-long` are off unless `[checks]` turns them on.** Only a project that shows its docs in a product needs summaries, and it turns them on. See [Show the docs in your product](docs/content/permalinks/in-your-product.md).

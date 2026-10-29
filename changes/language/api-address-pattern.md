@@ -1,1 +1,0 @@
-- **An API's `reference` that isn't Redoc's is called an address pattern.** `link-operation-form-unsupported` and `model-api-reference` say so in their messages, so they no longer read like a content type's template. See [Link to your API reference](docs/content/openapi/index.md).

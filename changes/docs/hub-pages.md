@@ -1,1 +1,0 @@
-- **The docs index, the command reference, and Files Ascribe writes list every feature again.** A test now fails when one of them falls behind. See the [docs index](docs/content/index.md).

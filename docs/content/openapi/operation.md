@@ -43,6 +43,5 @@ It never shows the operation's parameters, request, or responses: those are the 
 
 ## In the editor
 @id: operation-editor
-@available: ascribe planned
 
 The editor treats `@operation`'s link as it treats a link to an operation: after the spec's `#`, it offers the spec's operations; hovering the link shows the operation's method, path, summary, tag, and deprecation; and go to definition opens the spec at the operation. When the spec changes on disk, the line is checked again, so an operation the spec renamed is offered the one now in its place as a safe fix. See [Link to operations in the editor](editor.md).

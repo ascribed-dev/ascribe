@@ -1,1 +1,0 @@
-- **The specification's principles and binding rules cover the newer features.** Principle 3 says what's derived and from where, binding names `@memo`'s and `@summary`'s exceptions, and §1.3 defines advice. Nothing behaves differently. See [SPEC.md §1.2](SPEC.md#12-design-principles).

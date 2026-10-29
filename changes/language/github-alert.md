@@ -1,1 +1,0 @@
-- **A GitHub alert, such as `> [!NOTE]`, is a warning, with a fix that writes the `@note`.** Ascribe showed it as a plain quote. The fix keeps the quote's content and the alert's type. See [`@note`](docs/content/writing/directives.md#note).

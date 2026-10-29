@@ -1,1 +1,0 @@
-- **`sources fetch` and `sources update` reach each repository once.** They plan their changes, ask the git guard about them, and then make that plan, in place of fetching a second time to write; with `--force`, they write as they go. See [`ascribe sources` and `observe`](docs/content/examples/sources.md).

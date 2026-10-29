@@ -1,1 +1,0 @@
-- **The review report is now the HTML preview.** `ascribe diff --format html` is named beside the page preview and the site preview, so "report" means `ascribe report` alone ([Attach the HTML preview to every pull request](docs/content/review/ci-report.md)).

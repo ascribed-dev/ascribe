@@ -22,7 +22,7 @@ A page says what type it is with `type:` in its frontmatter, first, and its othe
 
 Write the phrase (`{version}`), not the text it stands for.
 
-- `{version}`: 0.4.4
+- `{version}`: 0.4.5
 - `{node}`: 24
 - `{glibc}`: 2.28
 - `{vscode}`: 1.138
@@ -35,7 +35,6 @@ Each one's syntax is in the `ascribe` skill's `references/directives.md`, and in
 - `@id`
 - `@include`
 - `@variant`: dimensions `pm` (`npm`, `pnpm`), `release` (`ascribe`)
-- `@available`: targets such as `ascribe`
 - `@note`: types `note`, `tip`, `important`, `warning`, `caution`
 - `@steps`
 - `@details`

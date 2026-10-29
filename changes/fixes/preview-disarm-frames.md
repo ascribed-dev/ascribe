@@ -1,1 +1,0 @@
-- **Fixed:** the preview and the HTML report drop a page's frames, objects, embeds, and form actions. A frame's document could load a script the policy's resource origin allows; scripts were already dropped.

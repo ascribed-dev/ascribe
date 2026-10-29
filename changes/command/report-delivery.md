@@ -1,1 +1,0 @@
-- **Behavior change: `ascribe report agents` is `ascribe report delivery`.** The section is named for the Web Documentation Delivery Spec it checks: its JSON key is `delivery`, at `schema_version` 2, and `agents` still runs it for now ([the project report](docs/content/checks/report.md#the-site-and-agents)).

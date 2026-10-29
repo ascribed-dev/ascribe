@@ -1,1 +1,0 @@
-- **The glossary tells the four previews apart, and defines the recheck date.** The page preview, the site preview, the HTML preview, and `ascribe preview` each have one name ([Preview](docs/content/glossary.md#preview)).

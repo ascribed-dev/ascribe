@@ -1,1 +1,0 @@
-- **The CI recipe runs the `ascribe` your project pins.** Its workflow runs `npm ci` and `npx ascribe`, so CI checks with the editor's version; without Node, it installs a named release. See [Checks in CI](docs/content/checks/ci.md).

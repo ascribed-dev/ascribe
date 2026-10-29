@@ -195,7 +195,6 @@ Another site generator reads `gone` from `_ascribe/redirects.json` and makes its
 
 ## Permalinks on Netlify
 @id: permalinks-on-netlify
-@available: ascribe planned
 
 With `host = "netlify"`, the `_redirects` the build writes forwards each permalink's address with a `301`, straight to its page and heading, so a fetcher that doesn't follow the forwarding page's refresh, as `curl` and most agents' tools don't, still lands there in one step. Netlify keeps the heading's anchor. The forwarding page stays, for a host without redirects:
 

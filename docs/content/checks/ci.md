@@ -27,7 +27,6 @@ Name the release your team runs, and change it as you would a dependency: withou
 [`ascribe check`, `build`, `preview`, and `fmt`](check.md) has each command's options and exit codes.
 
 ### The problems on the pull request's lines
-@available: ascribe planned
 
 `--format github` writes each problem as a GitHub Actions [annotation](check.md#output-for-github-actions), which the pull request shows on its line, with the diagnostic's name and message. It needs no permissions and no upload step, and works with a project in a folder of the repository. Without it, the problems are in the job's log alone. With a release that doesn't have it yet, leave it out: an unknown format fails the step.
 
@@ -49,7 +48,6 @@ A project with [`ascribe.addresses`](../publishing/redirects.md) has `ascribe ch
 Without the history, or with a base that isn't there, as after a force-push, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) says the addresses weren't compared, a warning `--deny-warnings` fails on.
 
 ## Keep tested examples tested
-@available: ascribe planned
 
 A project with [tested examples](../examples/tested.md) fails the check when one changed after its last test run: the page has lost its "Tested with" line, and an expected output beside it may no longer be what the code prints. [`example-stale`](diagnostics/output-checks.md#ASC199) is a warning, which `--deny-warnings` fails on, at each `@snippet` of the file, naming the folder to run `ascribe observe` in. An example that was never tested, `example-unobserved`, is advice, and passes.
 
