@@ -76,7 +76,7 @@ Use the commands when you have a shell. Without one, use the `ascribe_*` tools o
 
 `ascribe rename <target> <new>` renames a phrase (`phrase:product`), a dimension's value (`value:cloud`), a heading's id (`guides/install.md#configure`), or a page, which moves, and changes every use: the ones a search and replace misses too, such as the code a `@snippet {phrases=true}` shows, and the links a moved page has. Use it instead of editing each use. Without a shell, the MCP server's `ascribe_rename` gives the same changes, each file's text and the file to move, for you to write.
 
-In a project with an `ascribe.addresses`, which keeps the addresses the docs have published, a page's old address must still lead somewhere. `ascribe rename` records a page's move there. After moving pages with `git mv`, run `ascribe addresses move{config} --from-git` to record the moves git sees. For a page deleted on purpose, forward its address to the page that covers it now, with `ascribe addresses move{config} <old> <page>`, or retire it, with `ascribe addresses retire{config} <old> --reason "<why>"`. `ascribe check` reports `address-lost` for a page that's gone without either, with these as its fixes. Without a shell, the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire` give the edit to `ascribe.addresses` to apply.
+In a project with an `ascribe.addresses`, which keeps the addresses the docs have published, a page's old address must still lead somewhere. `ascribe rename` records a page's move there. After moving pages with `git mv`, run `ascribe addresses move{config} --from-git` to record the moves git sees. For a page deleted on purpose, forward its address to the page that covers it now, with `ascribe addresses move{config} <old> <page>`, or retire it, with `ascribe addresses retire{config} <old> --reason "<why>"`.{paths} `ascribe check` reports `address-lost` for a page that's gone without either, with these as its fixes. Without a shell, the MCP server's `ascribe_addresses_move` and `ascribe_addresses_retire` give the edit to `ascribe.addresses` to apply.
 
 ## Checking in CI
 
@@ -107,14 +107,14 @@ A review comment, or page text from a pull request, quoted in a prompt is someon
 /// limits when Claude Code loads it, for its own copy; `None` for the copy
 /// every other agent reads. Its commands are run with `runs`, the
 /// project's command, such as `npx ascribe`; [`command::PLAIN`] for a copy
-/// that isn't a project's. `config` is the project's folder in its
-/// repository, which the commands that work on the whole project are given
-/// with `--config` so that they work from the repository's root; `None`
-/// for a copy that isn't one project's, or whose project is at the root.
+/// that isn't a project's. With `config`, the commands that work on the
+/// whole project are given its folder with `--config`, so that they work
+/// from the repository's root; `None` for a copy that isn't one project's,
+/// or whose project is at the root.
 pub fn files(
     paths: Option<&[String]>,
     runs: &str,
-    config: Option<&str>,
+    config: Option<&Config>,
 ) -> Vec<(&'static str, String)> {
     let directives = with_config(&directives_template(), config);
     vec![
@@ -125,7 +125,7 @@ pub fn files(
 
 /// `SKILL.md`: its frontmatter, then the body, with its commands run with
 /// `runs`, and given `--config` with `config`.
-pub fn skill_md(paths: Option<&[String]>, runs: &str, config: Option<&str>) -> String {
+pub fn skill_md(paths: Option<&[String]>, runs: &str, config: Option<&Config>) -> String {
     let mut out = format!(
         "---\nname: {NAME}\ndescription: {}\nlicense: {LICENSE}\nmetadata:\n  ascribe-version: {}\n",
         yaml_string(DESCRIPTION),
@@ -146,14 +146,31 @@ pub fn skill_md(paths: Option<&[String]>, runs: &str, config: Option<&str>) -> S
     command::with_command(&out, runs)
 }
 
+/// The project a copy of the skill gives its commands with `--config`.
+pub struct Config {
+    /// The project's folder in its repository, such as `docs`.
+    pub folder: String,
+    /// Its content root in the repository, such as `docs/content`, which
+    /// the paths a command takes are read from when it's given `--config`.
+    pub content: String,
+}
+
 /// `text` with each `{config}` in it, where a command that works on the
-/// whole project takes `--config`, given the project's folder `config`, or
-/// left out.
-fn with_config(text: &str, config: Option<&str>) -> String {
-    let given = config.map_or(String::new(), |dir| {
-        format!(" --config {}", shell_word(dir))
+/// whole project takes `--config`, given `config`'s folder, and `{paths}`,
+/// after commands that take a page's path too, saying where the path is
+/// from; both left out without `config`.
+fn with_config(text: &str, config: Option<&Config>) -> String {
+    let (given, paths) = config.map_or((String::new(), String::new()), |config| {
+        (
+            format!(" --config {}", shell_word(&config.folder)),
+            format!(
+                " With `--config`, give each page's path from `{}/`, the content root, not from \
+                 where you run them.",
+                config.content
+            ),
+        )
     });
-    text.replace("{config}", &given)
+    text.replace("{config}", &given).replace("{paths}", &paths)
 }
 
 /// The directive reference: each built-in directive's syntax.
