@@ -1,0 +1,1 @@
+- **Fixed:** a link or image whose destination, title, or label runs onto the next line ends at its `)`. An image's attribute block after it was lost, and the text after it was misplaced.
