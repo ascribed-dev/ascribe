@@ -1013,7 +1013,9 @@ describe("with several projects, one nested in another", () => {
     });
 
     // Last: the deletion of its ascribe.toml isn't reported either, so the
-    // project stays known until projects are looked for again.
+    // project stays known until projects are looked for again. The folder's
+    // own deletion is reported, as the folder alone, but late on macOS: the
+    // project can go while the next suite runs.
     it("finds a project the file watcher didn't report when one of its files is opened", async () => {
       // The workspace's settings exclude unwatched/ from the file watcher.
       const unwatched = path.join(workspace(), "unwatched");
@@ -1051,8 +1053,17 @@ describe("the tasks of projects in subfolders", () => {
   });
 
   it("run the binary in each project's folder, with --config naming its ascribe.toml", async () => {
-    const running = new Map(api.projects().map((project) => [project.folder, project.state]));
-    const tasks = await vscode.tasks.fetchTasks({ type: "ascribe" });
+    // Listened for, not compared with the projects' states before and after:
+    // the previous suite's unwatched project goes when its folder's deletion
+    // is reported, which on macOS can be while the tasks are listed.
+    const started: string[] = [];
+    const listener = api.onDidStartServer((folder) => started.push(folder));
+    let tasks: vscode.Task[];
+    try {
+      tasks = await vscode.tasks.fetchTasks({ type: "ascribe" });
+    } finally {
+      listener.dispose();
+    }
     const binary = vscode.workspace.getConfiguration("ascribe").get<string>("path");
     for (const project of ["docs", "handbook", "handbook/pages/nested"]) {
       const folder = path.join(workspace(), ...project.split("/"));
@@ -1072,10 +1083,7 @@ describe("the tasks of projects in subfolders", () => {
       }
     }
     // Listing the tasks starts no server.
-    assert.deepEqual(
-      new Map(api.projects().map((project) => [project.folder, project.state])),
-      running,
-    );
+    assert.deepEqual(started, []);
 
     const build = tasks.find(
       (each) => each.definition["task"] === "build" && each.definition["project"] === "handbook",
