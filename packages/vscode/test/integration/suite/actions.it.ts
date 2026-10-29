@@ -398,21 +398,24 @@ describe("the editor's actions", () => {
     }
 
     it("makes the selected text a phrase, in ascribe.toml and the page", async () => {
-      // "the agent" in "… and restart the agent. To install …".
+      // "agent" in "… and restart the agent. To install the agent …". One
+      // word: a refactoring saves the page, which applies its safe fixes
+      // (run.ts), and once the server has the new phrase, the fix for a value
+      // written out is safe for a value with a space in it, such as "the
+      // agent", and would write the other one as the phrase too. For an
+      // ordinary word it's unsafe, so the other occurrence stays.
       const editor = await open("keys.md", 20, 0);
       const line = lines(editor)[20] ?? "";
-      const start = line.indexOf("the agent.");
-      editor.selection = new vscode.Selection(20, start, 20, start + "the agent".length);
+      const start = line.indexOf("agent.");
+      editor.selection = new vscode.Selection(20, start, 20, start + "agent".length);
       // A refactoring saves the files it changes: put them back afterwards.
       const files = [uriOf("docs", "keys.md"), uriOf("ascribe.toml")];
       const saved = await Promise.all(files.map((uri) => vscode.workspace.fs.readFile(uri)));
       const record = await run("makePhrase", ["agent", "no"]);
       assert.equal(record.done, true, record.messages.join());
-      assert.ok(lines(editor)[20]?.includes("and restart {agent}. To install the agent"));
+      assert.ok(lines(editor)[20]?.includes("and restart the {agent}. To install the agent"));
       const model = await vscode.workspace.openTextDocument(uriOf("ascribe.toml"));
-      assert.ok(
-        model.getText().includes('\napi = "https://api.quill.dev/v3/"\nagent = "the agent"\n'),
-      );
+      assert.ok(model.getText().includes('\napi = "https://api.quill.dev/v3/"\nagent = "agent"\n'));
       await vscode.commands.executeCommand("undo");
       assert.equal(lines(editor)[20], line);
       for (const [i, uri] of files.entries()) {
