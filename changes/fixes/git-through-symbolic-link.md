@@ -1,0 +1,1 @@
+- **Fixed:** a symbolic link to a file under `.git` is reported, not copied. A link to the file itself already was. See [assets](docs/content/contracts/assets.md).

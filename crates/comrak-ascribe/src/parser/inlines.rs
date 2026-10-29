@@ -1806,11 +1806,13 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
                         self.scanner.pos = endall + 1;
                         let url = strings::clean_url(url);
                         let title = strings::clean_title(&self.input[starttitle..endtitle]);
+                        // ASCRIBE: where the link text ends, so a destination or title on later lines counts them (#1220).
                         self.close_bracket_match(
                             is_image,
                             url.into(),
                             title.into(),
                             source_end_pos,
+                            after_link_text_pos,
                             parent_line_offsets,
                         );
                         return None;
@@ -1863,11 +1865,13 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
             // When reff is Cow::Owned (from callback), into_owned() is a no-op
             // When reff is Cow::Borrowed (from refmap), into_owned() clones
             let reff = reff.into_owned();
+            // ASCRIBE: where the link text ends, so a label on later lines counts them (#1220).
             self.close_bracket_match(
                 is_image,
                 reff.url,
                 reff.title,
                 self.scanner.pos,
+                initial_pos,
                 parent_line_offsets,
             );
             return None;
@@ -1994,7 +1998,8 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
         url: String,
         title: String,
         source_end_pos: usize,
-        #[cfg_attr(not(feature = "attributes"), allow(unused))] parent_line_offsets: &[usize],
+        after_text: usize,
+        parent_line_offsets: &[usize],
     ) {
         let last = self.brackets.pop().unwrap();
 
@@ -2019,6 +2024,13 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
             )
                 .into(),
         );
+
+        // ASCRIBE: a destination, title, or label that runs onto later lines
+        // ends the link on the last of them, and the inlines after it are
+        // counted from that line. Upstream ends the link on its text's last
+        // line and never counts the lines, so everything after it in the
+        // block is placed lines early (#1220). **Candidate to upstream.**
+        self.adjust_node_newlines(inl, self.scanner.pos - after_text, 0, parent_line_offsets);
 
         #[cfg(feature = "attributes")]
         if self.options.extension.link_attributes {

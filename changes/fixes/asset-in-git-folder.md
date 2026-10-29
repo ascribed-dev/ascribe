@@ -1,1 +1,0 @@
-- **Fixed:** a link or image to a file in a `.git` folder is reported, not copied. Such a folder can hold a checkout's credentials. See [assets](docs/content/contracts/assets.md).

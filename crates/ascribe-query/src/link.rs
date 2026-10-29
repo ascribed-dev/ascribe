@@ -263,8 +263,10 @@ pub fn link(
                 Missing::Outside => {
                     format!("`{written}` is outside the project, so a build can't copy it")
                 }
-                Missing::Repository => {
-                    format!("`{written}` is in a `.git` folder, which a build never copies")
+                Missing::Git => {
+                    format!(
+                        "`{written}` is in `.git`, the repository's own folder, which a build never copies"
+                    )
                 }
                 _ => format!("`{written}` doesn't exist"),
             });

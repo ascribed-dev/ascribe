@@ -6,4 +6,4 @@ title: Test
 
 ![Logo](.git/logo.png)
 
-[Head](../vendor/.GIT/HEAD)
+[Head](../vendor/.git/HEAD)

@@ -1,0 +1,1 @@
+- **A file under `.git` is never an asset.** A link or image to one is reported as missing, with a message saying so, and no output copies it. See [assets](docs/content/contracts/assets.md).

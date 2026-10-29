@@ -1,6 +1,6 @@
 //! Where the content root and the output directory sit, and the boundary rule
 //! for local files: a file must be inside the content root or the project
-//! root, and not inside the output directory or a `.git` folder.
+//! root, and not inside the output directory.
 
 use ascribe_core::RelPath;
 use ascribe_model::ContentModel;
@@ -53,16 +53,13 @@ impl Layout {
         inside && !in_output
     }
 
-    /// Whether the file at this content path is in a `.git` folder, or is
-    /// one: never an asset, since the repository's folder can hold a
-    /// credential, such as the token `actions/checkout` writes to
-    /// `.git/config` (the assets contract, §2 step 5).
-    pub(crate) fn in_repository(&self, content_path: &RelPath) -> bool {
-        // Ignoring case, since on a case-insensitive file system `.GIT` is the
-        // same folder.
+    /// Whether the file at this content path is under a `.git` folder: the
+    /// repository's own files, which a build never copies, since a checkout's
+    /// `.git/config` can hold a credential (decision #1222).
+    pub(crate) fn is_in_git(&self, content_path: &RelPath) -> bool {
         self.project_path(content_path)
             .segments()
-            .any(|segment| segment.eq_ignore_ascii_case(".git"))
+            .any(|segment| segment == ".git")
     }
 }
 
@@ -95,17 +92,6 @@ mod tests {
         assert!(!l.is_allowed(&p("../../outside.png")));
         assert!(!l.is_allowed(&p("../.ascribe/build/site/p.png")));
         assert!(l.is_allowed(&p("../.ascribe/other.png")));
-    }
-
-    #[test]
-    fn a_git_folder_is_the_repository() {
-        let l = layout();
-        assert!(l.in_repository(&p("../.git/config")));
-        assert!(l.in_repository(&p(".git/HEAD")));
-        assert!(l.in_repository(&p("vendor/lib/.GIT/config")));
-        assert!(l.in_repository(&p("../.git")));
-        assert!(!l.in_repository(&p("../.github/workflows/ci.yml")));
-        assert!(!l.in_repository(&p("../.gitignore")));
     }
 
     #[test]

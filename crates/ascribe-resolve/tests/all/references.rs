@@ -642,12 +642,43 @@ fn an_asset_that_is_a_link_out_of_the_project_does_not_exist() {
     assert_eq!(asset_paths(&p, "index.md"), ["inside.png"]);
 }
 
-/// A file in a `.git` folder is never an asset, named directly, through a
-/// symbolic link, or in another case: it's reported with the `git` message
-/// and not copied (the assets contract, §2 step 5, decision #1222).
+/// A file under a `.git` folder is never an asset, however it's inside the
+/// project (decision #1222).
+#[test]
+fn a_file_under_git_is_not_an_asset() {
+    let p = project(&[
+        (
+            "docs/index.md",
+            &format!(
+                "{PAGE}[config](../.git/config)\n\n![hook](../.git/hooks/x.png)\n\n[nested](vendor/.git/HEAD)\n"
+            ),
+        ),
+        (".git/config", "[core]"),
+        (".git/hooks/x.png", ""),
+        ("docs/vendor/.git/HEAD", "ref"),
+    ]);
+    let problems = p.problems(&path("index.md"));
+    assert_eq!(
+        slugs(&p, "index.md", &problems),
+        [
+            ("image-source-missing".to_owned(), 7),
+            ("link-target-missing".to_owned(), 5),
+            ("link-target-missing".to_owned(), 9),
+        ]
+    );
+    assert!(
+        problems.iter().all(|i| i.variant == Some("git")),
+        "{problems:?}"
+    );
+    assert!(asset_paths(&p, "index.md").is_empty());
+}
+
+/// A symbolic link in the content root to a file under `.git` isn't an
+/// asset either: the file it names once followed is the repository's
+/// (decision #1222).
 #[cfg(unix)]
 #[test]
-fn a_file_in_a_git_folder_is_never_an_asset() {
+fn an_asset_that_is_a_link_into_git_is_not_an_asset() {
     use ascribe_resolve::{DiskFs, Layout, Project};
     use std::fs;
 
@@ -655,18 +686,16 @@ fn a_file_in_a_git_folder_is_never_an_asset() {
     let root = dir.path();
     fs::create_dir_all(root.join("docs")).expect("the content root");
     fs::create_dir_all(root.join(".git")).expect("a repository");
-    fs::create_dir_all(root.join(".github")).expect("a folder beside it");
     fs::write(root.join(".git/config"), b"token").expect("a credential");
-    fs::write(root.join(".github/logo.png"), b"logo").expect("a file inside");
     fs::write(
         root.join("docs/index.md"),
-        format!(
-            "{PAGE}[a](../.git/config)\n\n[b](creds.txt)\n\n[c](../.git/missing)\n\n![d](../.github/logo.png)\n"
-        ),
+        format!("{PAGE}[a](creds.txt)\n\n![b](linked/config)\n"),
     )
     .expect("a page");
     std::os::unix::fs::symlink("../.git/config", root.join("docs/creds.txt"))
-        .expect("a link into the repository");
+        .expect("a link to a file under .git");
+    std::os::unix::fs::symlink("../.git", root.join("docs/linked"))
+        .expect("a link to the .git folder");
 
     let model = support::model();
     let layout = Layout::from_model(&model);
@@ -676,11 +705,10 @@ fn a_file_in_a_git_folder_is_never_an_asset() {
     assert_eq!(
         slugs(&p, "index.md", &problems),
         [
+            ("image-source-missing".to_owned(), 7),
             ("link-target-missing".to_owned(), 5),
-            ("link-target-missing".to_owned(), 7),
-            ("link-target-missing".to_owned(), 9),
         ]
     );
     assert!(problems.iter().all(|i| i.variant == Some("git")));
-    assert_eq!(asset_paths(&p, "index.md"), ["../.github/logo.png"]);
+    assert!(asset_paths(&p, "index.md").is_empty());
 }

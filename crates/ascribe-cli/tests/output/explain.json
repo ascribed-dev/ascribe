@@ -18,7 +18,7 @@
     },
     {
       "name": "git",
-      "message": "`{path}` is in a `.git` folder, which is never copied into the output: it can hold the repository's credentials"
+      "message": "`{path}` is in `.git`, the repository's own folder, which is never copied into the output"
     },
     {
       "name": "outside",
