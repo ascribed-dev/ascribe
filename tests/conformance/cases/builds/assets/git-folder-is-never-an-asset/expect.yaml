@@ -1,0 +1,14 @@
+description: >-
+  A file in a `.git` folder is never an asset, since the repository's folder
+  can hold a credential: a link or an image naming one is reported as not
+  existing, whether or not the file is there, and nothing is copied.
+spec: ["5.2", "5.3", "9.4", "8.2"]
+tags: [resolve, check]
+
+diagnostics:
+  - {slug: link-target-missing, file: index.md, line: 5}
+  - {slug: image-source-missing, file: index.md, line: 7}
+  - {slug: link-target-missing, file: index.md, line: 9}
+builds:
+  site:
+    assets: []

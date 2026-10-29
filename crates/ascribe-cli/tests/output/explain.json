@@ -17,11 +17,15 @@
       "message": "`{path}` doesn't exist; did you mean `{closest}`?"
     },
     {
+      "name": "git",
+      "message": "`{path}` is in a `.git` folder, which is never copied into the output: it can hold the repository's credentials"
+    },
+    {
       "name": "outside",
       "message": "`{path}` is outside the project, so it can't be copied into the output"
     }
   ],
-  "fix": "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.",
+  "fix": "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder.",
   "docs": "https://ascribed-dev.com/go/ASC036/",
   "example": {
     "wrong": "---\ntitle: Install Quill\n---\n\nTo get a key, see [API keys](api-key.md).\n",

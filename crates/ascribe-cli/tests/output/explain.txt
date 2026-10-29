@@ -3,9 +3,10 @@ ASC036 link-target-missing: error, found in each file
 Message: `{path}` doesn't exist
   or: `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive
   or: `{path}` doesn't exist; did you mean `{closest}`?
+  or: `{path}` is in a `.git` folder, which is never copied into the output: it can hold the repository's credentials
   or: `{path}` is outside the project, so it can't be copied into the output
 
-Fix: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
+Fix: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder.
 
 Wrong, in page.md:
 ```md

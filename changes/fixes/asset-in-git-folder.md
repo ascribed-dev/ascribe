@@ -1,0 +1,1 @@
+- **Fixed:** a link or image naming a file in a `.git` folder is reported, not copied, so a build can't publish a checkout's credentials. See [assets](docs/content/contracts/assets.md).

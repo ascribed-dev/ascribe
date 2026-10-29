@@ -92,6 +92,9 @@ pub enum Missing {
     /// The file is outside the project, or inside the output directory, so it
     /// is treated as not existing (SPEC §9.4).
     Outside,
+    /// The file is in a `.git` folder, or is one, so it is treated as not
+    /// existing (the assets contract, §2 step 5).
+    Repository,
 }
 
 /// A source file, or a directory, the project couldn't read.

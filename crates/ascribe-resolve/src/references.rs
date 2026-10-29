@@ -9,7 +9,8 @@
 //!   external or local, a source file or an asset, and whether it looks like
 //!   a route (SPEC §5.2) ([`reference_target`], [`include_target`]);
 //! - whether it's there: the boundary rule (SPEC §9.4,
-//!   `Layout::is_allowed`) and exact-case names on every platform
+//!   `Layout::is_allowed`, and never a `.git` folder) and exact-case names
+//!   on every platform
 //!   ([`FileSystem::probe`]) ([`resolve_reference`]);
 //! - the page a route most likely names;
 //! - the file-level issue, if any ([`reference_issue`], [`include_issue`]),
@@ -321,6 +322,9 @@ pub fn resolve_reference(
     // A file the build would copy.
     let missing = if !layout.is_allowed(path) {
         Missing::Outside
+    } else if layout.in_repository(path) {
+        // Whether or not it's there: it's never one to copy, nor a route.
+        return Resolution::AssetMissing(Missing::Repository);
     } else {
         match fs.probe(&layout.project_path(path)) {
             Probe::File => {
@@ -334,6 +338,7 @@ pub fn resolve_reference(
                     .real_path(&layout.project_path(path))
                     .and_then(|real| content_path_of(layout, &real))
                 {
+                    Some(real) if layout.in_repository(&real) => Missing::Repository,
                     Some(real) if layout.is_allowed(&real) => {
                         return Resolution::Asset {
                             path: path.clone(),
@@ -351,7 +356,7 @@ pub fn resolve_reference(
             },
         }
     };
-    if local.route_like && !matches!(missing, Missing::Case(_)) {
+    if local.route_like && !matches!(missing, Missing::Case(_) | Missing::Repository) {
         return route(model, local, path, written_in, sources);
     }
     Resolution::AssetMissing(missing)
@@ -552,6 +557,7 @@ pub fn reference_issue(
                     .with_variant("case")
                     .with_arg("actual", actual.to_string()),
                 Missing::Outside => issue.with_variant("outside"),
+                Missing::Repository => issue.with_variant("git"),
             })
         }
         Resolution::Route {

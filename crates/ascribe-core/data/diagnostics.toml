@@ -1019,8 +1019,9 @@ row = "Links | Target file doesn't exist"
 message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
+messages.git = "`{path}` is in a `.git` folder, which is never copied into the output: it can hold the repository's credentials"
 messages.closest = "`{path}` doesn't exist; did you mean `{closest}`?"
-fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."
+fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder."
 example.wrong = '''
 ---
 title: Install Quill
@@ -1171,8 +1172,9 @@ row = "Images | Local source doesn't exist"
 message = "the image `{path}` doesn't exist"
 messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
+messages.git = "the image `{path}` is in a `.git` folder, which is never copied into the output: it can hold the repository's credentials"
 messages.empty = "this image has no source; put the image's path between the parentheses"
-fix = "Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project."
+fix = "Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project and not in a `.git` folder."
 example.wrong = '''
 ---
 title: Install Quill

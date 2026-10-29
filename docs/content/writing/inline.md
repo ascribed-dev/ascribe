@@ -37,6 +37,7 @@ See [](keys.md#rotate-keys).
 
 - Paths are relative to the file, or to the content root when they start with `/`. `#id` names a heading on the target page by its id: one of its own, or one from a fragment it includes.
 - The file, and the id, must exist. A link to a fragment is an error: link to a page that includes it.
+- A link to a local file that isn't a page copies the file into each output. It must be inside the project, and not in a `.git` folder, which can hold the repository's credentials. See the [asset contract](../contracts/assets.md).
 - **Empty link text** is filled in with the target's title: the heading's text with an id, or the page's `title`.
 - External URLs (`https://…`) pass through unchanged.
 - A destination that looks like a published URL (`/guides/install/`) instead of a file gets a warning, and the editor offers to convert it.
@@ -59,7 +60,7 @@ Images are CommonMark images. Attributes, such as a width, go in a block directl
 
 - A local image must exist, and names must match exactly, including case.
 - Ascribe warns about an image without alt text.
-- The image is copied into each output, so outputs don't need the source files.
+- The image is copied into each output, so outputs don't need the source files. It must be inside the project, and not in a `.git` folder.
 
 ## Heading ids
 
