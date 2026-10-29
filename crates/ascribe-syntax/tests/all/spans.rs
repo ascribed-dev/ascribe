@@ -135,6 +135,19 @@ fn directives_in_every_container() {
         "[a]:\n   /x\nb\nc\nd\n",
         "[\n d]:g\ng\ns\n===\n",
         "> [\n>  d]:g\n> g\n> s\n> .\n",
+        // A link whose destination, title, or label runs onto later lines
+        // ends on the last of them, and the inlines after it are counted
+        // from there (#1220).
+        "---\ntitle+ a\n---\n\n![nOe](x.pngTw\n)o](x\n![Two](x.png)\n",
+        "![a](x\n)\n![b](y)\n",
+        "[a](x \"t\nu\")\n[b](y)\n",
+        "[a](\nx\n\"t\"\n) [b](y)\nc\n",
+        "[a](x\r\n)\r\n[b](y)\r\n",
+        "[a][\nr]\n[b](y)\n\n[r]: /z\n",
+        "![a](x\n){width=1}\n[b](y)\n",
+        "x\n   [a](x\n   ) `c` [b](y)\n",
+        "> [a](x\n>   ) [b](y)\n",
+        "- [a](x\n  ) [b](y)\n",
     ] {
         assert_exact("container case", source);
     }
