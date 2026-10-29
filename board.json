@@ -8803,9 +8803,6 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1222"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhEeKz4",
-      "linked pull requests": [
-        "https://github.com/ascribed-dev/ascribe/pull/1225"
-      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Refuse a file under `.git` as an asset"
