@@ -53,7 +53,7 @@ Phase 0 comes first because every later phase asks "is this input trusted?" Phas
 
 **Re-checked on 29 October 2026** against `main` at `85c4c85c`, two hundred commits on (the `ascribe-workspace`, `ascribe-edit`, and `ascribe-report` crates, the git guard): all five private findings hold, one wider than first written; of the hardening notes one is fixed (phase 1's H4) and one improved (phase 2's H6), the rest hold; each notes file ends with what the two hundred commits added to its surface, looked at, with two new notes (phase 1's H5 and H6).
 
-**Fixed on 29 October 2026:** the five private findings, each in its own commit on `main` with its regression test and changelog entry (`changes/fixes/asset-link-outside.md`, `nesting-limit.md`, `preview-disarm-frames.md`, `watcher-linked-folder.md`, `preview-server-link.md`), after `pnpm check:all` passed. The advisories can be published with those commits as the fix.
+**Fixed on 29 October 2026:** the five private findings, each in its own commit on `main` with its regression test and changelog entry (`changes/fixes/asset-link-outside.md`, `nesting-limit.md`, `preview-disarm-frames.md`, `watcher-linked-folder.md`, `preview-server-link.md`), after `pnpm check:all` passed. The advisories can be published with those commits as the fix. A sixth change the maintainer decided in phase 6 followed on `main`: a file under `.git` is never an asset (decision #1222).
 
 ## No thread
 
