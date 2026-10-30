@@ -183,6 +183,14 @@ impl<'a> Converter<'a> {
             return None;
         }
         let span = self.span(node);
+        // comrak starts it at the page's first byte, before a byte-order
+        // mark; it starts at the `---`.
+        let bom = if self.source.starts_with('\u{feff}') {
+            '\u{feff}'.len_utf8()
+        } else {
+            0
+        };
+        let span = Span::new(span.start().max(bom).min(span.end()), span.end());
         let sourcepos = node.data().sourcepos;
         let open_line_end = self
             .index
