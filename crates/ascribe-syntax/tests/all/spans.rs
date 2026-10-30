@@ -77,6 +77,9 @@ fn directives_in_every_container() {
         "@warning: nope\n\nprose\n@availible\n",
         "---\ntitle: x\n---\n@note: after frontmatter\n",
         "---\n---\n",
+        // A byte-order mark comes before the frontmatter, not in it (#1228).
+        "\u{feff}---\ntitle: Test\n---\n",
+        "\u{feff}---\r\n---\r\n@note: after\n",
         // Link reference definitions: titles, several lines, containers, escapes.
         "[a]: /x\n[b]: <{api}y z> 'title'\n[c]:\n  {api}z\n  (t)\n\ntext\n",
         "- [a]: {api}x \"t\"\n  [b]: \\{x}\n\n  @note: after\n> [c]:\n> /y\n> \"z\"\n",

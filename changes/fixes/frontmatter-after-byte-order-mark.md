@@ -1,0 +1,1 @@
+- **Fixed:** A page that starts with a byte-order mark has its frontmatter start at the `---`. It started before the mark, one character early.
