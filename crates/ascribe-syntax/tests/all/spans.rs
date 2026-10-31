@@ -80,6 +80,11 @@ fn directives_in_every_container() {
         // A byte-order mark comes before the frontmatter, not in it (#1228).
         "\u{feff}---\ntitle: Test\n---\n",
         "\u{feff}---\r\n---\r\n@note: after\n",
+        // An indented line after a link reference definition (#1230).
+        "@steps\n[ref]: /docs/insta.\n Install the agent.\n",
+        "[ref]: /x\n   Indented paragraph.\n",
+        "[ref]: /x 'title'\n  next\n",
+        "> [ref]: /x\n>  quoted\n",
         // Link reference definitions: titles, several lines, containers, escapes.
         "[a]: /x\n[b]: <{api}y z> 'title'\n[c]:\n  {api}z\n  (t)\n\ntext\n",
         "- [a]: {api}x \"t\"\n  [b]: \\{x}\n\n  @note: after\n> [c]:\n> /y\n> \"z\"\n",

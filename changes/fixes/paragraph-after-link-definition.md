@@ -1,0 +1,1 @@
+- **Fixed:** A paragraph after a link reference definition starts at its first line's text. When that line was indented more, it started on the line's leading spaces.

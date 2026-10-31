@@ -1411,6 +1411,7 @@ where
             let taken = lines_before - ascribe::line_endings(&ast.content);
             ast.sourcepos.start.line += taken;
             ast.line_offsets.drain(..taken.min(ast.line_offsets.len()));
+            ascribe::start_at_first_line(ast, taken);
             has_content
         };
         if has_content {
@@ -2221,6 +2222,7 @@ where
                 let taken = lines_before - ascribe::line_endings(content);
                 ast.sourcepos.start.line += taken;
                 ast.line_offsets.drain(..taken.min(ast.line_offsets.len()));
+                ascribe::start_at_first_line(ast, taken);
             }
             NodeValue::CodeBlock(ref mut ncb) => {
                 if !ncb.fenced {

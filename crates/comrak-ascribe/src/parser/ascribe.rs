@@ -122,3 +122,16 @@ pub(super) fn line_endings(text: &str) -> usize {
         .filter(|&(i, &b)| b == b'\n' || (b == b'\r' && bytes.get(i + 1) != Some(&b'\n')))
         .count()
 }
+
+/// After link reference definitions took `taken` lines from the start of a
+/// paragraph or setext heading, start it at its new first line's content: the
+/// column the definitions started at belongs to their line, and the new first
+/// line can be indented differently (#1230).
+pub(super) fn start_at_first_line(ast: &mut crate::nodes::Ast, taken: usize) {
+    if taken == 0 {
+        return;
+    }
+    if let Some(&offset) = ast.line_offsets.first() {
+        ast.sourcepos.start.column = offset + 1;
+    }
+}
