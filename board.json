@@ -8809,7 +8809,7 @@
     },
     {
       "content": {
-        "body": "## Crawler sources\n\nThe crawlers Ascribe knows, in `crates/ascribe-model/data/crawlers.toml`, need their sources reread:\n\n- `Applebot-Extended`: https://support.apple.com/en-us/119829 answered 429. Find where its operator documents it now, or remove the token.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/40874606611)\n",
+        "body": "## Crawler sources\n\nThe crawlers Ascribe knows, in `crates/ascribe-model/data/crawlers.toml`, need their sources reread:\n\n- `Applebot-Extended`: https://support.apple.com/en-us/119829 answered 429. Find where its operator documents it now, or remove the token.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/41198903232)\n",
         "number": 1223,
         "repository": "ascribed-dev/ascribe",
         "title": "Crawler sources to reread",
