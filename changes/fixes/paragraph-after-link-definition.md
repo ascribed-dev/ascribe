@@ -1,1 +1,1 @@
-- **Fixed:** A paragraph whose first line follows a link reference definition starts at that line's first character. When the line was indented differently from the definition, the paragraph started at the definition's column, which could put it on the line's leading spaces.
+- **Fixed:** A paragraph after a link reference definition starts at its first line's text. When that line was indented more, it started on the line's leading spaces.
