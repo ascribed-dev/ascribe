@@ -3,7 +3,7 @@
 //! Upstream comrak takes link reference definitions from the start of a
 //! paragraph (or a setext heading's text) but leaves the node's start
 //! position on the definitions, so every inline position in it was a few
-//! lines too early. The fork moves the start line down, and drops the
+//! lines too early. The fork moves the start down to the first line's text, and drops the
 //! definitions' lines from the node's line offsets, which the inline parser
 //! indexes from that line (two `// ASCRIBE:` hunks in `src/parser/mod.rs`,
 //! `finalize_borrowed` and `handle_setext_heading`). These tests fail if a
@@ -96,4 +96,29 @@ fn a_paragraph_takes_no_indent_from_a_definitions_lines() {
 fn a_setext_heading_takes_no_indent_from_a_definitions_lines() {
     let md = "[a]:\n   /x\nb\nc\n===\n";
     assert_eq!(text_starts(md, is_heading), [(3, 1), (4, 1)]);
+}
+
+/// The start (line, column) of the first node `pick` matches.
+fn start(md: &str, pick: impl Fn(&NodeValue) -> bool) -> (usize, usize) {
+    let arena = Arena::new();
+    let root = parse_document(&arena, md, &Options::default());
+    let node: Node<'_> = root
+        .descendants()
+        .find(|n| pick(&n.data().value))
+        .expect("the document has the node");
+    let start = node.data().sourcepos.start;
+    (start.line, start.column)
+}
+
+#[test]
+fn a_paragraph_after_a_definition_starts_at_its_first_lines_text() {
+    // The new first line is indented less, or more, than the definition (#1230).
+    assert_eq!(start(" [foo]: /url\nbar\n", is_paragraph), (2, 1));
+    assert_eq!(start("[foo]: /url\n   bar\n", is_paragraph), (2, 4));
+    assert_eq!(start("> [foo]: /url\n>  bar\n", is_paragraph), (2, 4));
+}
+
+#[test]
+fn a_setext_heading_after_a_definition_starts_at_its_first_lines_text() {
+    assert_eq!(start("[foo]: /url\n  bar\n===\n", is_heading), (2, 3));
 }
