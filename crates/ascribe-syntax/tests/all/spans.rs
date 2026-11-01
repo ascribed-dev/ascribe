@@ -156,6 +156,9 @@ fn directives_in_every_container() {
         "x\n   [a](x\n   ) `c` [b](y)\n",
         "> [a](x\n>   ) [b](y)\n",
         "- [a](x\n  ) [b](y)\n",
+        // A bare definition destination can end with `>` (#1232).
+        "[ref]:>",
+        "[r]: a>\n\n[r]\n",
     ] {
         assert_exact("container case", source);
     }
