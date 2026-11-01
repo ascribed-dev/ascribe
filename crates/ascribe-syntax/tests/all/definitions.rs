@@ -357,3 +357,15 @@ fn blocks_have_no_definition_kind() {
     assert!(d.blocks.is_empty());
     assert_eq!(d.definitions.len(), 2);
 }
+
+#[test]
+fn a_bare_destination_can_end_with_a_pointy_bracket() {
+    // Only a destination that starts with `<` is the bracketed form; a bare
+    // one can end with `>`, or be a lone `>` (#1232).
+    for (source, destination) in [("[ref]:>", ">"), ("[ref]: >\n", ">"), ("[ref]: a>\n", "a>")] {
+        let d = doc(source);
+        let def = &d.definitions[0];
+        assert_eq!(cut(source, def.destination), destination, "{source:?}");
+        assert_eq!(def.url, destination, "{source:?}");
+    }
+}

@@ -162,7 +162,9 @@ impl Checker<'_> {
                 self.problem(what, d.destination, "starts before the label ends");
             }
             let dest = self.text(d.destination);
-            if dest.starts_with('<') != dest.ends_with('>') {
+            // Only a destination that starts with `<` is the bracketed form,
+            // which ends with `>`; a bare one can end with `>` too (#1232).
+            if dest.starts_with('<') && (dest.len() < 2 || !dest.ends_with('>')) {
                 self.problem(what, d.destination, "has one pointy bracket, not two");
             }
             let between = self
