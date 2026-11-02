@@ -1,0 +1,1 @@
+- **Fixed:** A `]` in the destination of a link in an image's alt text no longer ends the alt text. Phrases in that image's destination are substituted now.

@@ -961,7 +961,8 @@ fn hull(span: Span, others: impl Iterator<Item = Span>) -> Span {
 }
 
 /// The index of the `]` that matches the `[` at `open`, skipping escaped
-/// brackets and code spans.
+/// brackets, code spans, and the destination and title of an inline link
+/// or image inside, which can hold a `]`: `![a [b](c]) d](e)`.
 pub(crate) fn matching_bracket(text: &str, open: usize) -> Option<usize> {
     let bytes = text.as_bytes();
     if bytes.get(open) != Some(&b'[') {
@@ -991,12 +992,84 @@ pub(crate) fn matching_bracket(text: &str, open: usize) -> Option<usize> {
                 if depth == 0 {
                     return Some(i);
                 }
+                if let Some(end) = inline_tail_end(bytes, i) {
+                    i = end;
+                }
             }
             _ => {}
         }
         i += 1;
     }
     None
+}
+
+/// The index of the `)` that ends the inline link tail,
+/// `(destination "title")`, after the `]` at `close`, if one follows it
+/// (CommonMark §6.3).
+fn inline_tail_end(bytes: &[u8], close: usize) -> Option<usize> {
+    let skip_space = |mut i: usize| {
+        while bytes.get(i).is_some_and(u8::is_ascii_whitespace) {
+            i += 1;
+        }
+        i
+    };
+    if bytes.get(close + 1) != Some(&b'(') {
+        return None;
+    }
+    let mut i = skip_space(close + 2);
+    if bytes.get(i) == Some(&b'<') {
+        i += 1;
+        loop {
+            match *bytes.get(i)? {
+                b'\\' => i += 1,
+                b'>' => break,
+                b'<' | b'\n' | b'\r' => return None,
+                _ => {}
+            }
+            i += 1;
+        }
+        i += 1;
+    } else {
+        let mut depth = 0usize;
+        while let Some(&b) = bytes.get(i) {
+            match b {
+                b'\\' => i += 1,
+                b'(' => depth += 1,
+                b')' if depth == 0 => break,
+                b')' => depth -= 1,
+                b if b.is_ascii_whitespace() => break,
+                _ => {}
+            }
+            i += 1;
+        }
+        if depth > 0 {
+            return None;
+        }
+    }
+    let after = skip_space(i);
+    if after > i
+        && let Some(&quote) = bytes.get(after)
+        && let Some(closer) = match quote {
+            b'"' => Some(b'"'),
+            b'\'' => Some(b'\''),
+            b'(' => Some(b')'),
+            _ => None,
+        }
+    {
+        i = after + 1;
+        loop {
+            match *bytes.get(i)? {
+                b'\\' => i += 1,
+                b if b == closer => break,
+                b'(' if quote == b'(' => return None,
+                _ => {}
+            }
+            i += 1;
+        }
+        i += 1;
+    }
+    let end = skip_space(i);
+    (bytes.get(end) == Some(&b')')).then_some(end)
 }
 
 #[cfg(test)]
@@ -1009,6 +1082,14 @@ mod tests {
         assert_eq!(matching_bracket("[a [b] c](d)", 0), Some(8));
         assert_eq!(matching_bracket(r"[a \] b](c)", 0), Some(7));
         assert_eq!(matching_bracket("[a `]` b](c)", 0), Some(8));
+        // A `]` in a nested link's destination or title doesn't close it.
+        assert_eq!(matching_bracket("![a [b](c]) d](e)", 1), Some(13));
+        assert_eq!(matching_bracket("![a [b](<c]>) d](e)", 1), Some(15));
+        assert_eq!(matching_bracket("![a [b](c \"]\") d](e)", 1), Some(16));
+        assert_eq!(matching_bracket("![a [b](c (])) d](e)", 1), Some(16));
+        assert_eq!(matching_bracket("[![b](c])](e)", 0), Some(9));
+        // A `(` that doesn't start a link's tail is text.
+        assert_eq!(matching_bracket("![a [b](c ] d](e)", 1), Some(10));
         assert_eq!(matching_bracket("[a", 0), None);
         assert_eq!(matching_bracket("x", 0), None);
     }

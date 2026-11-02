@@ -159,6 +159,9 @@ fn directives_in_every_container() {
         // A bare definition destination can end with `>` (#1232).
         "[ref]:>",
         "[r]: a>\n\n[r]\n",
+        // A `]` in the destination of a link in alt text (#1234).
+        "![F\n[I](/g\0al])T](x.png)\n",
+        "---\ntitle: B\n---\u{10}\r\n\n![---\u{10}\n![Three](x.p(narpng){width=300=400}--\ntitle: Home\n--\u{fffd}-\n\n\n![Ful\n[Install](/guides/inst\0\0\0\0\0\0\0\0al])Three](x.png)\n",
     ] {
         assert_exact("container case", source);
     }

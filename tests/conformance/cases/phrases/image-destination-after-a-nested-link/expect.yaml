@@ -1,0 +1,12 @@
+description: >-
+  A phrase in an image's destination is substituted when the image's alt
+  text holds a link whose destination has a `]` (#1234).
+spec: ["5.1", "5.3", "9.2"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: See ![the [reference](/ref]) page](https://api.quill.dev/v3/reference.png).
