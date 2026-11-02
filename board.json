@@ -8912,7 +8912,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1235"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Fuzz: parse crashes (c1c7dcdaf4bd)"
     }
   ]
