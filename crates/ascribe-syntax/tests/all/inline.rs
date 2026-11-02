@@ -495,6 +495,43 @@ fn an_attribute_block_attaches_to_every_form_of_image() {
 }
 
 #[test]
+fn a_bracket_in_a_nested_destination_or_title_does_not_end_the_alt_text() {
+    // #1234: the alt text ended at the `]` in the link's destination.
+    for (source, form, label) in [
+        ("![a [b](c]) d]({k}x){width=1}\n", LinkForm::Inline, None),
+        ("![a [b](<c]>) d]({k}x){width=1}\n", LinkForm::Inline, None),
+        (
+            "![a [b](c \"]\") d]({k}x){width=1}\n",
+            LinkForm::Inline,
+            None,
+        ),
+        (
+            "![a [b](c]) d][r]{width=1}\n\n[r]: {k}x\n",
+            LinkForm::Full,
+            Some("r"),
+        ),
+    ] {
+        let d = doc(source);
+        let image = only_image(&d);
+        assert!(cut(source, image.alt).ends_with(" d"), "{source:?}");
+        assert_eq!(image.form, form, "{source:?}");
+        assert_eq!(image.label.map(|l| cut(source, l)), label, "{source:?}");
+        assert!(image.attributes.is_some(), "{source:?}");
+        let phrases: Vec<_> = image
+            .destination_phrases
+            .iter()
+            .map(|p| p.key.as_str())
+            .collect();
+        let expected: &[&str] = if form == LinkForm::Inline {
+            &["k"]
+        } else {
+            &[]
+        };
+        assert_eq!(phrases, expected, "{source:?}");
+    }
+}
+
+#[test]
 fn attributes_use_the_directive_grammar() {
     let source = "![a](s.png \"Title\"){width=\"6 0\", height = 400 , loading=eager|lazy}\n";
     let d = doc(source);
