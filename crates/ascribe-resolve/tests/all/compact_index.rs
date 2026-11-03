@@ -144,6 +144,22 @@ fn long_index(model: &str, folder: Option<&str>, limit: usize) -> CompactIndex {
 }
 
 #[test]
+fn without_a_page_at_the_base_path_the_summary_says_what_the_links_lead_to() {
+    let on = format!("{MODEL}agents = true\n");
+    let off = format!("{MODEL}agents = false\n");
+    let markdown = "> Every page of this documentation, each linked to its Markdown version.\n";
+    let page = "> Every page of this documentation, each linked to its page.\n";
+    for (model, folder, summary) in [
+        (&on, None, markdown),
+        (&off, None, page),
+        (&off, Some("docs"), markdown),
+    ] {
+        let index = long_index(model, folder, COMPACT_INDEX_LIMIT);
+        assert!(index.text.contains(summary), "{folder:?}:\n{}", index.text);
+    }
+}
+
+#[test]
 fn descriptions_are_left_out_from_the_last_page_back_before_any_page() {
     let off = format!("{MODEL}agents = false\n");
     let whole = long_index(&off, None, COMPACT_INDEX_LIMIT).text.len();

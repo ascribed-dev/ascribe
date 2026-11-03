@@ -125,7 +125,7 @@ pub fn llms_files(
         absolute(&router.markdown_path(&record.source))
     });
     let root = entries.iter().find(|e| e.id == "index");
-    let (name, summary) = name_and_summary(model, root);
+    let (name, summary) = name_and_summary(model, root, true);
     let root_page = root.map(|e| e.page.clone());
     let sections = sections(entries, navigation);
     let first_page = sections
@@ -238,11 +238,22 @@ fn entries<'a>(
 }
 
 /// An index's name and summary: the title and description of the page at
-/// the base path, `root`, or else the site's host and a sentence.
-fn name_and_summary(model: &ContentModel, root: Option<&Entry<'_>>) -> (String, String) {
+/// the base path, `root`, or else the site's host and a sentence saying
+/// what each page's link leads to: its Markdown version when `markdown`,
+/// or else its page.
+fn name_and_summary(
+    model: &ContentModel,
+    root: Option<&Entry<'_>>,
+    markdown: bool,
+) -> (String, String) {
     let name = root.map_or_else(|| site_name(model), |e| e.title.clone());
     let summary = root.and_then(|e| e.description.clone()).unwrap_or_else(|| {
-        "Every page of this documentation, each linked to its Markdown version.".to_owned()
+        if markdown {
+            "Every page of this documentation, each linked to its Markdown version."
+        } else {
+            "Every page of this documentation, each linked to its page."
+        }
+        .to_owned()
     });
     (name, summary)
 }
@@ -645,7 +656,10 @@ pub fn compact_index(
         },
     });
     let root = entries.iter().find(|e| e.id == "index");
-    let (name, summary) = name_and_summary(model, root);
+    // A page's link is its Markdown version's in a folder, or when the build
+    // publishes them, and else the page's own.
+    let markdown = folder.is_some() || records.pages.iter().any(|r| r.markdown.is_some());
+    let (name, summary) = name_and_summary(model, root, markdown);
     let sections = sections(entries, navigation);
     let everywhere = match folder {
         Some(folder) => Some(format!("`{}`", folder_path(folder, ""))),

@@ -1,0 +1,1 @@
+- **Fixed:** With `[consumer] agents = false`, `ascribe agents index` no longer says each page is linked to its Markdown version when the links lead to the pages. See [`ascribe agents index`](docs/content/agents/commands.md).
