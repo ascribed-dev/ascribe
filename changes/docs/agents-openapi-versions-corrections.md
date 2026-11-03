@@ -1,0 +1,1 @@
+- **The pages on agents, OpenAPI, templates, versions, install, and review agree with the binary.** They correct what the MCP tools return, how prompts end, which example counts as a link, and what `ascribe versions` does. See [The MCP server](docs/content/agents/mcp.md).

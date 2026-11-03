@@ -32,13 +32,9 @@ A marker on a block that isn't a `json` block, or whose code isn't JSON, is `api
 
 ## What's checked
 
-The block's JSON is checked against the schema of the body the marker names, with the schema's `$ref`s into the same file followed. Each disagreement is an error, `api-example-schema-mismatch`, at its place in the block:
+The block's JSON is checked against the schema of the body the marker names, with the schema's `$ref`s into the same file followed. Each disagreement is an error, `api-example-schema-mismatch`, at its place in the block. For a guide whose request example gives `"name": 42`, `ascribe check --format concise` prints:
 
-```console
-$ ascribe check
-error[api-example-schema-mismatch]: `name` is a number; the request body of `createUser` says it's a string
-  --> guides/users.md:12:11
-```
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-api-example.txt
 
 - A value of the wrong type, out of range, or not one the schema lists is reported at the value.
 - A property the schema doesn't allow is reported at its key.

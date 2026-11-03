@@ -8,9 +8,9 @@ The commands for a project's [release lines](lines.md): what they are, what diff
 
 ## `ascribe versions`
 @id {permalink=true}: cli-versions
-@summary: Lists a project's release lines, says what differs between two, releases one, archives one, and retires one.
+@summary: Lists a project's release lines, says what differs between two, releases one, exports one, and retires one.
 
-Lists a project's release lines, says what differs between two, releases one, archives one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/variation.md#121-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
+Lists a project's release lines, says what differs between two, releases one, exports one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/variation.md#121-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
 
 ### `ascribe versions list`
 @id {permalink=true}: cli-versions-list
@@ -59,7 +59,7 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 
 ### `ascribe versions release`
 @id {permalink=true}: cli-versions-release
-@summary: Releases a line: rewrites each `planned` mark for its target to the line's version, makes the line live, and archives the old current line.
+@summary: Releases a line: rewrites each `planned` mark for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target.
 
 Releases a line: rewrites each mark's [`planned`](../writing/directives.md#availability-specs) for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. [When a line ships](index.md#release-day) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. A feature's spec names its versions, so `planned` in one is left as it is. In a copy of `examples/quill` that plans 3.6, with a section marked `@available: self-managed planned`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do, `--next` adding 3.7 to `planned` so that `planned` names it from then on. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
 
