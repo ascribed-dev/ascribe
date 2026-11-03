@@ -76,7 +76,7 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ## JSON
 
-See the [JSON output contract](https://ascribed-dev.com/docs/contracts/json-output/), which says what each page's document holds, and its schema, [`schemas/json-page.schema.json`](../../schemas/json-page.schema.json), generated from the types in `src/json.rs` by `crates/ascribe-cli/src/shapes.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`). To change what a field says, change the type and its doc comment. `schema_version` is `JSON_SCHEMA_VERSION`, which changes only when a field is removed or changes meaning. Keys, and the names a field's values are, are snake_case. Beside the pages, `generated` adds `_ascribe/nav.json`, the site output's navigation with its formatted labels as pieces.
+See the [JSON output contract](https://ascribed-dev.com/go/json-output-contract/), which says what each page's document holds, and its schema, [`schemas/json-page.schema.json`](../../schemas/json-page.schema.json), generated from the types in `src/json.rs` by `crates/ascribe-cli/src/shapes.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`). To change what a field says, change the type and its doc comment. `schema_version` is `JSON_SCHEMA_VERSION`, which changes only when a field is removed or changes meaning. Keys, and the names a field's values are, are snake_case. Beside the pages, `generated` adds `_ascribe/nav.json`, the site output's navigation with its formatted labels as pieces.
 
 `tests/all/json_schema.rs` holds every page of every example and conformance case to the schema, and `tests/all/quill.rs` snapshots the full documents for Quill, in `tests/all/snapshots/`.
 

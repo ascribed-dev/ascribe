@@ -2,6 +2,7 @@
 type: reference
 title: JSON output contract
 description: "The format of the `json` output: each page as the build resolved it, with every node's place in its source, for your own tools."
+permalink: json-output-contract
 ---
 
 Each build writes a `json` output beside its site and plain outputs: each page the build publishes, as the build resolved it, with every node's place in its source, for your own tools. This contract says what each page's document holds. The [output-layout contract](output-layout.md) says where the files are.
