@@ -116,6 +116,7 @@ pages = [
   "archive.md",
   "tested-examples.md",
   "json-reports.md",
+  "json-output.md",
   "permalinks-list.md",
   "navigation.md",
 ]
@@ -123,6 +124,10 @@ pages = [
 [[sections]]
 folder = "contracts/content-model/"
 pages = ["content.md", "variation.md", "output.md", "sources.md", "checks.md", "validation.md"]
+
+[[sections]]
+folder = "contracts/json-output/"
+pages = ["schema.md"]
 
 [[sections]]
 folder = "contracts/json-reports/"

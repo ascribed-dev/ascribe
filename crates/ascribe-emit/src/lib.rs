@@ -62,6 +62,8 @@ pub use emitter::{
     emit_page,
 };
 pub use error::EmitError;
+#[cfg(feature = "json-schema")]
+pub use json::page_schema;
 pub use json::{
     FormattedPiece, JSON_SCHEMA_VERSION, JsonEmitter, PieceKind, formatted_pieces, formatted_title,
 };

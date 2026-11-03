@@ -161,7 +161,7 @@ fn plain_output_is_commonmark_with_no_html() {
 fn json_output_is_versioned_and_points_back_at_the_source() {
     let json = output("site", &JsonEmitter);
     let doc: serde_json::Value = serde_json::from_str(&json["install-agent.json"]).expect("JSON");
-    assert_eq!(doc["schemaVersion"], 1);
+    assert_eq!(doc["schema_version"], 2);
     assert_eq!(doc["path"], "install-agent.md");
     let mut nodes = 0;
     visit(&doc["blocks"], &mut |block| {

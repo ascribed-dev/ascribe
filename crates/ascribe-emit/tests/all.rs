@@ -21,6 +21,8 @@ mod assets;
 mod formatted;
 #[path = "all/help.rs"]
 mod help;
+#[path = "all/json_schema.rs"]
+mod json_schema;
 #[path = "all/lines.rs"]
 mod lines;
 #[path = "all/openapi.rs"]
