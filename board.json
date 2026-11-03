@@ -8934,6 +8934,898 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Fuzz: parse crashes (c1c7dcdaf4bd)"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\nWhen an `@include` path is mistyped, `ascribe check` suggests the file I meant, but the editor doesn't. With `examples/quill` and line 17 of `docs/install-agent.md` changed to `@include: _fragments/prerequisite.md`, `ascribe check` 0.4.5 prints:\n\n```\n[ASC021] Error: the included file `_fragments/prerequisite.md` doesn't exist\n    ...\n    │ Help: Include `_fragments/prerequisites.md`\n```\n\nThe VS Code hover for the same problem shows only \"the included file `_fragments/prerequisite.md` doesn't exist ascribe(ASC021)\" and \"Not found: _fragments/prerequisite.md\". The editor is where the typo happens, so it's where the suggestion would help most.\n\nThis looks deliberate: the doc comment on `include_fixes` in `crates/ascribe-resolve/src/references.rs` says only `ascribe check` offers these fixes, because they depend on every source file and the source index doesn't keep them.\n\n**What you'd like Ascribe to do:**\n\nShow the closest include in the editor too: as a Quick Fix that rewrites the path, and in the hover's help, the way `ascribe check` and `--fix` do. If keeping the fixes in the source index is too costly, computing them on demand when the editor asks for code actions or hover on that range would cover the common case.\n",
+        "number": 1238,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Suggest the closest include in the editor, as ascribe check does",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1238"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFzSMs",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Suggest the closest include in the editor, as ascribe check does"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version** (`ascribe --version`): 0.4.5\n\n**Platform:** macOS (arm64), report opened in Chromium\n\n**What happened, and what you expected:**\n\nIn the HTML review report (`ascribe diff --format html`), a changed block's removed words and added words are rendered with no space between them. Changing \"can read.\" to \"can clone over HTTPS.\" shows as:\n\n> A docs repository that Quill can ~~read~~clone over HTTPS.\n\nThat's readable, but with numbers it misleads: changing \"Node.js 20\" to \"Node.js 22\" renders as \"Node.js ~~20~~22\", which reads as \"2022\" at a glance. I expected a small gap (or separator) between the removed and added runs, as the text format effectively has with `[-20-] {+22+}`.\n\n**The smallest input that shows it:**\n\nIn a git repository with `examples/quill` committed on `main`, on a branch change `docs/_fragments/prerequisites.md` line 3 from `- Node.js 20 or later.` to `- Node.js 22 or later.`, commit, then:\n\n```sh\nascribe diff --base main --format html > review.html\n```\n\nOpen `review.html` and look at the Prerequisites list on `install-agent.md`.\n",
+        "number": 1239,
+        "repository": "ascribed-dev/ascribe",
+        "title": "HTML review report runs removed and added words together",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1239"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFzSNw",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "HTML review report runs removed and added words together"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version** (`ascribe --version`): 0.4.5\n\n**Platform:** macOS (arm64)\n\n**What happened, and what you expected:**\n\nWhen `ascribe diff` shows an added or removed list item, the item's list marker is printed after the diff sign, so the line starts with two dashes or a plus and a dash:\n\n```\n  added _fragments/prerequisites.md:3, shown through install-agent.md:17\n    + - Node.js 22 or later, with npm.\n```\n\nA removed item reads `- - Node.js 20 or later.`, which is easy to misread as a nested list or a typo. A changed item doesn't have the marker (`- [-Node.js 20-] or later.`), so added and removed items are inconsistent with changed ones. I expected the marker to be left out, as it is for changed items, or the block shown in a way that doesn't stack two markers.\n\n**The smallest input that shows it:**\n\nIn a git repository with `examples/quill` committed on `main`, on a branch add a list item to `docs/_fragments/prerequisites.md`, commit, and run `ascribe diff --base main docs/install-agent.md`.\n",
+        "number": 1240,
+        "repository": "ascribed-dev/ascribe",
+        "title": "ascribe diff prints a list marker after the diff sign for added and removed items",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1240"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFzSOw",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "ascribe diff prints a list marker after the diff sign for added and removed items"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version** (`ascribe --version`): 0.4.5\n\n**Platform:** macOS (arm64)\n\n**What happened, and what you expected:**\n\nReview pairs list items badly when an item is edited and another is inserted next to it. With `examples/quill`'s `docs/_fragments/prerequisites.md`:\n\n```diff\n-- Node.js 20 or later.\n+- Node.js 22 or later, with npm.\n+- Git 2.40 or later.\n - A docs repository that {product} can read.\n```\n\n`ascribe diff --base main docs/install-agent.md` reports:\n\n```\nsite: install-agent.md: 1 changed, 1 added (through _fragments/prerequisites.md)\n  added _fragments/prerequisites.md:3, shown through install-agent.md:17\n    + - Node.js 22 or later, with npm.\n  changed _fragments/prerequisites.md:4, shown through install-agent.md:17\n    - [-Node.js 20-] or later.\n    + {+Git 2.40+} or later.\n```\n\nThe Node.js item, which was edited, shows as added, and the old Node.js item is paired with the new Git item as a change. I expected \"Node.js 20 or later.\" → \"Node.js 22 or later, with npm.\" as the changed block, and \"Git 2.40 or later.\" as added.\n\nRelated, and possibly the same cause: small edits to short list items tend to come out as an added and a removed block rather than one changed block with word marks. \"Node.js 22 or later.\" → \"Node.js 22 or later, with npm.\" did this on its own. Only one- or two-word edits produced a word-level change. If there's a similarity threshold, it may be worth tuning for short blocks or documenting in \"How review works\".\n\n**The smallest input that shows it:**\n\nThe fragment change above, committed on a branch of a repository with `examples/quill` on `main`.\n",
+        "number": 1241,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Review pairs an edited list item with a newly inserted one",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1241"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFzSP8",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Review pairs an edited list item with a newly inserted one"
+    },
+    {
+      "content": {
+        "body": "**The problem you're trying to solve:**\n\n`examples/quill` uses 1×1 placeholder PNGs for its images (`docs/_fragments/prerequisites.png`, `docs/playground.png`). Anywhere the example is rendered, such as the page preview, the site, or the HTML review report, each image shows as a one-pixel dot with an empty gap around it. Quill is the example the README, the docs, and demos point to, so it's often the first rendered Ascribe page someone sees, and the dots look like a bug.\n\n**What you'd like Ascribe to do:**\n\nGive Quill small real images (for example a simple checklist graphic and a browser playground screenshot, a few KB each), or remove the image references if they're only there to exercise image handling, and keep that coverage in the test corpora instead.\n",
+        "number": 1242,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Replace the 1×1 placeholder images in examples/quill",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1242"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFzSRA",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Replace the 1×1 placeholder images in examples/quill"
+    },
+    {
+      "content": {
+        "body": "`ascribe init` always writes `ascribe.addresses`, and Getting started says to commit it. The workflow on Checks in CI uses `actions/checkout`'s default shallow checkout and runs `ascribe check --deny-warnings`. With `ascribe.addresses` and no base in the checkout, the check reports `addresses-base-unreadable` (ASC257) as a warning, and `--deny-warnings` fails on it.\n\nThe fix, `fetch-depth: 0` and `--base`, is in a later section (\"A project with `ascribe.addresses`…\"), which reads as optional and is a partial snippet to merge by hand. The example the main snippet comes from, `examples/getting-started`, has no `ascribe.addresses`, so its own CI never meets the case.\n\n**Evidence:** in a clone shaped like a pull request's checkout (depth 1, no `main`, `origin/main`, or `origin/HEAD`) of a project `init` made:\n\n```\n$ ascribe check --deny-warnings --format github\n::warning file=ascribe.addresses,...,title=addresses-base-unreadable (ASC257)::the addresses weren't compared with the base: no base to compare with: none of origin/HEAD, origin/main, origin/master, main, and master exists; pass --base <REV>\nchecked 2 files ..., 1 warning\nexit=1\n```\n\nThis was a local clone, not a run on GitHub Actions.\n\n**Where:** `docs/content/checks/ci.md:11-13` and `:33-48`, `examples/getting-started/.github/workflows/check.yml`, and `docs/content/getting-started.md:89`.\n\n**Done when:**\n- the page's main workflow is the complete one: `fetch-depth: 0`, and `--base` on pull requests and pushes;\n- `examples/getting-started` has an `ascribe.addresses`, so its CI covers the case;\n- the later section says every project `init` started has the file.\n\nWorth deciding at the same time: whether a missing base should be advice rather than a warning when the project has never been compared.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1243,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Checks in CI: the workflow fails the first pull request of a project `ascribe init` made",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1243"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz-9I",
+      "labels": [
+        "bug",
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Checks in CI: the workflow fails the first pull request of a project `ascribe init` made"
+    },
+    {
+      "content": {
+        "body": "`docs/content/agents/mcp.md:19-28` tells hosts to start the server with `\"command\": \"npx\", \"args\": [\"ascribe\", \"mcp\"]`. The npm package named `ascribe` isn't Ascribe:\n\n```\n$ npm view ascribe name version description\nname = 'ascribe'\nversion = '0.1.0'\ndescription = 'ASCII bar chart'\n```\n\nWhen `@ascribed/cli` isn't installed in the folder the host starts the server in, `npx` with no terminal installs that package without asking and runs it. MCP hosts start servers with no terminal. The page doesn't say the snippet needs `@ascribed/cli` installed in the project.\n\nThe snippet also differs from the `.mcp.json` that `ascribe agents sync --target claude` writes, which runs `\"command\": \"ascribe\"` from PATH.\n\n**Where:** `docs/content/agents/mcp.md:19-28`. Bare `npx ascribe` is also in `docs/content/agents/index.md:28`, `docs/content/command/index.md:10`, and many shell blocks; those are safe only where the project has `@ascribed/cli` installed.\n\n**Done when:**\n- the MCP snippet can't reach another package, for example `npx --no-install ascribe mcp` or `npm exec --package=@ascribed/cli -- ascribe mcp`;\n- the page says what the snippet needs;\n- it matches the form `sync` writes, or says why the two differ;\n- every other host config in `docs/content/agents/` is checked for the same pattern.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1244,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Set up the MCP server: `npx ascribe mcp` can install and run an unrelated npm package",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1244"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_AU",
+      "labels": [
+        "bug",
+        "documentation",
+        "agents"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Set up the MCP server: `npx ascribe mcp` can install and run an unrelated npm package"
+    },
+    {
+      "content": {
+        "body": "Followed as written, in a git repository as \"Before you start\" says, `docs/content/existing-docs.md` differs from what Ascribe prints:\n\n- **The format.** The page runs `npx ascribe check --fix`, but its snippet (`crates/ascribe-cli/tests/output/init-existing-fix.txt`) is the concise one-line format. The command prints the full boxed report, about 60 lines for the same problems.\n- **An extra advice.** Once the pages are committed, every check also reports `addresses-base-unreadable` (ASC257), with help text about CI (`fetch-depth: 0`, `$GITHUB_BASE_REF`). `baseline write` doesn't absorb it. Step 5's \"Check again\" shows no advice; the run gives `0 errors, 0 warnings, 1 advice, 3 in the baseline`.\n- **GitHub alerts.** Lines 81 and 91 say the check doesn't find callouts in another tool's syntax, and list `> [!NOTE]` among them. `github-alert` (ASC287) reports `> [!NOTE]` and the other markers, with a fix.\n- **The link step.** Lines 10 and 46 describe `--fix` rewriting a link written as the old site's address, `/guides/alerts/`. The example has no such link. Its link is `../install.html`, which `--fix` leaves alone.\n\n**Done when:**\n- each command's output on the page is what the command prints in a git repository, either by adding `--format concise` to the commands or by showing the default output, with the snippets generated from a run inside a repository;\n- step 5 names ASC257, or the check no longer reports it locally where the base has no project;\n- the alert rows say `> [!NOTE]` is found and fixed;\n- the link step matches the example.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1245,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Bring existing docs: the output shown doesn't match, and the walkthrough doesn't end clean",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1245"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_Dg",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Bring existing docs: the output shown doesn't match, and the walkthrough doesn't end clean"
+    },
+    {
+      "content": {
+        "body": "Getting started ends with \"Move `ascribe.toml` and `docs/` into it … Follow the guide from its first step\" (`docs/content/getting-started.md:158-170`). Then:\n\n1. **The content root changes.** Step 2 of `docs/content/astro/index.md:32-38` is \"Write `ascribe.toml`\", with `content-root = \"content\"`, and says \"The source pages go in `content/`\". A reader holding a working file with `content-root = \"docs\"` can't tell whether to replace it, merge it, or move the pages.\n2. **Adding `base-path` reports addresses that were never published.** Once the first pages are committed at `/`, adding `[consumer] base-path = \"/docs/\"` gives `[ASC255] Warning: base-path changed from \"/\" to \"/docs/\", so 2 addresses moved`, which fails CI under `--deny-warnings`. `--fix` writes `[former] base-path = [\"/\"]`, a redirect for a site that was never deployed. Nothing says what to do before the first deploy.\n3. **Two pins can run two compilers.** Getting started installs `@ascribed/cli`. The Astro guide adds `@ascribed/astro`, which depends on its own exact `@ascribed/cli` and runs that binary (`packages/astro/src/binary.ts`). The editor, CI, and `npx ascribe` run the hoisted `node_modules/.bin/ascribe`. When the two pins differ, `astro build` and `npx ascribe check` run different versions, and nothing says to keep them together.\n\nTwo smaller mismatches on the same path:\n- `ascribe init` prints \"Next, write a first page, docs/index.md\". Getting started writes `docs/install.md` and never makes an index.\n- After \"Create `docs/configure.md` … and check again\" (`getting-started.md:116`), the check reports `page-orphan` (ASC154) advice on `install.md`, with help about `intended` frontmatter the reader hasn't met. The page implies a clean check.\n\n**Done when:**\n- the Astro guide's step 2 tells a reader from Getting started to keep their file and add only `[consumer]`, shown as the lines to add;\n- the guide, or `docs/content/publishing/redirects.md`, says what to do about ASC255 before the first deploy;\n- step 1 says to keep `@ascribed/cli` and `@ascribed/astro` on the same version, or to drop the direct dependency, and says which binary the integration runs;\n- `init`'s next step and Getting started name the same first page, and the page names the orphan advice.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1246,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Getting started's handoff to the Astro guide: a conflicting `ascribe.toml`, a base-path warning, and two `@ascribed/cli` pins",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1246"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_F8",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Getting started's handoff to the Astro guide: a conflicting `ascribe.toml`, a base-path warning, and two `@ascribed/cli` pins"
+    },
+    {
+      "content": {
+        "body": "`docs/content/agents/loop.md:16` gives `ascribe check guides/install.md --format concise --editor-build`. `check` reads paths from the current folder, so in a project whose content root is `docs/`, a path from the content root is a usage error. `outline` and `link` take the same path from the content root, and work. An agent that copies the loop fails on its first step.\n\n```\n$ ascribe check install.md --format concise --editor-build\nerror: install.md doesn't exist                (exit 2)\n$ ascribe outline install.md                   (exit 0)\n$ ascribe link install.md --from index.md      (exit 0)\n```\n\n**Done when:** `loop.md` writes the path from the project's folder (`docs/guides/install.md`), as `docs/content/checks/check.md:31` does, and `docs/content/command/index.md` says in one sentence which commands take paths from the current folder and which from the content root.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1247,
+        "repository": "ascribed-dev/ascribe",
+        "title": "agents/loop.md: the first command exits 2, and no page says which commands read paths from the content root",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1247"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_JM",
+      "labels": [
+        "documentation",
+        "agents"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "agents/loop.md: the first command exits 2, and no page says which commands read paths from the content root"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version:** 0.4.5+dev (0655d2f5)\n\n**Platform:** macOS (arm64)\n\n**What happened, and what you expected:**\n\nThe hook entries `ascribe agents sync` writes depend on whether `node_modules/.bin/ascribe` exists when it runs. With it, the command is `\"$CLAUDE_PROJECT_DIR\"/node_modules/.bin/ascribe agents hook claude-code --event edit`. Without it, the command is `ascribe agents hook claude-code --event edit`. A developer who syncs before `npm install` commits one form. CI that runs `npm ci` and then `sync --check`, as `docs/content/agents/instructions.md:72-78` recommends, reports the file stale. The reverse happens too.\n\n```\nError: 1 file is out of date; run `ascribe agents sync` to update them\n-            \"command\": \"\\\"$CLAUDE_PROJECT_DIR\\\"/node_modules/.bin/ascribe agents hook ...\n+            \"command\": \"ascribe agents hook claude-code --event edit\",\n```\n\nI expected `sync` to write the same files for the same project on every machine.\n\n**The smallest input:** a project whose `package.json` pins `@ascribed/cli`. Run `ascribe agents sync --target claude --with-hook` with `node_modules` installed, commit, move `node_modules` away, and run `ascribe agents sync --check`.\n\n**Done when:** the hook command is decided from what's committed (`package.json`), not from what's on disk. If that isn't wanted, `docs/content/agents/instructions.md#keeping-them-current-in-ci` and `docs/content/agents/hooks.md` say to run `sync` and `sync --check` only after installing dependencies.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1248,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe agents sync --check` reports stale or fresh depending on whether `node_modules` exists",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1248"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_L8",
+      "labels": [
+        "bug",
+        "agents"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe agents sync --check` reports stale or fresh depending on whether `node_modules` exists"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version:** 0.4.5+dev (0655d2f5)\n\n**Platform:** macOS (arm64)\n\n**What happened, and what you expected:**\n\n`ascribe agents index` writes \"Every page of this documentation, each linked to its Markdown version.\" even with `[consumer] agents = false`, when the links are to HTML pages. The fixture `crates/ascribe-cli/tests/output/agents-index.json` has the same sentence, above links such as `https://docs.quill.dev/keys/`. I expected the sentence to describe the links it lists.\n\n**The smallest input:** `ascribe agents index` in `examples/quill`, which has `agents = false`.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1249,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe agents index` says its links are Markdown versions when `agents = false`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1249"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_OA",
+      "labels": [
+        "bug",
+        "agents"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe agents index` says its links are Markdown versions when `agents = false`"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version:** 0.4.5+dev (0655d2f5)\n\n**Platform:** macOS (arm64)\n\n**What happened, and what you expected:**\n\nIn a project with no versioned build, `ascribe versions release` leaves an empty `[releases.<target>.ends]` table in `ascribe.toml`. I expected no table when there's nothing to put in it.\n\n**The smallest input:** a project with a `[releases.<target>]` table and no build versioned by it. Run `ascribe versions release <target>` and read `ascribe.toml`.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1250,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe versions release` leaves an empty `ends` table",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1250"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_Rs",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe versions release` leaves an empty `ends` table"
+    },
+    {
+      "content": {
+        "body": "**Ascribe version:** 0.4.5+dev (0655d2f5)\n\n**Platform:** macOS (arm64)\n\n**What happened, and what you expected:**\n\n`ascribe versions retire` records `[moved]` keys in `ascribe.addresses` that start with `/`. A key written that way applies to every build. So a build that never published the retired line, such as `examples/quill`'s `cloud`, gets redirects for `/3.4/…` addresses it never had. I expected the redirects only in the builds that published the line.\n\n**The smallest input:** `examples/quill` in a git repository. Run `ascribe versions retire` on the 3.4 line, build `cloud`, and read its redirects.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1251,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe versions retire` records redirects for builds that never published the retired line",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1251"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_UI",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe versions retire` records redirects for builds that never published the retired line"
+    },
+    {
+      "content": {
+        "body": "Found outside `docs/content/` in a docs review. Each is small.\n\n- **`check --editor-build`'s help** (`crates/ascribe-cli/src/commands/check.rs:72`), repeated in the generated `docs/content/_generated/cli-check-options.md:6`, says the editor's build is \"`[editor] build` in `ascribe.toml`, or the first build\". With one build, it's that build. Otherwise it's the build named `site`. Otherwise `[editor] build` is required (`model-editor-build-required`, ASC118). See `docs/content/_fragments/content-model/editor.md:7`; a project with two builds, neither named `site`, reports ASC118.\n- **`ascribe build --help`** lists only `text` and `json` for `--format`. `build --format concise` is accepted, and `docs/content/command/index.md:53` says every command that takes `text` takes `concise`.\n- **`schemas/diff.schema.json:404`** describes `schema_version` as \"`SCHEMA_VERSION`.\", an internal constant's name. The other schemas give a sentence.\n- **`crates/ascribe-model/settings.toml:1025`:** `[apis]` still has `available = \"ascribe planned\"`, though 0.4.5 shipped it.\n- **`ARCHITECTURE.md:278`** says `report.yml` keeps its link answers \"with `actions/cache`\". It uses the `ascribe-links` artifact (`.github/workflows/report.yml:11-19,83`).\n- **`project-docs/surface.md`:** the \"What nothing declares\" list of reserved keys leaves out `type`, `listing`, `replaces`, `nav-label`, and `draft`.\n- **`docs/content/checks/check.md:207`** says `.ascribe/` \"is the folder `.gitignore` already leaves out\". `ascribe init` writes no `.gitignore`; only Getting started says to add one. Change the sentence, or have `init` add the line.\n\n**Done when:** each is fixed, and the generated files are rewritten with `pnpm bless`.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1252,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Small inaccuracies in help text, schemas, and repository docs",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1252"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_X0",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Small inaccuracies in help text, schemas, and repository docs"
+    },
+    {
+      "content": {
+        "body": "On the same binary, `ascribe check --format json` gives `\"ascribe_version\": \"0.4.5\"`, and `ascribe observe --format json` gives `\"0.4.5+dev (0655d2f50120)\"`. Every schema in `schemas/` describes the field only as \"The version of Ascribe that wrote it\".\n\nA tool that compares versions across reports can't rely on either form. The commands' JSON is a contract, so this needs a decision: one format for every command, or both documented with when each is written.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1253,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe_version` has two formats across the commands' JSON",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1253"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_aQ",
+      "labels": [
+        "question"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe_version` has two formats across the commands' JSON"
+    },
+    {
+      "content": {
+        "body": "Commit 0b5ec798 renumbered `docs/content/contracts/content-model.md`: 6→11, 7→12, 7.1→12.1, 8→13, 10→6, 12→8, 13→9, 14→10, 18→20, 21→18, 22→17. These references weren't updated, and some now point at the wrong section:\n\n- `docs/content/contracts/output-layout.md:143`: `[listing]` says §22, which is now `[checks]`. Should be §17.\n- `output-layout.md:147,148`: `[crawlers]` says §21, which is now `[apis]`. Should be §18.\n- `output-layout.md:189`: `[releases]` says §7.1, which no longer exists. Should be §12.1.\n- `docs/content/contracts/site-render.md:10`: image attributes §13 → §9.\n- `site-render.md:112`: glossary §12 → §8.\n- `site-render.md:115`: element names §14 → §10.\n- `docs/content/contracts/archive.md:45`: target label §6 → §11.\n- `docs/content/contracts/content-model/sources.md:53`: \"as a source's folder is (§18)\" → §20.\n- `packages/elements/CONTRACT.md:38`: §10, §6, §8 → §6, §11, §13.\n- `packages/elements/CONTRACT.md:216,224`: widgets §14 → §10.\n- `packages/elements/CONTRACT.md:245`: glossary §12 → §8.\n\nThey're plain text, not links, so `ascribe check` can't catch them. Compare `git show 0b5ec798^:docs/content/contracts/content-model.md` with today's headings to confirm the mapping.\n\n**Done when:** each is a link to its heading, so the check holds it, or, where a link can't go (`CONTRACT.md` outside the docs), the number is right.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1254,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Stale § numbers into the content-model contract, left by its renumbering",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1254"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_d8",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Stale § numbers into the content-model contract, left by its renumbering"
+    },
+    {
+      "content": {
+        "body": "[Decision #973](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/decisions/973-no-release-marks-before-1-0.md) says the docs don't name the release a feature arrived in before 1.0. The conformance test catches `@available` marks; it doesn't catch prose. Nine places name a release or say \"until this release\". Two of them are false now that 0.4.5 has shipped:\n\n- `docs/content/agents/commands.md:198`: \"`ascribe_fmt` and `ascribe_diff` were `ascribe_format` and `ascribe_changes` until this release … for one more release.\" The rename shipped in 0.4.5. → \"were once `ascribe_format` and `ascribe_changes`; the old names still call them, so settings that name them keep working until you change them.\"\n- `docs/content/versions/release.md:104`: \"It was `ascribe versions archive` until this release … for one more release.\" Shipped in 0.4.5. → \"Its old name, `ascribe versions archive`, still runs it, with a warning.\"\n\nThe other seven:\n- `docs/content/astro/reference.md:25`: \"In ascribe 0.2.0 … since ascribe 0.3.0 …\". → \"The integration replaces `trailingSlash: \"ignore\"`, as below. `base-path` agrees with Astro's `base` when it's that path or a path under it.\"\n- `docs/content/contracts/content-model/checks.md:18`: \"and so does `memo-long` from ascribe 0.4.0\". → \"`page-size`, `image-large`, and `memo-long` take `limit`.\"\n- `docs/content/install.md:14`: \"(2.39 for 0.1.1 and earlier)\". Drop it.\n- `docs/content/checks/check.md:92`: \"`--diff` is its old spelling, kept for a release.\" → \"…its old spelling, which still works.\"\n- `docs/content/content-model/index.md:214`: \"`review-date` … still works … until the next release.\" → \"…still works, for now.\"\n- `docs/content/glossary.md:124`: \"both old names still work for a release.\" → as above.\n- `docs/content/checks/ci.md:31`: \"With a release that doesn't have it yet, leave it out.\" Every live release has `--format github`; drop it.\n\nAlso consider removing `docs/content/navigation/site-list.md`'s guide \"for a site that `init` started in 0.3\": a migration guide is noise in a pre-1.0 tool with no users.\n\n**Done when:** no page names a release in prose, and `cargo test -p ascribe-conformance --test docs` also fails on phrases like \"until this release\", \"for a release\", and \"since ascribe 0.\", so the rule holds.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1255,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Release-dated prose breaks decision #973, and two notes are already false",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1255"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_h8",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Release-dated prose breaks decision #973, and two notes are already false"
+    },
+    {
+      "content": {
+        "body": "Statements in hand-written pages that disagree with the code or the binary. Each was confirmed by a run or by the source unless marked *suspected*. Paths are under `docs/content/`.\n\n- [ ] **`checks/check.md:130`:** the baseline row says it isn't read by \"`ascribe build` or `ascribe report`, for now\". Both read it (`crates/ascribe-cli/src/commands/build.rs:64-71`, `report/mod.rs:101-109`), and both take `--no-baseline`. It contradicts `checks/baseline.md:28-30` and line 154 of the same page. → \"`ascribe check`, `ascribe build`, `ascribe report`, the editor, the hooks, and the MCP server\".\n- [ ] **`content-model/index.md:116-127` and `:151`:** the reserved-keys table leaves out `draft`, and says the generated schemas leave out \"the three that reach a site another way\". `draft` is reserved (SPEC §2.1, §2.2), a type or fragment that declares it gets ASC074, and the schema leaves it out too, so there are four. Add a `draft` row, say \"the four\", and add `draft` to line 151.\n- [ ] **`_fragments/content-model/defaults.md:22` and `content-model/sources.md:11`:** \"Nothing outside the project's folder can be read\" without `[sources]`, and a source is \"the only way a page can read a file outside the project's folder\". An `[apis]` spec at `../api/openapi.yaml` and a `[from]` file are read without `[sources]`. → \"`@snippet` can't name a file outside the project's folder\" and \"the only way a page can show a file outside the project's folder as code\".\n- [ ] **`_fragments/content-model/defaults.md:7`:** \"a fragment's frontmatter can't have any keys\". Every fragment accepts `intended` (SPEC §2.2). → \"can have no keys but `intended`\".\n- [ ] **`_fragments/content-model/defaults.md`:** `content-model/index.md:10` says every section has a default, but the table has no rows for `[frontmatter]`, `[from]`, `[releases]`, `[apis]`, or `[[intended]]`.\n- [ ] **`writing/syntax.md:139-144`:** the binding table's Self row leaves out `@operation`, which binds itself (SPEC §4, `crates/ascribe-core/src/schema.rs:294`).\n- [ ] **`writing/directives.md:267`:** \"A `@note`, `@details`, or widget directly above it applies to it\" (about `@snippet`). Any following-block directive binds a snippet, `@available`, `@intended`, and `@memo` among them (SPEC §3.8, §4.8). *Confirmed from the spec, not run.*\n- [ ] **`writing/variants.md:85`:** \"Another build is for another output: a second site, a PDF, or plain Markdown\". There's no PDF output. Drop \"a PDF\", or say it's made from the plain output by your own tool.\n- [ ] **`checks/diagnostics.md:19` and `checks/diagnostics/content-model-builds.md:4,7`:** say the page covers `[permalinks]`. The generated page has no `[permalinks]` section, and has an `[apis]` section neither intro names.\n- [ ] **`checks/baseline.md:99`:** the example entry names `link-text-generic`, a check that doesn't exist (it comes from a unit test), with a path from the content root. Use a real advice check, such as `page-description-missing`, and a path from the project's folder.\n- [ ] **`command/project-files.md`:** says it lists every file Ascribe writes, but has no row for `.ascribe/preview/`, which `ascribe preview` writes.\n- [ ] **`permalinks/command.md:80`:** \"What it says goes to standard error\" (about `verify`). When every name passes, it prints \"N names are permalinks in …\" to standard output; only failures go to standard error.\n- [ ] **`command/questions.md:151`:** exit `2` covers \"a target that's neither a path nor an entry\". An unknown prefix (`ascribe refs foo:bar`) is read as a missing path and exits `1`. *Suspected:* say so, or make an unknown prefix exit 2.\n- [ ] **`content-model/glossary.md:20-25`:** the example page has `type: page` and `description:`, which a project `init` made in a folder of pages reports (ASC197, unknown key). *Suspected:* say which content model the example assumes.\n\n**Done when:** each item is fixed, and `cargo run -q -p ascribe-cli -- check --config docs` passes.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1256,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs inaccuracies: writing, the content model, checks, and commands",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1256"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_nI",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs inaccuracies: writing, the content model, checks, and commands"
+    },
+    {
+      "content": {
+        "body": "Statements in hand-written pages that disagree with the code or the binary. Each was confirmed by a run or by the source unless marked *suspected*. Paths are under `docs/content/`.\n\n- [ ] **`agents/copilot.md:9`:** reads as though `--target copilot` falls back to the project's folder outside a git repository. It exits 2 and writes nothing; only a plain `sync` falls back. → \"…so outside a git repository `--target copilot` and `--cloud` stop and write nothing (exit code `2`). Without them, `sync` treats your project's folder as the root and says so.\"\n- [ ] **`agents/mcp.md:34` and `agents/commands.md:180`:** \"A tool's result is its command's JSON\". With the default `response_format: \"concise\"`, the result is the concise text, and `structuredContent` is `{\"concise\": \"…\"}`. Say that, say `response_format: \"detailed\"` gives the JSON, and document the `structuredContent` shape.\n- [ ] **`agents/mcp.md:34`:** output schemas \"would make the tool list five times as long\". The code comment (`crates/ascribe-cli/src/mcp/tools.rs:19-22`) says three quarters, which is four times. *Suspected; not measured.*\n- [ ] **`agents/commands.md:142`:** every prompt ends with \"run `ascribe check <file>`\". `new-page` ends with `ascribe check docs`, and a project-wide `fix` prompt with `ascribe check`.\n- [ ] **`agents/claude-code.md:25`:** the plugin runs \"the `ascribe` binary the VS Code extension would\". Its third fallback is `ascribe` on PATH; the extension's is its bundled binary.\n- [ ] **`install.md:84`:** the editor \"runs the project's when there is one, and its own otherwise\". It leaves out `ascribe.path`, which comes first (`editor/index.md:24`).\n- [ ] **`templates/index.md:29-37`:** shows `eject` writing `title = \"string\"`. It writes only `description = \"string\"`, since `title` is implicit; `templates/command.md:48-53` has it right.\n- [ ] **`openapi/examples.md:37-41`:** shows rustc-style output (`error[api-example-schema-mismatch]`, `--> guides/users.md:12:11`) that Ascribe never prints. Replace it with a tested `@snippet` of the real output, preferably `--format concise` (`docs/guides/users.md:12: [ASC277] …`).\n- [ ] **`openapi/coverage.md:11`:** an operation counts as linked only through a link or an `@operation`. A JSON example's `request=\"…\"` or `response=\"… <status>\"` also counts, and suppresses ASC282.\n- [ ] **`review/how-it-works.md:71`:** \"The `ascribe` binary itself never uses the network\". `ascribe sources fetch` and `update` run `git fetch`, and `report links` and `report delivery` use the network. → \"Review uses no network of its own: `ascribe diff` runs `git` on your machine, against the repository you have.\"\n- [ ] **`versions/release.md:11,13,62`:** `ascribe versions` \"releases one, archives one, and retires one\". Nothing archives a line; `export` writes a copy and changes nothing (decision #950 renamed it for this reason). Line 62 also says `release` \"archives the old current line\" without the condition: only where no build is versioned by the target.\n\n**Done when:** each item is fixed, and `cargo run -q -p ascribe-cli -- check --config docs` passes.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1257,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs inaccuracies: agents, OpenAPI, templates, versions, install, and review",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1257"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_rM",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs inaccuracies: agents, OpenAPI, templates, versions, install, and review"
+    },
+    {
+      "content": {
+        "body": "Statements in hand-written pages that disagree with the code or the binary. Each was confirmed by a run or by the source. Paths are under `docs/content/`.\n\n**Contracts**\n- [ ] **`contracts/content-model/output.md:24,26`:** the agents' link formats are `[llms.txt](../<url>)` and `- [<title>](../<url>)`. There's no `../`; real output is `[llms.txt](https://docs.example.com/docs/llms.txt)`. Commit b28284f7, which moved the page into a subfolder, rewrote the link-like text inside these code spans, so the tool that moves pages is worth checking for the same thing.\n- [ ] **`contracts/navigation.md:63`:** calls `source` \"the key its record has in `_ascribe/pages.json`\". `pages.json` is keyed by route, and `source` is a field of the record (`output-layout.md:136-138`).\n- [ ] **`contracts/navigation.md:81`:** \"A page is in the file once, but for the page beside a nested folder.\" A page beside a top-level folder appears twice too, as §2 of the same page says.\n- [ ] **`contracts/output-layout.md:157`:** `headers.json` is \"an empty list when the build publishes no Markdown versions\". It also holds two rules for each help entry (§1.7); quill, with `agents = false`, gets 6. → \"…no Markdown versions and no permalinks\".\n- [ ] **`contracts/content-model/validation.md`, §26's map:** the row \"Retired permalinks and aliases (§7.6) | `[permalinks]` | §19\" maps a removed key. These records live in `ascribe.addresses` (SPEC §7.6, §7.10).\n- [ ] **`contracts/site-render.md:194` (§7.2):** the elements that carry an anchor leave out `ascribe-operation`, which carries one (`crates/ascribe-emit/src/site/blocks.rs:381-386`).\n- [ ] **`contracts/json-reports.md:19,24`:** the Questions list leaves out `rename`, and the line on what pages are leaves out `ascribe new`. Both are on the subpages.\n\n**The editor**\n- [ ] **`editor/language-server.md:27`:** \"Three commands are the editor's to run.\" There are four: `ascribe.copyCommand` carries the \"Copy the command\" quick fix on `example-stale` and `example-unobserved` (`crates/ascribe-lsp/src/examples.rs:32,224-233`). An editor that doesn't register it gets a quick fix that does nothing. Add its row here and in `crates/ascribe-lsp/README.md`.\n- [ ] **`editor/language-server.md:13`:** \"Its logs go to standard error, starting with the project it uses.\" The startup line is a `window/logMessage` (`crates/ascribe-lsp/src/core.rs:294-309`), as line 19 says.\n- [ ] **`editor/review.md:21` and the alt text at `:27-28`:** Review is \"first in the Ascribe sidebar\". It's second, after Project (`package.json`'s view order), as `editor/sidebar.md:7-13` says.\n- [ ] **`editor/sidebar.md:125,243`:** calls the Health row **Review**. It's labelled **Recheck** (`packages/vscode/src/ui/sidebar.ts:1059`).\n- [ ] **`editor/actions.md:45`:** leaves out that a page made from a type with no template also gets `draft: true` (`crates/ascribe-templates/src/start.rs:351-364`).\n- [ ] **`editor/writing.md:90`:** the button reads \"Keep <formatter>\", such as **Keep Prettier**, not **Keep**.\n- [ ] **`editor/preview.md:33`:** any `127.x.x.x` address is accepted (`packages/vscode/src/preview/site.ts:22-24`), not only `127.0.0.1`.\n- [ ] **`astro/elements.md:118`:** \"like the lead-ins below\" should be \"above\".\n\n**Done when:** each item is fixed, and `cargo run -q -p ascribe-cli -- check --config docs` passes.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1258,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs inaccuracies: contracts and the editor",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1258"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_uc",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs inaccuracies: contracts and the editor"
+    },
+    {
+      "content": {
+        "body": "Every command, option, directive, `ascribe.toml` key, MCP tool, Astro option, and editor setting has a page. These don't:\n\n- [ ] **`ascribe diff --build site`** compares only the current line of a versioned build; another line must be named, as `site@3.4`. `docs/content/review/diff.md` doesn't say so.\n- [ ] **`@ascribed/astro/permalinks` and `@ascribed/astro/redirects`** are exported (`packages/astro/package.json`) and listed in `project-docs/surface.md`. No page mentions them.\n- [ ] **`pageVersions`, `lineVersions`, and `versionNotice`** are exported from `@ascribed/astro/content` (`packages/astro/src/content.ts:364,390,410`) and not documented.\n- [ ] **`AscribeTabs`, `AscribeTab`, and `AscribeGroup`**, classes `@ascribed/elements` exports (`packages/elements/src/index.ts:11`). Only `choose` is documented.\n- [ ] **`<ascribe-attributes>`** is missing from `docs/content/astro/elements.md`'s table of elements, though `contracts/site-render.md` §1 and `command/site-output.md` cover it.\n- [ ] **`ascribe-astro init`'s** exit code `2` and `-h/--help`.\n- [ ] **`editor.semanticHighlighting.enabled`:** the extension turns it on for `[markdown]` (`configurationDefaults`). `docs/content/editor/writing.md` doesn't say so.\n- [ ] **The Project view's Actions** come in three labelled groups: Check, Write, and Review and agents. `docs/content/editor/sidebar.md` doesn't show them.\n\nBefore documenting an export, decide whether it's public API: one that isn't meant to be could stop being exported instead. A published package's API is a contract, so either way the decision is recorded.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1259,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Document the surface no page covers",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1259"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_w0",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Document the surface no page covers"
+    },
+    {
+      "content": {
+        "body": "Each build writes the resolved pages as JSON (`json/`), which Getting started presents as \"for your own tools\" (`docs/content/getting-started.md:138`; also `checks/check.md:171`). Its format (`\"format\": \"ascribe-page\"`, `schemaVersion`, `blocks`, `inlines`, `source`, `span`) is described only in `crates/ascribe-emit/README.md:79-160`. `schemas/` has no schema for it, and `docs/content/contracts/output-layout.md:28-36` gives only the file paths.\n\nIts keys are camelCase (`{\"schemaVersion\": 1, \"format\": \"ascribe-page\", \"build\": \"site\", …}`), while `docs/content/contracts/json-reports.md:15` says \"Keys are snake_case\". A reader takes that as the rule for all of Ascribe's JSON.\n\nThis needs a decision, since it sets a contract:\n- Is the `json/` output a contract? If so, a page under `contracts/`, with a schema generated like the others.\n- Do its keys stay camelCase? If so, `json-reports.md` says its rule is for the commands' reports only.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1260,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The `json/` build output has no contract, and its keys don't follow the stated rule",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1260"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_1U",
+      "labels": [
+        "documentation",
+        "question"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The `json/` build output has no contract, and its keys don't follow the stated rule"
+    },
+    {
+      "content": {
+        "body": "Two things make the commands' JSON contracts hard to build on.\n\n**1. You can't get the schemas for the version you run.**\n- Every link is to `main`: `docs/content/contracts/json-reports.md:8` (`schemas/` on `tree/main`), `editor/language-server.md:39`, and `astro/elements.md:10` (`CONTRACT.md` on `blob/main`). A team pins `@ascribed/cli`, and `main` may differ.\n- The schemas have no `$id`; `schemas/check.schema.json` has only `$schema`.\n- They aren't in the npm package (`packages/cli/package.json`'s `files` is `[\"dist\", \"skills\"]`), and no command prints them.\n\n**2. The contract pages are raw schema.** `json-reports.md` includes `_generated/json-check.md`, about 430 lines of JSON Schema with `$defs` in alphabetical order, and the other `json-reports/*.md` pages are the same. Finding whether a field is a string or nullable means following `$ref`s.\n\n**Done when:**\n- the schemas have an `$id`, and are published per version: in `@ascribed/cli`, at a versioned address, or both;\n- the docs link to the version's schemas;\n- each contract page has a table generated from the same schema (path, type, required, nullable, description), with the raw schema behind a `@details`.\n\nPart 1 decides where the schemas live and is the first pull request. Part 2 can follow.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1261,
+        "repository": "ascribed-dev/ascribe",
+        "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1261"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_4I",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
+    },
+    {
+      "content": {
+        "body": "An evaluator rules out the deal-breakers first: \"we're on GitLab\", \"we ship in six languages\", \"half the team is on Intel Macs\", \"we use another site generator\". The docs don't answer these in one place.\n\nThe landing site's \"Why Ascribe\" page has the list (`site/home/content/why.md:83-91`): one site generator, made for Astro; no translations; a section is a folder, so a sidebar can't list a page twice; no hosting; no check that the words are true. No page in `docs/content/` links to it, and no page mentions translation or localization. Other limits are scattered: Intel Macs aren't supported (`install.md:14`, `editor/index.md:18`), review comments are GitHub only (inferred from `review/how-it-works.md:52-67`), and the extension is VS Code only.\n\n**Done when:**\n- `docs/content/index.md`, or `install.md`, has a short section, \"What you need and what it doesn't do\":\n  - the requirements: Node or the binary, VS Code for the editor and review, GitHub for review comments, Astro for the site, and the platforms;\n  - what it doesn't do: translations (and what to do instead, such as a second project under its own base path), hosting, other site generators;\n- the first paragraph of `index.md` and `getting-started.md:8` link the Why page.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1262,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Say what Ascribe needs and what it doesn't do",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1262"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_60",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Say what Ascribe needs and what it doesn't do"
+    },
+    {
+      "content": {
+        "body": "Three problems on the way to a live site:\n\n- **The section called Publishing isn't about publishing.** `docs/content/publishing/` is about what a project tells search engines and AI crawlers: listing, `robots.txt`, `X-Robots-Tag`. The publishing itself is the next section, \"Publishing with Astro\".\n- **No page takes the site to a host.** `docs/content/astro/index.md:101-108` ends at \"`astro build` writes it to `dist/`, for your host\". There's no recipe for deploying from CI to GitHub Pages, Netlify, Cloudflare Pages, or Vercel, or for what those hosts need: the base path, `trailingSlash`, the `_headers` rule limit (only in `astro/serve-markdown.md:27`).\n- **\"Can I publish without Astro?\" has no direct answer.** The pieces: another generator can read the same records (`publishing/index.md:16`, `astro/reference.md:111,125`); `preview` and `versions export` render HTML but aren't for production (`checks/check.md:207`).\n\n**Done when:**\n- the section is renamed for what it covers, for example \"Search engines and crawlers\", and kept after \"Publishing with Astro\" (this changes `docs/ascribe.nav` and the sidebar fixture);\n- a \"Ways to publish\" section says what's supported: Astro; your own generator, through the contracts; and `preview`, not for production, and why;\n- a how-to deploys the site from CI end to end, with one GitHub Pages and one Netlify workflow (`host = \"netlify\"` is already supported).\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1263,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Deploy the site: a how-to, the supported ways to publish, and a Publishing section that's about publishing",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1263"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhFz_94",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Deploy the site: a how-to, the supported ways to publish, and a Publishing section that's about publishing"
+    },
+    {
+      "content": {
+        "body": "Setting up CI means assembling one workflow from five pages:\n- `docs/content/checks/ci.md:11`: check and fmt;\n- `ci.md:35`: the addresses base;\n- `ci.md:56`: `observe --check`;\n- `docs/content/agents/instructions.md:74`: `agents sync --check`;\n- `docs/content/review/ci-report.md:18`: the HTML preview.\n\nNothing shows `astro build` in CI. Along the way:\n- **The review job installs an unpinned CLI.** `.github/workflows/review.yml#job`, shown on `ci-report.md`, runs `npm install --global @ascribed/cli`. That contradicts `ci.md:25`: \"Name the release your team runs … a release with a new check fails pull requests nobody changed.\"\n- **The no-Node snippet may not find `ascribe`.** `ci.md:19-23` runs the install script, which puts `ascribe` in `$HOME/.local/bin` (`site/public/install.sh:10`) and doesn't add it to `$GITHUB_PATH`; the next step runs a bare `ascribe`. *Not verified on a runner.* The snippet also doesn't give the `--version` format (`0.4.5`; a leading `v` is accepted).\n- **CI outside GitHub isn't covered.** `--format github` is the only CI-native format. A GitLab user has no Code Quality, SARIF, or JUnit output, and no page says to start from `--format json`.\n\n**Done when:**\n- one page or section has a single workflow: `fetch-depth: 0`, `npm ci`, `check --format github --base …`, `fmt --check`, `agents sync --check`, `observe --check` where it applies, the review artifact, and `astro build`;\n- the review job uses the project's pinned CLI (`npm ci` and `npx ascribe`) or a pinned `--version`;\n- the no-Node snippet adds the install folder to `$GITHUB_PATH`, or installs with `--to` into a folder on the path;\n- a short section says how to use Ascribe in another CI, from `--format json`, with a `jq` example.\n\n**Needs:** #1243\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1264,
+        "repository": "ascribed-dev/ascribe",
+        "title": "One complete CI pipeline, in one place",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1264"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AAM",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "One complete CI pipeline, in one place"
+    },
+    {
+      "content": {
+        "body": "Almost every team that adopts Ascribe is coming from another tool, and the construct map is what lets a writer estimate the migration.\n\n`docs/content/existing-docs.md:79-97` has a generic table (`:::note`, `!!! note`, `{#id}`, `[[wiki]]`). For MDX it says only \"rename a `.mdx` file whose components you've replaced\", without saying what a `<Tabs>`, `<Steps>`, or imported component becomes. The repository already has `examples/comparison/README.md`, a construct-by-construct table for Starlight MDX, Elastic docs-builder, and Hugo (tabs, steps, includes, version substitution, applicability). No page links it. Versioned docs from another tool (Docusaurus `versioned_docs/`, mike for MkDocs) aren't mapped to `@available` and release lines either.\n\n**Done when:** a page, or a section of `existing-docs.md`, maps each tool's constructs, built from `examples/comparison`:\n- MDX components: `<Tabs>`/`<TabItem>` → `@variant`, `<Steps>` → `@steps`, an imported partial → `@include`, a custom component → a project widget;\n- Docusaurus and Starlight `:::tip[Title]` → a title line and `@note`;\n- per-version folder copies → `@available` and `[releases]`, linking `versions/index.md`.\n\nIt needs no redirects or compatibility notes for Ascribe's own history.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1265,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Moving from Docusaurus, Starlight/MDX, MkDocs, or Hugo",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1265"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AEQ",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Moving from Docusaurus, Starlight/MDX, MkDocs, or Hugo"
+    },
+    {
+      "content": {
+        "body": "A writer's second hour is \"write a real page\": a note, steps, a collapsible block, an image, a link, an include. Today that means piecing it together from two reference pages written for implementers.\n\n- **There's no task page for it.** The Writing section has no `index.md`; its first page is \"Directive syntax\" (`docs/content/writing/syntax.md`). Of its seven pages, two are task pages (`variants.md`, `memos.md`).\n- **The reference follows the spec's order.** `writing/directives.md:8` runs \"in the order of the Ascribe specification\", so `@id`, `@include`, `@variant`, and `@available`, with its spec grammar, come before `@note` and `@steps`, the two a writer uses most.\n- **Spec links under every heading.** `syntax.md:13`, `:41`, `:61`, and others put a line like `([SPEC §3.1](…), [§3.2]…)` under each heading, linking out to GitHub.\n\n**Done when:**\n- a how-to, \"Write a page\", is first in the section and builds one worked page with the everyday constructs: note, steps, details, a link to a file, an image with a width, a phrase, an include;\n- `directives.md` opens with a \"most used\" table (`@note`, `@steps`, `@details`, `@include`, `@variant`, `@id`) before the spec-ordered entries;\n- the `SPEC §` links in `syntax.md` and `directives.md` move to one line at the end of each section.\n\nRelated: #1280, on implementer vocabulary in writer-facing pages.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1266,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Writing pages: a \"Write a page\" how-to first, and the everyday directives before the spec order",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1266"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AHA",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Writing pages: a \"Write a page\" how-to first, and the everyday directives before the spec order"
+    },
+    {
+      "content": {
+        "body": "Single-sourcing is a top reason teams adopt a structured tool, and the docs hide it.\n\n- The writers' path (`docs/content/index.md:27`) sends \"write a name or a passage once\" to two reference anchors, `writing/inline.md#phrases` and `writing/directives.md#include`.\n- The rule that makes a file a reusable fragment (any part of its path starts with `_`) is in `writing/frontmatter.md:17-26`, under \"Files\", where a writer wouldn't look.\n- Nothing says when to use a phrase, a fragment, or a variant. How a fragment's relative links behave is a bullet in the `@include` reference (`directives.md:43-63`).\n\n**Done when:** a how-to, \"Write it once\":\n- makes `_fragments/prerequisites.md`, includes it on two pages, and includes one section of it with `#id` and `{heading=false}`;\n- adds a phrase;\n- has a three-row \"phrase, fragment, or variant\" table;\n- says how links in a fragment resolve;\n\nand the writers' path on `index.md` links it in place of the two anchors.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1267,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Write it once: a guide to fragments, includes, and phrases",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1267"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AJU",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Write it once: a guide to fragments, includes, and phrases"
+    },
+    {
+      "content": {
+        "body": "Designing the content model is a docs lead's main job in an adoption, and the docs give them only the numbered reference.\n\n- The only content-model how-to is the glossary guide. \"A `how-to` type with a required `owner` and an `audience` enum\" has to be assembled from `docs/content/content-model/index.md`.\n- The reference carries material for whoever implements a loader:\n  - \"Generated consumer schemas include them automatically, except the three that reach a site another way\" (`content-model/index.md:116`);\n  - a column \"In generated consumer schemas\", citing \"output-layout contract §1.3\" (`:118-126`);\n  - \"Astro would take a page's `slug` as its entry id\" (`:128`);\n  - \"`formatted` is reserved… `source` is reserved…\" (`:130-132`);\n  - \"in generated code (the Zod schema's name)\" (`_fragments/content-model/types.md:15`).\n\n**Done when:**\n- a how-to, \"Define your page types and fields\", walks from the implicit `page` type to two types with shared `[frontmatter]`, a required enum, a default, and `role = \"owner\"`, and shows `ascribe check` reporting the pages missing them;\n- the consumer-schema and Astro notes move to `contracts/content-model.md`, which is for implementers.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1268,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Define your page types and fields: a how-to, with implementer notes moved to the contract",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1268"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AMs",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Define your page types and fields: a how-to, with implementer notes moved to the contract"
+    },
+    {
+      "content": {
+        "body": "\"Who owns this page, and when was it last checked?\" comes up in every docs-governance conversation, and Ascribe answers it. The docs hide that.\n\n`recheck-date` (the `recheck-overdue` check) and `owner` (counted by `ascribe report inventory`) appear only in a reference table, `docs/content/content-model/index.md:189-219` (§5.4, \"Field roles\"). Neither the writers' path nor any how-to mentions them.\n\n**Done when:** a how-to, \"Keep pages current\", adds the two fields, shows overdue pages in `ascribe check` and in the editor's This page view, counts pages by owner with `ascribe report`, and runs the report on a schedule in CI. \"For writers\" on `index.md` and `checks/report.md` link it.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1269,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Keep pages current: a how-to for owners and recheck dates",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1269"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0APY",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Keep pages current: a how-to for owners and recheck dates"
+    },
+    {
+      "content": {
+        "body": "\"Can it enforce our style guide?\" is a standard question when evaluating a tool. The answer is yes, but:\n\n- Vale appears only under \"Check\" (`docs/content/index.md:62`), not on the writers' path (`index.md:20-29`).\n- The only mention of a public style guide is \"say to add a style package, run `ascribe vale eject`\" (`docs/content/checks/vale.md:98`). Nothing says how to add Google or Microsoft style (`Packages =` in `.vale.ini`, then `vale sync`). The preset section stresses that no `vale sync` is needed, which leaves a reader unsure whether syncing is allowed after `eject`.\n\n**Done when:** Vale is a step on \"For writers\", and `vale.md` has a section, \"Use a published style guide\", that runs `eject`, adds `Packages = Google` (or another) to `.vale.ini`, runs `vale sync`, and says what to commit.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1270,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Vale: put it on the writers' path, and show how to use a published style guide",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1270"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0ASQ",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Vale: put it on the writers' path, and show how to use a published style guide"
+    },
+    {
+      "content": {
+        "body": "The only troubleshooting page is `docs/content/review/troubleshooting.md`. Other failures are each mentioned once, inside a long paragraph:\n- the optional native package missing (`install.md:33`);\n- glibc too old (`install.md:14`);\n- `addresses-base-unreadable` in CI (`checks/ci.md:48`);\n- `ascribe diff` with no merge base (`review/diff.md`, the exit-code table);\n- Astro answering 503 after a failed rebuild (`astro/reference.md:43`);\n- `[consumer]` disagreeing with Astro's `site` (`astro/reference.md:25`);\n- the hook timing out (`agents/commands.md:166`).\n\n**Done when:** a troubleshooting page has one entry per symptom, each with the text the reader sees, the cause, and the fix. At least: \"can't find its native package\", ASC257 in CI, \"`ascribe diff`: no merge base\", \"astro build: site doesn't match\", \"the host doesn't list Ascribe's MCP tools\", and \"the hook says nothing\". The pages above link their entries.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1271,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Troubleshooting for install, CI, Astro, and agents",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1271"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AVQ",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Troubleshooting for install, CI, Astro, and agents"
+    },
+    {
+      "content": {
+        "body": "**Environment variables** are each mentioned once, on different pages:\n- `ASCRIBE_TODAY` (`docs/content/checks/check.md:27`);\n- `ASCRIBE_CACHE_DIR` and `ASCRIBE_HOOK_SERVER` (`agents/commands.md:168`);\n- `ASCRIBE_PATH` (`agents/claude-code.md:25`);\n- `ASCRIBE_BIN` (`astro/reference.md:17`);\n- `ASCRIBE_LINKS_RETRY_WAIT` (checks);\n- `NO_COLOR` (help text only).\n\n**Exit codes** follow a convention, 0 for success, 1 for findings, 2 for a command that couldn't run, but no page states it. The exceptions take reading every table: `agents hook` exits 1 when its input isn't JSON, `model` exits 2 when `ascribe.toml` has errors, and `preview` documents only 2.\n\n**Done when:** `docs/content/command/index.md` has a table of environment variables (name, what reads it, its effect, its default), generated from where each is read if that's practical, and a paragraph stating the exit-code convention with its exceptions.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1272,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The command reference: environment variables, and the exit-code convention",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1272"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AYg",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The command reference: environment variables, and the exit-code convention"
+    },
+    {
+      "content": {
+        "body": "`docs/content/editor/language-server.md:17,39` gives editors other than VS Code one clause, Neovim's `root_markers = { \"ascribe.toml\" }`. There's no complete config for any editor, and the page doesn't say whether the server reads `initializationOptions` or `workspace/configuration`. The custom requests' parameters are only in `crates/ascribe-lsp/README.md`, which is source documentation.\n\n**Done when:**\n- the page has a config to copy for Neovim (`vim.lsp.config`), Helix (`languages.toml`), and Zed;\n- it says what settings the server reads, or that it reads none;\n- the custom requests' parameters are on a docs page. Moving them under `contracts/` makes them a contract, which needs a decision.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1273,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The language server: complete setups for Neovim, Helix, and Zed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1273"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0Aas",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The language server: complete setups for Neovim, Helix, and Zed"
+    },
+    {
+      "content": {
+        "body": "Most people who review docs aren't writers and won't install the extension.\n\n- Commenting needs VS Code, a checkout, and a GitHub sign-in, or `gh` and `astro dev`. The HTML preview \"shows the changes, not the pull request's comments\" (`docs/content/review/ci-report.md:7`). Nothing tells a docs lead what a product manager or support engineer who reviews content should do.\n- That review comments are GitHub only has to be inferred from the sign-in table (`review/how-it-works.md:52-67`). GitLab, Bitbucket, and Azure DevOps aren't mentioned.\n- `docs/content/index.md`'s \"For engineers\" and \"For writers\" paths don't say who sets up what, or in what order: the writer, the reviewer, the engineer who owns CI and the site, and the docs lead who owns `ascribe.toml` and `ascribe.nav`.\n\n**Done when:**\n- `review/index.md` says in its first paragraph that review comments work with GitHub and GitHub Enterprise;\n- it has a section, \"Reviewers who don't use VS Code\": read the HTML preview from the run, comment in GitHub's Files view, and see the comments beside the blocks in the writer's preview;\n- a short page or section, \"Who does what\", says what each role installs and which page each starts from.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1274,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Review: a route for reviewers who don't use VS Code, and who does what on a docs team",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1274"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0Ado",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Review: a route for reviewers who don't use VS Code, and who does what on a docs team"
+    },
+    {
+      "content": {
+        "body": "`docs/content/agents/claude-code.md:18-23` says \"Add it from a copy of the repository\", then `/plugin marketplace add ./plugins/ascribe`. `marketplace.json` is in `plugins/ascribe/.claude-plugin/`, not at the repository's root, so the plugin can't be added from the remote repository. The page also doesn't say which plugin version goes with which CLI.\n\n**Done when:** the plugin can be added without a clone (a marketplace at a path Claude Code can add remotely, or the remote form documented if one exists), and the page says how the plugin's version relates to the CLI's.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1275,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Claude Code plugin: install without cloning Ascribe's repository",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1275"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AhY",
+      "labels": [
+        "enhancement",
+        "agents"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Claude Code plugin: install without cloning Ascribe's repository"
+    },
+    {
+      "content": {
+        "body": "No page shows the whole system. A new reader assembles it from Getting started, `docs/content/publishing/index.md`, and `review/how-it-works.md`, the only concept pages.\n\n**Done when:** a concept page shows, in one diagram and a few paragraphs: source pages and `ascribe.toml` go through the checks into builds; builds write the site, plain Markdown, and JSON outputs; Astro and a host publish the site; and the editor, CI, review, and agents all run the same checks. `index.md` links it near the top.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1276,
+        "repository": "ascribed-dev/ascribe",
+        "title": "How Ascribe works: a one-page overview",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1276"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AkM",
+      "labels": [
+        "documentation",
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "How Ascribe works: a one-page overview"
+    },
+    {
+      "content": {
+        "body": "The sections run Writing, Content model, Checks, Review, Editor, Agents, Examples, OpenAPI, Publishing, Astro, Permalinks, Navigation, Versions, Templates, Command (`docs/ascribe.nav:14-110`). Templates, which a writer uses on their first page, is 14th of 15. Navigation, which every site needs, comes after Permalinks. Command references are also scattered: `ascribe init` is documented on Install (`install.md:97-103`), and `build` and `preview` on \"Checks and reports\".\n\nA possible order, keeping the feature folders as they are: Writing, Templates, Content model, Editor, Checks, Review, Navigation, Publishing with Astro, Search engines and crawlers, Versions, Permalinks, Examples, OpenAPI, Agents, Command.\n\n**Decide:** the order. Then `docs/ascribe.nav` changes, and the sidebar fixture is rewritten with `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all site_sidebar`. `command/index.md` should list every command with a link to where it lives, whichever page that is.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1277,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The docs sidebar: order sections along the adoption path",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1277"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0Am4",
+      "labels": [
+        "documentation",
+        "question"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The docs sidebar: order sections along the adoption path"
+    },
+    {
+      "content": {
+        "body": "Step 1 of `docs/content/navigation/order.md:14` is \"Run `ascribe model --format json`, and read the project's navigation as it is now, under `navigation`.\" For a writer's task, the first step is reading nested JSON. There's no text view: `ascribe model --section navigation` is rejected (\"invalid value 'navigation'\"), and plain `ascribe model` doesn't show the navigation.\n\n**Done when:** `ascribe model --section navigation` prints the navigation as text, and step 1 uses it, or step 1 opens the editor's **Pages** view, which already shows the navigation. Either way the step shows what the reader will see.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1278,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Show a project's navigation without reading JSON",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1278"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AqE",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Show a project's navigation without reading JSON"
+    },
+    {
+      "content": {
+        "body": "Word choice holds the house style, and the median sentence is 17 words. The tail is the problem: of 6,075 prose sentences in the hand-written pages, 556 (9%) have 35 words or more, 202 have 45 or more, and 46 have 60 or more. 130 sentences have seven or more commas, and 69 paragraphs run past 120 words. Most are an enumeration with conditions and exceptions, joined by commas, semicolons, and \"which\", that should be a list.\n\nThe longest, by page (paths under `docs/content/`):\n\n| Page | Longest sentence, in words |\n|---|---|\n| `editor/writing.md` | 110 |\n| `contracts/content-model/content.md` | 101 |\n| `command/questions.md` | 90 |\n| `contracts/output-layout.md` | 87 |\n| `publishing/redirects.md` | 79 |\n| `agents/commands.md` | 76 |\n| `examples/sources.md` | 75 |\n| `editor/sidebar.md` | 74 |\n\nExamples:\n- `editor/writing.md:57`, **Find All References** (110 words, 19 commas). → \"lists every place that uses what's under the cursor:\", then one item each for a heading or `@id`, a page's frontmatter or title, a link or include, a phrase or other key, and a frontmatter `type`. `:55` (Go to Definition) is the same shape.\n- `command/questions.md:95` (90 words), what `link` lists when a target doesn't work. → one item each for a missing heading, a missing page, a fragment, and a published route.\n- `publishing/redirects.md:47`: four kinds of `[moved]` key in one 79-word sentence. → a sub-list, one item per kind.\n- `install.md:119` (80 words) lists what `init` prints, and `:123` is a 150-word paragraph. → lists.\n- `versions/index.md:116`: a 134-word release-day paragraph with a 69-word sentence. → a list, \"What `versions release` does\".\n- `navigation/index.md:8`: a 100-word opening that lists every consumer of the navigation before saying what it is.\n\n**Done when:** outside `contracts/`, no sentence runs past 45 words and no paragraph past 120, or the ones left are named as deliberate. The rule to adopt: a sentence that lists more than three things, or has more than one \"which\", becomes a list or two sentences.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1279,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Prose: split the longest sentences, mostly into lists",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1279"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0As4",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Prose: split the longest sentences, mostly into lists"
+    },
+    {
+      "content": {
+        "body": "The writing pages and the `ascribe.toml` reference, which writers use, carry the contract's vocabulary: \"SPEC §\" as a sentence's subject, \"normative\", \"loader\", \"processor\", \"emitter\", \"consumer\", and grammar productions such as \"(`key` rule)\" and \"SPEC A `widget-name`\". There are 135 such uses in 21 non-contract reference pages and the content-model fragments. The most are in `writing/directives.md` (32), `writing/syntax.md` (25), `content-model/index.md` (15), `writing/inline.md` (12), `_fragments/content-model/conventions.md` (12), `content-model/output.md` (10), and `_fragments/content-model/phrases.md` (10).\n\nCore terms are also used before they're defined. In the writer-facing folders, \"consumer\" appears 40 times, \"arm\" 28, \"primary\" 18, and \"binding\" 13. `writing/syntax.md:15` introduces \"an optional primary after a colon\" with no definition. Writers say \"the site\" where the docs say \"consumer\".\n\nExamples:\n- `_fragments/content-model/glossary.md:1`: \"Authors don't mark terms where they're used; processors link them ([SPEC §9.2] step 7).\" → \"You don't mark a term where you use it: Ascribe links it.\"\n- `_fragments/content-model/phrases.md:5`: \"Every key is a phrase key (`key` rule, the same rule as SPEC Appendix A's `phrase`) …\" → say the rule in words, as `writing/syntax.md:51` does for attribute keys, with the SPEC link in parentheses.\n- `content-model/content.md:7`: \"The rules for a loader are in the contract's …\" → \"The exact rules are in the contract's …\".\n- `writing/directives.md:8`: drop \"the normative definition\".\n\n**Done when:** outside `contracts/`, pages name actors the reader knows (\"Ascribe\", \"`ascribe check`\", \"the build\", \"the site\"), state rules in words, and cite SPEC sections only in parentheses; \"primary\" and \"arm\" are defined where first used; and \"consumer\" is kept for the `[consumer]` key.\n\nThe per-heading SPEC link lines in `writing/` are covered by #1266.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1280,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Prose: write writer-facing pages without spec and implementer vocabulary",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1280"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0AwA",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Prose: write writer-facing pages without spec and implementer vocabulary"
+    },
+    {
+      "content": {
+        "body": "On 31 pages the first paragraph is navigation, not substance:\n- 21 open with \"Part of the […]\": every `content-model/*.md`, `contracts/content-model/*.md`, `checks/diagnostics/*.md`, and `contracts/json-reports/*.md` page. On five content-model pages the next block is an `@include`, so the page never says in its own words what it covers.\n- 10 open with \"The commands that …\", a fragment with no verb, followed by the same 25-word sentence, \"The options every command accepts are in the command reference\": `agents/commands.md`, `checks/check.md`, `checks/report-command.md`, `command/questions.md`, `examples/sources.md`, `permalinks/command.md`, `templates/command.md`, `versions/release.md`, `review/diff.md`, `contracts/json-reports.md`.\n- Other fragment openings: `editor/problems.md:7` (\"What the editor reports, and the fixes it offers for it.\"), `writing/directives.md:8`.\n\nThe median first paragraph is 52 words, and 31 pages open with 70 or more. Only 8 pages say who they're for.\n\nThe home page, `index.md:8`, has no sentence saying what Ascribe is; a reader from search lands on \"Everyone starts with Getting started\". → \"Ascribe checks and builds documentation written as code: Markdown pages with `@` directives, checked against a content model in `ascribe.toml`, and built into a website, plain Markdown, and JSON.\"\n\nExamples:\n- `content-model/content.md:7` → \"These sections of `ascribe.toml` declare what a page can hold beyond its frontmatter: note types, phrases, the glossary, image attributes, and widgets.\" Then the pointer. Each page's `description:` already has the sentence.\n- `editor/problems.md:7` → \"The editor reports problems as you type and offers fixes for many of them. This page says which problems it shows and when, how to see every build's, and how to apply the fixes.\"\n- `checks/check.md:7` → \"`ascribe check`, `build`, `preview`, and `fmt` check a project, build its outputs, preview its pages, and format its Markdown. For the options every command accepts, see the command reference.\"\n\n**Done when:** every page's first sentence is a full sentence saying what the page covers or what the reader will do; pointers come second; a how-to or tutorial says who it's for in its first two paragraphs or in \"Before you start\"; and the 10 identical pointer sentences come from one fragment.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1281,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Prose: open each page with what it covers, not a pointer",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1281"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0Ayo",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Prose: open each page with what it covers, not a pointer"
+    },
+    {
+      "content": {
+        "body": "**Procedures without steps.** 16 of 41 how-tos have neither `@steps` nor numbered step headings: `agents/claude-code`, `agents/index`, `checks/ci`, `checks/report`, `examples/drift`, `openapi/coverage`, `openapi/editor`, `openapi/examples`, `openapi/index`, `openapi/no-id`, `openapi/operation`, `permalinks/in-your-product`, `permalinks/index`, `publishing/redirects`, `review/ci-report`, and `templates/index`. Some are fine without (`openapi/editor`), but `checks/ci`, `openapi/index`, `review/ci-report`, and `publishing/redirects` describe a setup done in order.\n\n**Command reference inside how-tos.** Four how-tos hold a command's full reference:\n- `install.md:97-137`: `ascribe init` (options, refusals, output, JSON, exit codes);\n- `publishing/redirects.md:213-264`: five `ascribe addresses` commands, in a 3,278-word page;\n- `checks/vale.md`: two commands;\n- `templates/index.md`: `ascribe new`.\n\nEvery other command's reference is on a reference page.\n\n**Titles that aren't tasks.** 11 how-to titles are nouns: \"Agents\", \"Astro\", \"Checks in CI\", \"Claude Code\", \"GitHub Copilot\", \"Page templates\", \"Permalinks\", \"Prose, through Vale\", \"Review\", \"The project report\", \"Install\". Seven how-to descriptions open with a gerund or \"The …\" while the other 34 are imperative.\n\n**Buried actions.** `getting-started.md:116`: the step (\"Create `docs/configure.md` … and check again\") is the last of four sentences of reference. Put it first.\n\n**Done when:** every ordered action is `@steps` or numbered headings; each of the four command references is on a reference page, with the how-to linking it; how-to titles name the task (\"Check pull requests in CI\", \"Review a pull request\"); and how-to descriptions are imperative. Retitling changes `docs/ascribe.nav` and the sidebar fixture.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1282,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Prose: how-tos with numbered steps and task titles, and command reference moved out of them",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1282"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0A0s",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Prose: how-tos with numbered steps and task titles, and command reference moved out of them"
+    },
+    {
+      "content": {
+        "body": "Most terms are used consistently. These split or collide (counts are uses in prose):\n\n| Concept | Variants | Use |\n|---|---|---|\n| A page's kind, `[types.<name>]` | \"content type\" 27, \"page type\" 25 | **page type**; \"content type\" only where a key needs it |\n| A finding and its kind | \"problem\" 244, \"diagnostic\" 205. `checks/diagnostics.md:10` defines a diagnostic as the kind and a problem as the instance; `editor/problems.md:11` then says \"Every diagnostic appears as you type\". | Follow the definition |\n| \"mark\" | 159 uses in three senses: review's change marks, availability marks, and the verb | **change mark**, **availability mark**; keep the verb |\n| \"the spec\" | the OpenAPI spec, SPEC.md, and the Web Documentation Delivery Spec | **the OpenAPI spec**, **the Ascribe specification**, **the Delivery Spec** |\n| The plain output | \"plain output\" 17, \"plain Markdown\" 9, \"plain-markdown output\" 5 | **plain Markdown output** |\n| Markdown | \"markdown\" 28 times in running text, mostly `contracts/assets.md` and `content-model/output.md` | **Markdown** |\n| Folder | \"folder\" 354, \"directory\" 45; \"project root\" 18, \"project's folder\" 38 | **folder**; define **project root** or replace it |\n| The editor | \"the editor\" sometimes means any LSP editor (`openapi/editor.md`), sometimes VS Code only (`editor/problems.md`) | **the VS Code extension** for VS Code only; `editor/index.md` says which once |\n| UI names | \"lightbulb\"/\"light bulb\", \"Command Palette\"/\"command palette\" | VS Code's: **light bulb**, **Command Palette** |\n| People | \"writer\", \"author\", \"user\", \"reader\", \"you\" | **you** for the person following the page, **writer** for a third party, **reader** for the site's reader; drop \"author\" |\n| Setting a problem aside | \"put off\", \"hold back\", \"acknowledge\", \"mark as intended\", \"quiet\", \"silence\": 71 uses in 23 files | **baseline** (verb) and **acknowledge**; \"quiet\" only as the umbrella heading |\n| advice | counted in `checks/baseline.md:8,57` (\"thousands of advice\") | **advice-level problems** when counting |\n\nThe glossary (`docs/content/glossary.md`, 24 terms) has no entry for diagnostic, problem, page type, mark, the plain Markdown output, content root, directive, primary, arm, container, binding, consumer, or widget.\n\n**Done when:** the pages use the chosen terms, and the glossary has entries for them, so `match = \"marked\"` links them and Vale substitution rules can hold the variants out.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1283,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Terminology: settle the split terms, and add them to the glossary",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1283"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0A3Y",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Terminology: settle the split terms, and add them to the glossary"
+    },
+    {
+      "content": {
+        "body": "7 pages write `npx ascribe` in shell blocks, 26 write bare `ascribe`, and `install.md` and `checks/check.md` mix them. The only explanation is the last paragraph of `docs/content/agents/index.md:28`: \"This guide writes commands as `ascribe`. With `@ascribed/cli` installed in your project … run them as `npx ascribe`.\" Getting started installs with npm and teaches `npx ascribe`, so a reader who then opens `agents/loop.md` meets `ascribe check` with no explanation.\n\n**Done when:** the docs write bare `ascribe` everywhere but Getting started and Install; a short `@note` on Getting started's \"Install the command\", and on the home page, states the convention once; and the paragraph in `agents/index.md` goes. Where `npx ascribe` stays, #1244 applies.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1284,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Say once, early, how the docs write commands: `ascribe` or `npx ascribe`",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1284"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0A6o",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Say once, early, how the docs write commands: `ascribe` or `npx ascribe`"
+    },
+    {
+      "content": {
+        "body": "Each is small; together they're one pull request. Paths are under `docs/content/`.\n\n**Elliptical sentences**, where the reader has to rebuild a dropped verb or subject. \"as X does\" appears 34 times in 24 files, and 75 sentences have four or more \"it/its\".\n- [ ] `publishing/site.md:12`: \"A layout includes `Head.astro` in `<head>`, given the page's collection entry, and writes none of what it writes:\" → \"In your layout's `<head>`, include `Head.astro` and pass it the page's collection entry. Don't write the tags it writes yourself:\"\n- [ ] `agents/commands.md:31`: \"[Hooks] has the entries, and [The MCP server] the server's.\" → \"…has the hook entries, and [Set up the MCP server] has the server's entry.\"\n- [ ] `writing/syntax.md:37`: \"are the same error\", where \"the same\" points two paragraphs back.\n- [ ] `editor/problems.md:63`: → \"When two fixes would edit the same text, it applies the first and leaves the other's problem for the next run.\"\n- [ ] `install.md:117`: \"`init` adds files, and changes one that's there only to add the templates to it, so it has little for git to refuse, but it's refused as every command that writes does\" → \"Like every command that writes, `init` won't change a file git couldn't restore. It names the file and writes nothing, unless you pass `--force`.\"\n\n**Mechanical**\n- [ ] `checks/baseline.md:8,57`: \"thousands of advice\", \"every advice\" → \"advice-level problems\".\n- [ ] 39 bullets end with `;` (for example `getting-started.md:134-138`, `review/how-it-works.md:21-24`); 870 end with `.`. End them with periods.\n- [ ] Sentences continued in lowercase after a code block: `getting-started.md:148` (\"renders the build's pages …\") and `review/index.md:30` (\"or `git fetch` …\"). Restart them.\n- [ ] \"This guide\" on two tutorials (`getting-started.md:8`, `writing/variants.md:8`) and a concept (`agents/measuring.md:7`) → \"This tutorial\", \"This page\".\n- [ ] Clauses used as nouns: `writing/syntax.md:9` (\"This page is how a directive is written\") → \"This page shows how to write a directive\"; `review/how-it-works.md:7` (\"This page is what holds in all three\") → \"This page describes what's the same in all three\".\n- [ ] `agents/loop.md:63`: a raw `https://github.com/ascribed-dev/ascribe/releases` → `{repo}/releases`.\n- [ ] `contracts/assets.md:60,63,67,68`: \"markdown\" → \"Markdown\".\n- [ ] `content-model/content.md:29,31`: \"**Matching:**\" then \"**Rules.**\" → one form.\n- [ ] `checks/diagnostics.md:24,28` both say what an entry ends with; merge them. `:35`: \"A **warning** doesn't, unless …\" → \"A **warning** doesn't make `ascribe check` fail unless …\".\n- [ ] `existing-docs.md:60`: the step title \"Put the advice off\" can read as \"turn it off\" → \"Record the remaining advice in a baseline\".\n- [ ] The audience sentence \"for a writer who has a project already, as [Getting started] sets one up\" appears four times in openings. Where a page has \"Before you start\", move it there.\n- [ ] `index.md:79-81`: an \"Agents\" section with one entry repeats \"For agent builders\" at `:31`. Fold them together.\n- [ ] `editor/index.md:18` repeats the platform list from `install.md:14`. Link it instead.\n\nThe prose review's report has a before → after for each.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1285,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Prose: small fixes found across the docs",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1285"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0A8Q",
+      "labels": [
+        "documentation",
+        "good first issue"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Prose: small fixes found across the docs"
+    },
+    {
+      "content": {
+        "body": "`ascribe check --config docs` reports one advice: `content/command/questions.md:1 [ASC149]`. The page is 54,429 characters, over the 50,000 limit for agents. It's also where several of the longest sentences are (90 words at `:95`). Its `@summary:` line at `:32-34` repeats the next paragraph's first sentence; `cli-explain` at `:12` shows the form that writes it once.\n\n**Done when:** the page is split, for example by command group, under 50,000 characters each, and `check --config docs` reports nothing. Moving pages changes `docs/ascribe.nav` and the sidebar fixture.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1286,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Split `command/questions.md`, which is over the size limit for agents",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1286"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0A_4",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Split `command/questions.md`, which is over the size limit for agents"
+    },
+    {
+      "content": {
+        "body": "The prose issues from the docs review are fixed by hand. These would keep them from coming back.\n\n**Vale rules for this project's docs**, after `ascribe vale eject`:\n- sentence length: flag more than 45 words outside `contracts/` (#1279);\n- implementer vocabulary: `\\b(loader|processor|emitter|normative)\\b` and \"`key` rule\" outside `contracts/` (#1280);\n- substitutions for the settled terms (#1283);\n- \"as \\w+ does\" and \"is \\w+'s, not\" as suggestions.\n\n**Two content checks** in Ascribe, at advice level, fitting the `[checks]` model:\n- a `how-to` page with no `@steps` and no numbered step headings (#1282);\n- a page whose first paragraph is only a pointer, such as \"Part of …\" or a fragment with no verb (#1281).\n\nThe checks are new diagnostics, so they need codes reserved on this issue. The first may be the simpler; the second needs a definition of \"only a pointer\" that doesn't flag good openings.\n\n---\nFrom the docs review of 3 November 2026, at `main` 0655d2f5.",
+        "number": 1287,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Hold the prose rules with checks: Vale rules for the docs, and two new content checks",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1287"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0BEA",
+      "labels": [
+        "enhancement"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Hold the prose rules with checks: Vale rules for the docs, and two new content checks"
+    },
+    {
+      "content": {
+        "body": "On 3 November 2026 the docs were reviewed from four points of view: a technical writer adopting Ascribe, a software engineer integrating it, a technical editor checking claims against the code and the binary, and a prose editor checking the text against the house style. Each reviewer followed the pages in a sandbox with the binary at `main` 0655d2f5. This issue lists what they found, filed one pull request's worth at a time.\n\nThe command reference held up well: options, exit codes, and JSON matched in every run, because they're generated or come from tested fixtures. The errors are in hand-written prose beside them, and in the paths between commands.\n\n**Fix first: a reader who follows the page gets stuck**\n- [ ] #1243 Checks in CI: the workflow fails the first pull request of a project `ascribe init` made\n- [ ] #1244 Set up the MCP server: `npx ascribe mcp` can install and run an unrelated npm package\n- [ ] #1245 Bring existing docs: the output shown doesn't match, and the walkthrough doesn't end clean\n- [ ] #1246 Getting started's handoff to the Astro guide\n- [ ] #1247 agents/loop.md: the first command exits 2\n\n**Bugs in the code**\n- [ ] #1248 `ascribe agents sync --check` depends on whether `node_modules` exists\n- [ ] #1249 `ascribe agents index` says its links are Markdown versions when `agents = false`\n- [ ] #1250 `ascribe versions release` leaves an empty `ends` table\n- [ ] #1251 `ascribe versions retire` records redirects for builds that never published the line\n- [ ] #1252 Small inaccuracies in help text, schemas, and repository docs\n\n**Inaccuracies in the docs**\n- [ ] #1254 Stale § numbers into the content-model contract\n- [ ] #1255 Release-dated prose breaks decision #973\n- [ ] #1256 Writing, the content model, checks, and commands\n- [ ] #1257 Agents, OpenAPI, templates, versions, install, and review\n- [ ] #1258 Contracts and the editor\n- [ ] #1259 Document the surface no page covers\n\n**Contracts: need a decision**\n- [ ] #1253 `ascribe_version` has two formats\n- [ ] #1260 The `json/` build output has no contract\n- [ ] #1261 JSON Schemas: `$id`, published per version, field tables\n\n**Missing pages**\n- [ ] #1262 What Ascribe needs and what it doesn't do\n- [ ] #1263 Deploy the site, and a Publishing section that's about publishing\n- [ ] #1264 One complete CI pipeline\n- [ ] #1265 Moving from Docusaurus, Starlight/MDX, MkDocs, or Hugo\n- [ ] #1266 \"Write a page\", and the everyday directives first\n- [ ] #1267 Write it once: fragments, includes, and phrases\n- [ ] #1268 Define your page types and fields\n- [ ] #1269 Keep pages current: owners and recheck dates\n- [ ] #1270 Vale on the writers' path, and a published style guide\n- [ ] #1271 Troubleshooting for install, CI, Astro, and agents\n- [ ] #1272 Environment variables and the exit-code convention\n- [ ] #1273 The language server in Neovim, Helix, and Zed\n- [ ] #1274 Reviewers without VS Code, and who does what\n- [ ] #1275 Claude Code plugin without cloning the repository\n- [ ] #1276 How Ascribe works: a one-page overview\n- [ ] #1277 The docs sidebar's order (a decision)\n- [ ] #1278 Show the navigation without reading JSON\n\n**Prose and terminology**\n- [ ] #1279 Split the longest sentences\n- [ ] #1280 Writer-facing pages without spec and implementer vocabulary\n- [ ] #1281 Open each page with what it covers\n- [ ] #1282 How-tos with steps and task titles\n- [ ] #1283 Settle the split terms, and add them to the glossary\n- [ ] #1284 Say once how the docs write commands\n- [ ] #1285 Small fixes across the docs\n- [ ] #1286 Split `command/questions.md` (ASC149)\n- [ ] #1287 Hold the prose rules with Vale rules and two new checks\n",
+        "number": 1288,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs review, 3 November 2026",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1288"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF0Bdg",
+      "labels": [
+        "documentation"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs review, 3 November 2026"
     }
   ]
 }
