@@ -133,7 +133,7 @@ Two projects beside each other, such as a product's docs and its landing site, o
 
 ### Listing a page
 
-A page says whether readers that aren't people are offered it with `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), one of three values, from open to closed: `listed`, the default when a page doesn't set it, `unquoted`, and `unlisted`. What each tells search engines and agents is in [Publishing](../publishing/index.md#how-a-page-is-listed). Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
+A page says whether readers that aren't people are offered it with `listing` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)), one of three values, from open to closed: `listed`, the default when a page doesn't set it, `unquoted`, and `unlisted`. What each tells search engines and agents is in [Search engines and crawlers](../publishing/index.md#how-a-page-is-listed). Any other value, or one that isn't a string, is an error (`frontmatter-type-mismatch`).
 
 ```yaml
 ---

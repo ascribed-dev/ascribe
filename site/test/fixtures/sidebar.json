@@ -284,6 +284,10 @@
         "label": "Astro"
       },
       {
+        "href": "/docs/astro/deploy/",
+        "label": "Deploy the site"
+      },
+      {
         "href": "/docs/astro/more-than-docs/",
         "label": "Put the docs in a site with more than the docs"
       },
@@ -306,11 +310,11 @@
     ]
   },
   {
-    "label": "Publishing",
+    "label": "Search engines and crawlers",
     "pages": [
       {
         "href": "/docs/publishing/",
-        "label": "Publishing"
+        "label": "Search engines and crawlers"
       },
       {
         "href": "/docs/publishing/site/",

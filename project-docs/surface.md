@@ -910,6 +910,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `agents/prompts.md` | Prompt your agent | how-to |
 | `agents/whats-sent.md` | What's sent where | concept |
 | `astro/agents.md` | Publish for AI agents | how-to |
+| `astro/deploy.md` | Deploy the site | how-to |
 | `astro/elements.md` | Element library reference | reference |
 | `astro/index.md` | Astro | how-to |
 | `astro/more-than-docs.md` | Put the docs in a site with more than the docs | how-to |
@@ -1002,7 +1003,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
 | `permalinks/index.md` | Permalinks | how-to |
-| `publishing/index.md` | Publishing | concept |
+| `publishing/index.md` | Search engines and crawlers | concept |
 | `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
 | `review/ci-report.md` | Attach the HTML preview to every pull request | how-to |
