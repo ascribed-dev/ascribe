@@ -1,0 +1,1 @@
+- **Behavior change:** `@ascribed/elements` no longer exports `AscribeTabs`, `AscribeTab`, or `AscribeGroup`. It registers them itself, and `choose` stays. See [the element library](docs/content/astro/elements.md#choosing-a-tab-from-a-script).

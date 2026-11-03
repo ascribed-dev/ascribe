@@ -93,6 +93,8 @@ In VS Code, when another extension is the formatter for Markdown, such as Pretti
 
 Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon as a file opens. Once the server is running, it adds what depends on the content model: declared and undeclared phrases, project widgets, and **title lines**, shown distinctly so a paragraph that accidentally became a title stands out.
 
+What the server adds is semantic highlighting, which a color theme may leave off, so the extension turns on `editor.semanticHighlighting.enabled` for Markdown files (`[markdown]`) as a default. A setting of your own wins: with `"editor.semanticHighlighting.enabled": false` under `[markdown]`, or for every language, pages keep only what's highlighted as the file opens.
+
 The extension gives `ascribe.nav`, `ascribe.permalinks`, and `ascribe.lock` to VS Code's TOML language, like `ascribe.toml`. VS Code has no TOML coloring of its own, so they're colored only with a TOML extension installed, such as Even Better TOML.
 
 A [memo](../writing/directives.md#memo)'s text is colored as a comment, in either form, and nothing in it is colored as a link, a phrase, or a heading. A container memo folds to its first line, beside the folding of headings, lists, and code blocks.

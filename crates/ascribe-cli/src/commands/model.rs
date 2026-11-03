@@ -88,6 +88,8 @@ pub enum Section {
     Crawlers,
     /// What the site lists for search engines.
     Listing,
+    /// The project's sections and pages, in the order the sidebar has.
+    Navigation,
 }
 
 impl Section {
@@ -117,6 +119,7 @@ impl Section {
             Section::Checks => QuerySection::Checks,
             Section::Crawlers => QuerySection::Crawlers,
             Section::Listing => QuerySection::Listing,
+            Section::Navigation => QuerySection::Navigation,
         }
     }
 }
@@ -163,8 +166,9 @@ struct Loaded {
     index: Arc<ascribe_resolve::Project>,
 }
 
-/// What `--format json` writes: without `--section`, with the project's
-/// navigation, which reads its pages.
+/// What `--format json` writes: without `--section`, or with
+/// `--section navigation`, with the project's navigation, which reads its
+/// pages.
 ///
 /// # Errors
 ///
@@ -179,7 +183,7 @@ pub fn answer(global: &Global, args: &Args) -> Result<ModelReport, Stop> {
         section,
         Some(&loaded.fs),
     );
-    if section.is_none() {
+    if section.is_none_or(|s| s == QuerySection::Navigation) {
         report.navigation = Some(ascribe_query::navigation(&loaded.index));
     }
     Ok(report)
@@ -198,6 +202,11 @@ fn model(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
                 Err(failure) => return answer::report_failure(err, &failure),
             };
             let section = args.section.map(Section::query);
+            if section == Some(QuerySection::Navigation) {
+                let navigation = ascribe_query::navigation(&loaded.index);
+                let text = ascribe_query::navigation_summary(&navigation);
+                return answer::written(out.write_all(text.as_bytes()), err).unwrap_or(exit::OK);
+            }
             out.write_all(
                 ascribe_query::summary(
                     &loaded.model,

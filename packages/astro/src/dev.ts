@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { AstroIntegration } from "astro";
-import { permalinksText } from "./permalinks.js";
+import { permalinksText } from "./internal/permalinks.js";
 import { consumerMismatches, readProject, type BinaryOption, type ProjectInfo } from "./project.js";
 
 type ServerOptions = Parameters<NonNullable<AstroIntegration["hooks"]["astro:server:setup"]>>[0];

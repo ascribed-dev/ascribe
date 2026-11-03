@@ -20,7 +20,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe drift` | Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. | `[--base <REV>] [--build <NAME>]... [--exit-code]` | `text`, `json`, `markdown` |
 | `ascribe report` | Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. | `[SECTION]... [--build <NAME>]... [--not-listed] [--site <URL>] [--limit <N>] [--recheck] [--no-history] [--no-baseline] [--exit-code[=advice\|warning\|error]]` | `text`, `markdown`, `json`, `prompt` |
 | `ascribe explain` | Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in Diagnostics, and, for the diagnostics people meet most, a short page that has the problem and the same page without it. | `[CODE] [--list]` | `text`, `json` |
-| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|frontmatter\|fragments\|dimensions\|lifecycle\|phrases\|features\|notes\|glossary\|images\|widgets\|releases\|builds\|sources\|apis\|from\|intended\|project\|versions\|consumer\|editor\|checks\|crawlers\|listing]` | `text`, `json` |
+| `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|frontmatter\|fragments\|dimensions\|lifecycle\|phrases\|features\|notes\|glossary\|images\|widgets\|releases\|builds\|sources\|apis\|from\|intended\|project\|versions\|consumer\|editor\|checks\|crawlers\|listing\|navigation]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
 | `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
@@ -728,8 +728,8 @@ What a site imports:
 | `@ascribed/astro/Versions.astro` | An import |
 | `@ascribed/astro/VersionBanner.astro` | An import |
 | `@ascribed/astro/content` | An import |
-| `@ascribed/astro/permalinks` | An import |
-| `@ascribed/astro/redirects` | An import |
+| `@ascribed/astro/internal/permalinks` | An import |
+| `@ascribed/astro/internal/redirects` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |
 
 ## `@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli`
@@ -845,6 +845,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/explain.schema.json` | ExplainReport | What `ascribe explain <CODE>` answers: one diagnostic. |
 | `schemas/fmt.schema.json` | FmtReport | What `ascribe fmt --format json` writes: one document. |
 | `schemas/init.schema.json` | InitReport | What `ascribe init` did. |
+| `schemas/json-page.schema.json` | JsonPage | A page of the JSON output: the page as the build resolved it, with every node's place in its source (the JSON output contract). |
 | `schemas/link.schema.json` | LinkReport | What `ascribe link <TARGET> --from <PAGE>` answers. |
 | `schemas/lsp-addresses.schema.json` | AddressesParams | The parameters of `ascribe/addresses`: what the last comparison found. |
 | `schemas/lsp-agent-prompt.schema.json` | AgentPromptResult | The answer to `ascribe/agentPrompt`, or `null` when there's nothing to prompt about: the file has no problem, the diagnostic is no longer reported, review is off, or the page or fragment didn't change. |
@@ -951,6 +952,8 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/content-model/sources.md` | `ascribe.toml` format contract: what pages draw from | reference |
 | `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
 | `contracts/content-model/variation.md` | `ascribe.toml` format contract: how content varies | reference |
+| `contracts/json-output.md` | JSON output contract | reference |
+| `contracts/json-output/schema.md` | JSON output: the schema | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
 | `contracts/json-reports/addresses.md` | JSON reports: `ascribe permalinks` and `ascribe addresses` | reference |
 | `contracts/json-reports/agents.md` | JSON reports: `ascribe agents` | reference |
@@ -1098,7 +1101,7 @@ These are part of the surface, and no file a script can read lists them, so they
 | Surface | What | Where it lives instead |
 |---|---|---|
 | The command line | What each command's exit codes mean | The prose of the command reference's pages, `docs/content/command/index.md` and the pages it lists, command by command; the three codes are in `crates/ascribe-cli/src/exit.rs` |
-| The language | The reserved frontmatter keys: `available`, `variant`, `formatted`, `source`, `permalink`, `intended`, and `slug` under the `astro` profile | Checked in `crates/ascribe-model/src/sections.rs`; described in SPEC §2.1 |
+| The language | The reserved frontmatter keys: `available`, `variant`, `type`, `listing`, `replaces`, `nav-label`, `draft`, `formatted`, `source`, `permalink`, `intended`, and `slug` under the `astro` profile | Checked in `crates/ascribe-model/src/sections.rs`; described in SPEC §2.1 |
 | The language | Attributes each directive takes, phrases (`{key}`), and the inline forms | `Builtin::schema` in `crates/ascribe-core/src/schema.rs`, as code, not as a list |
 | The VS Code extension | The status bar item (the build, and review's state), the preview and its header, the build lens, and review's marks and threads | `packages/vscode/src/`, as code |
 | `@ascribed/astro` | The dev toolbar's review app, and what the integration serves: published files, `llms.txt`, each page's Markdown, and a page for each permalink | `packages/astro/src/`, as code |

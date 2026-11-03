@@ -87,7 +87,7 @@ describe("routes", () => {
     writeFileSync(
       path.join(json, "Guides", "My Setup.json"),
       JSON.stringify({
-        schemaVersion: 1,
+        schema_version: 2,
         path: "Guides/My Setup.md",
         route: "/docs/guides/my-setup",
         title: 'My "setup"',
@@ -105,7 +105,7 @@ describe("routes", () => {
       path.join(json, "keys.json"),
       JSON.stringify(
         {
-          schemaVersion: 1,
+          schema_version: 2,
           path: "keys.md",
           route: "/docs/keys",
           title: "ascribe.toml keys",

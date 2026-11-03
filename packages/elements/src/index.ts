@@ -8,7 +8,10 @@ import { AscribeGroup } from "./group.js";
 import { AscribeTab, AscribeTabs, choose } from "./tabs.js";
 import { ELEMENT_GROUP, ELEMENT_TAB, ELEMENT_TABS } from "./names.js";
 
-export { AscribeGroup, AscribeTab, AscribeTabs, choose };
+// The elements register themselves here; their contract is their markup and
+// behavior (`CONTRACT.md`), not their classes, which aren't exported
+// (decision #1259).
+export { choose };
 
 const registry: [string, CustomElementConstructor][] = [
   [ELEMENT_TABS, AscribeTabs],

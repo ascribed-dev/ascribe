@@ -171,7 +171,7 @@ fn the_json_output_works_with_the_source_removed() {
         .find(|a| a["source"] == "_fragments/pipeline.png")
         .expect("the fragment's image");
     assert_eq!(pipeline["reference"], "../_fragments/pipeline.png");
-    assert_eq!(pipeline["writtenIn"], "_fragments/prerequisites.md");
+    assert_eq!(pipeline["written_in"], "_fragments/prerequisites.md");
 }
 
 #[test]

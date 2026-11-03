@@ -1,0 +1,1 @@
+- **Behavior change:** `@ascribed/astro/permalinks` and `/redirects` are now under `@ascribed/astro/internal/`. They're for the package's own components and aren't part of its API. See [what the package exports](docs/content/astro/reference.md#what-the-package-exports).

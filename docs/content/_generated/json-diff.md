@@ -405,7 +405,7 @@
       "description": "Where the project is."
     },
     "schema_version": {
-      "description": "`SCHEMA_VERSION`.",
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "minimum": 0,
       "type": "integer"
     },

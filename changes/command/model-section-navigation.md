@@ -1,0 +1,1 @@
+- **`ascribe model --section navigation` shows the navigation as text.** It lists each section and page in the sidebar's order, with their labels, folders, and files. See [`ascribe model`](docs/content/command/questions.md).

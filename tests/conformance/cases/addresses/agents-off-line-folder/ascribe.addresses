@@ -1,0 +1,11 @@
+version = 1
+
+[moved]
+
+[former]
+agents = [true]
+
+[former.builds]
+old = "site@1.0"
+
+[retired]

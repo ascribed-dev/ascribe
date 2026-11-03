@@ -7,7 +7,7 @@ import {
   permalinkPattern,
   readPermalinks,
   servedList,
-} from "../src/permalinks.js";
+} from "../src/internal/permalinks.js";
 
 function siteRoot(list: unknown): string {
   const root = mkdtempSync(path.join(tmpdir(), "ascribe-permalinks-"));

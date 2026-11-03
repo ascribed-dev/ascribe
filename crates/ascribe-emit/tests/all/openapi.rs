@@ -113,11 +113,11 @@ fn openapi_the_json_output_gives_an_operation_target() {
         serde_json::json!({
             "type": "operation",
             "api": "public",
-            "operationId": "getUser",
+            "operation_id": "getUser",
             "address": "/docs/api/#operation/getUser",
         })
     );
-    assert_eq!(links[1]["target"]["operationId"], "activity/list invoices");
+    assert_eq!(links[1]["target"]["operation_id"], "activity/list invoices");
 }
 
 #[test]
@@ -205,7 +205,7 @@ fn openapi_the_json_output_gives_an_operation_with_no_id_its_method_and_path() {
         serde_json::json!({
             "type": "operation",
             "api": "public",
-            "operationId": "getUser",
+            "operation_id": "getUser",
             "address": "/docs/api/#operation/getUser",
         })
     );

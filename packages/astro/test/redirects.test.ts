@@ -11,7 +11,7 @@ import {
   readHostRedirects,
   redirectsOutcome,
   type Redirect,
-} from "../src/redirects.js";
+} from "../src/internal/redirects.js";
 
 const moved: Redirect = { from: "/docs/guides/my-setup", to: "/docs/guides/setup", status: 301 };
 const markdown: Redirect = {

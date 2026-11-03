@@ -33,7 +33,8 @@ pub const DRIFT_SCHEMA_VERSION: u32 = 1;
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct DriftReport {
-    /// [`DRIFT_SCHEMA_VERSION`].
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
     pub schema_version: u32,
     /// The version of Ascribe that wrote it.
     pub ascribe_version: &'static str,

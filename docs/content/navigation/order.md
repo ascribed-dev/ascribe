@@ -11,7 +11,7 @@ A section is a folder, and a page is in its folder's section. To put a page in a
 ## Write `ascribe.nav`
 
 @steps
-1. Run `ascribe model --format json`, and read the project's navigation as it is now, under `navigation`.
+1. Run `ascribe model --section navigation` to see the navigation as it is now: each section with its label and folder, and its pages in the order the sidebar has them, each with its label and file. The editor's [**Pages** view](../editor/sidebar.md#pages) shows the same.
 2. Add `ascribe.nav` beside `ascribe.toml`, and list the sections in the order you want them, each a `[[sections]]` table with its `folder`, from the content root, ending in `/`; `""` is the content root. A nested folder is a section of its own, with its own table.
 3. For a section whose pages you want in another order, list its file names in `pages`, without the section's own `index.md`:
 

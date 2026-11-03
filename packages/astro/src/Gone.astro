@@ -8,7 +8,7 @@
 // this is comes from the route's pattern. It isn't indexed.
 import type { GetStaticPaths } from "astro";
 import { base, permalinks } from "virtual:ascribe/site";
-import { gonePaths, type GonePage } from "@ascribed/astro/redirects";
+import { gonePaths, type GonePage } from "@ascribed/astro/internal/redirects";
 
 export const getStaticPaths = (({ routePattern }) =>
   gonePaths(permalinks, base, routePattern)) satisfies GetStaticPaths;

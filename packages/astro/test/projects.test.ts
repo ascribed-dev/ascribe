@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { PermalinkList } from "../src/permalinks.js";
+import type { PermalinkList } from "../src/internal/permalinks.js";
 import { readProject } from "../src/project.js";
 import {
   basePathClashes,

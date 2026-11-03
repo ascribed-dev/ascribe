@@ -1,9 +1,10 @@
 ---
 source: crates/ascribe-emit/tests/all/quill.rs
+assertion_line: 45
 expression: text
 ---
 {
-  "schemaVersion": 1,
+  "schema_version": 2,
   "format": "ascribe-page",
   "build": "cloud",
   "path": "install-agent.md",
@@ -46,7 +47,7 @@ expression: text
       "level": 2,
       "text": "Prerequisites",
       "id": "prerequisites",
-      "sourceId": "prerequisites",
+      "source_id": "prerequisites",
       "explicit": true,
       "source": {
         "file": "install-agent.md",
@@ -58,7 +59,7 @@ expression: text
       "level": 2,
       "text": "Install the agent",
       "id": "install-agent",
-      "sourceId": "install-agent",
+      "source_id": "install-agent",
       "explicit": true,
       "source": {
         "file": "install-agent.md",
@@ -70,7 +71,7 @@ expression: text
       "level": 2,
       "text": "Connect to Quill",
       "id": "connect",
-      "sourceId": "connect",
+      "source_id": "connect",
       "explicit": true,
       "source": {
         "file": "install-agent.md",
@@ -82,7 +83,7 @@ expression: text
       "level": 2,
       "text": "Streaming sync",
       "id": "streaming-sync",
-      "sourceId": "streaming-sync",
+      "source_id": "streaming-sync",
       "explicit": true,
       "source": {
         "file": "install-agent.md",
@@ -94,7 +95,7 @@ expression: text
       "level": 2,
       "text": "Troubleshooting",
       "id": "troubleshooting",
-      "sourceId": "troubleshooting",
+      "source_id": "troubleshooting",
       "explicit": true,
       "source": {
         "file": "install-agent.md",
@@ -110,7 +111,7 @@ expression: text
       "reference": "./_fragments/prerequisites.png",
       "kind": "image",
       "fragment": null,
-      "writtenIn": "_fragments/prerequisites.md",
+      "written_in": "_fragments/prerequisites.md",
       "span": [120, 168]
     }
   ],
@@ -132,7 +133,7 @@ expression: text
             "page": "quickstart.md",
             "id": "try-in-browser",
             "url": "/quickstart/#try-in-browser",
-            "textFilled": false
+            "text_filled": false
           },
           "children": [
             {
@@ -164,7 +165,7 @@ expression: text
             "page": "quickstart.md",
             "id": "try-in-browser",
             "url": "/quickstart/#try-in-browser",
-            "textFilled": false
+            "text_filled": false
           }
         }
       ],
@@ -213,7 +214,7 @@ expression: text
         }
       ],
       "primary": null,
-      "binding": "followingBlock",
+      "binding": "following_block",
       "annotation": null,
       "source": {
         "file": "install-agent.md",
@@ -247,7 +248,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "prerequisites",
-      "sourceId": "prerequisites",
+      "source_id": "prerequisites",
       "explicit": true,
       "text": "Prerequisites",
       "inlines": [
@@ -438,7 +439,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "install-agent",
-      "sourceId": "install-agent",
+      "source_id": "install-agent",
       "explicit": true,
       "text": "Install the agent",
       "inlines": [
@@ -482,7 +483,7 @@ expression: text
       "attributes": [],
       "title": null,
       "primary": null,
-      "binding": "followingBlock",
+      "binding": "following_block",
       "annotation": null,
       "source": {
         "file": "install-agent.md",
@@ -654,7 +655,7 @@ expression: text
               "attributes": [],
               "title": null,
               "primary": null,
-              "binding": "followingBlock",
+              "binding": "following_block",
               "annotation": null,
               "source": {
                 "file": "install-agent.md",
@@ -747,7 +748,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "connect",
-      "sourceId": "connect",
+      "source_id": "connect",
       "explicit": true,
       "text": "Connect to Quill",
       "inlines": [
@@ -855,7 +856,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "streaming-sync",
-      "sourceId": "streaming-sync",
+      "source_id": "streaming-sync",
       "explicit": true,
       "text": "Streaming sync",
       "inlines": [
@@ -1158,7 +1159,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "troubleshooting",
-      "sourceId": "troubleshooting",
+      "source_id": "troubleshooting",
       "explicit": true,
       "text": "Troubleshooting",
       "inlines": [
@@ -1244,7 +1245,7 @@ expression: text
                 "page": "keys.md",
                 "id": "rotate-keys",
                 "url": "/keys/#rotate-keys",
-                "textFilled": true
+                "text_filled": true
               },
               "children": [
                 {
@@ -1276,7 +1277,7 @@ expression: text
                 "page": "keys.md",
                 "id": "rotate-keys",
                 "url": "/keys/#rotate-keys",
-                "textFilled": true
+                "text_filled": true
               }
             }
           ]

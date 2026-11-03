@@ -85,7 +85,8 @@ pub enum Emit {
 /// How to show the checks' results.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
-    /// Diagnostics with source snippets, for people.
+    /// Diagnostics with source snippets, for people. `concise` writes the
+    /// same.
     #[value(alias = "concise")]
     Text,
     /// One JSON document, for tools.

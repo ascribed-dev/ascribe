@@ -14,7 +14,7 @@
 // here was removed, gives the reason as its authors wrote it, as text, and
 // links to the docs' home: the root of the project whose list named it.
 import { home as root, permalinks } from "virtual:ascribe/site";
-import { forwardingPaths, type Forwarding } from "@ascribed/astro/permalinks";
+import { forwardingPaths, type Forwarding } from "@ascribed/astro/internal/permalinks";
 
 export function getStaticPaths() {
   return forwardingPaths(permalinks);

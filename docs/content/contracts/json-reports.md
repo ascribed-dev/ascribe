@@ -12,7 +12,7 @@ Every document follows these rules:
 - `schema_version` changes only when a field is removed or changes meaning. Fields can be added without a new version, so **ignore fields you don't know**. The schemas allow fields they don't list.
 - A field whose values are a fixed set of names, such as a diagnostic's `severity` or `next`, may gain a value without a new version. A reader treats a value it doesn't know as the field says: an unknown `severity` as advice, which never fails a check.
 - A field the schema doesn't list as required is left out when it has no value. A required field that can be `null` is always written.
-- Keys are snake_case.
+- Keys are snake_case, and so are the names a field's values are. That holds for every JSON document Ascribe writes, the [JSON output](json-output.md) and the files a build records among them; only the language server's and the MCP server's messages are camelCase, as their protocols are.
 
 The pages are grouped as the [`ascribe.toml` reference](../content-model/index.md#contents) is, by what the commands are for:
 

@@ -101,7 +101,9 @@ The [Astro guide](https://ascribed-dev.com/go/astro-guide/) walks through a site
 | `src/Versions.astro`, `src/VersionBanner.astro`, `src/versions.ts` | A versioned build's lines, from `<output-dir>/_ascribe/versions.json`, the list of the lines that have a page, and an older line's banner |
 | `src/code-titles.ts` | The Shiki transformer that shows code block titles and tested lines |
 | `src/code-languages.ts` | The Shiki transformer that gives a code block's `<code>` its language as a class |
-| `src/Permalink.astro`, `src/permalinks.ts` | The route at each permalink's address, and its pages, from the site output's `_ascribe/permalinks.json` |
+| `src/Permalink.astro`, `src/internal/permalinks.ts` | The route at each permalink's address, and its pages, from the site output's `_ascribe/permalinks.json` |
+| `src/Gone.astro`, `src/internal/redirects.ts` | A retired address's page, from the site output's `_ascribe/redirects.json`, and the site's `_redirects` for Netlify |
+| `src/internal/` | Modules the package's own `.astro` components import by the package's name, so they're exported as `@ascribed/astro/internal/*`. They aren't part of the API (decision [#1259](../../project-docs/decisions/1259-package-exports.md)) |
 | `src/MissingPermalink.astro` | The explanation on a site's 404 page for an address under the permalinks' path that matches nothing |
 | `src/schema.ts` | Copies the generated schema inside the Astro root |
 | `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |

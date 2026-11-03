@@ -59,7 +59,25 @@ test("the CI how-to shows a check workflow that runs the pinned ascribe", () => 
   expect(text).toContain("# :snippet-end:\n");
   // The project's own `@ascribed/cli`, never the latest release.
   expect(text).toContain("- run: npm ci\n");
-  expect(text).toContain("- run: npx ascribe check --deny-warnings");
+  expect(text).toContain("run: npx ascribe check --deny-warnings");
+  // The history and the base, which a project's ascribe.addresses needs
+  // (#1243): `ascribe init` writes one, and the example has it.
+  expect(text).toContain("fetch-depth: 0\n");
+  expect(text).toContain("--base origin/$GITHUB_BASE_REF\n");
+  expect(text).toContain("--base ${{ github.event.before }} --base-exact\n");
+  // The push that creates the branch has no commit before it: its
+  // `github.event.before` is all zeros, which isn't a revision.
+  expect(text).toContain("if: github.event_name == 'push' && !github.event.created\n");
+  expect(text).toContain(
+    "if: github.event_name == 'push' && github.event.created\n        run: npx ascribe check --deny-warnings --format github\n",
+  );
+  expect(page).toContain("if: github.event_name == 'push' && !github.event.created\n");
+  expect(page).toContain(
+    "if: github.event_name == 'push' && github.event.created\n        run: ascribe check --deny-warnings --format github\n",
+  );
+  expect(
+    readFileSync(path.join(root, "examples", "getting-started", "ascribe.addresses"), "utf8"),
+  ).toContain("version = 1\n");
   expect(text).toContain("- run: npx ascribe fmt --check");
   expect(text).not.toMatch(/npm install --global|:remove:/);
   // Without Node, a named release.
