@@ -74,14 +74,18 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-check.txt
 
-   No errors are left. The one advice, [`addresses-base-unreadable`](checks/diagnostics/project-checks.md#ASC257) (ASC257), says the check compared nothing with `ascribe.addresses`: the base it compares with, the last commit on `main`, has the pages and no project, so it published no address to keep. Its help is about CI, where a base can't be read; here nothing is wrong, and the baseline doesn't hold it back, since it goes once the project is committed.
-6. Commit `ascribe.toml`, `ascribe.addresses`, `ascribe.baseline`, and the pages, and add `.ascribe/` to `.gitignore`. The base then has the project, and the check is clean:
+   No errors are left. The one advice, [`addresses-base-unreadable`](checks/diagnostics/project-checks.md#ASC257) (ASC257), says the check compared nothing with `ascribe.addresses`: the [base](publishing/redirects.md#addresses-base) it compares with has the pages and no project, so it published no address to keep. The base is where your branch left `main`, or, working on `main`, its last commit. Its help is about CI, where a base can't be read; here nothing is wrong.
+
+   The baseline doesn't hold it back: `baseline write` doesn't compare the addresses, so it never sees this advice, and doesn't record it. The advice goes once the base has the project, as the next step shows.
+6. Commit `ascribe.toml`, `ascribe.addresses`, `ascribe.baseline`, and the pages, and add `.ascribe/` to `.gitignore`. Committed on `main`, the base then has the project, and the check is clean:
 
    ```sh
    npx ascribe check --format concise
    ```
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-committed.txt
+
+   On a branch, the base is still where the branch left `main`, so the advice stays until the branch is merged, as it does in the pull request that brings the project in.
 
 To check every pull request, see [Check in CI](checks/ci.md).
 
