@@ -1,1 +1,1 @@
-- **Fixed:** `ascribe versions retire` records a line's addresses in `[moved.<build>]`, the table of the build that published them, so a build that never published the line no longer redirects them. See [Retire a line](docs/content/versions/archive.md).
+- **Fixed:** a retired line's redirects go only to the build that published it. `ascribe versions retire` writes them in that build's table, `[moved.<build>]`. See [Retire a line](docs/content/versions/archive.md).
