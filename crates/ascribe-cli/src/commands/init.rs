@@ -94,7 +94,7 @@ fn run_init(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Wri
         root: &root,
         templates: args.templates,
         content_root: content_root.as_deref(),
-        ascribe_version: env!("ASCRIBE_VERSION"),
+        ascribe_version: env!("CARGO_PKG_VERSION"),
         dry_run: true,
     };
     // A dry run first: what it would write, which the guard is asked about.

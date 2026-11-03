@@ -71,7 +71,7 @@ pub struct NewJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// The page, from the folder `ascribe.toml` is in, `/`-separated.
     pub path: String,
@@ -211,7 +211,7 @@ fn run_new(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Writ
     }
     let answer = NewJson {
         schema_version: SCHEMA_VERSION,
-        ascribe_version: env!("ASCRIBE_VERSION"),
+        ascribe_version: env!("CARGO_PKG_VERSION"),
         path: in_project.to_string(),
         type_name: args.type_name.clone(),
         title: title.map(str::to_owned),

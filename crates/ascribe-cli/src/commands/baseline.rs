@@ -87,7 +87,7 @@ pub(crate) struct WriteJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The file written, from the project's folder: `ascribe.baseline`.
     file: &'static str,
@@ -126,7 +126,7 @@ pub(crate) struct PruneJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The file pruned, from the project's folder: `ascribe.baseline`.
     file: &'static str,

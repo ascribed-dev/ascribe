@@ -110,7 +110,7 @@
   "description": "What `ascribe fmt --format json` writes: one document. Fields can be\nadded without a new `schema_version`, so a reader ignores fields it\ndoesn't know.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "files": {

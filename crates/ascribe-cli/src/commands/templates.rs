@@ -75,7 +75,7 @@ pub(crate) struct ListJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The repository of The Good Docs Project's templates.
     repository: String,
@@ -280,7 +280,7 @@ fn run_eject(global: &Global, args: &EjectArgs, out: &mut dyn Write, err: &mut d
         model_text: &file.text,
         names: &args.names,
         to: &to,
-        ascribe_version: env!("ASCRIBE_VERSION"),
+        ascribe_version: env!("CARGO_PKG_VERSION"),
         keep_type: args.keep_type,
         dry_run: true,
     };

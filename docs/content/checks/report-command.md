@@ -63,7 +63,7 @@ It keeps a history of what each address answered, so a run asks about less and r
 | Field | Type | Meaning |
 |---|---|---|
 | `schema_version` | number | `3`, since `builds` lists each mark once |
-| `ascribe_version` | string | The version of `ascribe` that wrote the report |
+| `ascribe_version` | string | The release of `ascribe` that wrote the report, as `0.4.5` |
 | `error` | string or null | Why the report couldn't be made (exit code `2`); no section is there then |
 | `sections` | array of strings | The sections asked for, in the report's order |
 | `builds_checked` | array of strings | The builds `problems` checked and `builds` and `pages` report on |

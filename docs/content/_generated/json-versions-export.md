@@ -40,7 +40,7 @@
   "description": "What `ascribe versions export --format json` writes: the line, the\nfolder, and what's in it.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "assets": {

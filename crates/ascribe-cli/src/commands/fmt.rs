@@ -192,7 +192,7 @@ pub(crate) struct FmtReport {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// Whether the files were rewritten: `false` with `--check` or
     /// `--dry-run`, which write nothing.

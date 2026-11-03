@@ -1,0 +1,1 @@
+- **Every command's JSON gives `ascribe_version` as the release, such as `0.4.5`.** `init`, `new`, `templates`, and `observe` no longer add `+dev` and the commit. See [the JSON report contract](docs/content/contracts/json-reports.md).

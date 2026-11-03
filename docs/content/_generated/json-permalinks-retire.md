@@ -7,7 +7,7 @@
   "description": "What `ascribe permalinks retire` did.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "created": {

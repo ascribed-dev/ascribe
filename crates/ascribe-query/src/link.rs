@@ -21,7 +21,7 @@ pub struct LinkAnswer {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// The page the link is written on, as the command was given it: a path
     /// from the folder it was run in, as `ascribe check` names a file.

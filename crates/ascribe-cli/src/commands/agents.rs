@@ -248,7 +248,7 @@ pub(crate) struct SyncJson<'a> {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// Whether it ran with `--check`, which writes nothing.
     check: bool,
@@ -286,7 +286,7 @@ pub(crate) struct PromptJson<'a> {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The prompt's name.
     name: &'a str,
@@ -302,7 +302,7 @@ pub(crate) struct PromptListJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The prompts, in order.
     prompts: Vec<PromptListed>,

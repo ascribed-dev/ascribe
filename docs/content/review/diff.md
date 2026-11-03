@@ -98,7 +98,7 @@ The prompt asks for a report, not edits: a review reads the change, and its auth
 | Field | Type | Meaning |
 |---|---|---|
 | `schema_version` | number | `1` |
-| `ascribe_version` | string | The version of `ascribe` that wrote the report |
+| `ascribe_version` | string | The release of `ascribe` that wrote the report, as `0.4.5` |
 | `base` | object | `requested`: the revision asked for, or the default branch used. `commit`: the commit it names. `merge_base`: the merge base with `HEAD` that was compared with, or `null` with `--base-exact`. |
 | `repository` | object | `root`: the repository's top-level directory. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
 | `working_tree_errors` | number | How many errors `ascribe check` finds in the working tree for the builds compared (with the same `--build` options). The comparison runs either way. |
@@ -182,7 +182,7 @@ It reads little: one `git diff` listing of the change, and at the base only the 
 | Field | Type | Meaning |
 |---|---|---|
 | `schema_version` | number | `1` |
-| `ascribe_version` | string | The version of `ascribe` that wrote the report |
+| `ascribe_version` | string | The release of `ascribe` that wrote the report, as `0.4.5` |
 | `base` | object | As in the [diff JSON](diff.md#diff-json): `requested`, `commit`, and `merge_base` |
 | `repository` | object | As in the diff JSON: `root` and `project_prefix` |
 | `pages` | array | Every page with an example that changed or no longer resolves, in path order |

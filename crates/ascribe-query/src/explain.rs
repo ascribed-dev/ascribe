@@ -33,7 +33,7 @@ pub struct Explanation {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// The code, such as `ASC036`.
     pub code: String,
@@ -106,7 +106,7 @@ pub struct DiagnosticList {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// Every diagnostic, in code order.
     pub diagnostics: Vec<ListedDiagnostic>,

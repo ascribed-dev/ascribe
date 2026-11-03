@@ -170,7 +170,7 @@
   "description": "What `ascribe versions retire --format json` writes: the line, its\naddress, the marks rewritten, what no line has any more, and where each\nof the line's addresses should go.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "ended": {

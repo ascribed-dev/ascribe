@@ -109,7 +109,7 @@ pub(crate) struct ObserveReport {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The config it ran, `ascribe.examples.toml`, in the current folder.
     config: String,
@@ -378,7 +378,7 @@ fn observe(
     };
     let mut report = ObserveReport {
         schema_version: SCHEMA_VERSION,
-        ascribe_version: env!("ASCRIBE_VERSION"),
+        ascribe_version: env!("CARGO_PKG_VERSION"),
         config: EXAMPLES_FILE.to_owned(),
         check: false,
         environment,
@@ -620,7 +620,7 @@ fn check(folder: &Path, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -
     if args.format == Format::Json {
         let report = ObserveReport {
             schema_version: SCHEMA_VERSION,
-            ascribe_version: env!("ASCRIBE_VERSION"),
+            ascribe_version: env!("CARGO_PKG_VERSION"),
             config: EXAMPLES_FILE.to_owned(),
             check: true,
             environment: Vec::new(),
