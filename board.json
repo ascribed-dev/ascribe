@@ -8929,7 +8929,7 @@
         "rust"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Fuzz: parse crashes (c1c7dcdaf4bd)"
     }
   ]
