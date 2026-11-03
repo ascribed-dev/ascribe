@@ -25,6 +25,8 @@ There are two ways to keep documentation today, and each gives something up.
 
 Ascribe gives docs written as code the tools a docs team expects, and checks every page the way code is checked: in the editor, in CI, and for the AI agents that write and read the docs.
 
+Its claim is tools that understand what you wrote: includes, variants, and page types are part of the Markdown, not the site generator, so one compiler checks them in the editor, the command line, and CI, and a broken include is underlined as you type, like a misspelled import.
+
 ## What Ascribe is
 
 **Recommendation: call it a toolchain, and don't call it a platform.**
@@ -41,7 +43,7 @@ Ascribe gives docs written as code the tools a docs team expects, and checks eve
 
 > Docs as code, with the tools docs need.
 
-The headline states the promise, and the sentence above says what Ascribe is. The headline doesn't say what "the tools" are, so whatever stands under it names them: reusable content, variants, versions, a glossary, and preview.
+The headline states the promise, and the sentence above says what Ascribe is. The headline doesn't say what "the tools" are, so whatever stands under it names them: reusable content, variants, versions, page types, and templates.
 
 "Documentation written as code", the current tagline, stays in the sentence that says what Ascribe is. It's no longer the headline, because it names a practice that many tools claim.
 
@@ -68,8 +70,8 @@ Each pillar has its claim and the features that prove it. A claim with nothing b
    - Memos keep the reason a page is written its way, for the next person or agent who changes it.
    - As readers, agents get `llms.txt`, a Markdown version of every page, each permalink's help as JSON, and an index of the docs written into the product's `AGENTS.md`.
 4. **Plain files you can leave.** This is the trust pillar, and it's quieter than the other three.
-   - A page reads as Markdown without Ascribe.
-   - The plain output is CommonMark.
+   - A page is a Markdown file.
+   - The plain output is CommonMark, with includes and phrases filled in.
    - Ascribe hosts nothing and calls no model.
    - It's open source under the MPL.
 
@@ -102,3 +104,4 @@ The story was carried out on 22 October 2026, by the second website plan:
 1. **The words** live in `design/words.toml`, and every surface takes them or is tested against them (decision [#833g](../decisions/833g-words-home.md)).
 2. **Bryo Studio** is the maker everywhere one is named, but the Marketplace publisher, which stays `Ascribe` (decision [#833h](../decisions/833h-bryo-studio-maker.md)).
 3. **The site** leads with the headline and is built on the pillars, and its copy comes from here (decisions [#833d](../decisions/833d-landing-page-in-ascribe.md) and [#833e](../decisions/833e-site-copy-from-story.md)).
+4. **On 3 November 2026,** the site took the framing of the post "The docs tool I wanted": the claim under the promise, in the checked-like-code pillar; the tools named under the headline; and Why Ascribe's limits, split into what's by design and what's for now. The headline, the sentence, and the decided items above are unchanged.

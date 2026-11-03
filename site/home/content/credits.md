@@ -55,7 +55,7 @@ You install these yourself, when you use the command that runs them.
 
 ## Where its ideas came from
 
-Each of these is said where Ascribe uses it, and linked here.
+Each is also cited where Ascribe uses it.
 
 | From | What Ascribe took |
 |---|---|
