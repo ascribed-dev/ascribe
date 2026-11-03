@@ -250,7 +250,7 @@ fn model_reads_every_example_content_model() {
         assert!(text.starts_with("# Content model"), "{config}: {text}");
         let value = json(&root, &["--config", config, "model"], 0);
         for section in ascribe_query::Section::ALL.map(|s| s.name()) {
-            let shown = if section == "fragments" {
+            let shown = if section == "fragments" || section == "navigation" {
                 value[section].is_object()
             } else {
                 value[section].is_array()
