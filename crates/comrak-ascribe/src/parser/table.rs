@@ -294,7 +294,10 @@ fn try_inserting_table_header_paragraph<'a>(
     }
 
     let preface = &container_content[..paragraph_offset];
-    let mut paragraph_content = unescape_pipes(preface);
+    // ASCRIBE: the paragraph keeps its `\|` as written. It isn't part of the table, so GFM's
+    // unescaping of a cell's pipes doesn't apply, and dropping the backslash put every position
+    // after it a byte early (#1236).
+    let mut paragraph_content: Cow<'_, str> = preface.into();
     let (newlines, _since_newline) = count_newlines(&paragraph_content);
     trim_cow(&mut paragraph_content);
     let paragraph_content = paragraph_content.to_string();
