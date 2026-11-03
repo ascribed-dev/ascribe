@@ -4,7 +4,7 @@ title: "`ascribe.toml`: what pages draw from"
 description: "How the content model names what pages draw from outside the content: the source folders and repositories snippets read, and the OpenAPI specs links point into."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [what pages draw from](../contracts/content-model/sources.md).
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [what pages draw from](../contracts/content-model/sources.md).
 
 ## 20. `[sources.<name>]`
 

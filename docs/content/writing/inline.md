@@ -4,7 +4,7 @@ title: Phrases, links, and images
 description: "What a page writes in its prose: phrases, links between files, images, heading ids, and glossary terms."
 ---
 
-What Ascribe adds to a page's prose, and the rules it checks there. Directives are in the [directive reference](directives.md), and how one is written in [directive syntax](syntax.md). The [Ascribe specification]({repo}/blob/main/SPEC.md) is the normative definition; each section links to its part of the spec.
+What Ascribe adds to a page's prose, and the rules it checks there. Directives are in the [directive reference](directives.md), and how one is written in [directive syntax](syntax.md). Each section links to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
 
 ## Phrases
 
@@ -40,7 +40,7 @@ See [](keys.md#rotate-keys).
 - **Empty link text** is filled in with the target's title: the heading's text with an id, or the page's `title`.
 - External URLs (`https://…`) pass through unchanged.
 - A destination that looks like a published URL (`/guides/install/`) instead of a file gets a warning, and the editor offers to convert it.
-- In each build, a link's target page must be published. To link from shared content to a page a build drops, put the link in a `@variant` arm the same build removes.
+- In each build, a link's target page must be published. To link from shared content to a page a build drops, put the link in a [`@variant`](directives.md#variant) alternative the same build removes.
 - A link to an OpenAPI spec the content model declares, with an `operationId` as its fragment, `[Get a user](../api/openapi.yaml#getUser)`, is a link to that operation: the spec must have it, and each output writes the operation's address in the published reference. See [Link to your API reference](../openapi/index.md). An operation with no id is linked by its method and path, `#delete/users/{id}`, with Redoc 3: see [Link to an operation with no id](../openapi/no-id.md).
 
 ### Links between lines

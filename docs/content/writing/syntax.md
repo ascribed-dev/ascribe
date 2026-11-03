@@ -6,13 +6,13 @@ description: "How a directive is written: its line, attributes, forms, groups, t
 
 Ascribe source is CommonMark with a few additions: **directives**, lines that start with `@` and annotate the content around them; **title lines**, which give a directive a title; and **phrases**, reusable strings written `{key}`. Everything else is ordinary Markdown, and an Ascribe page read by a plain Markdown renderer still reads sensibly.
 
-This page is how a directive is written. Each built-in directive is in the [directive reference](directives.md), [phrases, links, and images](inline.md) are on a page of their own, and so is [frontmatter](frontmatter.md). The [Ascribe specification]({repo}/blob/main/SPEC.md) is the normative definition; each section links to its part of the spec.
+This page is how a directive is written. Each built-in directive is in the [directive reference](directives.md), [phrases, links, and images](inline.md) are on a page of their own, and so is [frontmatter](frontmatter.md). Each section links to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
 
 ## Directive lines
 
 ([SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax), [§3.2]({repo}/blob/main/SPEC.md#32-recognition))
 
-A directive line has a name, optional attributes in braces, and an optional primary after a colon:
+A directive line has a name, optional attributes in braces, and an optional **primary** after a colon, the directive's one main value, such as a note's text or the file an `@include` brings in:
 
 ```text
 @<name> {<attributes>}: <primary>
@@ -34,7 +34,7 @@ Anything else is text. `@astrojs/react` at the start of a line and `support@exam
 
 Spaces between the parts don't matter, and nothing else may be on the line: `@steps foo` is an error. Built-in names never contain a hyphen; project widget names always do.
 
-Attributes written without their braces, as in `@note type=warning: You need Node 20.`, are the same error, and it's the one reported for the line: the errors that would follow from it, such as the note binding the heading below, aren't. When the keys are the directive's attributes, the fix adds the braces (`@note {type=warning}: …`), and `ascribe check --fix` applies it when a primary follows the colon.
+Attributes written without their braces, as in `@note type=warning: You need Node 20.`, are the same error, and it's the one reported for the line: the errors that would follow from it, such as the note applying to the heading below, aren't. When the keys are the directive's attributes, the fix adds the braces (`@note {type=warning}: …`), and `ascribe check --fix` applies it when a primary follows the colon.
 
 ## Attributes
 
@@ -89,7 +89,7 @@ It holds several paragraphs.
 ```
 
 - `@end` closes the innermost open container. There are no named closers.
-- A container must close before the block around it ends: its list item, block quote, group arm, or the document.
+- A container must close before the block around it ends: its list item, block quote, a group's alternative (an [arm](#groups)), or the document.
 - A trailing colon on a directive with no container form is an error, and so is a container-only directive (such as `@variant`) without one.
 - A text primary that happens to end in a colon is still a primary: `@note: Important:` is a one-line note.
 

@@ -104,7 +104,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[versions]` | How versions in availability specs are compared (SPEC §4.4). | §12 |
 | `[lifecycle.<state>]` | Lifecycle states (SPEC §4.4). | §13 |
 | `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §14 |
-| `[consumer]` | The consumer profile (SPEC §9.5): how the site output fits a specific consumer. | §15 |
+| `[consumer]` | Which site generator publishes the site output, and how the output fits it: the **profile** (SPEC §9.5). | §15 |
 | `[builds.<name>]` | Named builds (SPEC §9.3). | §16 |
 | `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §17 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §18 |

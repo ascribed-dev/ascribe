@@ -32,7 +32,7 @@ See [`[dimensions.<name>]`](../content-model/variation.md#dimensions) for every 
 
 @snippet {lang=markdown}: code:examples/platforms/docs/install.md
 
-**The variant group** is the three `@variant` arms under "Install the CLI". Each arm opens with the value it's for, and its content runs to the next arm; one `@end` closes the group. An arm can hold anything a page can: paragraphs, lists, notes, more code. An arm can be for several values (`{platform=linux|macos}`), and a group doesn't need an arm for every value, though `ascribe check` warns when a build would leave a group with no arm at all. See [`@variant`](directives.md#variant).
+**The variant group** is the three `@variant` **arms** under "Install the CLI", one alternative for each platform. Each arm opens with the value it's for, and its content runs to the next arm; one `@end` closes the group. An arm can hold anything a page can: paragraphs, lists, notes, more code. An arm can be for several values (`{platform=linux|macos}`), and a group doesn't need an arm for every value, though `ascribe check` warns when a build would leave a group with no arm at all. See [`@variant`](directives.md#variant).
 
 **The availability mark** is `@available: linux, macos` under "Start it at login". Directly under a heading, it applies to the whole section; anywhere else, to the block it touches. Unlike a variant, it doesn't choose between alternatives: it says where the content applies, and every reader of a build that keeps it sees the mark. See [`@available`](directives.md#available).
 

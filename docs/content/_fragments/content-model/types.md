@@ -12,7 +12,7 @@ description = "string?"
 api-version = "string"
 ```
 
-`<name>` is the type's name (`key` rule). It appears in diagnostics, in generated code (the Zod schema's name), and on each page of the type, as the value of `type`.
+`<name>` is the type's name: a lowercase letter, then lowercase letters, digits, or `-` (a [key](../../content-model/index.md#12-names)). It appears in diagnostics, in generated code (the Zod schema's name), and on each page of the type, as the value of `type`.
 
 **Frontmatter every type shares.** `[frontmatter]` declares the fields every page type has, written as a type's own are, so a field every page has is written once. A type's own `frontmatter` adds fields to them. A type that declares a field `[frontmatter]` has replaces it whole, for that type: an index page's type can make a shared `description` optional, or give it a default. The two aren't merged key by key, so a field reads as one declaration, wherever it's written. The implicit `page` type of a project that declares no types has them too.
 

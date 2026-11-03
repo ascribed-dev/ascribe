@@ -1,0 +1,1 @@
+- **The writing pages and the `ascribe.toml` reference speak to writers.** They name Ascribe and the site, not loaders and consumers, define "primary" and "arm" where first used, and cite the specification in parentheses. See [Directive syntax](docs/content/writing/syntax.md).

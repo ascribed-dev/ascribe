@@ -4,7 +4,7 @@ title: "`ascribe.toml`: how content varies"
 description: "The content model's dimensions, versions and releases, lifecycle states, and features: what content varies along, and how a page says where it applies."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [how content varies](../contracts/content-model/variation.md).
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [how content varies](../contracts/content-model/variation.md).
 
 ## 11. `[dimensions.<name>]`
 @id {permalink=true}: dimensions
