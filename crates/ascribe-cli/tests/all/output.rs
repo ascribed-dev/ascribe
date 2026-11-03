@@ -746,13 +746,20 @@ fn lantern_with_code() -> TempDir {
 }
 
 /// `ascribe check` on `examples/getting-started`, the getting started guide's
-/// project, which links to a page it doesn't have yet.
+/// project, which links to a page it doesn't have yet. It's checked in a copy
+/// outside any repository: its `ascribe.addresses` is compared with a base in
+/// one, and whether this repository's checkout has a base would change the
+/// report.
 #[test]
 fn getting_started() {
-    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started");
+    let dir = tempfile::tempdir().unwrap();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started"),
+        dir.path(),
+    );
     expect(
         "getting-started-check.txt",
-        &stdout(&run(&example, &["check"], 1)),
+        &stdout(&run(dir.path(), &["check"], 1)),
     );
 }
 

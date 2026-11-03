@@ -8,7 +8,7 @@ The editor checks a page as you write it. CI checks every pull request the same 
 
 ## Add the workflow
 
-Add `.github/workflows/check.yml`, which installs the project's dependencies and runs `npx ascribe check --deny-warnings` and `npx ascribe fmt --check` on every pull request and on each push to `main`, and shows each problem on the pull request's lines, as a linter's are:
+Add `.github/workflows/check.yml`, which installs the project's dependencies and runs `npx ascribe check --deny-warnings` and `npx ascribe fmt --check` on every pull request and on each push to `main`, and shows each problem on the pull request's lines, as a linter's are. It checks out the whole history and names the base, which the project's `ascribe.addresses` needs ([below](#keep-the-addresses-youve-published)):
 
 @snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/getting-started/.github/workflows/check.yml#workflow
 
@@ -18,7 +18,12 @@ Where there's no Node, [install `ascribe` on the path](../install.md#without-nod
 
 ```yaml
       - run: curl -fsSL https://ascribed-dev.com/install.sh | sh -s -- --version <version>
-      - run: ascribe check --deny-warnings --format github
+      - if: github.event_name == 'pull_request'
+        run: ascribe check --deny-warnings --format github --base origin/$GITHUB_BASE_REF
+      - if: github.event_name == 'push' && !github.event.created
+        run: ascribe check --deny-warnings --format github --base ${{ github.event.before }} --base-exact
+      - if: github.event_name == 'push' && github.event.created
+        run: ascribe check --deny-warnings --format github
       - run: ascribe fmt --check --format github
 ```
 
@@ -32,20 +37,9 @@ Name the release your team runs, and change it as you would a dependency: withou
 
 ## Keep the addresses you've published
 
-A project with [`ascribe.addresses`](../publishing/redirects.md) has `ascribe check` compare the addresses the docs publish with the base's, and the base needs the history: give `actions/checkout` `fetch-depth: 0`, and name the base. On a pull request, it's the branch the pull request targets; on a push, it's the commit before the push, compared as it is:
+Every project `ascribe init` started has [`ascribe.addresses`](../publishing/redirects.md), and `ascribe check` compares the addresses the docs publish with the base's, so a page that moved without a record fails the pull request. That's why the workflow gives `actions/checkout` `fetch-depth: 0`, for the history, and names the base: on a pull request, the branch it targets; on a push, the commit before the push, compared as it is. The push that creates `main`, a new repository's first, has no commit before it: there, the check names no base, and compares the pushed commit with itself.
 
-```yaml
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      # ...
-      - if: github.event_name == 'pull_request'
-        run: npx ascribe check --deny-warnings --format github --base origin/$GITHUB_BASE_REF
-      - if: github.event_name == 'push'
-        run: npx ascribe check --deny-warnings --format github --base ${{ github.event.before }} --base-exact
-```
-
-Without the history, or with a base that isn't there, as after a force-push, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) says the addresses weren't compared, a warning `--deny-warnings` fails on.
+Without the history, as `actions/checkout`'s default gives, or with a base that isn't there, as after a force-push or with `--base` on the push that creates the branch, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) says the addresses weren't compared, a warning `--deny-warnings` fails on. A workflow that leaves out `fetch-depth: 0` or `--base` fails the project's first pull request this way.
 
 ## Keep tested examples tested
 
