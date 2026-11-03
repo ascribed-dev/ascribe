@@ -29,10 +29,13 @@ jobs:
       - run: npm ci
       # Fails on errors and warnings, then on a page `ascribe fmt` would change,
       # and shows each on the pull request's lines. The base is the branch the
-      # pull request targets, or the commit before the push.
+      # pull request targets, or the commit before the push. The push that
+      # creates the branch has no commit before it, and compares with itself.
       - if: github.event_name == 'pull_request'
         run: npx ascribe check --deny-warnings --format github --base origin/$GITHUB_BASE_REF
-      - if: github.event_name == 'push'
+      - if: github.event_name == 'push' && !github.event.created
         run: npx ascribe check --deny-warnings --format github --base ${{ github.event.before }} --base-exact
+      - if: github.event_name == 'push' && github.event.created
+        run: npx ascribe check --deny-warnings --format github
       - run: npx ascribe fmt --check --format github
 # :snippet-end:
