@@ -38,9 +38,12 @@ describe("the crawlers' sources", () => {
       return Promise.resolve(url.startsWith("https://c") ? 404 : 200);
     });
     expect(asked).toEqual(["https://a.example/", "https://c.example/"]);
-    expect(problems).toEqual([
-      "`C`: https://c.example/ answered 404. Find where its operator documents it now, or remove the token.",
-    ]);
+    expect(problems).toEqual({
+      gone: [
+        "`C`: https://c.example/ answered 404. Find where its operator documents it now, or remove the token.",
+      ],
+      unchecked: [],
+    });
   });
 
   it("asks again after a failed request or a server error, and not after a 404", async () => {
@@ -75,10 +78,10 @@ describe("the crawlers' sources", () => {
       "https://c.example/",
     ]);
     expect(pauses).toBe(2);
-    expect(problems.map((p) => p.slice(0, 4))).toEqual(["`B`:", "`C`:"]);
+    expect(problems.gone.map((p) => p.slice(0, 4))).toEqual(["`B`:", "`C`:"]);
   });
 
-  it("asks again after a 429, and names the source only when the second ask is refused too", async () => {
+  it("asks again after a 429, and counts the source unchecked, not gone, when the second ask is refused too", async () => {
     const answers = new Map<string, number[]>([
       ["https://a.example/", [429, 200]],
       ["https://b.example/", [429, 429]],
@@ -93,8 +96,11 @@ describe("the crawlers' sources", () => {
       (url) => Promise.resolve(answers.get(url)?.shift() ?? 0),
       () => Promise.resolve(),
     );
-    expect(problems).toEqual([
-      "`B`: https://b.example/ answered 429. Find where its operator documents it now, or remove the token.",
-    ]);
+    expect(problems).toEqual({
+      gone: [],
+      unchecked: [
+        "`B`: https://b.example/ answered 429 twice, so it wasn't checked. Open it by hand before a release.",
+      ],
+    });
   });
 });

@@ -53,7 +53,7 @@ operator = "Apple"
 purpose = "training"
 robots = "follows"
 source = "https://support.apple.com/en-us/119829"
-read = "2026-10-12"
+read = "2026-11-03"
 note = "A token, not a crawler: Applebot fetches, and this says whether Apple may train its models on it. Pages it disallows can still appear in Apple's search."
 
 [[crawler]]
