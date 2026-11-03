@@ -1,7 +1,7 @@
 ---
 type: reference
 title: "`ascribe.toml`: where pages are published"
-description: "How the content model sets the site's consumer, the builds, how pages are listed, what crawlers are told, and where retired permalinks went."
+description: "How the content model sets which site generator publishes the site, the builds, how pages are listed, what crawlers are told, and where retired permalinks went."
 ---
 
 Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [where pages are published](../contracts/content-model/output.md).
