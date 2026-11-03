@@ -380,7 +380,10 @@ mod tests {
         assert_eq!(marketplace["name"], NAME);
         let entry = &marketplace["plugins"][0];
         assert_eq!(entry["name"], NAME);
-        assert!(entry.get("version").is_none(), "the plugin's manifest names the version");
+        assert!(
+            entry.get("version").is_none(),
+            "the plugin's manifest names the version"
+        );
         let source = root().join(entry["source"].as_str().unwrap());
         assert!(source.join(".claude-plugin/plugin.json").is_file());
         assert_eq!(read(".lsp.json")[NAME]["args"][0], LAUNCHER_PATH);
