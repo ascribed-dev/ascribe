@@ -204,6 +204,8 @@ fn json_says_what_was_written() {
     assert_eq!(code_of(&out), 0, "{}", stderr(&out));
     let answer: Value = serde_json::from_str(&stdout(&out)).unwrap();
     assert_eq!(answer["schema_version"], 1);
+    // The release alone, as every command writes it (decision #1253).
+    assert_eq!(answer["ascribe_version"], env!("CARGO_PKG_VERSION"));
     assert_eq!(answer["path"], "docs/about.md");
     assert_eq!(answer["type"], "page");
     assert_eq!(answer["title"], "About");
