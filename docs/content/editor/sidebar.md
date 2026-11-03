@@ -55,18 +55,18 @@ Health                                   1 to do
 | | **Unused model entries** | Content model entries nothing uses | Content model, with **Unused Only** on |
 | **At the last save** | **Agent files out of date** | What `ascribe agents sync --check` reports | **Sync Agent Files**, which names the files it would change and asks first |
 
-**Actions** act on the project the view shows, wherever the cursor is. Each one's tooltip says how it runs:
+**Actions** act on the project the view shows, wherever the cursor is. They're in three groups, each under its label: **Check**, **Write**, and **Review and agents**. Each one's tooltip says how it runs:
 
-| Action | How it runs |
-|---|---|
-| **Check Every Build** | The extension checks every build and puts their problems in the Problems panel |
-| **Apply Every Safe Fix** | The language server, as one edit, left unsaved: see [Edits to the whole project](#edits-to-the-whole-project) |
-| **Format Every Page** | The language server, as one edit, left unsaved |
-| **Build** | A task: `ascribe build`, in the terminal |
-| **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
-| **Observe Examples** | A task: `ascribe observe`, in the terminal, in the folder of a source with [tested examples](../examples/tested.md). It lists the commands `ascribe.examples.toml` names and asks before running them. |
-| **Start Review** | As **Ascribe: Start Review**: marks what changed in the preview, against a base it asks for. See [Review in the preview](review.md). |
-| **Prompt Agent to Fix This Project** | As **Ascribe: Prompt Agent to Fix This Project**: builds a prompt about the project's problems for your agent, without sending it. See [Prompt your agent](../agents/prompts.md). |
+| Group | Action | How it runs |
+|---|---|---|
+| Check | **Check Every Build** | The extension checks every build and puts their problems in the Problems panel |
+| Write | **Apply Every Safe Fix** | The language server, as one edit, left unsaved: see [Edits to the whole project](#edits-to-the-whole-project) |
+| Write | **Format Every Page** | The language server, as one edit, left unsaved |
+| Write | **Build** | A task: `ascribe build`, in the terminal |
+| Write | **Sync Agent Files** | A task: `ascribe agents sync`, in the terminal |
+| Write | **Observe Examples** | A task: `ascribe observe`, in the terminal, in the folder of a source with [tested examples](../examples/tested.md). It lists the commands `ascribe.examples.toml` names and asks before running them. |
+| Review and agents | **Start Review** | As **Ascribe: Start Review**: marks what changed in the preview, against a base it asks for. See [Review in the preview](review.md). |
+| Review and agents | **Prompt Agent to Fix This Project** | As **Ascribe: Prompt Agent to Fix This Project**: builds a prompt about the project's problems for your agent, without sending it. See [Prompt your agent](../agents/prompts.md). |
 
 The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run.
 

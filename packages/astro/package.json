@@ -59,13 +59,13 @@
       "types": "./dist/content.d.ts",
       "default": "./dist/content.js"
     },
-    "./permalinks": {
-      "types": "./dist/permalinks.d.ts",
-      "default": "./dist/permalinks.js"
+    "./internal/permalinks": {
+      "types": "./dist/internal/permalinks.d.ts",
+      "default": "./dist/internal/permalinks.js"
     },
-    "./redirects": {
-      "types": "./dist/redirects.d.ts",
-      "default": "./dist/redirects.js"
+    "./internal/redirects": {
+      "types": "./dist/internal/redirects.d.ts",
+      "default": "./dist/internal/redirects.js"
     }
   },
   "engines": {

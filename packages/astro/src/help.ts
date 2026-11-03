@@ -10,7 +10,7 @@
 // in `astro build` and `astro dev`.
 import path from "node:path";
 import { readHelp, type HelpFile } from "./help-file.js";
-import { permalinkPattern, readPermalinks } from "./permalinks.js";
+import { permalinkPattern, readPermalinks } from "./internal/permalinks.js";
 import { normalizeBase } from "./project.js";
 import { olderLines } from "./versions.js";
 

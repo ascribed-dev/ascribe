@@ -7,8 +7,8 @@
 // serves every project's list.
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { readHelp } from "./help-file.js";
-import { normalizeBase } from "./project.js";
+import { readHelp } from "../help-file.js";
+import { normalizeBase } from "../project.js";
 
 /** The list's format version this reads. */
 const VERSION = 1;

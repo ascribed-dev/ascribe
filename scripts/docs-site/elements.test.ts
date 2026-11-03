@@ -128,15 +128,18 @@ test("the reference's table of custom properties is the stylesheet's", () => {
   expect(read(FRAGMENT), `${FRAGMENT} is out of date: run \`${BLESS}\``).toBe(fragment);
 });
 
-test("the reference's table of elements is the element contract's", () => {
-  // Each element names.ts cites the element contract for. (`ascribe-attributes`
-  // is the site-render contract's marker, which no page keeps.)
+test("the reference's table of elements is the site output's elements", () => {
+  // Each element names.ts cites the element contract for, and the site-render
+  // contract's marker, `ascribe-attributes`, which the processor removes.
   const names = read(NAMES);
   const contract = Array.from(
     names.matchAll(/\/\*\*((?:(?!\*\/)[\s\S])*)\*\/\s*export const ELEMENT_\w+ = "([a-z-]+)";/g),
     ([, doc = "", name = ""]) => ({ doc, name }),
   )
-    .filter(({ doc }) => doc.includes("packages/elements/CONTRACT.md"))
+    .filter(
+      ({ doc }) =>
+        doc.includes("packages/elements/CONTRACT.md") || doc.includes("site-render contract"),
+    )
     .map(({ name }) => name);
   expect(contract.length).toBeGreaterThan(0);
 

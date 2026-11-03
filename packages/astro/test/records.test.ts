@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { forwardingRoutes } from "../src/permalinks.js";
+import { forwardingRoutes } from "../src/internal/permalinks.js";
 import {
   pageList,
   purposeConflicts,
