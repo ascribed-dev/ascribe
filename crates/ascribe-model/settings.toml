@@ -1022,7 +1022,6 @@ table = ""
 key = "apis"
 kind = "table"
 type = "table of tables"
-available = "ascribe planned"
 description = '''OpenAPI specs that pages link into, by name: each one's file, and where its reference is published.'''
 
 [[setting]]
