@@ -11,6 +11,12 @@
 # with the issue as the reason:
 #   ignore = [{ id = "RUSTSEC-0000-0000", reason = "#123" }]
 yanked = "deny"
+ignore = [
+  # unsafe-libyaml, under serde_yaml_ng, is unmaintained: no known
+  # vulnerability, and the YAML read is the project's own files. #1289 replaces
+  # serde_yaml_ng with serde-saphyr (decision #1157).
+  { id = "RUSTSEC-2024-0449", reason = "#1157" },
+]
 
 [licenses]
 # The licenses in the tree today, by name. A crate under any other license
