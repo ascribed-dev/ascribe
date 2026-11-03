@@ -93,7 +93,7 @@ token = "Amzn-SearchBot"
 operator = "Amazon"
 purpose = "search"
 robots = "follows"
-source = "https://developer.amazon.com/amazonbot"
+source = "https://developer.amazon.com/docs/amazonbot/amazonbot.html"
 read = "2026-10-12"
 note = "When `robots.txt` doesn't name it, it follows the rules given to other search bots."
 
@@ -134,7 +134,7 @@ token = "Amzn-User"
 operator = "Amazon"
 purpose = "on-request"
 robots = "may-ignore"
-source = "https://developer.amazon.com/amazonbot"
+source = "https://developer.amazon.com/docs/amazonbot/amazonbot.html"
 read = "2026-10-12"
 
 [[crawler]]
