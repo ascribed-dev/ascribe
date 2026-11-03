@@ -78,11 +78,15 @@ pub enum Section {
     Crawlers,
     /// `[listing]`'s settings.
     Listing,
+    /// The project's navigation, which its pages and `ascribe.nav` make:
+    /// [`navigation`] gives it, and [`navigation_summary`] its text, since
+    /// [`model`] and [`summary`] read only the content model.
+    Navigation,
 }
 
 impl Section {
     /// Every section, in the order answers list them.
-    pub const ALL: [Section; 24] = [
+    pub const ALL: [Section; 25] = [
         Section::Types,
         Section::Frontmatter,
         Section::Fragments,
@@ -107,6 +111,7 @@ impl Section {
         Section::Checks,
         Section::Crawlers,
         Section::Listing,
+        Section::Navigation,
     ];
 
     /// Whether it's a table of settings, each key [`ModelSetting`]: shown
@@ -158,6 +163,7 @@ impl Section {
             Section::Checks => "checks",
             Section::Crawlers => "crawlers",
             Section::Listing => "listing",
+            Section::Navigation => "navigation",
         }
     }
 
@@ -187,6 +193,7 @@ impl Section {
             Section::Checks => "`[checks]`",
             Section::Crawlers => "`[crawlers]`",
             Section::Listing => "`[listing]`",
+            Section::Navigation => "Navigation",
         }
     }
 }
@@ -286,7 +293,7 @@ pub struct ModelReport {
     pub listing: Option<Vec<ModelSetting>>,
     /// The project's navigation, its root section: every page that isn't
     /// `unlisted`, in order, as each build's `_ascribe/nav.json` has its
-    /// share of it. Only in the whole report.
+    /// share of it. In the whole report, and with `--section navigation`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub navigation: Option<ModelNavSection>,
 }
@@ -385,6 +392,55 @@ fn nav_page(project: &Project, path: &RelPath) -> Option<ModelNavPage> {
         label: file_label(file, model),
         type_name: type_name.map(str::to_owned),
     })
+}
+
+/// The navigation as `ascribe model --section navigation` shows it: a
+/// nested list in the order the sidebar has, each section with its label
+/// and folder and its own page, then its pages and nested sections, each
+/// page with its label and its path from the content root.
+pub fn navigation_summary(navigation: &ModelNavSection) -> String {
+    let mut out = format!(
+        "# Content model\n\n## {}\n\n",
+        Section::Navigation.heading()
+    );
+    nav_lines(navigation, 0, &mut out);
+    out
+}
+
+/// `section`'s line at `depth`, then its pages', each nested section drawn
+/// where its own page is among them, as the sidebar draws it, and the rest
+/// after.
+fn nav_lines(section: &ModelNavSection, depth: usize, out: &mut String) {
+    let indent = "  ".repeat(depth);
+    let folder = if section.folder.is_empty() {
+        "the content root".to_owned()
+    } else {
+        format!("`{}`", section.folder)
+    };
+    out.push_str(&format!("{indent}- {} ({folder})", section.label));
+    if let Some(page) = &section.page {
+        out.push_str(&format!(": `{}`", page.source));
+    }
+    out.push('\n');
+    let mut drawn = vec![false; section.sections.len()];
+    for page in &section.pages {
+        let beside =
+            section.sections.iter().enumerate().find(|(i, s)| {
+                !drawn[*i] && s.page.as_ref().is_some_and(|p| p.source == page.source)
+            });
+        match beside {
+            Some((i, nested)) => {
+                drawn[i] = true;
+                nav_lines(nested, depth + 1, out);
+            }
+            None => out.push_str(&format!("{indent}  - {}: `{}`\n", page.label, page.source)),
+        }
+    }
+    for (nested, drawn) in section.sections.iter().zip(drawn) {
+        if !drawn {
+            nav_lines(nested, depth + 1, out);
+        }
+    }
 }
 
 /// A page type.
@@ -1200,7 +1256,8 @@ fn releases(model: &ContentModel) -> Vec<ModelReleases> {
 /// the sections of settings, named. When the whole would be longer than
 /// `budget` characters, long lists are cut, each where it's cut naming the
 /// command that lists the rest. With a `section`, only that one, never cut:
-/// a section of settings with every key and its value in effect.
+/// a section of settings with every key and its value in effect. The
+/// navigation reads the project's pages, so it's [`navigation_summary`]'s.
 pub fn summary(
     model: &ContentModel,
     config: Option<&str>,
@@ -1218,7 +1275,9 @@ pub fn summary(
         .into_iter()
         .filter(|s| match section {
             Some(wanted) => wanted == *s,
-            None => !s.is_settings() && (!s.has_built_ins() || writes(*s)),
+            None => {
+                *s != Section::Navigation && !s.is_settings() && (!s.has_built_ins() || writes(*s))
+            }
         })
         .map(|s| (s, lines(&report, s)))
         .filter(|(s, lines)| !lines.is_empty() || section == Some(*s))
@@ -1481,6 +1540,8 @@ fn lines(report: &ModelReport, section: Section) -> Vec<String> {
         Section::Checks => setting_lines(section, &report.checks),
         Section::Crawlers => setting_lines(section, &report.crawlers),
         Section::Listing => setting_lines(section, &report.listing),
+        // A nested list, which `navigation_summary` writes.
+        Section::Navigation => Vec::new(),
     }
 }
 
