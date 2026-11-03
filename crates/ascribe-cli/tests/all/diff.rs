@@ -685,6 +685,48 @@ other: about.md: 1 changed, 1 added
 }
 
 #[test]
+fn a_list_items_lines_are_shown_without_its_marker() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "# About\n\nAbout us.\n\n- Node.js 20 or later.\n- Git.\n  - Any version.\n",
+    );
+    commit(dir.path(), "a list");
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "# About\n\nAbout us.\n\n- Git.\n  - Any version.\n  - Configured,\n    with a name.\n- Node.js 22 or later.\n",
+    );
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "docs/about.md", "--build", "site", "--base", "HEAD"],
+    );
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    // An item's own marker is left out, as a changed item's is; a list
+    // inside it keeps its markers, under the item's text.
+    let text = stdout(&out);
+    assert!(
+        text.ends_with(
+            "site: about.md: 1 changed, 1 added, 1 removed
+  added about.md:5-8
+    + Git.
+    + - Any version.
+    + - Configured,
+    +   with a name.
+  changed about.md:9
+    - Node.js [-20-] or later.
+    + Node.js {+22+} or later.
+  removed about.md:6-7 in the base
+    - Git.
+    - - Any version.
+"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
 fn html_report_has_each_pages_prompt_as_the_command_writes_it() {
     let dir = repo();
     write(

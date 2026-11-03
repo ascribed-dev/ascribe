@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe diff` leaves an added or removed list item's marker out of its lines. A line read `+ - item`, a marker after the diff sign. See [`ascribe diff`](docs/content/review/diff.md).
