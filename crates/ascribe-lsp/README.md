@@ -112,15 +112,7 @@ came through includes, which the client uses to scroll the preview with the
 editor by block. No capability is advertised: a client that wants it sends
 the request.
 
-**Params**
-
-```jsonc
-{
-  "textDocument": { "uri": "file:///…/docs/install.md" },
-  "build": "cloud",       // optional: a build name; the default is `[editor] build`
-  "review": true          // optional: include what changed against the review base
-}
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribepreview), their one home.
 
 **Result.** Always an object; `page` is `null` when there is nothing to show,
 and `problems` says why. Field names are camelCase.
@@ -175,11 +167,7 @@ compared with moved, after a pull, rebase, or fetch; otherwise it keeps the
 base it has. The editor does that when the preview regains focus. The request
 runs `git` on the main loop, without the server's lock.
 
-```jsonc
-{ "base": "main" }  // a branch, tag, or commit
-{}                  // the default branch: the first of origin/HEAD, origin/main, origin/master, main, master
-{ "base": null }    // stop comparing, and free the base
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribereviewsetbase), their one home.
 
 The result is `{ base, problem }`. `base` is `{ requested, commit, merge_base }`
 (as in `ascribe diff`'s report), or `null` once dropped or when it couldn't be
@@ -221,12 +209,7 @@ includes unsaved edits, and holds nothing about the rest of the project (that's
 `ascribe/targets`). No capability is advertised: a client that wants it sends
 the request.
 
-```jsonc
-{
-  "textDocument": { "uri": "file:///…/docs/install.md" },
-  "range": { "start": { "line": 20, "character": 5 }, "end": { "line": 20, "character": 5 } }
-}
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribecontext), their one home.
 
 An empty range is the cursor. Every range in the answer is in the negotiated
 position encoding. The result, whose TypeScript type is `ContextResult` in
@@ -293,19 +276,7 @@ A custom request that lists what an action can point at or use in the page's
 project, so a client can offer choices instead of asking for syntax. The
 client asks for the kinds it needs:
 
-```jsonc
-{
-  "textDocument": { "uri": "file:///…/docs/guide/install.md" },
-  "kinds": ["pages", "headings", "fragments", "images", "snippets", "phrases",
-            "notes", "dimensions", "widgets", "features", "builds", "occurrences", "types"],
-  "range": { "start": { "line": 8, "character": 4 }, "end": { "line": 8, "character": 15 } },
-  "folder": "file:///…/docs/guide"
-}
-```
-
-`range`, the cursor or selection, is optional; only `occurrences` reads it.
-`folder`, a folder in the content root as a `file:` URI, is optional too;
-only `types` reads it.
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribetargets), their one home.
 
 The result has a list for each kind asked for and no others, and `modelUri`,
 the `file:` URI of `ascribe.toml`, which declaration ranges are in. Its
@@ -354,20 +325,9 @@ so a client can offer actions without writing syntax itself. It answers
 from the current snapshot, so it sees unsaved edits. No capability is
 advertised: a client that wants it sends the request.
 
-```jsonc
-{
-  "textDocument": { "uri": "file:///…/docs/install.md" },
-  "range": { "start": { "line": 20, "character": 0 }, "end": { "line": 20, "character": 0 } },
-  "action": "wrapNote",
-  "args": { "type": "tip" },
-  "version": 12
-}
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeedit), their one home.
 
-`range` is the cursor or selection the action was invoked on, `args` what
-the action needs (each operation's are below; missing means `{}`), and
-`version`, optional, the document version the client saw. The result, whose
-TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
+The result, whose TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-edit.schema.json`), is one of:
 
 | Result | Meaning |
@@ -375,65 +335,15 @@ TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
 | `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change; for `newPage`, its `documentChanges` create the page and then give it its text, and `select` is in the new page; for the navigation's actions, it changes `ascribe.nav`, keeping its comments, or, with no file, its `documentChanges` create it and give it its text, and `select` is `null`. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
 | `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
 
-The operations, where each applies, and its arguments (`?` is optional):
-
-| Action | Applies to | Args | Writes |
-|---|---|---|---|
-| `wrapNote` | One paragraph, or whole blocks | `type?` (default `note`) | `@note` before one paragraph, or a container (`@note:` … `@end`) around several blocks; `{type=…}` unless the type is `note` |
-| `setNoteType` | A note | `type` | The note's `type` attribute, or none for `note` |
-| `unwrapNote` | A note | | The note's content, without the directive |
-| `noteToDetails` | A note | `title` | `.Title` and `@details`, keeping the content and the form |
-| `wrapDetails` | One block, or whole blocks | `title` | `.Title` and `@details` (or `@details:` … `@end`) |
-| `unwrapDetails` | A details block | | Its content, without the title and the directive |
-| `makeSteps` | An ordered list | | `@steps` above it |
-| `removeSteps` | Steps | | The ordered list, without `@steps` |
-| `addHeadingId` | A heading without `@id` | `id?` (default its slug) | `@id: …` after the heading |
-| `insertNote` | An insertable line | `type?`, `text?` | A note; without `text`, a placeholder |
-| `insertSteps` | An insertable line | `count?` (1 to 50, default 3) | `@steps` and a numbered list of placeholders |
-| `insertVariantGroup` | An insertable line | `dimension`, `values` | One `@variant {dimension=value}:` arm per value, each with a placeholder, and `@end` |
-| `addVariantArm` | A group of one dimension's arms | `value` | A new arm, in the dimension's declared order |
-| `removeVariantArm` | An arm of a group with others | | The group without it |
-| `insertDetails` | An insertable line | `title` | `.Title`, `@details:`, a placeholder, `@end` |
-| `insertInclude` | An insertable line | `path` (with `#id` for a section) | `@include: …` |
-| `insertSnippet` | An insertable line | `address`, `lang?`, `title?` | `@snippet: …`, with the attributes given |
-| `insertImage` | An insertable line | `path`, `alt`, `attributes?` | An image of `path`, with `alt` as its text and the attributes after it |
-| `insertWidget` | An insertable line | `name`, `primary?`, `attributes?` | The widget, attributes in declared order; the container form with a placeholder when it takes one, and a `.Title` placeholder when its title is required |
-| `markAvailable` | A heading (its section), a block, or a table's body row | `spec` (a spec or a feature key) | `@available: …` under the heading or before the block; for a row, `{available=…}` at the end of its first cell |
-| `setPageVariant` | Anywhere in a page | `dimension`, `value` | That dimension's value under `variant:` in the frontmatter, keeping the rest |
-| `setPageAvailable` | Anywhere in a page | `spec` | `available:` in the frontmatter |
-| `setPageLabel` | Any of the project's pages, open or not | `label?` (none or empty to take it out) | `nav-label:` in the frontmatter, a comment after it kept; nothing when it's already so |
-| `linkSelection` | Prose selected in one paragraph or heading | `destination` | A link to `destination`, with the selection as its text |
-| `insertLink` | A cursor in prose | `destination` | A link to `destination` with empty text, so the target's title fills it |
-| `insertPhrase` | A cursor in prose | `key` | `{key}` |
-| `setLinkTarget` | A link | `destination` | The link's destination |
-| `useTargetTitle` | A link to a page | | Empty link text, so the target's title fills it |
-| `setImageWidth` | An image | `width` | The image's `width` attribute, when the model declares one |
-| `setImageAlt` | An image | `alt` | The image's alt text |
-| `makePhrase` | Plain text selected in prose, on one line | `key`, `everywhere?` (default `false`) | `key = "<the text>"` in `[phrases]`, and `{key}` in place of the selection; with `everywhere`, in place of each of its `occurrences` too |
-| `addGlossaryTerm` | Anywhere in a page | `term`, `definition`, `aliases?` (a list) | A section at the end of the first page `[glossary] pages` lists: the term as its heading, `@term` with the aliases, and the definition as its paragraph |
-| `promoteFeature` | Anywhere in a page | `key`, `spec` | The feature's `available` in `[features.<key>]` |
-| `newPage` | Any of the project's files: `textDocument` names the project, and `range` is unused | `type`, `title`, `folder?` (a folder in the content root, as a `file:` URI) | A new page, made by `ascribe_templates::start`: the type's template with its `title` set, or its frontmatter when it has none, with `type:` first in its frontmatter, in `folder` or the content root, named for the title. Never over a file. `select` is the first thing the template left to fill in |
-| `moveSection` | Any of the project's files, as `newPage` | `folder` (a section's folder from the content root, ending in `/`), `before?` (a sibling section's folder; none for the end) | `ascribe.nav`'s `[[sections]]` with the section before `before` among its siblings: the siblings it didn't list are listed in the order they had, so nothing else moves |
-| `movePage` | Any of the project's files, as `newPage` | `page` (a content path), `before?` (a page of the same section; none for the end) | The section's `pages`, listing its pages as they stood with `page` before `before`; its table is added, and its siblings', when the file doesn't list it |
-| `placePage` | Any of the project's files, as `newPage` | `page` | `page` at the end of its section's `pages`, which leaves it out |
-| `setSectionLabel` | Any of the project's files, as `newPage` | `folder`, `label?` (none or empty for the default) | The section's `label` |
-| `setSetting` | Any of the project's files, as `newPage` | `table` (a dotted path, `consumer`; a check's is `checks.<check>`, with the key `level` or `limit`), `key`, `value` (a boolean, a whole number, or a string, as the setting's kind takes, or `null` to reset it to its default), `shown` (the `version` the [`ascribe/settings`](#project-settings-ascribesettings) answer it was shown from had: a number, or `null` for the disk) | The value where `ascribe.toml` writes it, as it is now, and nothing else; a value the file leaves out added after its table's last entry, or in a new table at the end; or, for `null`, the setting's line taken out with the comment lines touching it from above. A check is set in the form the file writes it (a level alone, an inline table, or a `[checks.<check>]` table). Refused when `shown` isn't the version `ascribe.toml` has now, a buffer's for the disk's and the disk's for a buffer's included. Not refused for a problem the model then has, which `ascribe/settings` shows under the setting |
-| `nextPlaceholder` | A page of a type with a template | | Nothing: `select` is the next thing the template left to fill in after `range`, or the first when none is after it |
-| `addMemo` | Anywhere in a page | | A new memo file in `memos/`, its `documentChanges` creating it and giving it its text: `about` is the innermost section with an id at the cursor, as `page.md#id`, or the page above the first heading; `quote` is the selection, its whitespace runs as one space, or the first line of the block at the cursor, left out on a heading or when the memo wouldn't find it. Named from the quote's first words, or the heading's id, never over a file. `select` is the empty line for the memo's text. Refused when `memos/` is in the content root |
-| `addPersonalMemo` | Anywhere in a page | | As `addMemo`, in `.ascribe/memos/` |
+The actions, where each applies, its arguments, and what it writes are in
+[the requests' parameters](../../docs/content/editor/language-server.md#ascribeedit), on the docs page
+about the language server, which is their one home.
 
 What a template left to fill in is found as `template-placeholder-left`
 finds it (`ascribe_check::Project::template_places`): a frontmatter field
 whose value is still the template's, inside its quotes, and each placeholder
 of the body, whole, so one that runs across blocks is one range. An
 instruction isn't one: it's read, not filled in.
-
-An insertable line is where `ascribe/context` says `insertable`: a blank
-line between blocks. `attributes` is an object of key to value (a string,
-number, boolean, or a list for a set). Names, types, dimensions, values,
-specs, keys, pages, fragments, images, snippet addresses, and widget
-attributes are checked against the project and its model; the valid choices
-are what `ascribe/targets` lists.
 
 What every edit holds to:
 
@@ -473,10 +383,7 @@ the targets found as `ascribe/context` finds them.
 A custom request that answers what the project has and how much each part is
 used, for the editor's Pages and Content model views:
 
-```jsonc
-{ "textDocument": { "uri": "file:///…/ascribe.toml" } }
-```
-
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeinventory), their one home.
 Like `ascribe/targets`, it can be sent for any of the project's files. Its
 TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-inventory.schema.json`):
@@ -543,10 +450,7 @@ its cost.
 A custom request that answers every setting of `ascribe.toml` that Project
 Settings shows, for the editor's tab of the same name:
 
-```jsonc
-{ "textDocument": { "uri": "file:///…/ascribe.toml" } }
-```
-
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribesettings), their one home.
 Like `ascribe/inventory`, it can be sent for any of the project's files. Its
 TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-settings.schema.json`):
@@ -619,9 +523,7 @@ A custom request that answers what the page is, and what links to and
 includes the heading at the cursor, for the editor's This page view, in one
 request:
 
-```jsonc
-{ "textDocument": { "uri": "file:///…/docs/keys.md" }, "position": { "line": 14, "character": 0 } }
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribepage), their one home.
 
 Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-page.schema.json`):
@@ -715,9 +617,7 @@ A custom request that answers with one edit to every source file of the
 project, for the editor's Project view, which says how much it changes before
 it applies it:
 
-```jsonc
-{ "textDocument": { "uri": "file:///…/ascribe.toml" }, "kind": "fixAll" }
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeprojectedit), their one home.
 
 Like `ascribe/inventory`, it can be sent for any of the project's files. Its
 `kind` is `fixAll`, every safe fix "Apply the safe fixes in this page" makes,
@@ -758,9 +658,7 @@ A custom request that says what a build leaves out of a page, for a client
 that dims it in the source (the editor's build lens). The client names the
 page and the build; without `build`, the editor's build (`[editor] build`):
 
-```jsonc
-{ "textDocument": { "uri": "file:///…/docs/guides/rollouts.md" }, "build": "self-hosted" }
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribebuildview), their one home.
 
 The result's TypeScript type is `BuildViewResult` in
 `packages/vscode/src/shapes.ts` (`schemas/lsp-build-view.schema.json`):
@@ -801,9 +699,7 @@ editor's **Search Pages as Readers See Them**. The client names any of the
 project's files, which says which project, the query as `ascribe search`
 takes it, and a build; without `build`, every build:
 
-```jsonc
-{ "textDocument": { "uri": "file:///…/ascribe.toml" }, "query": "\"sign in to quill cloud\"", "build": "site" }
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribesearch), their one home.
 
 The result's TypeScript type is `SearchResult` in
 `packages/vscode/src/shapes.ts` (`schemas/lsp-search.schema.json`):
@@ -856,13 +752,7 @@ A custom request for **Prompt agent**: a prompt for the user's agent about one
 problem, a file's problems, or the project's. The client says which, and lists
 the documents with unsaved changes, so a prompt about one says to save it:
 
-```jsonc
-{ "kind": "problem",                  // or "file", or "project"
-  "textDocument": { "uri": "file:///…/docs/guides/install.md" },  // optional for "project"
-  "diagnostic": { "range": …, "code": "ASC036", "message": "…" },  // for "problem", as published
-  "unsaved": ["file:///…/docs/guides/install.md"],
-  "program": "/…/bin/linux-x64/ascribe" }  // optional: what the prompt's commands start with
-```
+Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeagentprompt), their one home.
 
 `program` is how the agent runs Ascribe when `ascribe` isn't the binary the
 editor runs: the extension sends the binary's path when `ascribe` on the
@@ -887,16 +777,8 @@ project's.
 While review is on (`ascribe/review/setBase`), two more kinds prompt about
 changes, against the base the server holds:
 
-```jsonc
-{ "kind": "pageChanges",              // what changed on this page
-  "textDocument": { "uri": "file:///…/docs/guides/install.md" },
-  "build": "site",                    // optional: the editor's build
-  "unsaved": [] }
-{ "kind": "fragmentReach",            // the pages that changed through a fragment
-  "fragment": "_fragments/prereqs.md", // a content path, as a page's `because` names it
-  "build": "site",
-  "unsaved": [] }
-```
+`pageChanges`, what changed on a page, and `fragmentReach`, the pages that
+changed through a fragment, take the parameters [the docs](../../docs/content/editor/language-server.md#ascribeagentprompt) give.
 
 They answer `null` when review is off, or the page or fragment didn't change
 in the build. The prompts are built by `ascribe_diff::prompt`, as `ascribe diff
