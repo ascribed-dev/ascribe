@@ -99,6 +99,7 @@ These contracts say what an emitter writes and what a consumer can rely on. They
 - [Navigation](contracts/navigation.md): what `_ascribe/nav.json` holds, the sections and pages in order with their labels, and how a site draws a sidebar from it.
 - [Archive](contracts/archive.md): what `ascribe versions export` writes into a folder, and what each page holds.
 - [JSON reports](contracts/json-reports.md): the schemas of what the commands write with `--format json`.
+- [JSON output](contracts/json-output.md): what each page of the `json` output holds, with its schema.
 - [The permalinks list](contracts/permalinks-list.md): the format of `ascribe.permalinks`, the list of a project's permalinks a product can check its links against.
 - [Tested examples](contracts/tested-examples.md): the formats of `ascribe.examples.toml` and of the observation `ascribe observe` writes beside it.
 - [Site render](contracts/site-render.md): the markers the site output writes and how a consumer renders them. The fixtures are in [`tests/render/`]({repo}/tree/main/tests/render/).
