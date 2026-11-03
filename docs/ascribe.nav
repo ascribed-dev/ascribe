@@ -55,6 +55,7 @@ pages = ["order.md", "site-list.md"]
 folder = "astro/"
 label = "Publishing with Astro"
 pages = [
+  "deploy.md",
   "more-than-docs.md",
   "agents.md",
   "serve-markdown.md",

@@ -83,9 +83,10 @@ Give the agents that write your docs the project's rules and checks, and the age
 
 ## Publish
 
-- [Astro](astro/index.md): publishing a site with `@ascribed/astro`.
+- [Astro](astro/index.md): the ways to publish, and publishing a site with `@ascribed/astro`.
+- [Deploy the site](astro/deploy.md): building the site in CI and publishing it on GitHub Pages or Netlify, and what each host needs.
 - [Navigation](navigation/index.md): the order a project's sections and pages come in, from `ascribe.nav` or the default, and their labels, which every sidebar is drawn from.
-- [Publishing](publishing/index.md): what a project tells search engines and AI crawlers about its pages, and what it delivers to agents.
+- [Search engines and crawlers](publishing/index.md): what a project tells search engines and AI crawlers about its pages, and what it delivers to agents.
 - [Keep the addresses you've published](publishing/redirects.md): recording where a page went when it moves or goes, so a link to its old address still leads somewhere.
 - [Permalinks](permalinks/index.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
 - [Publish a site for each version](versions/index.md): building the docs of every version a reader can be on from one source, a site for each release line, and moving them on when a line ships.
