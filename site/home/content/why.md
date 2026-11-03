@@ -1,25 +1,35 @@
 ---
 type: page
 title: Why Ascribe
-description: The problems teams that keep docs as code report, what Ascribe does about each, and what it doesn't do.
+description: The problems teams that keep docs as code run into, what Ascribe does about each, and what it doesn't do.
 ---
 
 @hero-banner:
 # Why Ascribe
 
-Teams that keep docs as code, in a repository beside what they document, report the same few problems. This page says what they are, what Ascribe does about each, and what it doesn't do.
+Docs kept as code, in a repository beside what they document, run into the same few problems. Here's what Ascribe does about each, and what it doesn't do.
 @end
 
-## What teams report, and what Ascribe does
+## The problems, and what Ascribe does
 
-The problems come from research into what documentation teams report: surveys, the records of open-source projects, and the accounts of people who write and review docs as code. The answers are what Ascribe does today, and what's in `main` and in no release yet is marked.
+Claims about what teams report link to their sources. Anything in `main` that isn't in a release yet is marked.
+
+@claim-example:
+### The structure lives in the site generator
+
+Markdown has no standard way to reuse content or to vary it, so each site generator has its own include syntax. The editor treats it as text, and a mistyped include is found when the build fails.
+
+Ascribe puts includes, variants, and page types in the Markdown, defined by a [specification](https://github.com/ascribed-dev/ascribe/blob/main/SPEC.md). One compiler checks them in the editor, on the command line, and in CI. The note, tabs, steps, and phrases on this page are all Ascribe's:
+
+@snippet {lang=markdown, title=install.md}: code:site/demo/content/install.md
+@end
 
 @claim-example:
 ### Examples stop matching the code
 
-Keeping documentation in step with the product is the challenge surveys of documentation teams name most often, and engineers name it more often than writers do. Keeping the docs in the code's repository doesn't settle it: a study of the 1,000 most popular projects on GitHub found that more than a quarter had an outdated reference to code in their README or wiki. The fixes developers say they trust are structural ones, such as examples taken from code that's tested.
+Keeping docs in sync with the product is the challenge documentation teams name most often ([State of Docs 2026](https://www.stateofdocs.com/2026/docs-and-product)). Keeping the docs beside the code doesn't fix it: 28.9% of the 1,000 most popular projects on GitHub had an outdated code reference in their README or wiki ([Tan, Wagner, and Treude, 2023](https://arxiv.org/html/2307.04291)).
 
-Ascribe reads a code example from the code's own file with `@snippet`, every time it checks or builds a page, so there's no copy to fall behind, and `ascribe check` reports an example whose file or region is gone. When a pull request changes code, [`ascribe drift`]({site}/go/cli-drift/) lists the pages whose examples changed, so someone rereads the words around them:
+With `@snippet`, a code example is read from the code's own file each time a page is checked or built, so there's no copy to fall behind. `ascribe check` reports an example whose file or region is gone, and [`ascribe drift`]({site}/go/cli-drift/) lists the pages whose examples a pull request changed:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/drift.txt
 @end
@@ -27,11 +37,9 @@ Ascribe reads a code example from the code's own file with `@snippet`, every tim
 @claim-example:
 ### A review shows lines, not the page
 
-On a pull request, a reviewer can read the rendered page or comment on a line of its source, but not both, and people have built browser extensions to work around it. Reading prose as lines has costs teams describe: text that moved reads as text that was deleted, and a small edit to a wrapped paragraph shows as a change to all of it. Writing with AI adds to the load. Teams that use it report spending more time checking and editing what it writes, so more of the work is now reading changes.
+On GitHub, a reviewer can read a Markdown file rendered or comment on its source, but not both ([GitHub Community](https://github.com/orgs/community/discussions/186730)). Read as lines, moved text looks deleted, and a small edit to a wrapped paragraph looks like a rewrite ([Sarah Moir, 2024](https://thisisimportant.net/posts/docs-as-code-broken-promise/)). AI drafting adds to the reading: in [State of Docs 2026](https://www.stateofdocs.com/2026/docs-and-professional-development), 43% of respondents said they spend more time fact-checking.
 
-Ascribe compares pages as readers will see them, not lines. [Review]({site}/go/review-guide/) shows a pull request's changes on the rendered page, in VS Code's preview or in the site's own, with what changed marked and the pull request's review comments beside the blocks they're about. Reformatting isn't a change, a move is shown as a move, and a page that changed only through a fragment it includes is listed with the cause.
-
-Here is the site's preview of one of these docs' pages, with a pull request's change and the comments on it:
+[Review]({site}/go/review-guide/) shows a pull request's changes on the rendered page, in VS Code's preview or the site's, with each change marked and each comment beside the block it's about. Reformatting doesn't count as a change, a move shows as a move, and a page that changed through a fragment it includes says so.
 
 ![A page of these docs in the site's preview during review: a changed paragraph is marked, the pull request's two comments on it are beside it, and the review panel below names the pull request and its one change.](screenshots/review-light.png){scheme=light}
 ![A page of these docs in the site's preview during review: a changed paragraph is marked, the pull request's two comments on it are beside it, and the review panel below names the pull request and its one change.](screenshots/review-dark.png){scheme=dark}
@@ -40,59 +48,71 @@ Here is the site's preview of one of these docs' pages, with a pull request's ch
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff.txt
 
-An AI coding agent can run the checks you run. [`ascribe agents sync`]({site}/go/agents-guide/) gives it the project's rules and the check to run after each edit, so its change reaches review with its links, names, and examples already checked.
+An AI coding agent can run the same checks. [`ascribe agents sync`]({site}/go/agents-guide/) gives it the project's rules and a check to run after each edit, so its links, names, and examples are checked before review.
 @end
 
 @claim-example:
 ### One page, copied for each version
 
-Teams that keep a copy of their docs for each version of the product report what it costs: authors edit the wrong copy, and a fix made in one has to be carried to each of the others, often as a pull request per version. Most documentation markup has no way to say that a section applies from version 3.4 on, which is what would let one copy serve them all.
+A copy of the docs for each version of the product means edits land in the wrong copy, and each fix has to be carried to every other copy. Markdown can't say that a section applies from version 3.4 on, which is what would let one copy serve every version.
 
-Ascribe keeps one copy. A section says where it's available, as `@available: cloud, self-managed preview 3.4` does, and content that differs by platform, product, or deployment is marked once, with `@variant`. Each build is a selection from the same pages: the site can show everything, with badges and tabs, while another build keeps only what one deployment or version has. These are the builds of an example project:
+Ascribe keeps one copy. A section says where it's available, as `@available: cloud, self-managed preview 3.4` does, and content that differs by platform, product, or deployment is marked with `@variant`. Each build selects from the same pages: the site can show everything, with badges and tabs, while another build keeps only one deployment or version. These are the builds of an example project:
 
 @snippet {title=ascribe.toml}: code:examples/content-models/full.toml#builds
 
-`ascribe check` reports a version or a value the content model doesn't declare, and a section that says it's available somewhere its page isn't.
+`ascribe check` reports a version or value the content model doesn't declare, and a section marked available somewhere its page isn't.
 @end
 
 @claim-example:
 ### A link breaks when a page moves
 
-When docs are reorganized, a page's old address goes away. Links from other pages, from search results, from the product, and from what AI tools learned before the move still point at it. Of the docs tools the research looked at, one creates a redirect when a page moves.
+When docs are reorganized, a page's old address goes away, but links from other pages, search results, and the product still point to it.
 
-In Ascribe, a link names the page's file, not its address. A link to a file or a heading that isn't there is an error, in the editor and in CI, and moving or renaming a file in VS Code updates the links to it. A link written as an address is reported, with the file to link to instead:
+In Ascribe, a link names the page's file. A link to a missing file or heading is an error in the editor and in CI, and moving or renaming a file in VS Code updates the links to it. A link written as an address is reported, with the file to link to instead:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 
-In VS Code, the warning is on the link as you type, with a quick fix that makes the change:
+In VS Code, the warning shows on the link as you type, with a quick fix:
 
 ![VS Code with a page whose link is written as an address: the link is underlined, the Problems view says to link to the file instead, and the quick fix menu offers "Link to the page's file instead of its route".](screenshots/editor-light.png){scheme=light}
 ![VS Code with a page whose link is written as an address: the link is underlined, the Problems view says to link to the file instead, and the quick fix menu offers "Link to the page's file instead of its route".](screenshots/editor-dark.png){scheme=dark}
 
-For links from outside the docs, a page or a heading can have a [permalink]({site}/go/directives/): a name, at an address that leads to it wherever it moves. With the list of permalinks committed, `ascribe check` warns when one goes away. Ascribe's command and editor link to these docs by permalink, which is how the docs moved to `/docs/` without breaking those links.
+For links from outside the docs, a page or heading can have a [permalink]({site}/go/directives/): a name whose address follows it wherever it moves. With the list of permalinks committed, `ascribe check` warns when one goes away. Ascribe's command and editor link to these docs by permalink, which is how the docs moved to `/docs/` without breaking those links.
 @end
 
 @claim-example:
 ### Pages that are code, and a site to keep
 
-Teams that build their own docs site describe its upkeep as work nobody is funded for. Site generators stop releasing or change their plugin systems, sites move from one generator to the next, and where a page is compiled as code, as MDX pages are, an ordinary brace or angle bracket in a sentence can stop the build.
+Free site generators are cheap to adopt and costly to maintain ([Write the Docs, May 2024](https://www.writethedocs.org/blog/newsletter-may-2024/)). Generators stop releasing or change their plugin systems, and where a page is compiled as code, as an MDX page is, a brace or angle bracket in a sentence can break the build.
 
-An Ascribe page isn't code. A directive is a line that starts with `@`, and there's no JSX, so a brace or an angle bracket in a sentence doesn't stop the build: at most, a `{name}` the project doesn't declare gets a warning. The pages read as Markdown without Ascribe, and the [plain output]({site}/go/cli-build/) is ordinary CommonMark, so leaving Ascribe means building once more, not rewriting. Ascribe is a dependency too, and a young one. What it lowers is the cost of leaving, not the risk of depending.
+A directive is a line that starts with `@`, and there's no JSX, so a brace or angle bracket in a sentence can't break the build. At most, a `{name}` the project doesn't declare gets a warning. The [plain output]({site}/go/cli-build/) is CommonMark, so you can take your content with you, though the reuse is flattened into each page. Ascribe is still a young dependency.
 @end
 
 ## What it doesn't do
 
-- **No hosting.** Ascribe builds files, and the site is served by whatever serves it now. Review comments are the pull request's own, on GitHub, so there's no service of Ascribe's to sign in to or to run.
-- **No model.** Ascribe calls no AI model and holds no key for one. Its checks are rules, with the same answer on every run, and an agent you already use runs them.
-- **No check that the words are true.** A page that's well formed and says something false passes every check. `ascribe drift` says which pages to reread when their examples change; it can't tell that behavior changed behind code that didn't.
-- **A section is a folder.** A project's order and labels are in `ascribe.nav`, which every sidebar is drawn from ([Navigation]({site}/go/navigation/)), but the file only orders and labels what the folders hold. A page is in its folder's section and only there, so putting it in another group means moving the file, and a sidebar can't list a page twice or link to one outside the project.
-- **One site generator.** The site output is made for Astro, through `@ascribed/astro`: its routes are Astro's, and only Astro's plugin renders its heading ids and attributes. The element library that draws Ascribe's tabs, notes, and badges works on any site, and the plain Markdown and JSON outputs work with anything that reads them, but another generator would have to render the site output's markers itself.
-- **No lighter pull request.** A change is still a branch and a pull request. Ascribe makes a pull request easier to read and to check, not to open.
-- **No translations.** A project is written in one language. A translation can be a second project, under its own base path, but nothing says which of its pages are behind the source; that's an idea for later.
+### By design
+
+- A page can't run JSX components. Directives cover notes, tabs, and steps.
+- A block directive ends with `@end`, because whitespace never carries meaning.
+- There's no visual editor or CMS. Pages are files, and changes are pull requests.
+- Ascribe hosts nothing. Whatever serves your site now serves it.
+- Ascribe calls no AI model. Its checks are rules that give the same answer every run.
+- Nothing checks that the words are true. A well-formed page that says something false passes.
+- A section is a folder, so a sidebar can't list a page twice ([Navigation]({site}/go/navigation/)).
+
+### For now
+
+- Ascribe is before 1.0, so a release can still change behavior. Pin the version.
+- One person maintains it, part time.
+- `@ascribed/astro` is the only site integration. The output format is documented, so others can be added.
+- The full editor is VS Code. Other editors get the checks through the language server.
+- Review comments work on GitHub. The comparison works in any git repository.
+- There's no migration tool, no translation support, and no built-in search.
+- It runs on macOS on Apple silicon, Linux with glibc {glibc} or later, and Windows. The npm package needs Node {node}. See [Install]({site}/go/install/).
 
 ## The same page in other formats
 
-[`examples/comparison`](https://github.com/ascribed-dev/ascribe/tree/main/examples/comparison) holds one page written four ways: as Ascribe writes it, and as three open-source documentation sites write theirs, with a table of how each says the same thing. `ascribe check` passes on the Ascribe version, and a test runs it on every change.
+[`examples/comparison`](https://github.com/ascribed-dev/ascribe/tree/main/examples/comparison) has one page written four ways: in Ascribe, and as three open-source documentation sites write theirs, with a table of how each says the same thing. A test runs `ascribe check` on the Ascribe version on every change.
 
 ## Try it
 

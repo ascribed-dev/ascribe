@@ -16,8 +16,8 @@ Ascribe is a toolchain for documentation written as code: Markdown with the stru
 - [Reusable content](#tools)
 - [Variants](#tools)
 - [Versions](#tools)
-- [A glossary](#tools)
-- [Preview](#tools)
+- [Page types](#tools)
+- [Templates](#tools)
 @end
 
 @call-to-action:
@@ -35,7 +35,7 @@ npm install --save-dev @ascribed/cli
 
 ## A page, and what readers see
 
-Here is a page's source, read from its file in Ascribe's repository, and the same file as this site builds and draws it. The note, the tabs, and the steps are Ascribe's.
+A page's source, read from its file in Ascribe's repository, and the page this site builds from it. The note, tabs, and steps are Ascribe directives.
 
 @source-and-result {page=install}:
 @snippet {lang=markdown, title=install.md}: code:site/demo/content/install.md
@@ -67,7 +67,7 @@ pnpm exec ascribe build
 ```
 @end
 
-Content that differs by platform, product, or package manager is marked once, with `@variant`, as this page marks the command above. The site draws it as tabs, and plain Markdown and JSON label each arm.
+The command above is marked with `@variant`. The site shows it as tabs, and the plain Markdown and JSON label each version.
 @end
 
 ## Checked like code
@@ -77,9 +77,9 @@ Content that differs by platform, product, or package manager is marked once, wi
 @pillar-proof:
 ### Checked
 
-A broken link, a missing heading, or a name the content model doesn't declare is an error, in the editor as you type and in CI. This is what [`ascribe check`]({site}/go/cli-check/) prints for the page that getting started writes, which links to a page it doesn't have yet.
+Includes, variants, and page types are part of the Markdown, so one compiler checks them in the editor, on the command line, and in CI. A broken include or link is underlined as you type, like a misspelled import. Here is [`ascribe check`]({site}/go/cli-check/) on the page getting started writes, which links to a page that doesn't exist yet.
 
-[Vale]({site}/go/cli-vale/) style checks run on the prose.
+[Vale]({site}/go/cli-vale/) can check the prose, too.
 @end
 
 @proof-example:
@@ -89,7 +89,7 @@ A broken link, a missing heading, or a name the content model doesn't declare is
 @pillar-proof:
 ### Examples from real code
 
-A code example is read from the code's own file with `@snippet`, every time a page is checked or built, so it changes when the code does. On a pull request, [`ascribe drift`]({site}/go/cli-drift/) lists the pages whose examples changed, so someone rereads the words around them.
+With `@snippet`, a code example is read from the code's own file each time a page is checked or built, so it changes when the code does. On a pull request, [`ascribe drift`]({site}/go/cli-drift/) lists the pages whose examples changed, so someone can reread the text around them.
 @end
 
 @proof-example:
@@ -99,7 +99,7 @@ A code example is read from the code's own file with `@snippet`, every time a pa
 @pillar-proof:
 ### Reviewed as pages
 
-A pull request's changes are read the way readers will see them: in the site's own preview, or in VS Code's, with what changed marked and each review comment beside the paragraph it's about. [Review]({site}/go/review-guide/) shows how.
+Review a pull request as rendered pages, in the site's preview or VS Code's, with each change marked and each comment beside its paragraph. [Review]({site}/go/review-guide/) shows how.
 @end
 
 @proof-example:
@@ -136,14 +136,14 @@ What [`ascribe agents sync`]({site}/go/cli-agents-sync/) writes into an example 
 @audience-list:
 ## For engineers, writers, and agents
 
-The pillars are the same for everyone. What leads changes with the reader.
+Where to start depends on what you do.
 
 @audience-entry:
 ### Engineers
 
-Leads with [checked like code](#checks) and examples from real code.
+Start with [checked like code](#checks).
 
-They get writing tools without leaving the editor, the repository, or CI.
+Writing tools in the editor, repository, and CI you already use.
 
 [The path for engineers]({site}/go/for-engineers/)
 @end
@@ -151,9 +151,9 @@ They get writing tools without leaving the editor, the repository, or CI.
 @audience-entry:
 ### Writers
 
-Leads with [the tools of a docs team](#tools).
+Start with [the tools of a docs team](#tools).
 
-They get reuse, variants, versions, a glossary, and preview, without leaving the repository where the engineers who review them work.
+Reuse, variants, versions, and preview, in the same repository as the engineers who review your pages.
 
 [The path for writers]({site}/go/for-writers/)
 @end
@@ -161,9 +161,9 @@ They get reuse, variants, versions, a glossary, and preview, without leaving the
 @audience-entry:
 ### Agents
 
-Leads with [the rules, the checks, and the outputs](#for-agents).
+Start with [the rules, the checks, and the outputs](#for-agents).
 
-An agent writing pages has a deterministic check to run. An agent reading them gets Markdown and an index, not a page of HTML.
+An agent writing pages gets a check to run that always gives the same answer. An agent reading them gets Markdown and an index instead of HTML.
 
 [The path for agent builders]({site}/go/for-agent-builders/)
 @end
@@ -180,13 +180,13 @@ An agent writing pages has a deterministic check to run. An agent reading them g
    npm install --save-dev @ascribed/cli
    ```
 
-2. And the editor, for VS Code:
+2. Install the VS Code extension:
 
    ```sh
    code --install-extension Ascribe.ascribe-vscode
    ```
 
-Then [read getting started]({site}/go/getting-started/): it sets up a project, writes a first page, checks it, and publishes it.
+Then follow [getting started]({site}/go/getting-started/) to set up a project and publish a first page.
 
 [Read getting started]({site}/go/getting-started/)
 @end
@@ -194,16 +194,16 @@ Then [read getting started]({site}/go/getting-started/): it sets up a project, w
 @quiet-pillar:
 ## Plain files you can leave
 
-- A page reads as Markdown without Ascribe.
-- The [plain output]({site}/go/cli-build/) is CommonMark.
+- A page is a Markdown file.
+- The [plain output]({site}/go/cli-build/) is CommonMark, with includes and phrases filled in.
 - Ascribe hosts nothing and calls no model.
 - It's open source under the MPL.
 
-[Why Ascribe](why.md) says which problems these answer, from what teams that keep docs as code report, and what Ascribe doesn't do.
+[Why Ascribe](why.md) covers the problems Ascribe solves, and what it doesn't do.
 
 ## Early, and open source
 
-Ascribe is before 1.0, so what it writes and what it accepts can still change between releases. The latest release is {version}. The code, the docs, and the plans are on [GitHub](https://github.com/ascribed-dev/ascribe), under the Mozilla Public License 2.0.
+Ascribe is before 1.0, so a release can still change behavior. Pin the version. The latest release is {version}. The code, the docs, and the plans are on [GitHub](https://github.com/ascribed-dev/ascribe), under the Mozilla Public License 2.0.
 
 Ascribe is made by [Bryo Studio](https://bryostudio.com). [Credits](credits.md) says what it's built on.
 @end
