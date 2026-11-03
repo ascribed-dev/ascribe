@@ -315,3 +315,47 @@ fn an_older_line_s_own_folder_is_each_page_s_move() {
         ]
     );
 }
+
+#[test]
+fn agents_turned_off_with_an_older_line_s_folder_loses_the_markdown_with_the_page() {
+    // `old` is `site@1.0` now, under `1.0/`, and `agents` is off: the
+    // Markdown versions moved with the line's folder too, which nothing
+    // forwards, so each is lost with its page, recorded `agents` or not.
+    let before = format!("{MODEL}[builds.old]\n");
+    let now = with_lines().replace(
+        "trailing-slash = \"never\"",
+        "trailing-slash = \"never\"\nagents = false",
+    );
+    let lost = |page: &str| format!("{page}, and nothing publishes them now in the build `old`");
+    let (index, keys, setup) = (
+        lost("index.md was published at /docs and /docs/index.md"),
+        lost("keys.md was published at /docs/keys and /docs/keys.md"),
+        lost("setup.md was published at /docs/setup and /docs/setup.md"),
+    );
+    let warning = diagnostics::ADDRESS_LOST.as_str();
+    let (found, _) = compared(&before, &now, "");
+    assert_eq!(
+        messages(&found),
+        [
+            (
+                warning,
+                Severity::Warning,
+                "agents was turned off and the build `old` was renamed `site@1.0`, \
+                 so 4 addresses moved in the build `site`"
+            ),
+            (warning, Severity::Warning, index.as_str()),
+            (warning, Severity::Warning, keys.as_str()),
+            (warning, Severity::Warning, setup.as_str()),
+        ]
+    );
+    let recorded = "[former]\nagents = [true]\n\n[former.builds]\nold = \"site@1.0\"\n";
+    let (found, _) = compared(&before, &now, recorded);
+    assert_eq!(
+        messages(&found),
+        [
+            (warning, Severity::Warning, index.as_str()),
+            (warning, Severity::Warning, keys.as_str()),
+            (warning, Severity::Warning, setup.as_str()),
+        ]
+    );
+}

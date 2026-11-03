@@ -1,0 +1,11 @@
+description: >-
+  A build matched to an older line, whose base is under the line's folder,
+  with `agents` turned off in the same change, and both recorded in
+  `[former]`: the Markdown version moved with the line's folder too, which
+  no setting records, so it's lost with its page, in the page's one
+  warning.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

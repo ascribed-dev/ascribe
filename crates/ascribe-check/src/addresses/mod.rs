@@ -223,22 +223,16 @@ pub fn compare(here: &Here<'_>, base: &Base) -> Vec<Diagnostic> {
             {
                 continue;
             }
-            if let Some(by) = moved_by(address, before, after, &has) {
-                let by: Vec<&Change> = changes
-                    .iter()
-                    .filter(|c| by.contains(&c.setting()))
-                    .collect();
-                // A move no setting of the content model made, as a line's
-                // own folder, is the page's, and reported as one.
-                if !by.is_empty() {
-                    if !by.iter().all(|c| c.recorded(&file.former)) {
-                        for change in by {
-                            moved.change(change.clone());
-                        }
-                        moved.add(address, &after.build);
+            if let Some(by) =
+                moved_by(address, before, after, &has).and_then(|by| made(&changes, &by))
+            {
+                if !by.iter().all(|c| c.recorded(&file.former)) {
+                    for change in by {
+                        moved.change(change.clone());
                     }
-                    continue;
+                    moved.add(address, &after.build);
                 }
+                continue;
             }
             match address.kind {
                 AddressKind::Page | AddressKind::Markdown => {
@@ -565,6 +559,23 @@ fn moved_by(
         }
         AddressKind::Anchor => None,
     }
+}
+
+/// The changes of `changes` to `settings`, when each of them changed: what
+/// moved an address `moved_by` says they moved. `None` when one didn't
+/// change, so the move isn't the settings' alone, as a line's own folder,
+/// and the address is the page's, reported as one: `agents` turned off as
+/// the base moved under the line's folder leaves a Markdown version at a
+/// base nothing forwards.
+fn made<'a>(changes: &'a [Change], settings: &[Setting]) -> Option<Vec<&'a Change>> {
+    let by: Vec<&Change> = changes
+        .iter()
+        .filter(|c| settings.contains(&c.setting()))
+        .collect();
+    settings
+        .iter()
+        .all(|s| by.iter().any(|c| c.setting() == *s))
+        .then_some(by)
 }
 
 /// The addresses the settings' changes moved, gathered across the builds.
