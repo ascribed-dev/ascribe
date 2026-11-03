@@ -8949,7 +8949,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Suggest the closest include in the editor, as ascribe check does"
     },
     {
@@ -8966,7 +8966,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "HTML review report runs removed and added words together"
     },
     {
@@ -8983,7 +8983,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "ascribe diff prints a list marker after the diff sign for added and removed items"
     },
     {
@@ -9000,7 +9000,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Review pairs an edited list item with a newly inserted one"
     },
     {
@@ -9017,7 +9017,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Replace the 1×1 placeholder images in examples/quill"
     },
     {
@@ -9035,7 +9035,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Checks in CI: the workflow fails the first pull request of a project `ascribe init` made"
     },
     {
@@ -9054,7 +9054,7 @@
         "agents"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Set up the MCP server: `npx ascribe mcp` can install and run an unrelated npm package"
     },
     {
@@ -9071,7 +9071,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Bring existing docs: the output shown doesn't match, and the walkthrough doesn't end clean"
     },
     {
@@ -9088,7 +9088,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Getting started's handoff to the Astro guide: a conflicting `ascribe.toml`, a base-path warning, and two `@ascribed/cli` pins"
     },
     {
@@ -9106,7 +9106,7 @@
         "agents"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "agents/loop.md: the first command exits 2, and no page says which commands read paths from the content root"
     },
     {
@@ -9124,7 +9124,7 @@
         "agents"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe agents sync --check` reports stale or fresh depending on whether `node_modules` exists"
     },
     {
@@ -9142,7 +9142,7 @@
         "agents"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe agents index` says its links are Markdown versions when `agents = false`"
     },
     {
@@ -9159,7 +9159,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe versions release` leaves an empty `ends` table"
     },
     {
@@ -9193,7 +9193,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Small inaccuracies in help text, schemas, and repository docs"
     },
     {
@@ -9227,7 +9227,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Stale § numbers into the content-model contract, left by its renumbering"
     },
     {
@@ -9244,7 +9244,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Release-dated prose breaks decision #973, and two notes are already false"
     },
     {
@@ -9261,7 +9261,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs inaccuracies: writing, the content model, checks, and commands"
     },
     {
@@ -9278,7 +9278,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs inaccuracies: agents, OpenAPI, templates, versions, install, and review"
     },
     {
@@ -9295,7 +9295,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Docs inaccuracies: contracts and the editor"
     },
     {
@@ -9366,7 +9366,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Say what Ascribe needs and what it doesn't do"
     },
     {
@@ -9384,7 +9384,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Deploy the site: a how-to, the supported ways to publish, and a Publishing section that's about publishing"
     },
     {
@@ -9420,7 +9420,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Moving from Docusaurus, Starlight/MDX, MkDocs, or Hugo"
     },
     {
@@ -9438,7 +9438,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Writing pages: a \"Write a page\" how-to first, and the everyday directives before the spec order"
     },
     {
@@ -9456,7 +9456,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Write it once: a guide to fragments, includes, and phrases"
     },
     {
@@ -9474,7 +9474,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Define your page types and fields: a how-to, with implementer notes moved to the contract"
     },
     {
@@ -9492,7 +9492,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Keep pages current: a how-to for owners and recheck dates"
     },
     {
@@ -9510,7 +9510,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Vale: put it on the writers' path, and show how to use a published style guide"
     },
     {
@@ -9528,7 +9528,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Troubleshooting for install, CI, Astro, and agents"
     },
     {
@@ -9546,7 +9546,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The command reference: environment variables, and the exit-code convention"
     },
     {
@@ -9564,7 +9564,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The language server: complete setups for Neovim, Helix, and Zed"
     },
     {
@@ -9582,7 +9582,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Review: a route for reviewers who don't use VS Code, and who does what on a docs team"
     },
     {
@@ -9600,7 +9600,7 @@
         "agents"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Claude Code plugin: install without cloning Ascribe's repository"
     },
     {
@@ -9618,7 +9618,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "How Ascribe works: a one-page overview"
     },
     {
@@ -9653,7 +9653,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Show a project's navigation without reading JSON"
     },
     {
@@ -9670,7 +9670,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Prose: split the longest sentences, mostly into lists"
     },
     {
@@ -9687,7 +9687,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Prose: write writer-facing pages without spec and implementer vocabulary"
     },
     {
@@ -9704,7 +9704,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Prose: open each page with what it covers, not a pointer"
     },
     {
@@ -9721,7 +9721,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Prose: how-tos with numbered steps and task titles, and command reference moved out of them"
     },
     {
@@ -9738,7 +9738,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Terminology: settle the split terms, and add them to the glossary"
     },
     {
@@ -9755,7 +9755,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Say once, early, how the docs write commands: `ascribe` or `npx ascribe`"
     },
     {
@@ -9773,7 +9773,7 @@
         "good first issue"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Prose: small fixes found across the docs"
     },
     {
@@ -9790,7 +9790,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Split `command/questions.md`, which is over the size limit for agents"
     },
     {
