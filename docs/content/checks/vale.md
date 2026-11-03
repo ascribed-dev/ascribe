@@ -25,7 +25,7 @@ Install Vale 3.16 or later: see [Vale's installation page](https://docs.vale.sh/
 
 2. Add `.ascribe/` to your `.gitignore`, if it isn't there. Ascribe writes the preset there, beside the build's output, and writes it again whenever it's needed ([Files Ascribe writes](../command/project-files.md)).
 
-That's all: no `.vale.ini` to write, and no `vale sync`. Open a page in VS Code, or save one, and Vale's alerts appear in the Problems panel. In a terminal, `ascribe check --vale` checks every page.
+That's all: no `.vale.ini` to write, and no `vale sync`, since the preset's rules come with Ascribe. (A style package you add later is synced as usual: see [Use a published style guide](#use-a-published-style-guide).) Open a page in VS Code, or save one, and Vale's alerts appear in the Problems panel. In a terminal, `ascribe check --vale` checks every page.
 
 The `quiet` preset has only rules that are almost never wrong. Each was run on Ascribe's own docs and on three large documentation sets, and kept only if it was wrong at most once in a hundred alerts:
 
@@ -95,7 +95,44 @@ A path is a program in the repository, so the editor asks you before it runs it,
 
 ## From the preset to a configuration of your own
 
-When turning rules off isn't enough, say to add a style package, run [`ascribe vale eject`](#cli-vale-eject) in the project. It writes the preset out as your own configuration, and from then on the files are yours to change: Ascribe never writes them again. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
+When turning rules off isn't enough, say to add a style package or rules of your own, run [`ascribe vale eject`](#cli-vale-eject) in the project. It writes the preset out as your own configuration, and from then on the files are yours to change: Ascribe never writes them again. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
+
+## Use a published style guide
+
+Vale publishes packages of rules for the common style guides, such as `Google`, `Microsoft`, and `RedHat` ([Vale's package hub](https://vale.sh/hub/)). To check your pages against one, take the preset as your own configuration, name the package in it, and have Vale download it:
+
+@steps
+1. Write the preset out as your own configuration:
+
+   ```sh
+   ascribe vale eject
+   ```
+
+   It writes `.vale.ini` and a `.vale/` styles folder, and points `[checks.vale]` at `.vale.ini` ([`ascribe vale eject`](#cli-vale-eject)).
+
+2. In `.vale.ini`, name the package with `Packages`, before the first section, and add it to `BasedOnStyles`:
+
+   ```ini
+   StylesPath = .vale
+   MinAlertLevel = suggestion
+   IgnoredScopes = code, tt, strong, b
+   Packages = Google
+
+   [*.md]
+   BasedOnStyles = Ascribe, Google
+   ```
+
+3. Download the package into `.vale/`:
+
+   ```sh
+   vale sync
+   ```
+
+4. Check every page: `ascribe check --vale`.
+
+A published style guide finds far more than the preset does, and many of its rules are warnings or errors. To have them shown without failing `ascribe check --deny-warnings` while you work through them, set `max-level = "advice"` in `[checks.vale]`, and turn off a rule that's wrong for your project in `.vale.ini`, by its name, such as `Google.Exclamation = NO`.
+
+Commit `.vale.ini` and the `.vale/` folder, with the package `vale sync` downloaded into it. Then every machine and CI check the same rules, with no download, since Ascribe never runs `vale sync`. To take a newer version of the package, run `vale sync` again and commit what changed. Don't commit `.ascribe/`, which holds the project's vocabulary and is written again each time Vale runs.
 
 ## `ascribe vale`
 @id {permalink=true}: cli-vale

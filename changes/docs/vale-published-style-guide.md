@@ -1,0 +1,1 @@
+- **The Vale page shows how to check prose against a published style guide.** It ejects the preset, adds a package such as Google's, syncs it, and says what to commit. See [Prose, through Vale](docs/content/checks/vale.md).
