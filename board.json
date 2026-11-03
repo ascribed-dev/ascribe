@@ -8525,8 +8525,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1290"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "cargo deny reports unsafe-libyaml as unmaintained (RUSTSEC-2024-0449), through serde_yaml_ng"
     },
     {
@@ -8770,7 +8773,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhEXjLI",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Addresses: an older line's Markdown versions vanish silently when agents is turned off in the same rename"
     },
     {
@@ -9016,8 +9019,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1294"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Replace the 1×1 placeholder images in examples/quill"
     },
     {
@@ -9053,8 +9059,11 @@
         "documentation",
         "agents"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1293"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Set up the MCP server: `npx ascribe mcp` can install and run an unrelated npm package"
     },
     {
@@ -9158,6 +9167,9 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1296"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "`ascribe versions release` leaves an empty `ends` table"
@@ -9176,7 +9188,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe versions retire` records redirects for builds that never published the retired line"
     },
     {
@@ -9210,7 +9222,7 @@
         "question"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "`ascribe_version` has two formats across the commands' JSON"
     },
     {
@@ -9225,6 +9237,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzhFz_d8",
       "labels": [
         "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1291"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
@@ -9312,7 +9327,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Document the surface no page covers"
     },
     {
@@ -9330,7 +9345,7 @@
         "question"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The `json/` build output has no contract, and its keys don't follow the stated rule"
     },
     {
@@ -9348,7 +9363,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
     },
     {
@@ -9383,8 +9398,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1295"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Deploy the site: a how-to, the supported ways to publish, and a Publishing section that's about publishing"
     },
     {
@@ -9509,8 +9527,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1292"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Vale: put it on the writers' path, and show how to use a published style guide"
     },
     {
@@ -9545,8 +9566,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1298"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The command reference: environment variables, and the exit-code convention"
     },
     {
@@ -9563,8 +9587,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1299"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The language server: complete setups for Neovim, Helix, and Zed"
     },
     {
@@ -9636,7 +9663,7 @@
         "question"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "The docs sidebar: order sections along the adoption path"
     },
     {
@@ -9686,8 +9713,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1297"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Prose: write writer-facing pages without spec and implementer vocabulary"
     },
     {
