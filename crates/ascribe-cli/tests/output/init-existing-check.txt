@@ -1,1 +1,2 @@
-checked 4 files for every build, 0 with problems: 0 errors, 0 warnings, 0 advice, 3 in the baseline
+ascribe.addresses:1: [ASC257] the addresses weren't compared with the base: `main` (880f4af4a43f) has no Ascribe project here, so it published nothing to keep
+checked 4 files for every build, 1 with problems: 0 errors, 0 warnings, 1 advice, 3 in the baseline
