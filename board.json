@@ -8529,7 +8529,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1290"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "cargo deny reports unsafe-libyaml as unmaintained (RUSTSEC-2024-0449), through serde_yaml_ng"
     },
     {
@@ -8772,6 +8772,9 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1219"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhEXjLI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1307"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Addresses: an older line's Markdown versions vanish silently when agents is turned off in the same rename"
@@ -8951,8 +8954,11 @@
       "labels": [
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1300"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Suggest the closest include in the editor, as ascribe check does"
     },
     {
@@ -8967,6 +8973,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzhFzSNw",
       "labels": [
         "bug"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1301"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
@@ -9023,7 +9032,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1294"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Replace the 1×1 placeholder images in examples/quill"
     },
     {
@@ -9040,8 +9049,11 @@
         "bug",
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1303"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Checks in CI: the workflow fails the first pull request of a project `ascribe init` made"
     },
     {
@@ -9079,8 +9091,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1306"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Bring existing docs: the output shown doesn't match, and the walkthrough doesn't end clean"
     },
     {
@@ -9204,8 +9219,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1304"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Small inaccuracies in help text, schemas, and repository docs"
     },
     {
@@ -9327,7 +9345,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Document the surface no page covers"
     },
     {
@@ -9662,8 +9680,11 @@
         "documentation",
         "question"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1302"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "The docs sidebar: order sections along the adoption path"
     },
     {
@@ -9868,7 +9889,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF0LAs",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Replace serde_yaml_ng with serde-saphyr"
     }
   ]
