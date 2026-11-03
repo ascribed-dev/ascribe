@@ -163,6 +163,9 @@ export const CLASS_INS = "ascribe-ins";
 /** Deleted text. */
 export const CLASS_DEL = "ascribe-del";
 
+/** Deleted text with a word right after it, which keeps a gap from it. */
+export const CLASS_DEL_GAP = "ascribe-del-gap";
+
 /** A removed block. */
 export const CLASS_REMOVED = "ascribe-removed";
 

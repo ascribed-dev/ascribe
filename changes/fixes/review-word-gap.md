@@ -1,0 +1,1 @@
+- **Fixed:** In `ascribe diff`'s report, removed words no longer run into the word after them. "20" replaced by "22" read as "2022".

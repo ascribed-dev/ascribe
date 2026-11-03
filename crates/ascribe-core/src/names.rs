@@ -153,6 +153,8 @@ names! {
     CLASS_INS = "ascribe-ins";
     /// Deleted text.
     CLASS_DEL = "ascribe-del";
+    /// Deleted text with a word right after it, which keeps a gap from it.
+    CLASS_DEL_GAP = "ascribe-del-gap";
     /// A removed block.
     CLASS_REMOVED = "ascribe-removed";
     /// A removed block's content.
