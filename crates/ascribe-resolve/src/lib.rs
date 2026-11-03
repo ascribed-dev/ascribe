@@ -142,8 +142,9 @@ pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };
 pub use references::{
-    IncludeTarget, SourceSet, destination_phrases, destination_span, include_fixes, include_issue,
-    include_target, operation_target, reference_issue, reference_target, resolve_reference,
+    IncludeTarget, SourceSet, closest_include_hrefs, destination_phrases, destination_span,
+    include_fixes, include_issue, include_target, operation_target, reference_issue,
+    reference_target, resolve_reference,
 };
 pub use replaces::{REPLACES, replaces_span, replaces_target};
 pub use snippet::examples::{

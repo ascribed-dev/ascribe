@@ -1,0 +1,1 @@
+- **Hover on a mistyped include names the file you most likely meant.** It's the file `ascribe check` suggests, and the quick fix rewrites the path to it. See [Writing in the editor](docs/content/editor/writing.md#hover).

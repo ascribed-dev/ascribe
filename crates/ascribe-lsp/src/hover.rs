@@ -16,7 +16,9 @@ use ascribe_model::{
     ContentModel, ContentType, Field, FieldSource, LineStatus, Placement, TypeFile,
 };
 use ascribe_resolve::openapi::Operation;
-use ascribe_resolve::{DefaultRouter, FileIndex, Heading, Resolution, Snapshot, Usable};
+use ascribe_resolve::{
+    DefaultRouter, FileIndex, Heading, Resolution, Snapshot, Usable, closest_include_hrefs,
+};
 use lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position, Range};
 
 use crate::model_file::ModelFile;
@@ -192,7 +194,7 @@ fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
                     include.section.as_deref(),
                     ctx.snapshot.model().is_fragment(target.as_str()),
                 ),
-                Some(_) => format!("**Not found:** `{}`", include.written),
+                Some(target) => missing_include(ctx, &include.written, target),
                 None => return None,
             };
             (include.primary?, text)
@@ -255,6 +257,18 @@ fn hover_at(ctx: &Ctx, position: Position) -> Option<Hover> {
         }),
         range: Some(range),
     })
+}
+
+/// An include of a missing file: what's written, and the file it most
+/// likely meant, which `ascribe check` gives as its help and the Quick Fix
+/// writes.
+fn missing_include(ctx: &Ctx, written: &str, target: &RelPath) -> String {
+    let project = ctx.snapshot.project();
+    let closest = closest_include_hrefs(written, target, &ctx.path, project);
+    match closest.first() {
+        Some(href) => format!("**Not found:** `{written}`\n\nDid you mean `{href}`?"),
+        None => format!("**Not found:** `{written}`"),
+    }
 }
 
 /// What a link's or image's destination names, in words, with a preview of a
