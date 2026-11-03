@@ -765,8 +765,8 @@ pub fn archive(
 }
 
 /// The edit that takes `line` out of the target's `ends`: its entry in an
-/// `[releases.<target>.ends]` table, or in an inline `ends = { … }`, which
-/// goes whole with its last entry.
+/// `[releases.<target>.ends]` table, or in an inline `ends = { … }`, either
+/// of which goes whole with its last entry.
 fn remove_end(file: &ModelFile<'_>, target: &str, line: &str) -> Result<Edit, ReleaseError> {
     let at = path(&["releases", target, "ends"]);
     if let Some(toml_edit::Item::Value(Value::InlineTable(ends))) = file.get(&at) {
@@ -779,6 +779,16 @@ fn remove_end(file: &ModelFile<'_>, target: &str, line: &str) -> Result<Edit, Re
             file.replace_value(&at, Value::InlineTable(rest))
         }
         .map_err(ReleaseError::ModelEdit);
+    }
+    // A `[releases.<target>.ends]` table goes whole with its last entry too,
+    // rather than staying as a header over nothing.
+    let last = file
+        .table_like(&at)
+        .is_some_and(|ends| ends.iter().all(|(key, _)| key == line));
+    if last {
+        return file
+            .remove_table(&["releases", target, "ends"])
+            .map_err(ReleaseError::ModelEdit);
     }
     file.remove_entry(&["releases", target, "ends"], line)
         .map_err(ReleaseError::ModelEdit)

@@ -161,6 +161,29 @@ fn a_release_rewrites_the_planned_marks_and_archives_the_old_line() {
     assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
 }
 
+#[test]
+fn a_release_takes_an_ends_table_away_with_its_last_entry() {
+    // An `[releases.prod.ends]` table, not an inline one, with a table
+    // after it.
+    let model = MODEL.replace(
+        "planned = [\"1.1\"]\n",
+        "planned = [\"1.1\"]\n\n[releases.prod.ends]\n\"1.0\" = 2026-06-30\n\n[phrases]\nproduct = \"Prod\"\n",
+    );
+    let dir = repository(&model);
+    let out = ascribe(dir.path(), &["versions", "release", "prod 1.1"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    let model = read(dir.path(), "ascribe.toml");
+    assert!(!model.contains("ends"), "{model}");
+    assert!(
+        model.contains(
+            "planned = []\n\n[releases.prod.archived]\n\"1.0\" = { ended = 2026-06-30 }\n\n[phrases]\n"
+        ),
+        "{model}"
+    );
+    let check = ascribe(dir.path(), &["check"]);
+    assert_eq!(code_of(&check), 0, "{}{}", stdout(&check), stderr(&check));
+}
+
 /// A site that writes each page's Markdown for agents, whose preamble names
 /// the live lines.
 const AGENTS_MODEL: &str = "\n[consumer]\nsite = \"https://example.com\"\n";
