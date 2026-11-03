@@ -1,0 +1,8 @@
+description: >-
+  A build's table of `[moved]` naming a build `ascribe.toml` doesn't
+  declare is an error at the table: no build writes its redirects.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: addresses-build-unknown, file: ascribe.addresses, line: 5}

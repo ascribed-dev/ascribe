@@ -1,0 +1,9 @@
+description: >-
+  A build's table, `[moved.site]`, accounts for its key's addresses in the
+  builds declared with that name alone: every other build that published
+  the page still lost it.
+spec: ["7.10", "8.2"]
+tags: [addresses]
+
+diagnostics:
+  - {slug: address-lost, file: ascribe.addresses, line: 1}

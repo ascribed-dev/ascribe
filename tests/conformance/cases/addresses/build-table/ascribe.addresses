@@ -1,0 +1,8 @@
+version = 1
+
+[moved]
+
+[moved.site]
+"keys.md" = "index.md"
+
+[retired]

@@ -4,8 +4,9 @@
 //! old address is made from its path by the build's routing today, so the
 //! redirect is written as long as the entry is there, whatever the base.
 //!
-//! - **`redirects`:** for each `[moved]` entry that leads to a page the
-//!   build publishes, the key's address and its Markdown version's, each to
+//! - **`redirects`:** for each `[moved]` entry, and each of the build's own
+//!   table, `[moved.<build>]` by the name it's declared with, that leads to
+//!   a page the build publishes, the key's address and its Markdown version's, each to
 //!   the page's, 301, flat and exact: an entry whose value is another
 //!   entry's key leads where that one does. A key that's an address from the
 //!   host's root is its own `from`. A pair whose `from` and `to` agree once
@@ -122,6 +123,9 @@ pub fn redirects(
     let Some(file) = file else {
         return out;
     };
+    // `[moved]`'s entries, with this build's table's, and no other build's.
+    let file = file.in_build(declared.declared_name());
+    let file = file.as_ref();
     let router = AstroRouter::from_consumer(&model.consumer);
     let agents = model.consumer.agents;
     let former = &file.former;

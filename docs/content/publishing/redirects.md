@@ -45,6 +45,7 @@ version = 1
 ```
 
 - **`[moved]`:** where each key's addresses lead now. A key is a page's path from the content root, which stands for every address the page was published at, its Markdown version's too; a file's path, `#`, and a heading's id, with the file the `@id` is written in, a fragment's once for every page that includes it; `go:` and a [permalink](../permalinks/index.md)'s name, for one no heading or page declares any more; or an address from the host's root, starting with `/`, from before the project used Ascribe. A value is a page's path, and optionally `#` and a heading's id, or, for a `go:` key, `go:` and another permalink's name, which makes the key an alias of it ([when a section moves or goes away](../permalinks/index.md#moving-aliasing-and-retiring)).
+- **`[moved.<build>]`:** a build's own entries, as `[moved]`'s, apart from a permalink: only the builds declared with that name write them, each of a line's builds by its build's name. A build writes `[moved]`'s entries and its own table's, and no other build's. [`ascribe versions retire`](../versions/archive.md#retire-a-line) writes the addresses a retired line published there, `[moved.site]` for `site@3.4`, so a build that never published the line doesn't redirect them.
 - **`[retired]`:** the addresses removed on purpose, each key as `[moved]`'s, with why. A reader who follows an old link gets [a page that says what was removed and why](#a-retired-addresss-page), answering 404; a retired permalink's address shows the reason.
 - **`[former]`:** the routing settings the docs were published under before, each oldest first: `base-path`, `permalink-path`, and `agents`, each a list of values, and `builds`, a table from a build's old name to its new one. [`ascribe check --fix` writes it](#a-settings-change) when a setting changes.
 
@@ -69,7 +70,7 @@ Moving a page back to where an entry says it was removes the entry. A page moved
 
 ## What the check reports
 
-With the file, `ascribe check` lists every address the base published, in each build, and every address the working tree publishes, and reports what the base had that nothing accounts for. A build's addresses are each page's, its Markdown version's, each heading's explicit `@id`, each [permalink](../permalinks/index.md)'s under the permalinks' path, and each `llms.txt` file's. An address is accounted for when the working tree still publishes it, when an entry of `[moved]` leads it to a page a build publishes, when `[retired]` has it, or when an availability mark takes its page out of one build while another build publishes it.
+With the file, `ascribe check` lists every address the base published, in each build, and every address the working tree publishes, and reports what the base had that nothing accounts for. A build's addresses are each page's, its Markdown version's, each heading's explicit `@id`, each [permalink](../permalinks/index.md)'s under the permalinks' path, and each `llms.txt` file's. An address is accounted for when the working tree still publishes it, when an entry of `[moved]`, or of the build's own table, leads it to a page a build publishes, when `[retired]` has it, or when an availability mark takes its page out of one build while another build publishes it.
 
 - **[`address-lost`](../checks/diagnostics/project-files.md#ASC255)**, a warning: a page's address, or its Markdown version's, once for each page, listing its addresses and, when it isn't every build, the builds. Forward it with `ascribe addresses move`, or retire it with `ascribe addresses retire`.
 - **[`anchor-lost`](../checks/diagnostics/project-files.md#ASC256)**, advice: a heading's explicit `@id` the base published on a page still published, which the page doesn't have now. A link to it lands at the top of the page, so it's advice for now. A generated id isn't kept: it changes with the heading's text.
@@ -119,11 +120,12 @@ With the base read, `ascribe check` also checks that each entry of `ascribe.addr
 | [`addresses-entry-live`](../checks/diagnostics/project-files.md#ASC266) | Advice | The key's source is back, as after a page is restored; the fix removes the entry |
 | [`addresses-entry-taken`](../checks/diagnostics/project-files.md#ASC267) | Error | Another page publishes an address the key had, so an old link lands on it |
 | [`addresses-entry-unpublished`](../checks/diagnostics/project-files.md#ASC268) | Advice | The base never published the key, and its file doesn't have the entry, as moving a page made on the same branch leaves; the fix removes it |
-| [`addresses-key-twice`](../checks/diagnostics/project-files.md#ASC269) | Error | A key is in the file twice, as a merge can leave; the file isn't used until one goes |
+| [`addresses-key-twice`](../checks/diagnostics/project-files.md#ASC269) | Error | A key is in the file twice, as a merge can leave, or in a build's table and in `[moved]` or `[retired]`; the file isn't used until one goes |
 | [`addresses-chain`](../checks/diagnostics/project-files.md#ASC270) | Advice | A `[moved]` value is another entry's key; the build writes where the chain ends, and the fix forwards it there |
 | [`addresses-anchor-collision`](../checks/diagnostics/project-files.md#ASC271) | Error | An id from a page that's gone is live on the page its page's addresses lead to, so a link to it lands there |
 | [`addresses-file-deleted`](../checks/diagnostics/project-files.md#ASC272) | Error | `ascribe.addresses` is gone, and the base has it; read only when `--base` names the base, as CI does |
 | [`addresses-soft-404`](../checks/diagnostics/project-files.md#ASC273) | Advice | Three addresses or more are forwarded to one index page or the home page |
+| [`addresses-build-unknown`](../checks/diagnostics/project-files.md#ASC289) | Error | A build's table, `[moved.<build>]`, names a build `ascribe.toml` doesn't declare, so no build writes its redirects |
 
 Retiring a page that entries lead to retires them with it, for the same reason, and moving a page takes the entries that lead to its headings with it.
 
@@ -163,7 +165,7 @@ When the base can't be read, because the revision isn't there, as in a shallow c
 
 ## What the build writes
 
-Each build writes `_ascribe/redirects.json` in its site output, from `ascribe.addresses` alone: for each `[moved]` entry, a `301` from each address the key had, the page's and its Markdown version's, to where the value is now; for each `[former]` value, a `301` from each address under it to today's, as [a settings change](#a-settings-change) says; and for each `[retired]` entry, its addresses and the reason. The base isn't read, so a redirect stays once the base has moved past the move. Its format is in the [output-layout contract](../contracts/output-layout.md#18-the-redirects).
+Each build writes `_ascribe/redirects.json` in its site output, from `ascribe.addresses` alone: for each `[moved]` entry, and each of its own table's, a `301` from each address the key had, the page's and its Markdown version's, to where the value is now; for each `[former]` value, a `301` from each address under it to today's, as [a settings change](#a-settings-change) says; and for each `[retired]` entry, its addresses and the reason. The base isn't read, so a redirect stays once the base has moved past the move. Its format is in the [output-layout contract](../contracts/output-layout.md#18-the-redirects).
 
 ```console
 $ ascribe addresses list
