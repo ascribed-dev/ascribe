@@ -1099,7 +1099,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("releases", "`[releases]`"),
     ("phrases", "Phrases and the glossary"),
     ("widgets", "Widgets"),
-    ("consumer", "The consumer, builds, and the editor"),
+    ("consumer", "`[consumer]`, builds, and the editor"),
     ("crawlers", "`[crawlers]`"),
     ("listing", "`[listing]`"),
     ("apis", "`[apis]`"),

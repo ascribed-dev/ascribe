@@ -1,0 +1,1 @@
+- **The `[consumer]` reference speaks to writers too.** Its keys, and the diagnostics about them, name the site generator the site output is for, not the consumer. See [`[consumer]`](docs/content/content-model/output.md#consumer).

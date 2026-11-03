@@ -116,4 +116,4 @@ These contracts say what an emitter writes and what a consumer can rely on. They
 - [Tested examples](contracts/tested-examples.md): the formats of `ascribe.examples.toml` and of the observation `ascribe observe` writes beside it.
 - [Site render](contracts/site-render.md): the markers the site output writes and how a consumer renders them. The fixtures are in [`tests/render/`]({repo}/tree/main/tests/render/).
 
-The [Ascribe specification]({repo}/blob/main/SPEC.md) is the normative definition of the language. The [changelog]({repo}/blob/main/CHANGELOG.md) lists what each release changed.
+The [Ascribe specification]({repo}/blob/main/SPEC.md) defines the language exactly, for anyone building a tool that reads it. The [changelog]({repo}/blob/main/CHANGELOG.md) lists what each release changed.

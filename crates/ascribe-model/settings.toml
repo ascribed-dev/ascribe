@@ -47,7 +47,7 @@ key = "spec"
 kind = "text"
 type = "string"
 required = true
-description = '''The version of the Ascribe specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`.'''
+description = '''The version of the Ascribe specification this project targets (SPEC §11). It must be quoted: `spec = 0.1` is a TOML float and is an error. Ascribe accepts only the spec versions it supports, compared as exact strings; this reference defines `"0.1"`.'''
 
 [[setting]]
 table = ""
@@ -87,7 +87,7 @@ key = "output-dir"
 kind = "text"
 type = "string (path)"
 default = ".ascribe/build"
-description = '''Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/`. It need not exist. It may be outside the project's folder, with `..`, and a build then writes there. A build never writes or removes through a symbolic link on the way to it, or in it ([output-layout contract](../contracts/output-layout.md#2-what-ascribe-owns)).'''
+description = '''Where `ascribe build` writes output. Each build writes each output under `<output-dir>/<build>/<output>/`. It need not exist. It may be outside the project's folder, with `..`, and a build then writes there. A build never writes or removes through a symbolic link on the way to it, or in it ([output-layout contract](../contracts/output-layout.md#2-what-ascribe-owns)).'''
 
 # ---- 4. `[types.<name>]` and `[fragments]` ----------------------------------
 
@@ -404,7 +404,7 @@ key = "name"
 kind = "text"
 type = "string"
 required = true
-description = '''The feature's display name, shown on hover and available to emitters.'''
+description = '''The feature's display name, shown on hover and available to each output.'''
 
 [[setting]]
 table = "features.<key>"
@@ -589,7 +589,7 @@ table = ""
 key = "consumer"
 kind = "table"
 type = "table"
-description = '''The consumer profile: how the site output fits a specific consumer.'''
+description = '''Which site generator publishes the site output, and how the output fits it.'''
 
 [[setting]]
 table = "consumer"
@@ -598,7 +598,7 @@ kind = "choice"
 type = "string"
 choices = ["astro"]
 default = "astro"
-description = '''The consumer profile. Supported: `"astro"`.'''
+description = '''The site generator the site output is for, which sets the defaults of the other keys. Supported: `"astro"`.'''
 
 [[setting]]
 table = "consumer"
@@ -622,7 +622,7 @@ kind = "choice"
 type = "string"
 choices = ["always", "never"]
 default = "always"
-description = '''**Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`).'''
+description = '''**Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the site generator's own setting (Astro's `trailingSlash` and `build.format`).'''
 
 [[setting]]
 table = "consumer"
@@ -631,7 +631,7 @@ kind = "choice"
 type = "string"
 choices = ["github"]
 default = "github"
-description = '''**Slugging.** The algorithm for heading ids ([SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses.'''
+description = '''**Slugging.** The algorithm for heading ids ([SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)), which must be the one the site generator uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses.'''
 
 [[setting]]
 table = "consumer"
@@ -639,7 +639,7 @@ key = "html"
 kind = "switch"
 type = "boolean"
 default = true
-description = '''**HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`.'''
+description = '''**HTML passthrough.** Whether the site generator renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`.'''
 
 [[setting]]
 table = "consumer"

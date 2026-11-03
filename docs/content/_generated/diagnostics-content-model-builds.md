@@ -201,15 +201,15 @@
 
 **Read more:** [`[widgets.<name>]`](../content-model/content.md#10-widgetsname) in the `ascribe.toml` reference.
 
-## The consumer, builds, and the editor
+## `[consumer]`, builds, and the editor
 
 ### ASC106 `model-consumer-unsupported`
 @id {permalink=true}: ASC106
-@summary: A `[consumer]` key has a value the consumer profile doesn't support.
+@summary: A `[consumer]` key has a value its `profile` doesn't support.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
-**When:** A `[consumer]` key has a value the consumer profile doesn't support.
+**When:** A `[consumer]` key has a value its `profile` doesn't support.
 
 **Message:** the \{profile} profile doesn't support \{key} = \{value}; use \{values}
 
