@@ -136,7 +136,7 @@ impl Section {
     }
 
     /// The section's name, as `--section` takes it, and its table's in
-    /// `ascribe.toml`.
+    /// `ascribe.toml`: every section but the navigation is a table's.
     pub fn name(self) -> &'static str {
         match self {
             Section::Types => "types",
@@ -1920,7 +1920,12 @@ mod tests {
             .filter(|s| s.table.is_empty() && s.type_text.contains("table"))
             .map(|s| s.key.as_str())
             .collect();
-        let mut sections: Vec<&str> = Section::ALL.iter().map(|s| s.name()).collect();
+        // The navigation is the pages' and `ascribe.nav`'s, not a table's.
+        let mut sections: Vec<&str> = Section::ALL
+            .iter()
+            .filter(|s| **s != Section::Navigation)
+            .map(|s| s.name())
+            .collect();
         tables.sort_unstable();
         sections.sort_unstable();
         assert_eq!(sections, tables);
