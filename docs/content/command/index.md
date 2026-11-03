@@ -78,7 +78,7 @@ Every command exits with the same three codes, and each command's section has a 
 | Code | Meaning |
 |---|---|
 | `0` | It did what it was asked, whatever it found, unless finding something fails it. |
-| `1` | It ran, and found something: errors, with `ascribe check` and `ascribe build`; a file that would change, with `--check`; a target that doesn't exist, with `ascribe link` and `ascribe refs`; nothing matched, with `ascribe search`. A command that takes `--exit-code` exits with `1` only with it. |
+| `1` | It ran, and found something, such as errors, with `ascribe check` and `ascribe build`; a file that would change, with `--check`; a target that doesn't exist, with `ascribe link` and `ascribe refs`; nothing matched, with `ascribe search`; or a test that failed, with `ascribe observe`. `--exit-code` means two things. On `ascribe report`, `ascribe diff`, `ascribe drift`, and `ascribe templates status`, it turns `1` on for what they find. On `ascribe check`, it sets the level that fails, `error` unless you say `warning`. |
 | `2` | It couldn't run: a usage error, no `ascribe.toml`, a content model with errors, a file it can't read or write, or, without `--force`, a file git couldn't put back. The reason goes to standard error. |
 
 A command with nothing to find, such as `ascribe init` or `ascribe new`, has no `1`: it did its work, or it couldn't. A content model with errors is a `2` for every command, `ascribe check` and `ascribe model` included: the errors are shown, and nothing else is done.
