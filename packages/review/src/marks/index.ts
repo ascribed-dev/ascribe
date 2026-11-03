@@ -1,5 +1,6 @@
 import {
   CLASS_DEL,
+  CLASS_DEL_GAP,
   CLASS_FLASH,
   CLASS_HINT,
   CLASS_INS,
@@ -438,6 +439,10 @@ function markWords(block: HTMLElement, words: Words): boolean {
       wrapRange(map, offset + edit.at, offset + edit.end, () => ui(doc, "ins", CLASS_INS));
     } else {
       const del = ui(doc, "del", CLASS_DEL, edit.text);
+      // A word right after the removed words, new or unchanged, would read
+      // as one with them: "20" then "22" as "2022".
+      const next = map.text[offset + edit.at];
+      if (next !== undefined && !/\s/.test(next)) del.classList.add(CLASS_DEL_GAP);
       insertAt(map, offset + edit.at, del, element);
     }
   }

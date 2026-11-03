@@ -313,6 +313,7 @@
   var CLASS_LABEL_BEFORE = "ascribe-label-before";
   var CLASS_INS = "ascribe-ins";
   var CLASS_DEL = "ascribe-del";
+  var CLASS_DEL_GAP = "ascribe-del-gap";
   var CLASS_REMOVED = "ascribe-removed";
   var CLASS_REMOVED_BODY = "ascribe-removed-body";
   var CLASS_TOGGLE = "ascribe-toggle";
@@ -614,6 +615,8 @@
         wrapRange(map, offset + edit.at, offset + edit.end, () => ui(doc, "ins", CLASS_INS));
       } else {
         const del = ui(doc, "del", CLASS_DEL, edit.text);
+        const next = map.text[offset + edit.at];
+        if (next !== void 0 && !/\s/.test(next)) del.classList.add(CLASS_DEL_GAP);
         insertAt(map, offset + edit.at, del, element);
       }
     }

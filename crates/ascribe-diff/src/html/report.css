@@ -777,6 +777,11 @@ a[data-ascribe-release-line]::after {
   color: var(--ascribe-review-muted);
 }
 
+/* So the removed words don't run into the word after them. */
+[data-ascribe-show="changes"] .ascribe-del-gap {
+  margin-inline-end: 0.25em;
+}
+
 /* A removed block: collapsed to one line, struck through, with Show. */
 .ascribe-removed {
   display: none;

@@ -170,6 +170,35 @@ describe("markChanges", () => {
     expect(text).toBe("Run the [del:old]installer [del:.][ins:now.]");
   });
 
+  it("keeps a gap after removed words that a word follows", () => {
+    const root = page(`<p data-ascribe-source="a.md:1-1">Node.js 22 or later, as is.</p>`);
+    markChanges(root, [
+      {
+        kind: "changed",
+        now: a("a.md:1-1"),
+        was: a("a.md:1-1"),
+        words: {
+          now: [[8, 10]],
+          was: [
+            [8, 10],
+            [27, 32],
+          ],
+          now_text: "Node.js 22 or later, as is.",
+          was_text: "Node.js 20 or later, as is. Then",
+        },
+      },
+    ]);
+    const dels = Array.from(root.querySelectorAll("del")).map((e) => [
+      e.textContent,
+      e.classList.contains("ascribe-del-gap"),
+    ]);
+    // "20" then "22" would read as "2022"; nothing follows " Then".
+    expect(dels).toEqual([
+      ["20", true],
+      [" Then", false],
+    ]);
+  });
+
   it("highlights words across inline elements and skips text it can't match", () => {
     const root = page(`<p data-ascribe-source="a.md:1-1">Use the <code>quill</code>
       command today.</p>`);
