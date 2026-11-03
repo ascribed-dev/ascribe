@@ -1,0 +1,1 @@
+- **Fixed:** Archiving a line no longer leaves an empty `ends` table. `ascribe versions release` and `retire` remove the table with its last entry.

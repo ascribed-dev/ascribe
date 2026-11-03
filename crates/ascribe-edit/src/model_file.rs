@@ -519,6 +519,48 @@ impl<'a> ModelFile<'a> {
         ))
     }
 
+    /// Removes the `[header]` table at `table`, with its entries, the
+    /// comment that touches its header from above, and the blank lines
+    /// before it, so the table above it is followed by what came after it.
+    /// Refused when a table is written under it, which would be left
+    /// without its parent's header.
+    pub fn remove_table(&self, table: &[&str]) -> Result<Edit, String> {
+        if let Some(i) = self.holder(&path(table))? {
+            return Ok(self.taken[i]
+                .1
+                .remove_table(table)?
+                .in_taken(self.taken[i].0));
+        }
+        let refused = || {
+            format!(
+                "`ascribe.toml` writes `{}` in a form this can't remove. Remove it by hand.",
+                table.join(".")
+            )
+        };
+        let Some(Item::Table(t)) = self.get(&path(table)) else {
+            return Err(refused());
+        };
+        if t.is_dotted() || t.is_implicit() || t.iter().any(|(_, item)| !item.is_value()) {
+            return Err(refused());
+        }
+        let header = t.span().ok_or_else(refused)?;
+        let line = self.text[..header.start].rfind('\n').map_or(0, |i| i + 1);
+        let comment = self.comment_above(line);
+        let above = self.text[..comment].trim_end().len();
+        let start = if above == 0 {
+            0
+        } else {
+            self.text[above..comment]
+                .find('\n')
+                .map_or(comment, |i| above + i + 1)
+        };
+        let (end, _) = self.after_entries(t);
+        Ok(Edit::new(
+            TextEdit::replace(Span::new(start, end), String::new()),
+            Change::Remove(path(table)),
+        ))
+    }
+
     /// The edits, checked: applied to each file's text, they give a file
     /// with the same values as the changes made through `toml_edit`'s API.
     /// Returns each file's edits, sorted, and its text after them.
@@ -1027,6 +1069,23 @@ mod tests {
             apply(text, vec![edit]),
             "[phrases]\nproduct = \"Quill\" # the name\n"
         );
+    }
+
+    #[test]
+    fn a_table_is_removed_with_its_comment_and_the_blank_lines_before_it() {
+        let text = "[a]\nx = 1\n\n# Ends.\n[a.ends]\n\"1\" = 2026-06-30 # the day\n\n[b]\ny = 2\n";
+        let file = ModelFile::parse(text).expect("parses");
+        let edit = file.remove_table(&["a", "ends"]).expect("removes");
+        assert_eq!(apply(text, vec![edit]), "[a]\nx = 1\n\n[b]\ny = 2\n");
+        // At the end of the file, nothing is left after the table above.
+        let text = "[a]\nx = 1\n\n[a.ends]\n\"1\" = 2026-06-30\n";
+        let file = ModelFile::parse(text).expect("parses");
+        let edit = file.remove_table(&["a", "ends"]).expect("removes");
+        assert_eq!(apply(text, vec![edit]), "[a]\nx = 1\n");
+        // A table written under it would lose its parent, so it's refused.
+        let text = "[a]\nx = 1\n\n[a.b]\n\n[a.b.c]\nz = 3\n";
+        let file = ModelFile::parse(text).expect("parses");
+        assert!(file.remove_table(&["a", "b"]).is_err());
     }
 
     #[test]
