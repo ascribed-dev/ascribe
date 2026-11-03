@@ -70,3 +70,37 @@ One that takes `--check`, such as `ascribe fmt`, `ascribe permalinks sync`, `asc
 Without `--config`, a command's project is the nearest `ascribe.toml` at or above the current directory, or at or above the path it's given.
 
 When there's none, and the folder holds projects in its subfolders, as a repository with several does at its root, the error names their folders, so you can run the command in one, or pass `--config` with its folder: `the projects below it are in docs, handbook: run ascribe in one of them, or pass --config with its folder`. `ascribe agents sync` is the exception: there, it syncs each of them.
+
+## Exit codes
+
+Every command exits with the same three codes, and each command's section has a table that says what they mean for it:
+
+| Code | Meaning |
+|---|---|
+| `0` | It did what it was asked, whatever it found, unless finding something fails it. |
+| `1` | It ran, and found something: errors, with `ascribe check` and `ascribe build`; a file that would change, with `--check`; a target that doesn't exist, with `ascribe link` and `ascribe refs`; nothing matched, with `ascribe search`. A command that takes `--exit-code` exits with `1` only with it. |
+| `2` | It couldn't run: a usage error, no `ascribe.toml`, a content model with errors, a file it can't read or write, or, without `--force`, a file git couldn't put back. The reason goes to standard error. |
+
+A command with nothing to find, such as `ascribe init` or `ascribe new`, has no `1`: it did its work, or it couldn't. A content model with errors is a `2` for every command, `ascribe check` and `ascribe model` included: the errors are shown, and nothing else is done.
+
+A few don't follow the pattern:
+
+- [`ascribe agents hook`](../agents/commands.md#cli-agents-hook) exits with `1` when its input isn't JSON, a failure an agent shows to you and not to the model, and with `0` whatever its checks find.
+- [`ascribe lsp`](../editor/language-server.md#cli-lsp) exits with `1` when the editor stops it without asking it to shut down first, as the Language Server Protocol says, and with `0` when it shuts down.
+- [`ascribe preview`](../checks/check.md#cli-preview) runs until you stop it, so it has no `0` or `1`: it exits with `2` only when it couldn't start.
+
+## Environment variables
+
+The `ascribe` binary, and the tools that run it, read these. Each is for a test, a CI job, or a machine set up differently from most, and none is needed: unset, each has the default its row gives.
+
+| Variable | Read by | What it does | Default |
+|---|---|---|---|
+| `ASCRIBE_BIN` | [`@ascribed/astro`](../astro/reference.md#options) | The `ascribe` binary the integration runs, when its `binary` option doesn't name one. | The binary `@ascribed/cli` installed |
+| `ASCRIBE_CACHE_DIR` | [`ascribe sources`](../examples/sources.md#cli-sources), and [`ascribe agents hook`](../agents/commands.md#cli-agents-hook)'s check server | The folder Ascribe keeps fetched repositories and the check server's files in. | `ascribe` in your user's cache folder: `$XDG_CACHE_HOME`, `~/.cache`, `~/Library/Caches`, or `%LOCALAPPDATA%` |
+| `ASCRIBE_HOOK_SERVER` | [`ascribe agents hook`](../agents/commands.md#cli-agents-hook) | `off` checks in the hook's own process every time, instead of starting a check server that keeps the project loaded. | A check server |
+| `ASCRIBE_LINKS_RETRY_WAIT` | [`ascribe report links`](../checks/external-links.md#a-servers-error) | How many seconds to wait before asking again about a link that answered with a server error, such as `0` in a test. | `30` |
+| `ASCRIBE_PATH` | [The Claude Code plugin](../agents/claude-code.md#the-plugin) | The `ascribe` binary the plugin runs. | The project's `node_modules/.bin/ascribe`, then `ascribe` on your path |
+| `ASCRIBE_TODAY` | Every command that checks, the [language server](../editor/language-server.md#cli-lsp), and the hook's check server | The day, written `YYYY-MM-DD`, the checks that depend on the date [check as of](../checks/check.md#checking-as-of-another-day). A value that isn't a date is reported, and today's is used. | Today's date in UTC |
+| `NO_COLOR` | Every command, with `--color auto` | Set to anything, it turns color off at a terminal too. | Color when writing to a terminal |
+
+`ASCRIBE_BLESS`, which rewrites generated files, is for the tests of Ascribe's own repository, and no command reads it.
