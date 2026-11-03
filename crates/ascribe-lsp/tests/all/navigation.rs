@@ -1674,3 +1674,33 @@ fn hovering_a_field_in_ascribe_toml_says_which_table_it_is_and_what_replaces_it(
         "**`steps`**: number, required\n\nDeclared by the type `guide`, its own."
     );
 }
+
+#[test]
+fn hovering_a_mistyped_include_suggests_the_closest_file() {
+    let f = quill();
+    let page = f.path("docs/install-agent.md");
+    let text = read(&f, "docs/install-agent.md").replace(
+        "@include: _fragments/prerequisites.md",
+        "@include: _fragments/prerequisite.md",
+    );
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, &text);
+    let value = hover_text(
+        &mut client,
+        &page,
+        at(&text, "_fragments/prerequisite.md", 4),
+    );
+    assert_eq!(
+        value,
+        "**Not found:** `_fragments/prerequisite.md`\n\nDid you mean `_fragments/prerequisites.md`?"
+    );
+    // A file that can't be a source file has nothing to suggest.
+    let text = text.replace("_fragments/prerequisite.md", "_fragments/prerequisites.png");
+    client.open(&page, 2, &text);
+    let value = hover_text(
+        &mut client,
+        &page,
+        at(&text, "_fragments/prerequisites.png", 4),
+    );
+    assert_eq!(value, "**Not found:** `_fragments/prerequisites.png`");
+}

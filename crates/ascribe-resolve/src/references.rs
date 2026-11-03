@@ -119,11 +119,12 @@ pub fn include_issue(
 }
 
 /// The fixes an include of a missing file is offered: one for each of its
-/// [`closest_includes`], which rewrites the path written at the start of
-/// the primary `at` in `from`, the including file, keeping any `#id`.
-/// Only `ascribe check` offers them: they depend on every source file, so
-/// the source index, which rechecks a file when what it names changes,
-/// doesn't keep them.
+/// [`closest_include_hrefs`], which rewrites the path written at the start
+/// of the primary `at` in `from`, the including file, keeping any `#id`.
+/// `ascribe check` and the language server, which runs the same file-level
+/// check, offer them; the source index doesn't keep them, since they depend
+/// on every source file and it rechecks a file only when what it names
+/// changes.
 pub fn include_fixes(
     written: &str,
     target: &RelPath,
@@ -135,19 +136,36 @@ pub fn include_fixes(
         return Vec::new();
     }
     let span = Span::new(at.span.start(), at.span.start() + written.len());
+    closest_include_hrefs(written, target, from, sources)
+        .into_iter()
+        .map(|href| Fix {
+            title: format!("Include `{href}`"),
+            file: at.file,
+            edits: vec![TextEdit::replace(span, href)],
+            // A guess at the file meant, which only the author can
+            // confirm.
+            applicability: Applicability::Unsafe,
+        })
+        .collect()
+}
+
+/// The [`closest_includes`] of an include of the missing `target`, written
+/// as `written` in `from`, each as the path to write there: what the
+/// include's fixes write, and what the editor's hover suggests. None for a
+/// target that can't be a source file (the `not-source` variant of
+/// [`include_issue`]), which no fix can make one.
+pub fn closest_include_hrefs(
+    written: &str,
+    target: &RelPath,
+    from: &RelPath,
+    sources: &dyn SourceSet,
+) -> Vec<String> {
+    if !target.is_inside() || target.extension() != Some("md") {
+        return Vec::new();
+    }
     closest_includes(sources, from, target, written)
         .into_iter()
-        .map(|path| {
-            let href = encode_destination(&link_path(&path, from));
-            Fix {
-                title: format!("Include `{href}`"),
-                file: at.file,
-                edits: vec![TextEdit::replace(span, href)],
-                // A guess at the file meant, which only the author can
-                // confirm.
-                applicability: Applicability::Unsafe,
-            }
-        })
+        .map(|path| encode_destination(&link_path(&path, from)))
         .collect()
 }
 

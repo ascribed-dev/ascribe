@@ -1700,3 +1700,33 @@ fn renaming_a_page_s_id_records_it_in_the_addresses_file_when_there_is_one() {
         read(&f, "ascribe.addresses")
     );
 }
+
+#[test]
+fn a_mistyped_include_is_fixed_to_the_closest_file() {
+    // What `ascribe check` offers as `Help: Include ...`, and `--fix --unsafe`
+    // applies.
+    let f = quill();
+    let path = f.path("docs/install-agent.md");
+    let text = read(&f, "docs/install-agent.md").replace(
+        "@include: _fragments/prerequisites.md",
+        "@include: _fragments/prerequisite.md",
+    );
+    write(&f, "docs/install-agent.md", &text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+
+    let diag = diagnostic(&client, &path, "include-target-missing");
+    let action = actions(&mut client, &path, diag)
+        .into_iter()
+        .find(|action| action["title"] == "Include `_fragments/prerequisites.md`")
+        .expect("the closest include");
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    assert!(read(&f, "docs/install-agent.md").contains("@include: _fragments/prerequisites.md\n"));
+    notify_changed(&mut client, &changed);
+    assert!(
+        !client
+            .diagnostics(&path)
+            .iter()
+            .any(|d| support::slug(d) == "include-target-missing")
+    );
+}

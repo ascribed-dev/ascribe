@@ -34,7 +34,7 @@ VS Code's own search, **Search: Find in Files**, reads the source as written: it
 
 ## Hover
 
-- A link, image, or include: its target's path, title, and the first paragraph, with phrases filled in. A fragment, a missing file or id, a link written as a URL, and a name whose case doesn't match are called out.
+- A link, image, or include: its target's path, title, and the first paragraph, with phrases filled in. A fragment, a missing file or id, a link written as a URL, and a name whose case doesn't match are called out. On an include of a missing file, it names the file you most likely meant, the one `ascribe check` suggests, and the quick fix rewrites the path to it.
 - A phrase: its value.
 - An availability spec or feature key: what it means, in the words the published site uses.
 - A directive or attribute key: its description. A dimension key: its values and labels.
