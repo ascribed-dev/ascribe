@@ -1,0 +1,1 @@
+- **Fixed:** A `\|` in a paragraph above a table no longer puts what follows it a character early. In a code span there, it now stays `\|`.

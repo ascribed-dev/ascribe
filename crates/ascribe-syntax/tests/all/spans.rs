@@ -4,7 +4,7 @@
 
 use crate::support;
 
-use ascribe_syntax::{ParseOptions, parse};
+use ascribe_syntax::{BlockKind, InlineKind, ParseOptions, parse};
 use support::{check_tree, markdown_files, repo_root};
 
 fn options() -> ParseOptions {
@@ -162,9 +162,38 @@ fn directives_in_every_container() {
         // A `]` in the destination of a link in alt text (#1234).
         "![F\n[I](/g\0al])T](x.png)\n",
         "---\ntitle: B\n---\u{10}\r\n\n![---\u{10}\n![Three](x.p(narpng){width=300=400}--\ntitle: Home\n--\u{fffd}-\n\n\n![Ful\n[Install](/guides/inst\0\0\0\0\0\0\0\0al])Three](x.png)\n",
+        // A paragraph before a table keeps its `\|`, so what follows it
+        // isn't a byte early (#1236).
+        "a\\|b\nx\nb j\n--|",
+        "a\\|b \\| c\r\nx\r\nb | j\r\n- | -\r\n",
+        "> `a\\|b`\n> x\n> b j\n> --|\n",
+        "@n b\0\0\0\\|n b\n--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|--\nbn- n- j\n--|",
     ] {
         assert_exact("container case", source);
     }
+}
+
+/// The paragraph a table takes its header line out of is CommonMark's: a
+/// `\|` in its text is an escaped `|`, and one in a code span stays as
+/// written, as it would with no table after it (#1236).
+#[test]
+fn a_paragraph_before_a_table_reads_its_pipes_as_commonmark_does() {
+    let source = "a\\|b `c\\|d`\nx\nb j\n--|\n";
+    let doc = parse(source, &options());
+    assert!(check_tree(source, &doc).is_empty());
+    let BlockKind::Paragraph(p) = &doc.blocks[0].kind else {
+        panic!("not a paragraph: {:?}", doc.blocks[0].kind);
+    };
+    let text: Vec<_> = p
+        .inlines
+        .iter()
+        .filter_map(|i| match &i.kind {
+            InlineKind::Text(t) | InlineKind::Code(t) => Some(t.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(text, ["a|b ", "c\\|d", "x"]);
+    assert!(matches!(doc.blocks[1].kind, BlockKind::Table(_)));
 }
 
 #[test]
