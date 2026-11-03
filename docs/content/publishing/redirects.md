@@ -152,7 +152,7 @@ The build then forwards every address under each former value to the same source
 - **`agents`,** turned off: `agents = [true]` forwards each Markdown version to its page, and each `llms.txt` file to the page at the base path.
 - **`builds`:** the build of the new name is compared with the base's build of the old one. A build is taken for renamed when the base's build is gone and a new build publishes more than half of its pages.
 
-A second change composes with the first: under `base-path = ["/docs/", "/guide/"]`, an address under either forwards straight to today's, in one step. A page lost in the same change, as one deleted with it, is still a warning of its own. `trailing-slash` isn't kept: a host matches an address with or without its final `/`.
+A second change composes with the first: under `base-path = ["/docs/", "/guide/"]`, an address under either forwards straight to today's, in one step. A page lost in the same change, as one deleted with it, is still a warning of its own. So is a page whose build became an older line, under the line's folder, since no setting moved it: its address and its Markdown version's are lost together, even when `agents` was turned off in the same change. `trailing-slash` isn't kept: a host matches an address with or without its final `/`.
 
 ## The base
 @id {permalink=true}: addresses-base

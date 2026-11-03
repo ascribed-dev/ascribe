@@ -1,0 +1,1 @@
+- **Fixed:** A Markdown version an older line's folder moved is reported lost with its page. With `agents` turned off in the same change, it was neither reported nor forwarded. See [Redirects](docs/content/publishing/redirects.md#a-settings-change).
