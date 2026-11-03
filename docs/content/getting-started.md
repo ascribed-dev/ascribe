@@ -86,7 +86,7 @@ Add the output directory to `.gitignore`:
 .ascribe/
 ```
 
-Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when it moves, so the addresses your docs publish keep working ([Keep the addresses you've published](publishing/redirects.md)). [Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
+Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when it moves, so the addresses your docs publish keep working ([Keep the addresses you've published](publishing/redirects.md)). `ascribe check` compares it with the base's, so CI needs the history and the base: the workflow on [Checks in CI](checks/ci.md) has both. [Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
 
 ## Write a page
 
@@ -135,7 +135,7 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 
 - `site/`: Markdown with web components, for Astro;
 - `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
-- `json/`: the resolved pages as JSON, for your own tools.
+- `json/`: the resolved pages as JSON, for your own tools, in the format the [JSON output contract](contracts/json-output.md) gives.
 
 See [`ascribe build`](checks/check.md#cli-build) for its options, and the [command reference](command/index.md) for the rest.
 

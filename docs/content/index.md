@@ -7,6 +7,19 @@ permalink: docs
 
 Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do.
 
+## Who does what
+
+A docs team sets Ascribe up in this order: the docs lead creates the project, the engineer who owns CI and the site wires it in, and then writers write and reviewers review. Each role installs only what its work needs.
+
+| Role | Owns | Installs | Starts from |
+|---|---|---|---|
+| Docs lead | `ascribe.toml` and `ascribe.nav`: the page types, phrases, builds, and the order of the sections | `@ascribed/cli` and the VS Code extension | [Getting started](getting-started.md), then [the `ascribe.toml` reference](content-model/index.md) and [Navigation](navigation/index.md) |
+| Engineer | The checks in CI, the HTML preview on pull requests, and the site | `@ascribed/cli` in CI, and `@ascribed/astro` in the site | [For engineers](#for-engineers), then [Astro](astro/index.md) |
+| Writer | The pages | `@ascribed/cli` and the VS Code extension | [Getting started](getting-started.md), then [For writers](#for-writers) |
+| Reviewer | Comments on pull requests | Nothing: a browser and a GitHub account that can comment | [Reviewers who don't use VS Code](review/index.md#reviewers-who-dont-use-vs-code) |
+
+A writer who reviews, or a reviewer with a checkout and VS Code, reviews in the page preview instead: [Review a pull request](review/index.md#review-a-pull-request).
+
 ## For engineers
 @id {permalink=true}: for-engineers
 
@@ -70,9 +83,10 @@ Give the agents that write your docs the project's rules and checks, and the age
 
 ## Publish
 
-- [Astro](astro/index.md): publishing a site with `@ascribed/astro`.
+- [Astro](astro/index.md): the ways to publish, and publishing a site with `@ascribed/astro`.
+- [Deploy the site](astro/deploy.md): building the site in CI and publishing it on GitHub Pages or Netlify, and what each host needs.
 - [Navigation](navigation/index.md): the order a project's sections and pages come in, from `ascribe.nav` or the default, and their labels, which every sidebar is drawn from.
-- [Publishing](publishing/index.md): what a project tells search engines and AI crawlers about its pages, and what it delivers to agents.
+- [Search engines and crawlers](publishing/index.md): what a project tells search engines and AI crawlers about its pages, and what it delivers to agents.
 - [Keep the addresses you've published](publishing/redirects.md): recording where a page went when it moves or goes, so a link to its old address still leads somewhere.
 - [Permalinks](permalinks/index.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
 - [Publish a site for each version](versions/index.md): building the docs of every version a reader can be on from one source, a site for each release line, and moving them on when a line ships.
@@ -99,6 +113,7 @@ These contracts say what an emitter writes and what a consumer can rely on. They
 - [Navigation](contracts/navigation.md): what `_ascribe/nav.json` holds, the sections and pages in order with their labels, and how a site draws a sidebar from it.
 - [Archive](contracts/archive.md): what `ascribe versions export` writes into a folder, and what each page holds.
 - [JSON reports](contracts/json-reports.md): the schemas of what the commands write with `--format json`.
+- [JSON output](contracts/json-output.md): what each page of the `json` output holds, with its schema.
 - [The permalinks list](contracts/permalinks-list.md): the format of `ascribe.permalinks`, the list of a project's permalinks a product can check its links against.
 - [Tested examples](contracts/tested-examples.md): the formats of `ascribe.examples.toml` and of the observation `ascribe observe` writes beside it.
 - [Site render](contracts/site-render.md): the markers the site output writes and how a consumer renders them. The fixtures are in [`tests/render/`]({repo}/tree/main/tests/render/).

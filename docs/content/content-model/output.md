@@ -29,7 +29,7 @@ A later profile that offers a choice will add a key for it.
 - **`llms.txt`** lists every page the build publishes as `- [Title](../url): description`, linking to its Markdown. Its heading is the title of the page at `base-path`, and its summary that page's description. Its sections are the project's [navigation](../navigation/index.md)'s: the content root's pages first, under its label, **Start** unless `ascribe.nav` gives another, then each top section, in order, named by its label, with the pages of the sections nested in it in reading order. A page is listed by its title, not its `nav-label`. With `[releases]`, its summary, and each page's opening line, end with the releases the build describes: a versioned build's line, the version a build filters for, or else each target's live lines, adding that what's marked planned is in none of them yet ([output-layout contract](../contracts/output-layout.md)). An index over 50,000 characters is split into one `llms.txt` per top section, which the root file links to. A page's description is the field its type marks [`role = "description"`](index.md#54-field-roles), as plain text, or the field's `default` when the page leaves the field out or empty; a type without one lists its pages without descriptions.
 - **Each page of the site output** opens with a pointer to `llms.txt` and the page's Markdown, which the element library hides from sight ([element contract §8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents)).
 
-**The headers of a Markdown version.** Each build lists the response headers each Markdown version needs, `X-Robots-Tag` and a canonical `Link`, in `_ascribe/headers.json` in the site output ([output-layout contract](../contracts/output-layout.md#14-the-headers)), and with `host = "netlify"`, the build writes them in Netlify's `_headers` too, which `@ascribed/astro` places at the site's root, beside the `_redirects` that [`ascribe.addresses`](../publishing/redirects.md) gives. Why a host sends them is in [Publishing](../publishing/index.md#the-markdown-versions-headers).
+**The headers of a Markdown version.** Each build lists the response headers each Markdown version needs, `X-Robots-Tag` and a canonical `Link`, in `_ascribe/headers.json` in the site output ([output-layout contract](../contracts/output-layout.md#14-the-headers)), and with `host = "netlify"`, the build writes them in Netlify's `_headers` too, which `@ascribed/astro` places at the site's root, beside the `_redirects` that [`ascribe.addresses`](../publishing/redirects.md) gives. Why a host sends them is in [Search engines and crawlers](../publishing/index.md#the-markdown-versions-headers).
 
 `@ascribed/astro` publishes the plain output with the site, and serves it in `astro dev`. With another generator, copy `<output-dir>/<build>/plain/` to the site's `base-path`. `ascribe check` then reports two advice checks: a description too long for its line in `llms.txt` (`description-too-long`), on the page that writes it, or once on a field's `default` in `ascribe.toml`, and an `llms.txt` still over the limit when it's split (`llms-section-large`).
 
@@ -51,7 +51,7 @@ A versioned build's outputs, their names and addresses, and what each line keeps
 
 @include: ../_fragments/content-model/listing.md
 
-What each value tells search engines and agents is in [Publishing](../publishing/index.md#how-a-page-is-listed).
+What each value tells search engines and agents is in [Search engines and crawlers](../publishing/index.md#how-a-page-is-listed).
 
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says whether a page is listed, and which rule says so; choosing the row opens the rule.
 
@@ -67,7 +67,7 @@ In an older line of a versioned build, a page isn't looser than `older-lines` ei
 
 @include: ../_fragments/content-model/crawlers.md
 
-What each purpose's choice costs, and why a page is kept out of search by its listing and not by `robots.txt`, is in [Publishing](../publishing/index.md#what-crawlers-are-told).
+What each purpose's choice costs, and why a page is kept out of search by its listing and not by `robots.txt`, is in [Search engines and crawlers](../publishing/index.md#what-crawlers-are-told).
 
 `ascribe check` reads each search crawler the way it reads the file: the one group that applies to it. A page that isn't listed is reported when a search crawler may not fetch it, whether the lines for every crawler say so, a group of `lines` that names that crawler, or `search = "disallow"` (`listing-disallowed`).
 

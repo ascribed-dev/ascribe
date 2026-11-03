@@ -746,20 +746,29 @@ fn lantern_with_code() -> TempDir {
 }
 
 /// `ascribe check` on `examples/getting-started`, the getting started guide's
-/// project, which links to a page it doesn't have yet.
+/// project, which links to a page it doesn't have yet. It's checked in a copy
+/// outside any repository: its `ascribe.addresses` is compared with a base in
+/// one, and whether this repository's checkout has a base would change the
+/// report.
 #[test]
 fn getting_started() {
-    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started");
+    let dir = tempfile::tempdir().unwrap();
+    copy_tree(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started"),
+        dir.path(),
+    );
     expect(
         "getting-started-check.txt",
-        &stdout(&run(&example, &["check"], 1)),
+        &stdout(&run(dir.path(), &["check"], 1)),
     );
 }
 
 /// The guide to bringing existing docs over, step by step, on a copy of
-/// `examples/existing-docs`: `ascribe init`, which adopts its pages, and the
-/// `ascribe.toml` it writes; `ascribe check --fix`; then, once the guide's
-/// two edits are made, `ascribe baseline write` and a clean `ascribe check`.
+/// `examples/existing-docs` committed first, as the guide asks: `ascribe
+/// init`, which adopts its pages, and the `ascribe.toml` it writes; `ascribe
+/// check --fix`; then, once the guide's two edits are made, `ascribe baseline
+/// write` and `ascribe check`, which still has the advice that the base has
+/// no project; and, once the project is committed, a clean `ascribe check`.
 #[test]
 fn existing_docs() {
     let dir = tempfile::tempdir().unwrap();
@@ -768,15 +777,16 @@ fn existing_docs() {
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/existing-docs"),
         root,
     );
+    // Committed before `init`, as the guide's reader is asked to, so the git
+    // guard lets `--fix` write, and the check's base, `main`, has the pages
+    // and no project.
+    git(root, &["init", "-q"]);
+    commit(root, "Write the docs");
     expect("init-existing.txt", &stdout(&run(root, &["init"], 0)));
     expect(
         "init-existing-ascribe.toml",
         &fs::read_to_string(root.join("ascribe.toml")).unwrap(),
     );
-    // Committed, as a reader's docs are, so the git guard lets `--fix`
-    // write.
-    git(root, &["init", "-q"]);
-    commit(root, "Start using Ascribe");
     expect(
         "init-existing-fix.txt",
         &stdout(&run(root, &["check", "--fix", "--format", "concise"], 1)),
@@ -798,7 +808,12 @@ fn existing_docs() {
     );
     expect(
         "init-existing-check.txt",
-        &stdout(&run(root, &["check"], 0)),
+        &stdout(&run(root, &["check", "--format", "concise"], 0)),
+    );
+    commit(root, "Start using Ascribe");
+    expect(
+        "init-existing-committed.txt",
+        &stdout(&run(root, &["check", "--format", "concise"], 0)),
     );
 }
 

@@ -350,3 +350,61 @@ fn ascribe_model_reports_the_navigation_with_each_section_s_listed() {
     let report: serde_json::Value = serde_json::from_str(&stdout(&output)).expect("JSON");
     assert!(report.get("navigation").is_none(), "{report}");
 }
+
+#[test]
+fn ascribe_model_section_navigation_shows_the_sidebar_s_order_as_text() {
+    let dir = astro_site();
+    let output = ascribe(dir.path(), &["model", "--section", "navigation"]);
+    assert!(output.status.success(), "{output:?}");
+    // A nested section is drawn where its own page is, as the sidebar
+    // draws it, and a section with no page of its own by its folder.
+    assert_eq!(
+        stdout(&output),
+        "# Content model\n\n## Navigation\n\n\
+         - Start (the content root): `index.md`\n\
+         \x20 - Guides (`Guides/`)\n\
+         \x20   - Set up Loom: `Guides/My Setup.md`\n\
+         \x20   - Teams (`Guides/Teams/`)\n\
+         \x20     - Share a loom: `Guides/Teams/Share a loom.md`\n\
+         \x20 - Reference (`Reference/`)\n\
+         \x20   - loom.yaml options: `Reference/Options.md`\n"
+    );
+    let output = ascribe(
+        dir.path(),
+        &["model", "--format", "json", "--section", "navigation"],
+    );
+    assert!(output.status.success(), "{output:?}");
+    let report: serde_json::Value = serde_json::from_str(&stdout(&output)).expect("JSON");
+    assert_eq!(report["navigation"]["sections"][0]["folder"], "Guides/");
+    assert!(report.get("types").is_none(), "{report}");
+}
+
+#[test]
+fn a_section_whose_page_is_beside_its_folder_is_drawn_at_that_page() {
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    write(
+        &dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[builds.site]\n",
+    );
+    write(
+        &dir.path().join("ascribe.nav"),
+        "version = 1\n\n[[sections]]\nfolder = \"\"\npages = [\"b.md\", \"guides.md\", \"a.md\"]\n",
+    );
+    let docs = dir.path().join("docs");
+    write(&docs.join("index.md"), "---\ntitle: Home\n---\n");
+    write(&docs.join("a.md"), "---\ntitle: A\n---\n");
+    write(&docs.join("b.md"), "---\ntitle: B\n---\n");
+    write(&docs.join("guides.md"), "---\ntitle: Guides\n---\n");
+    write(&docs.join("guides/sync.md"), "---\ntitle: Sync\n---\n");
+    let output = ascribe(dir.path(), &["model", "--section", "navigation"]);
+    assert!(output.status.success(), "{output:?}");
+    assert_eq!(
+        stdout(&output),
+        "# Content model\n\n## Navigation\n\n\
+         - Start (the content root): `index.md`\n\
+         \x20 - B: `b.md`\n\
+         \x20 - Guides (`guides/`): `guides.md`\n\
+         \x20   - Sync: `guides/sync.md`\n\
+         \x20 - A: `a.md`\n"
+    );
+}

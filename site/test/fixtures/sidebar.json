@@ -58,6 +58,19 @@
     ]
   },
   {
+    "label": "Page templates",
+    "pages": [
+      {
+        "href": "/docs/templates/",
+        "label": "Page templates"
+      },
+      {
+        "href": "/docs/templates/command/",
+        "label": "ascribe templates"
+      }
+    ]
+  },
+  {
     "label": "The content model",
     "pages": [
       {
@@ -87,6 +100,51 @@
       {
         "href": "/docs/content-model/glossary/",
         "label": "Set up a glossary"
+      }
+    ]
+  },
+  {
+    "label": "The editor",
+    "pages": [
+      {
+        "href": "/docs/editor/",
+        "label": "Editing"
+      },
+      {
+        "href": "/docs/editor/problems/",
+        "label": "Problems and fixes"
+      },
+      {
+        "href": "/docs/editor/writing/",
+        "label": "Writing in the editor"
+      },
+      {
+        "href": "/docs/editor/actions/",
+        "label": "Actions, new pages, and memos"
+      },
+      {
+        "href": "/docs/editor/preview/",
+        "label": "The preview and builds"
+      },
+      {
+        "href": "/docs/editor/sidebar/",
+        "label": "The sidebar and the status bar"
+      },
+      {
+        "href": "/docs/editor/review/",
+        "label": "Review in the preview"
+      },
+      {
+        "href": "/docs/editor/agents/",
+        "label": "Agents in the editor"
+      },
+      {
+        "href": "/docs/editor/settings/",
+        "label": "Editor workspaces, settings, tasks, and commands"
+      },
+      {
+        "href": "/docs/editor/language-server/",
+        "label": "The language server"
       }
     ]
   },
@@ -202,100 +260,107 @@
     ]
   },
   {
-    "label": "The editor",
+    "label": "Navigation",
     "pages": [
       {
-        "href": "/docs/editor/",
-        "label": "Editing"
+        "href": "/docs/navigation/",
+        "label": "Navigation"
       },
       {
-        "href": "/docs/editor/problems/",
-        "label": "Problems and fixes"
+        "href": "/docs/navigation/order/",
+        "label": "Put your pages in order"
       },
       {
-        "href": "/docs/editor/writing/",
-        "label": "Writing in the editor"
-      },
-      {
-        "href": "/docs/editor/actions/",
-        "label": "Actions, new pages, and memos"
-      },
-      {
-        "href": "/docs/editor/preview/",
-        "label": "The preview and builds"
-      },
-      {
-        "href": "/docs/editor/sidebar/",
-        "label": "The sidebar and the status bar"
-      },
-      {
-        "href": "/docs/editor/review/",
-        "label": "Review in the preview"
-      },
-      {
-        "href": "/docs/editor/agents/",
-        "label": "Agents in the editor"
-      },
-      {
-        "href": "/docs/editor/settings/",
-        "label": "Editor workspaces, settings, tasks, and commands"
-      },
-      {
-        "href": "/docs/editor/language-server/",
-        "label": "The language server"
+        "href": "/docs/navigation/site-list/",
+        "label": "Move a site's own list to the navigation"
       }
     ]
   },
   {
-    "label": "Agents",
+    "label": "Publishing with Astro",
     "pages": [
       {
-        "href": "/docs/agents/",
-        "label": "Agents"
+        "href": "/docs/astro/",
+        "label": "Astro"
       },
       {
-        "href": "/docs/agents/loop/",
-        "label": "Work with an agent"
+        "href": "/docs/astro/deploy/",
+        "label": "Deploy the site"
       },
       {
-        "href": "/docs/agents/instructions/",
-        "label": "Write the agent files"
+        "href": "/docs/astro/more-than-docs/",
+        "label": "Put the docs in a site with more than the docs"
       },
       {
-        "href": "/docs/agents/prompts/",
-        "label": "Prompt your agent"
+        "href": "/docs/astro/agents/",
+        "label": "Publish for AI agents"
       },
       {
-        "href": "/docs/agents/mcp/",
-        "label": "Set up the MCP server"
+        "href": "/docs/astro/serve-markdown/",
+        "label": "Serve the Markdown versions"
       },
       {
-        "href": "/docs/agents/hooks/",
-        "label": "Check an agent's edits with hooks"
+        "href": "/docs/astro/reference/",
+        "label": "@ascribed/astro reference"
       },
       {
-        "href": "/docs/agents/claude-code/",
-        "label": "Claude Code"
+        "href": "/docs/astro/elements/",
+        "label": "Element library reference"
+      }
+    ]
+  },
+  {
+    "label": "Search engines and crawlers",
+    "pages": [
+      {
+        "href": "/docs/publishing/",
+        "label": "Search engines and crawlers"
       },
       {
-        "href": "/docs/agents/copilot/",
-        "label": "GitHub Copilot"
+        "href": "/docs/publishing/site/",
+        "label": "The head, sitemap, robots.txt, and headers"
       },
       {
-        "href": "/docs/agents/product-index/",
-        "label": "Index your docs for your product's agents"
+        "href": "/docs/publishing/redirects/",
+        "label": "Keep the addresses you've published"
+      }
+    ]
+  },
+  {
+    "label": "Versions",
+    "pages": [
+      {
+        "href": "/docs/versions/",
+        "label": "Publish a site for each version"
       },
       {
-        "href": "/docs/agents/whats-sent/",
-        "label": "What's sent where"
+        "href": "/docs/versions/archive/",
+        "label": "Export and retire a line"
       },
       {
-        "href": "/docs/agents/measuring/",
-        "label": "What to measure"
+        "href": "/docs/versions/lines/",
+        "label": "Release lines"
       },
       {
-        "href": "/docs/agents/commands/",
-        "label": "ascribe agents and mcp"
+        "href": "/docs/versions/release/",
+        "label": "ascribe versions"
+      }
+    ]
+  },
+  {
+    "label": "Permalinks",
+    "pages": [
+      {
+        "href": "/docs/permalinks/",
+        "label": "Permalinks"
+      },
+      {
+        "href": "/docs/permalinks/command/",
+        "label": "ascribe permalinks"
+      },
+      {
+        "href": "/docs/permalinks/in-your-product/",
+        "label": "Show the docs in your product"
       }
     ]
   },
@@ -358,116 +423,55 @@
     ]
   },
   {
-    "label": "Publishing",
+    "label": "Agents",
     "pages": [
       {
-        "href": "/docs/publishing/",
-        "label": "Publishing"
+        "href": "/docs/agents/",
+        "label": "Agents"
       },
       {
-        "href": "/docs/publishing/site/",
-        "label": "The head, sitemap, robots.txt, and headers"
+        "href": "/docs/agents/loop/",
+        "label": "Work with an agent"
       },
       {
-        "href": "/docs/publishing/redirects/",
-        "label": "Keep the addresses you've published"
-      }
-    ]
-  },
-  {
-    "label": "Publishing with Astro",
-    "pages": [
-      {
-        "href": "/docs/astro/",
-        "label": "Astro"
+        "href": "/docs/agents/instructions/",
+        "label": "Write the agent files"
       },
       {
-        "href": "/docs/astro/more-than-docs/",
-        "label": "Put the docs in a site with more than the docs"
+        "href": "/docs/agents/prompts/",
+        "label": "Prompt your agent"
       },
       {
-        "href": "/docs/astro/agents/",
-        "label": "Publish for AI agents"
+        "href": "/docs/agents/mcp/",
+        "label": "Set up the MCP server"
       },
       {
-        "href": "/docs/astro/serve-markdown/",
-        "label": "Serve the Markdown versions"
+        "href": "/docs/agents/hooks/",
+        "label": "Check an agent's edits with hooks"
       },
       {
-        "href": "/docs/astro/reference/",
-        "label": "@ascribed/astro reference"
+        "href": "/docs/agents/claude-code/",
+        "label": "Claude Code"
       },
       {
-        "href": "/docs/astro/elements/",
-        "label": "Element library reference"
-      }
-    ]
-  },
-  {
-    "label": "Permalinks",
-    "pages": [
-      {
-        "href": "/docs/permalinks/",
-        "label": "Permalinks"
+        "href": "/docs/agents/copilot/",
+        "label": "GitHub Copilot"
       },
       {
-        "href": "/docs/permalinks/command/",
-        "label": "ascribe permalinks"
+        "href": "/docs/agents/product-index/",
+        "label": "Index your docs for your product's agents"
       },
       {
-        "href": "/docs/permalinks/in-your-product/",
-        "label": "Show the docs in your product"
-      }
-    ]
-  },
-  {
-    "label": "Navigation",
-    "pages": [
-      {
-        "href": "/docs/navigation/",
-        "label": "Navigation"
+        "href": "/docs/agents/whats-sent/",
+        "label": "What's sent where"
       },
       {
-        "href": "/docs/navigation/order/",
-        "label": "Put your pages in order"
+        "href": "/docs/agents/measuring/",
+        "label": "What to measure"
       },
       {
-        "href": "/docs/navigation/site-list/",
-        "label": "Move a site's own list to the navigation"
-      }
-    ]
-  },
-  {
-    "label": "Versions",
-    "pages": [
-      {
-        "href": "/docs/versions/",
-        "label": "Publish a site for each version"
-      },
-      {
-        "href": "/docs/versions/archive/",
-        "label": "Export and retire a line"
-      },
-      {
-        "href": "/docs/versions/lines/",
-        "label": "Release lines"
-      },
-      {
-        "href": "/docs/versions/release/",
-        "label": "ascribe versions"
-      }
-    ]
-  },
-  {
-    "label": "Page templates",
-    "pages": [
-      {
-        "href": "/docs/templates/",
-        "label": "Page templates"
-      },
-      {
-        "href": "/docs/templates/command/",
-        "label": "ascribe templates"
+        "href": "/docs/agents/commands/",
+        "label": "ascribe agents and mcp"
       }
     ]
   },
@@ -596,6 +600,15 @@
       {
         "href": "/docs/contracts/json-reports/agents/",
         "label": "ascribe agents",
+        "nested": true
+      },
+      {
+        "href": "/docs/contracts/json-output/",
+        "label": "JSON output contract"
+      },
+      {
+        "href": "/docs/contracts/json-output/schema/",
+        "label": "The schema",
         "nested": true
       },
       {

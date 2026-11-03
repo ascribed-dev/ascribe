@@ -1,0 +1,1 @@
+- **A guide deploys the site from CI, to GitHub Pages or Netlify.** It says what each host needs, and the Astro guide now says which ways to publish are supported. See [Deploy the site](docs/content/astro/deploy.md).

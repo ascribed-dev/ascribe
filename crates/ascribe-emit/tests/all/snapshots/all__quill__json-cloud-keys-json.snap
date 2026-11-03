@@ -1,9 +1,10 @@
 ---
 source: crates/ascribe-emit/tests/all/quill.rs
+assertion_line: 45
 expression: text
 ---
 {
-  "schemaVersion": 1,
+  "schema_version": 2,
   "format": "ascribe-page",
   "build": "cloud",
   "path": "keys.md",
@@ -21,7 +22,7 @@ expression: text
       "level": 2,
       "text": "Create a key",
       "id": "create-key",
-      "sourceId": "create-key",
+      "source_id": "create-key",
       "explicit": true,
       "source": {
         "file": "keys.md",
@@ -33,7 +34,7 @@ expression: text
       "level": 2,
       "text": "Rotate keys",
       "id": "rotate-keys",
-      "sourceId": "rotate-keys",
+      "source_id": "rotate-keys",
       "explicit": true,
       "source": {
         "file": "keys.md",
@@ -48,7 +49,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "create-key",
-      "sourceId": "create-key",
+      "source_id": "create-key",
       "explicit": true,
       "text": "Create a key",
       "inlines": [
@@ -123,7 +124,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "rotate-keys",
-      "sourceId": "rotate-keys",
+      "source_id": "rotate-keys",
       "explicit": true,
       "text": "Rotate keys",
       "inlines": [
@@ -183,7 +184,7 @@ expression: text
             "page": "install-agent.md",
             "id": "install-agent",
             "url": "/install-agent/#install-agent",
-            "textFilled": true
+            "text_filled": true
           },
           "children": [
             {
@@ -215,7 +216,7 @@ expression: text
             "page": "install-agent.md",
             "id": "install-agent",
             "url": "/install-agent/#install-agent",
-            "textFilled": true
+            "text_filled": true
           }
         }
       ]

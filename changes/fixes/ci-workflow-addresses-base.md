@@ -1,0 +1,1 @@
+- **Fixed:** a project `ascribe init` made passes the workflow on Checks in CI. The workflow fetches the history and names the base its `ascribe.addresses` is compared with. See [Checks in CI](docs/content/checks/ci.md).

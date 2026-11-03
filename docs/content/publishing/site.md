@@ -5,7 +5,7 @@ description: "What `@ascribed/astro` writes from the page records for search eng
 permalink: search-engines
 ---
 
-Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/output.md#17-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/output.md#18-crawlers). `@ascribed/astro` writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Publishing](index.md) says what a project tells search engines and agents, and why.
+Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/output.md#17-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/output.md#18-crawlers). `@ascribed/astro` writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Search engines and crawlers](index.md) says what a project tells search engines and agents, and why.
 
 ## The head
 

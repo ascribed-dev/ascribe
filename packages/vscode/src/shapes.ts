@@ -1579,7 +1579,7 @@ export interface ModelReport {
   /**
    * The project's navigation, its root section: every page that isn't
    * `unlisted`, in order, as each build's `_ascribe/nav.json` has its
-   * share of it. Only in the whole report.
+   * share of it. In the whole report, and with `--section navigation`.
    */
   navigation?: ModelNavSection;
   /**
