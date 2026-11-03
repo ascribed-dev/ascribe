@@ -1,1 +1,1 @@
-- **Fixed:** `ascribe agents sync` writes the same hook commands whether or not `node_modules` is installed, deciding from `package.json`, so `sync --check` no longer reports them stale after `npm install`. See [Hooks](docs/content/agents/hooks.md).
+- **Fixed:** `ascribe agents sync` writes the same hooks with or without `node_modules`. It decides from `package.json`, so `sync --check` agrees on every machine. See [Hooks](docs/content/agents/hooks.md).
