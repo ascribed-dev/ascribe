@@ -1,7 +1,9 @@
 # The check on every pull request: the recipe in docs/content/checks/ci.md
 # ("Add the workflow"), which takes it from this file. It runs the `ascribe`
 # this project's package.json pins, as the editor and `npx ascribe` do, so a
-# new release changes the check only when the pin moves.
+# new release changes the check only when the pin moves. This project has the
+# `ascribe.addresses` `ascribe init` writes, so the check compares the
+# addresses with the base's, which needs the history and the base named.
 # :snippet-start: workflow
 name: Check
 
@@ -17,13 +19,20 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # The whole history, so the check can read ascribe.addresses at the base.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - run: npm ci
       # Fails on errors and warnings, then on a page `ascribe fmt` would change,
-      # and shows each on the pull request's lines.
-      - run: npx ascribe check --deny-warnings --format github
+      # and shows each on the pull request's lines. The base is the branch the
+      # pull request targets, or the commit before the push.
+      - if: github.event_name == 'pull_request'
+        run: npx ascribe check --deny-warnings --format github --base origin/$GITHUB_BASE_REF
+      - if: github.event_name == 'push'
+        run: npx ascribe check --deny-warnings --format github --base ${{ github.event.before }} --base-exact
       - run: npx ascribe fmt --check --format github
 # :snippet-end:
