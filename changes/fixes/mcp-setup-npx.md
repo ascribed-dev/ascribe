@@ -1,0 +1,1 @@
+- **Fixed:** The MCP server's setup no longer runs `npx ascribe mcp`. That could install and run an unrelated npm package named `ascribe`. See [Set up the MCP server](docs/content/agents/mcp.md).
