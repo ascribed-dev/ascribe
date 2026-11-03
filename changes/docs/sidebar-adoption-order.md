@@ -1,0 +1,1 @@
+- **The docs' sidebar puts its sections in the order you'll need them.** Templates and the editor come right after writing pages, and navigation before publishing. See [Getting started](docs/content/getting-started.md).
