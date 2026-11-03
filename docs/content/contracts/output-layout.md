@@ -21,7 +21,7 @@ This contract says where `ascribe build` writes each build's output, how it reco
     manifest.json               what this folder holds (§3)
 ```
 
-- `<build>` is the build's name from `ascribe.toml`, as written (`site`, `cloud`, `self-managed-3.3`). Build names are unique ignoring case (content-model.md, `model-build-name-case`), and start with a letter, so they can't clash with `.lock`, `.staging`, or `_ascribe`. A versioned build (content-model.md §16) has one `<build>` for each live line: its current line is named as the build is, and each other `<build>@<line>`, such as `site@3.4`.
+- `<build>` is the build's name from `ascribe.toml`, as written (`site`, `cloud`, `self-managed-3.3`). Build names are unique ignoring case (content-model.md, `model-build-name-case`), and start with a letter, so they can't clash with `.lock`, `.staging`, or `_ascribe`. A versioned build ([content-model.md §16](content-model/output.md#16-buildsname)) has one `<build>` for each live line: its current line is named as the build is, and each other `<build>@<line>`, such as `site@3.4`.
 - `<emitter>` is `site`, `plain`, or `json`.
 - Each emitter root is complete on its own: its pages, and a copy of every asset they use ([asset contract](assets.md)). Nothing is shared between emitter roots or builds, with one exception: `_ascribe/versions.json` (§1.5), which says what each line of a versioned build knows about the others.
 
@@ -37,7 +37,7 @@ Pages mirror their source paths relative to the content root:
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 
-**With `[consumer] agents = true`** (content-model.md §15), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
+**With `[consumer] agents = true`** ([content-model.md §15](content-model/output.md#15-consumer)), the `plain` root is laid out by URL instead, so that copying it to the site's base path publishes what agents read:
 
 | Emitter | Page `Guides/My Setup.md` is written to |
 |---|---|
@@ -49,9 +49,9 @@ For a project with `[releases]`, the opening blockquote, and the summary of each
 
 A link in these pages to a page the build publishes, a glossary link included, is the absolute URL of that page's Markdown version (`https://docs.example.com/docs/guides/my-setup.md`), and its fragment, when it names a heading, is the anchor a Markdown reader gives that heading there: the `github` slug of the heading's text as the page's Markdown writes it, numbered across the page as the slugger numbers. That's the heading's page id (SPEC §5.5), unless the heading has an `@id`, or is in a variant arm, whose label its heading ends with in the Markdown (SPEC §9.4); either way it's the heading the page id names on the page. A link out of a line of a versioned build, a link to an operation, and the sections in `_ascribe/help.json` (§1.7) keep the HTML address, as the `plain` output without agents does (decision #1023).
 
-Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split (content-model.md §15); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
+Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section when the index is split ([content-model.md §15](content-model/output.md#15-consumer)); both are `generated` in the manifest. Every asset the pages use is under `_ascribe/files/`, mirroring its source path, with its `url` in the manifest. The `site` and `json` roots don't change.
 
-Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
+Assets go where the [asset contract §3](assets.md#3-where-copies-go) puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
 **`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`), its list of permalinks (`_ascribe/permalinks.json`, §1.2), its page records (`_ascribe/pages.json`, §1.3), the headers its files need (`_ascribe/headers.json`, §1.4), its navigation (`_ascribe/nav.json`, §1.6), and each permalink's section for a product to show (`_ascribe/help.json`, §1.7).
 
@@ -79,7 +79,7 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 | Field | Meaning |
 |---|---|
 | `version` | The list's format version: `1`. A reader rejects versions it doesn't know. |
-| `path` | Where the addresses are published: `[consumer] permalink-path`, or `go/` under `base-path`, as a path from the site's root ending in `/` (content-model contract §15). A permalink's address is `path`, its name, and a final `/` when `trailing-slash` is `"always"`. |
+| `path` | Where the addresses are published: `[consumer] permalink-path`, or `go/` under `base-path`, as a path from the site's root ending in `/` ([content-model contract §15](content-model/output.md#15-consumer)). A permalink's address is `path`, its name, and a final `/` when `trailing-slash` is `"always"`. |
 | `dimensions` | The content model's dimensions, keyed by name and sorted by name, each with its values in declaration order: the parameters an address takes, each setting the reader's choice for a dimension (`?pm=pnpm`). |
 | `permalinks` | One entry per permalink, keyed by its name, sorted by name. A name is unique in a build (`permalink-duplicate`). |
 | `permalinks.*.route` | The route of the page the permalink is on, as the site output's links write it. |
@@ -154,7 +154,7 @@ In an older line of a versioned build (§1.5), a page's `canonical` is the route
 
 ### 1.4 The headers
 
-The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version (content-model contract §15) has no head to carry what its page's head says, and a help entry's own addresses (§1.7) are read by a product on another origin, so the host sends them, and the host is the site's: with `[consumer] host = "netlify"`, the build writes them in Netlify's format too (§1.9), which `@ascribed/astro` places at the site's root, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
+The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version ([content-model contract §15](content-model/output.md#15-consumer)) has no head to carry what its page's head says, and a help entry's own addresses (§1.7) are read by a product on another origin, so the host sends them, and the host is the site's: with `[consumer] host = "netlify"`, the build writes them in Netlify's format too (§1.9), which `@ascribed/astro` places at the site's root, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
 
 ```json
 {
@@ -273,7 +273,7 @@ The site output holds `_ascribe/help.json`: each permalink's section of the docs
 |---|---|
 | `version` | The file's format version: `1`. A reader rejects versions it doesn't know. |
 | `build` | The build's name, as `ascribe.toml` declares it: a line of a versioned build has its build's name, and the line in `line`. |
-| `line` | For a line of a versioned build (content-model.md §16), the line, as `[releases.<target>] live` writes it. Absent for a build that isn't versioned, and for a versioned build with one live line, which writes what it would unversioned. |
+| `line` | For a line of a versioned build ([content-model.md §16](content-model/output.md#16-buildsname)), the line, as `[releases.<target>] live` writes it. Absent for a build that isn't versioned, and for a versioned build with one live line, which writes what it would unversioned. |
 | `help` | One entry for each name the build answers to, keyed by name and sorted by name: each permalink the build publishes, and each alias of one (SPEC §7.6), under its own name with the entry of the permalink it ends at. A retired permalink has none. A name the build publishes twice (`permalink-duplicate`) has its first page's. |
 | `help.*.title` | The heading's text, or the page's title for a page's own permalink, as plain text: phrases substituted, and code spans as their text, without backticks. |
 | `help.*.summary` | The section's summary, its `@summary` (SPEC §4.12): its text, or the paragraph it marks, as `text` writes it. A page's own permalink has its description, or its opening's `@summary` when it has none. Absent when there's none: nothing is taken from a section that has no `@summary`. |
@@ -325,7 +325,7 @@ A later version adds keys and changes none of these.
 
 ### 1.9 The host's files
 
-With `[consumer] host` (content-model.md §15), the site output holds the host's own files in `_ascribe/host/`, each `generated` in the manifest, for whatever deploys the site to copy to the root of what's deployed. `@ascribed/astro` reads them, merges every project's, and writes them at the built site's root. Without `host`, the folder isn't written.
+With `[consumer] host` ([content-model.md §15](content-model/output.md#15-consumer)), the site output holds the host's own files in `_ascribe/host/`, each `generated` in the manifest, for whatever deploys the site to copy to the root of what's deployed. `@ascribed/astro` reads them, merges every project's, and writes them at the built site's root. Without `host`, the folder isn't written.
 
 With `host = "netlify"`:
 
@@ -388,12 +388,12 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 | `format` | Always `"ascribe-manifest"`. A file at a manifest's path without it isn't a manifest, and isn't Ascribe's (§4). |
 | `version` | The manifest format's version: `1`. A reader rejects versions it doesn't know. |
 | `build`, `emitter` | Which output this is. |
-| `anchors` | `true` when the site output has source anchors (`ascribe build --anchors`; site-render contract §7). Absent otherwise. |
+| `anchors` | `true` when the site output has source anchors (`ascribe build --anchors`; [site-render contract §7](site-render.md#7-source-anchors)). Absent otherwise. |
 | `files` | Every file in the emitter root that Ascribe wrote, sorted by `path`. |
 | `files[].path` | The file's path relative to the emitter root, `/`-separated. A manifest is read as input, not trusted as Ascribe's own: a path that's absolute, has a `.` or `..` segment, or that the operating system reads as on a drive (`C:/x`, `C:x` on Windows) isn't a manifest's, and fails the build. |
 | `files[].kind` | `"page"`, `"asset"`, or `"generated"` (anything else Ascribe writes, such as a schema). |
 | `files[].source` | For a page or asset, its source path relative to the content root, starting with `..` for a file outside it. Absent for generated files. |
-| `files[].url` | For an asset under `_ascribe/files/` (the site output's, or the plain output's with `agents = true`), the root-relative URL pages use for it, which the consumer must serve it at (asset contract §3.2). Absent otherwise. |
+| `files[].url` | For an asset under `_ascribe/files/` (the site output's, or the plain output's with `agents = true`), the root-relative URL pages use for it, which the consumer must serve it at ([asset contract §3.2](assets.md#32-placement-in-each-output)). Absent otherwise. |
 
 The manifest lists files only. Directories are implied by their paths.
 
