@@ -280,11 +280,13 @@ describe("the registry", () => {
   });
 
   it("has an action for every ascribe/edit operation", () => {
-    const readme = readFileSync(
-      new URL("../../../../crates/ascribe-lsp/README.md", import.meta.url),
+    // The operations are listed with the requests' parameters, on the docs page.
+    const page = readFileSync(
+      new URL("../../../../docs/content/editor/language-server.md", import.meta.url),
       "utf8",
     );
-    const table = readme.slice(readme.indexOf("| Action | Applies to |"));
+    const start = page.indexOf("| Action | Applies to |");
+    const table = page.slice(start, page.indexOf("\n\n", start));
     // Two aren't actions: New Page and Go to Next Placeholder are commands
     // of their own (src/actions/newPage.ts), since neither is about a place in a page.
     // The navigation's, and a page's label, are the Pages view's drags and menu (src/ui/sidebarViews.ts).
