@@ -1,0 +1,1 @@
+- **The command reference lists the environment variables and the exit-code convention.** It says what `0`, `1`, and `2` mean for every command, and which commands differ. See [Command reference](docs/content/command/index.md#exit-codes).
