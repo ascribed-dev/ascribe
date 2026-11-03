@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe check --editor-build`'s help names the right default build. `ascribe build --help` says `--format` takes `concise` too. See [`ascribe check`](docs/content/checks/check.md).

@@ -204,7 +204,7 @@ When a page, a fragment, `ascribe.toml`, or a file a snippet takes code from cha
 
 @include: ../_generated/cli-preview-options.md
 
-The preview isn't the published site, which looks the way its Astro project styles it ([Astro](../astro/index.md)), and isn't the editor's page preview or site preview, two of the four [previews](../glossary.md#preview). Only this computer can open its address: it listens at `127.0.0.1` alone, answers only a request addressed to `127.0.0.1` or `localhost` with its port, so a web page elsewhere can't read it, and connects to nothing. `.ascribe/` is the folder `.gitignore` already leaves out.
+The preview isn't the published site, which looks the way its Astro project styles it ([Astro](../astro/index.md)), and isn't the editor's page preview or site preview, two of the four [previews](../glossary.md#preview). Only this computer can open its address: it listens at `127.0.0.1` alone, answers only a request addressed to `127.0.0.1` or `localhost` with its port, so a web page elsewhere can't read it, and connects to nothing. It writes the preview in `.ascribe/`, which belongs in `.gitignore` ([Files Ascribe writes](../command/project-files.md)).
 
 | Code | Meaning |
 |---|---|

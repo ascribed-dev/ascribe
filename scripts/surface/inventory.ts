@@ -699,7 +699,7 @@ const UNDECLARED: { surface: string; what: string; where: string }[] = [
   },
   {
     surface: "The language",
-    what: "The reserved frontmatter keys: `available`, `variant`, `formatted`, `source`, `permalink`, `intended`, and `slug` under the `astro` profile",
+    what: "The reserved frontmatter keys: `available`, `variant`, `type`, `listing`, `replaces`, `nav-label`, `draft`, `formatted`, `source`, `permalink`, `intended`, and `slug` under the `astro` profile",
     where: "Checked in `crates/ascribe-model/src/sections.rs`; described in SPEC §2.1",
   },
   {

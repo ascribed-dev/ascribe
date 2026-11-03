@@ -68,8 +68,9 @@ pub struct Args {
     /// Run the page-level checks of the editor's build only, as the editor
     /// does as you type.
     ///
-    /// The editor's build is `[editor] build` in `ascribe.toml`, or the
-    /// first build. With paths that name files, only those files and the
+    /// The editor's build is `[editor] build` in `ascribe.toml`; without
+    /// it, the only build, or else the build named `site`. With paths that
+    /// name files, only those files and the
     /// pages that include them are checked, which is quick: for a check
     /// after every edit. A full `ascribe check` still covers every build.
     #[arg(long, conflicts_with = "build")]

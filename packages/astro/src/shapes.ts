@@ -89,7 +89,10 @@ export interface Counts {
 
 /** The whole report, as `ascribe diff --format json` writes it. */
 export interface DiffReport {
-  /** `SCHEMA_VERSION`. */
+  /**
+   * The version of this schema. It changes only when a field is removed
+   * or changes meaning.
+   */
   schema_version: number;
   /** The version of Ascribe that wrote it. */
   ascribe_version: string;
