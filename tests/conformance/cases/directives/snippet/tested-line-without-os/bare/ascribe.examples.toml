@@ -1,0 +1,3 @@
+include = ["examples/**"]
+test = "node --test"
+show-os = false

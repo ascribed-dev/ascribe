@@ -1247,12 +1247,13 @@ function healthRows(
       state: exampleState(example),
       value: [
         example.address,
-        example.tested === null ? "" : `with ${example.tested}`,
+        // An empty line is a config's `show-os = false` with no entries.
+        example.tested === null || example.tested === "" ? "" : `with ${example.tested}`,
         example.heading === null ? "" : `under “${example.heading}”`,
       ]
         .filter((part) => part !== "")
         .join(", "),
-      tooltip: example.tested ?? exampleState(example),
+      tooltip: example.tested || exampleState(example),
       warn: example.state !== "tested",
       opens: shown
         ? { kind: "beside", uri: shown }

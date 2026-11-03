@@ -1,0 +1,12 @@
+# Written by `ascribe observe`. Don't edit it by hand.
+version = 1
+ascribe = "0.4.0"
+command = "node --test"
+
+[environment]
+os = "macos"
+arch = "x64"
+node = "v24.9.0"
+
+[files]
+"examples/hello.ts" = "sha256-lf:f9444510dc7403e41049deb133f6892aa6a63c05591b2b59e4ee5b234d7bbd99"
