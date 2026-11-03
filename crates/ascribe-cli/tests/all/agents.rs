@@ -873,7 +873,8 @@ fn with_hook_keeps_what_the_user_changed() {
 fn with_hook_runs_the_pinned_ascribe() {
     let repo = repository("quill");
     let root = repo.path();
-    fs::create_dir_all(root.join("node_modules/@ascribed/cli")).unwrap();
+    write(&root.join("package.json"), DEPENDS_ON_CLI);
+    write(&root.join("package-lock.json"), "");
     sync(root, ".", &["--target", "claude", "--with-hook"]);
     let settings = read(&root.join(".claude/settings.json"));
     assert!(
@@ -886,6 +887,48 @@ fn with_hook_runs_the_pinned_ascribe() {
     // system, so it runs `ascribe` from the path.
     let mcp = read(&root.join(".mcp.json"));
     assert!(mcp.contains(r#""command": "ascribe""#), "{mcp}");
+}
+
+#[test]
+fn the_hooks_dont_depend_on_whether_node_modules_is_installed() {
+    let repo = repository("quill");
+    let root = repo.path();
+    write(&root.join("package.json"), DEPENDS_ON_CLI);
+    write(&root.join("package-lock.json"), "");
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    let without = read(&root.join(".claude/settings.json"));
+    fs::create_dir_all(root.join("node_modules/@ascribed/cli")).unwrap();
+    run(root, &["agents", "sync", "--check"], 0);
+    sync(root, ".", &[]);
+    assert_eq!(read(&root.join(".claude/settings.json")), without);
+    fs::remove_dir_all(root.join("node_modules")).unwrap();
+    run(root, &["agents", "sync", "--check"], 0);
+
+    // An installed `@ascribed/cli` the project doesn't pin isn't run.
+    let repo = repository("quill");
+    let root = repo.path();
+    fs::create_dir_all(root.join("node_modules/@ascribed/cli")).unwrap();
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.contains(r#""command": "ascribe agents hook claude-code --event edit""#),
+        "{settings}"
+    );
+}
+
+#[test]
+fn with_plug_n_play_the_hooks_run_ascribe_from_the_path() {
+    let repo = repository("quill");
+    let root = repo.path();
+    write(&root.join("package.json"), DEPENDS_ON_CLI);
+    write(&root.join("yarn.lock"), "__metadata:\n  version: 8\n");
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.contains(r#""command": "ascribe agents hook claude-code --event edit"#),
+        "{settings}"
+    );
+    assert!(!settings.contains("node_modules"), "{settings}");
 }
 
 /// A copy of quill synced for Claude Code with its hooks, with
