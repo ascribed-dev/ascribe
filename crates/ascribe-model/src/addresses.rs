@@ -681,6 +681,12 @@ fn quoted(text: &str) -> String {
     out
 }
 
+/// An entry read: its key, the key's place, and its value.
+type Read = (String, Span, String);
+
+/// A build's table read: its name, the name's place, and its entries.
+type Found = (String, Span, Vec<Read>);
+
 struct Reader {
     file: FileId,
     issues: Vec<Issue>,
@@ -923,7 +929,7 @@ impl Reader {
         &mut self,
         root: &DeTable<'_>,
         key: &str,
-        mut builds: Option<&mut Vec<(String, Span, Vec<(String, Span, String)>)>>,
+        mut builds: Option<&mut Vec<Found>>,
     ) -> Vec<(String, Span, String)> {
         let Some(value) = root.get(key) else {
             return Vec::new();
