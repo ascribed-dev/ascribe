@@ -1,7 +1,7 @@
 ---
 type: reference
 title: The language server
-description: "`ascribe lsp`, for an editor other than VS Code: setups for Neovim, Helix, and Zed, the project a server serves, what it asks of the editor, and the requests of its own, with their parameters."
+description: "`ascribe lsp`, for an editor other than VS Code: setups for Neovim and Helix, the project a server serves, what it asks of the editor, and the requests of its own, with their parameters."
 ---
 
 Every feature of the [VS Code extension](index.md) that isn't drawn on the screen comes from the language server, `ascribe lsp`, which runs the same checks as `ascribe check`. Any editor with a Language Server Protocol client can run it from a project installed with `@ascribed/cli`, and gets the problems, completion, hover, navigation, renaming, formatting, and fixes the extension has. The preview, the sidebar, and review are drawn by the extension, from the requests of the server's own below.
@@ -27,11 +27,12 @@ vim.lsp.config("ascribe", {
   cmd = { "npx", "ascribe", "lsp" },
   filetypes = { "markdown", "toml" },
   root_markers = { "ascribe.toml" },
+  workspace_required = true,
 })
 vim.lsp.enable("ascribe")
 ```
 
-`root_markers` starts one server for each project, at the nearest `ascribe.toml` above the file, and a file outside every project gets none.
+`root_markers` starts one server for each project, at the nearest `ascribe.toml` above the file. `workspace_required`, which Neovim reads from 0.11.1, starts none for a file outside every project. Without it, or in 0.11.0, such a file gets a server of its own with no project, which reports nothing.
 
 ### Helix
 
