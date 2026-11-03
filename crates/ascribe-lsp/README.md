@@ -112,7 +112,7 @@ came through includes, which the client uses to scroll the preview with the
 editor by block. No capability is advertised: a client that wants it sends
 the request.
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribepreview), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 **Result.** Always an object; `page` is `null` when there is nothing to show,
 and `problems` says why. Field names are camelCase.
@@ -167,7 +167,7 @@ compared with moved, after a pull, rebase, or fetch; otherwise it keeps the
 base it has. The editor does that when the preview regains focus. The request
 runs `git` on the main loop, without the server's lock.
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribereviewsetbase), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 The result is `{ base, problem }`. `base` is `{ requested, commit, merge_base }`
 (as in `ascribe diff`'s report), or `null` once dropped or when it couldn't be
@@ -209,7 +209,7 @@ includes unsaved edits, and holds nothing about the rest of the project (that's
 `ascribe/targets`). No capability is advertised: a client that wants it sends
 the request.
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribecontext), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 An empty range is the cursor. Every range in the answer is in the negotiated
 position encoding. The result, whose TypeScript type is `ContextResult` in
@@ -276,7 +276,7 @@ A custom request that lists what an action can point at or use in the page's
 project, so a client can offer choices instead of asking for syntax. The
 client asks for the kinds it needs:
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribetargets), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 The result has a list for each kind asked for and no others, and `modelUri`,
 the `file:` URI of `ascribe.toml`, which declaration ranges are in. Its
@@ -325,7 +325,7 @@ so a client can offer actions without writing syntax itself. It answers
 from the current snapshot, so it sees unsaved edits. No capability is
 advertised: a client that wants it sends the request.
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeedit), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 The result, whose TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-edit.schema.json`), is one of:
@@ -336,7 +336,7 @@ The result, whose TypeScript type is `EditResult` in `packages/vscode/src/shapes
 | `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
 
 The actions, where each applies, its arguments, and what it writes are in
-[the requests' parameters](../../docs/content/editor/language-server.md#ascribeedit), on the docs page
+[the requests' parameters](https://ascribed-dev.com/go/lsp-requests/), on the docs page
 about the language server, which is their one home.
 
 What a template left to fill in is found as `template-placeholder-left`
@@ -383,7 +383,7 @@ the targets found as `ascribe/context` finds them.
 A custom request that answers what the project has and how much each part is
 used, for the editor's Pages and Content model views:
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeinventory), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 Like `ascribe/targets`, it can be sent for any of the project's files. Its
 TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-inventory.schema.json`):
@@ -450,7 +450,7 @@ its cost.
 A custom request that answers every setting of `ascribe.toml` that Project
 Settings shows, for the editor's tab of the same name:
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribesettings), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 Like `ascribe/inventory`, it can be sent for any of the project's files. Its
 TypeScript type is `SettingsResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-settings.schema.json`):
@@ -523,7 +523,7 @@ A custom request that answers what the page is, and what links to and
 includes the heading at the cursor, for the editor's This page view, in one
 request:
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribepage), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 Its TypeScript type is `PageResult` in `packages/vscode/src/shapes.ts`
 (`schemas/lsp-page.schema.json`):
@@ -617,7 +617,7 @@ A custom request that answers with one edit to every source file of the
 project, for the editor's Project view, which says how much it changes before
 it applies it:
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeprojectedit), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 Like `ascribe/inventory`, it can be sent for any of the project's files. Its
 `kind` is `fixAll`, every safe fix "Apply the safe fixes in this page" makes,
@@ -658,7 +658,7 @@ A custom request that says what a build leaves out of a page, for a client
 that dims it in the source (the editor's build lens). The client names the
 page and the build; without `build`, the editor's build (`[editor] build`):
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribebuildview), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 The result's TypeScript type is `BuildViewResult` in
 `packages/vscode/src/shapes.ts` (`schemas/lsp-build-view.schema.json`):
@@ -699,7 +699,7 @@ editor's **Search Pages as Readers See Them**. The client names any of the
 project's files, which says which project, the query as `ascribe search`
 takes it, and a build; without `build`, every build:
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribesearch), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 The result's TypeScript type is `SearchResult` in
 `packages/vscode/src/shapes.ts` (`schemas/lsp-search.schema.json`):
@@ -752,7 +752,7 @@ A custom request for **Prompt agent**: a prompt for the user's agent about one
 problem, a file's problems, or the project's. The client says which, and lists
 the documents with unsaved changes, so a prompt about one says to save it:
 
-Its parameters are in [the docs](../../docs/content/editor/language-server.md#ascribeagentprompt), their one home.
+Its parameters are in [the docs](https://ascribed-dev.com/go/lsp-requests/), under its name, their one home.
 
 `program` is how the agent runs Ascribe when `ascribe` isn't the binary the
 editor runs: the extension sends the binary's path when `ascribe` on the
@@ -778,7 +778,7 @@ While review is on (`ascribe/review/setBase`), two more kinds prompt about
 changes, against the base the server holds:
 
 `pageChanges`, what changed on a page, and `fragmentReach`, the pages that
-changed through a fragment, take the parameters [the docs](../../docs/content/editor/language-server.md#ascribeagentprompt) give.
+changed through a fragment, take the parameters [the docs](https://ascribed-dev.com/go/lsp-requests/) give.
 
 They answer `null` when review is off, or the page or fragment didn't change
 in the build. The prompts are built by `ascribe_diff::prompt`, as `ascribe diff

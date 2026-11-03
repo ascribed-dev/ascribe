@@ -83,7 +83,7 @@ The action that applies a page's safe fixes has the kind `source.fixAll.ascribe`
 
 ## Ascribe's own requests
 
-Beside the standard requests, the server answers requests of its own, which the VS Code extension draws its views from. None is advertised as a capability: a client that wants one sends it. Each answers from the text the editor has, unsaved edits included, and each result's shape is a JSON Schema in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder, generated from the code that answers it. [Their parameters](#the-requests-parameters) are below.
+Beside the standard requests, the server answers requests of its own, which the VS Code extension draws its views from. None is advertised as a capability: a client that wants one sends it. Each answers from the text the editor has, unsaved edits included, and each result's shape is a JSON Schema in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder, generated from the code that answers it. [Their parameters](#lsp-requests) are below.
 
 | Request | What it answers | Its schema |
 |---|---|---|
@@ -109,6 +109,7 @@ The server also sends one notification of its own, `ascribe/preview/changed`, wi
 In a project that [keeps its addresses](../publishing/redirects.md), the server sends a second notification, `ascribe/addresses`, with what comparing the addresses with the base's found: `ascribe.addresses`' URI, the base, the count of pages lost, and the problems at the file, as `ascribe check` reports them (`lsp-addresses.schema.json`). It compares after the project loads, a save, a change on disk, or an edit to `ascribe.addresses`, never as a page is typed. A client shows the problems as the project's, not as a page's diagnostics. `ascribe/page`'s `about.alsoAnswersAt` lists the old addresses that lead to the page.
 
 ## The requests' parameters
+@id {permalink=true}: lsp-requests
 
 Each request names a document by its URI, as `textDocument`, and the server answers for that document's project. Positions and ranges are in the position encoding the editor and the server agreed on at `initialize`. A request whose parameters don't parse gets the error `InvalidParams`; every other problem is in the result, as its schema says.
 
