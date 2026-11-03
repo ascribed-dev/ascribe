@@ -9,8 +9,8 @@
 // pattern of the site's.
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { normalizeBase } from "./project.js";
-import { routeKey } from "./records.js";
+import { normalizeBase } from "../project.js";
+import { routeKey } from "../records.js";
 
 /** One redirect: an old address, from the host's root, to where it leads now. */
 export interface Redirect {

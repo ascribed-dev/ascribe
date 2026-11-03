@@ -65,9 +65,9 @@ import {
   mergeRedirects,
   readHostRedirects,
   redirectsOutcome,
-} from "./redirects.js";
+} from "./internal/redirects.js";
 import { helpPatterns } from "./help.js";
-import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./permalinks.js";
+import { forwardingRoutes, hasPermalinks, permalinkPattern, readPermalinks } from "./internal/permalinks.js";
 import {
   consumerMismatches,
   homeRoute,

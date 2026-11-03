@@ -1,0 +1,1 @@
+- **A layout's own version list and banner are documented.** `pageVersions`, `lineVersions`, and `versionNotice`, from `@ascribed/astro/content`, give what `Versions.astro` and `VersionBanner.astro` draw. See [the Astro reference](docs/content/astro/reference.md#version-functions).

@@ -728,8 +728,8 @@ What a site imports:
 | `@ascribed/astro/Versions.astro` | An import |
 | `@ascribed/astro/VersionBanner.astro` | An import |
 | `@ascribed/astro/content` | An import |
-| `@ascribed/astro/permalinks` | An import |
-| `@ascribed/astro/redirects` | An import |
+| `@ascribed/astro/internal/permalinks` | An import |
+| `@ascribed/astro/internal/redirects` | An import |
 | `ascribe-astro` | A program, from @ascribed/astro |
 
 ## `@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli`

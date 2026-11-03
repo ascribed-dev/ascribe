@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { entryId } from "./nav.js";
-import { hasPermalinks, type PermalinkList } from "./permalinks.js";
+import { hasPermalinks, type PermalinkList } from "./internal/permalinks.js";
 import { normalizeBase, type ProjectInfo } from "./project.js";
 
 /** One entry of the integration's `projects` option. */

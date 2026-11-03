@@ -5,7 +5,7 @@ description: "What the Astro integration takes, what it does to a site, and what
 permalink: astro-reference
 ---
 
-Everything `@ascribed/astro` takes and does, once a site is set up: its options, what it adds to Astro's build and dev server, the components a layout uses, several projects, versions, and permalinks in one site, the head, sitemap, `robots.txt`, and response headers it writes, review in the site preview, and styling. [Astro](index.md) sets a site up.
+Everything `@ascribed/astro` takes and does, once a site is set up: its options, what it adds to Astro's build and dev server, the components and functions a layout uses, several projects, versions, and permalinks in one site, the head, sitemap, `robots.txt`, and response headers it writes, review in the site preview, and styling. [Astro](index.md) sets a site up.
 
 ## Options
 
@@ -86,6 +86,32 @@ What the projects share, the integration checks, and it fails the build, naming 
 @id: versions
 
 With a [versioned build](../versions/index.md), one site serves every live line: the current line's pages at the base path, and each older line's under its number, `/docs/3.4/`, from one collection, with nothing to change in `astro.config.mjs` or `src/content.config.ts`. [The Astro components](../versions/lines.md#the-astro-components) says what the collection, the layout, and `astro dev` do with them. Each line's `llms.txt` and Markdown are published at its base path, an older line's pages name the current line's as canonical, and the sitemap lists each page once. A permalink always forwards to the current line.
+
+### A layout's own versions
+@id: version-functions
+
+`Versions.astro` and `VersionBanner.astro` draw what three functions from `@ascribed/astro/content` return, so a layout with its own version switcher or banner calls them instead. Each takes the page's collection entry, and finds nothing for an entry of a build that isn't versioned.
+
+```astro
+---
+import { lineVersions, versionNotice } from "@ascribed/astro/content";
+
+const versions = lineVersions(entry);
+const notice = versionNotice(entry);
+---
+{notice && <p>This is {notice.label} {notice.line}. <a href={notice.route}>Read {notice.current}</a>.</p>}
+<ul>
+  {versions.map((v) => <li>{v.route ? <a href={v.route} aria-current={v.own ? "page" : undefined}>{v.line}</a> : v.line}</li>)}
+</ul>
+```
+
+| Function | Returns |
+|---|---|
+| `lineVersions(entry)` | Every line, as `Versions.astro` lists them, newest first: each live line, then each archived line that has an address. Each is `{ line, status, route?, own }`: its number, `3.4`; `"current"`, `"live"`, or `"archived"`; where to link it, the page in that line, or the page in its place, or an archived line's address, and absent for a live line with neither; and whether it's the entry's own line. |
+| `pageVersions(entry)` | Only the live lines that publish the page, or the page in its place, newest first, each `{ line, current, route, own }`: its number, whether it's the current line, the page's route there, and whether it's the entry's own line. |
+| `versionNotice(entry)` | What an older line's page says, as `VersionBanner.astro` writes it: `{ label, line, ends?, current, route, samePage }`, the label of the target the build is versioned by, `Self-managed`; the page's line; the last day it's supported, `YYYY-MM-DD`, when the project says; the current line; the route of the page in the current line, or of the page in its place, or else of the current line's home; and whether `route` is the page or the one in its place rather than the home. `undefined` on the current line. |
+
+A page in its place is the page that replaces it there, or that it replaces, nearest first, as [`replaces`](../writing/frontmatter.md#a-page-that-replaces-another) chains them.
 
 ## Permalinks
 @id: permalinks
@@ -217,6 +243,23 @@ The figure has your browser's default margins, and the caption no style of its o
 ### Code block languages
 
 Astro's highlighting marks a block's language only as the `<pre>`'s `data-language`. A tool that converts a page's HTML to text or Markdown, as many AI agents do before they read it, looks for a `language-…` class on the `<code>`, as Markdown renders it before highlighting, and without one writes the block with no language. So the integration adds a second Shiki transformer, whatever `codeTitles` is, that gives the `<code>` that class: `<code class="language-sh">`. A block with no language, or one in a language Shiki doesn't know, which Astro highlights as `plaintext`, gets none.
+
+## `ascribe-astro init`
+@id: init
+
+`npx @ascribed/astro init`, or `ascribe-astro init` where the package is installed, writes the files a site starts from ([Astro](index.md) says what each does).
+
+| Option | Meaning |
+|---|---|
+| `--project <dir>` | The folder holding `ascribe.toml`, from the current folder. By default, the current folder. |
+| `--build <name>` | The build the site shows. By default, the project's one build. |
+| `-h`, `--help` | Print the usage, and write nothing. |
+
+It exits with `0` when it wrote the files, or printed the usage, and `2` when it wrote nothing: for an option it doesn't know, a command other than `init`, or a failure such as a file that's already there, which it names.
+
+## What the package exports
+
+Everything this page names is the package's API. The package also exports `@ascribed/astro/internal/permalinks` and `@ascribed/astro/internal/redirects`, only because its own components ship as source and import them by the package's name. Nothing under `@ascribed/astro/internal/` is part of the API: it can change or go in any release.
 
 ## Other Markdown processors
 
