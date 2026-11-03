@@ -7,6 +7,19 @@ permalink: docs
 
 Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do.
 
+## Who does what
+
+A docs team sets Ascribe up in this order: the docs lead creates the project, the engineer who owns CI and the site wires it in, and then writers write and reviewers review. Each role installs only what its work needs.
+
+| Role | Owns | Installs | Starts from |
+|---|---|---|---|
+| Docs lead | `ascribe.toml` and `ascribe.nav`: the page types, phrases, builds, and the order of the sections | `@ascribed/cli` and the VS Code extension | [Getting started](getting-started.md), then [the `ascribe.toml` reference](content-model/index.md) and [Navigation](navigation/index.md) |
+| Engineer | The checks in CI, the HTML preview on pull requests, and the site | `@ascribed/cli` in CI, and `@ascribed/astro` in the site | [For engineers](#for-engineers), then [Astro](astro/index.md) |
+| Writer | The pages | `@ascribed/cli` and the VS Code extension | [Getting started](getting-started.md), then [For writers](#for-writers) |
+| Reviewer | Comments on pull requests | Nothing: a browser and a GitHub account that can comment | [Reviewers who don't use VS Code](review/index.md#reviewers-who-dont-use-vs-code) |
+
+A writer who reviews, or a reviewer with a checkout and VS Code, reviews in the page preview instead: [Review a pull request](review/index.md#review-a-pull-request).
+
 ## For engineers
 @id {permalink=true}: for-engineers
 

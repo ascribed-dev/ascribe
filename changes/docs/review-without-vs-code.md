@@ -1,0 +1,1 @@
+- **The review guide has a route for reviewers who don't use VS Code.** It also says comments need GitHub, and the docs' first page says who on a team installs what. See [Review](docs/content/review/index.md).
