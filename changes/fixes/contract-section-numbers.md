@@ -1,0 +1,1 @@
+- **Fixed:** Contracts cite the `ascribe.toml` format contract's sections by their current numbers. On the docs site, each cite links to its section. See [the format contract](docs/content/contracts/content-model.md).
