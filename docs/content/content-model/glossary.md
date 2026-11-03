@@ -103,7 +103,7 @@ A term follows its section into each build. Mark the section with [`@available`]
 The most requests a workspace can make in an hour.
 ```
 
-When the definition differs by product, open the section with a [`@variant`](../writing/directives.md#variant) group instead of a paragraph. Each arm opens with the definition for its builds:
+When the definition differs by product, open the section with a [`@variant`](../writing/directives.md#variant) group instead of a paragraph. Each alternative opens with the definition for its builds:
 
 ```markdown
 ## Region

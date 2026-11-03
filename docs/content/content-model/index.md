@@ -13,7 +13,7 @@ A file containing only `spec = "0.1"` is valid; every section has a default ([§
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
 - [`examples/content-models/full.toml`]({repo}/blob/main/examples/content-models/full.toml): every section and key.
 
-Every problem the loader reports is in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md). The rules a loader enforces, stated for someone writing one, are in the [`ascribe.toml` format contract](../contracts/content-model.md), with the same section numbers and key tables.
+Every problem Ascribe finds in `ascribe.toml` is in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its fix. References to "SPEC" are to the [Ascribe specification]({repo}/blob/main/SPEC.md). The exact rules, stated for someone building a tool that reads the file, are in the [`ascribe.toml` format contract](../contracts/content-model.md), with the same section numbers and key tables.
 
 In VS Code, [Project Settings](../editor/settings.md#project-settings) shows a project's settings beside its `ascribe.toml`, each with its value, its default, and its line, and changes a value the file sets in place.
 
@@ -113,19 +113,19 @@ Two projects beside each other, such as a product's docs and its landing site, o
 
 **The page title.** Every page type has `title`, a required `string` field, whether it declares it or not. It's the page's title everywhere Ascribe needs one: an empty link to the page shows it as its text, for one ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). Declaring it, in `[frontmatter]` or in a type's own `frontmatter`, changes only how it's read: it can accept phrases (§11), and code spans (§5.3). A declared `title` that's optional, has a default, or isn't a string is an error at the field (`model-field-reserved`).
 
-**Reserved keys.** These are reserved frontmatter keys. Any page can use them, whatever its type says, and they mean what SPEC says; a type, or `[frontmatter]`, that declares one is an error (`model-field-reserved`). Generated consumer schemas include them automatically, except the three that reach a site another way.
+**Reserved keys.** These are reserved frontmatter keys. Any page can use them, whatever its type says, and each means what the table says; a type, or `[frontmatter]`, that declares one is an error (`model-field-reserved`). The frontmatter schemas the site output generates include them automatically, except the three that reach a site another way.
 
-| Key | What it is | In generated consumer schemas |
+| Key | What it is | In the site's generated schemas |
 |---|---|---|
 | `type` | The page's [content type](#4-typesname-and-fragments) | Included |
-| `available` | [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available) | Included |
-| `variant` | [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant) | Included |
-| `permalink` | [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](../writing/frontmatter.md#a-pages-permalink) | Included |
+| `available` | Where the page applies, and its lifecycle state, as [`@available`](../writing/directives.md#available) says for a section ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) | Included |
+| `variant` | The dimension values a [whole-page variant](../writing/frontmatter.md#whole-page-variants) is for ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) | Included |
+| `permalink` | A page's [permalink](../writing/frontmatter.md#a-pages-permalink) ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) | Included |
 | `listing` | [Listing a page](#listing-a-page), below | Left out: it reaches a site in the page's record (output-layout contract §1.3) |
-| `replaces` | [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), the page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another) | Left out: it reaches a site in the versions file (output-layout contract §1.5) |
-| `nav-label` | [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's name in the sidebar and the previous and next links | Left out: it reaches a site in the navigation (output-layout contract §1.6) |
+| `replaces` | The page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another) ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) | Left out: it reaches a site in the versions file (output-layout contract §1.5) |
+| `nav-label` | A page's name in the sidebar and the previous and next links ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) | Left out: it reaches a site in the navigation (output-layout contract §1.6) |
 
-`intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, generated consumer schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
+`intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, the site's generated schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
 
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 

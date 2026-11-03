@@ -5,7 +5,7 @@ description: "Each built-in directive: what it does, its attributes, and its rul
 permalink: directives
 ---
 
-Each built-in directive, in the order of the [Ascribe specification]({repo}/blob/main/SPEC.md#4-built-in-directives), the normative definition, whose part each section links to. How a directive is written, and what it applies to, is in [directive syntax](syntax.md).
+Each built-in directive, in the order of the [Ascribe specification]({repo}/blob/main/SPEC.md#4-built-in-directives), whose part each section links to. How a directive is written, and what it applies to, is in [directive syntax](syntax.md).
 
 @include: ../_generated/directives-builtins.md
 
@@ -66,7 +66,7 @@ A link names the page that includes a fragment, never the fragment, and can name
 
 ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant))
 
-Marks alternatives: content that differs by a dimension declared in `ascribe.toml`, such as a package manager or a deployment.
+Marks alternatives: content that differs by a dimension declared in `ascribe.toml`, such as a package manager or a deployment. Each `@variant` line opens one alternative, an **arm**, and the arms in a row make a [group](syntax.md#groups).
 
 **Dimensional arms** carry dimension values as attributes:
 
@@ -200,7 +200,7 @@ Several blocks,
 @end
 ```
 
-- With a primary, the primary is the note. It can continue onto the next lines, like a paragraph.
+- With a [primary](syntax.md#directive-lines), text after the colon, that text is the note. It can continue onto the next lines, like a paragraph.
 - Without a colon, the note is the next block.
 - With a trailing colon, the note is a container.
 - A note may have a title.
@@ -285,7 +285,7 @@ Read the [vendor's deployment notes](https://help.example.com/deploy) first.
 ```
 
 - **Only review checks,** whose next step is *review*, since what they report may be fine as it is, such as a page nothing links to. A problem that's always wrong is fixed instead. A review check the project raises to an error in [`[checks]`](../content-model/checks.md#22-checks) can still be acknowledged. The [diagnostics reference](../checks/diagnostics.md) says where each review check is acknowledged, and [Quieting a problem](../checks/check.md#quieting-a-problem) compares `@intended` with the other ways to quiet one.
-- **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another processor may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/sources.md#ASC143)).
+- **The names are Ascribe's.** A check is named as the diagnostics reference names it. The specification names no checks, so another tool that reads Ascribe may name its checks differently, and reports a name it doesn't know as an error, as Ascribe does ([`intended-check`](../checks/diagnostics/sources.md#ASC143)).
 - **Where it's written** depends on the check, which reports its problems at one kind of place:
   - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
   - **A heading:** `@intended` at the top of its section, among the directives under the heading. It covers the check's problems at the heading, and, when no blank line comes between, in the block directly under the `@intended` line, so a section's first block is acknowledged as any other block is. It covers nothing else in the section. An unused glossary term is acknowledged this way:
@@ -353,7 +353,7 @@ Makes a heading of a glossary page a glossary term. The heading's text is the te
 A plan for turning a flag on for a growing share of users: by percentage, by segment, or on a schedule.
 ```
 
-- It goes directly under the heading, with the heading's `@id` if it has one. It takes no primary.
+- It goes directly under the heading, with the heading's `@id` if it has one. It takes no [primary](syntax.md#directive-lines): nothing follows `@term` but its attributes.
 - **Attributes:** `aliases`, other forms that count as the term, separated by `|` (`aliases="API keys|keys"`); `match`, which occurrences are linked, `first`, `every`, or `marked`; and `case-sensitive`, `true` or `false`. The last two default to `[glossary]`'s settings.
 - A term is only a term on a page `[glossary] pages` lists, or in a fragment such a page includes. Anywhere else, `@term` is an error, `term-off-glossary-page`, whose fix lists the page in `pages`. See [Glossary terms](inline.md#glossary-terms).
 - The paragraph under the heading must be the first thing in the section, after the heading's directives: a section that opens with anything else has no definition, which is an error, `glossary-definition-missing`. Keep it to a sentence or two, since it's shown where there's no room for more: one over 300 characters is reported as advice, `glossary-definition-long`.
@@ -405,7 +405,7 @@ Puts an operation of an API that `ascribe.toml` declares in `[apis]` in the page
 @operation: ../api/openapi.yaml#getUser
 ```
 
-- **The primary** is a link to an operation, as a link's destination names one: the spec's path from the page (or from the content root, starting with `/`), `#`, and the operation's `operationId`, or, for an operation with no id, its method in lowercase and its path, `#delete/users/{id}` ([links to operations](inline.md#links)).
+- **The primary,** the text after the colon, is a link to an operation, as a link's destination names one: the OpenAPI file's path from the page (or from the content root, starting with `/`), `#`, and the operation's `operationId`, or, for an operation with no id, its method in lowercase and its path, `#delete/users/{id}` ([links to operations](inline.md#links)).
 - It's checked as that link is: an operation the spec doesn't have is `link-operation-missing`, and one named by its method and path that has an id is advice, `link-operation-by-path`. Anything that isn't a link to an operation of a declared API, a page, another file, the spec with no `#`, or a URL, is an error, `operation-link-not-operation`.
 - **What it shows:** `GET /users/{id}: Get a user`, with `(deprecated)` after it when the spec marks the operation deprecated. Never the operation's parameters, request, or responses.
 - It's a block, so a `@note`, `@available`, or widget directly above it applies to it.
@@ -423,5 +423,5 @@ A project widget is a directive a project declares in `ascribe.toml`, for needs 
 @quill-labspace {lab=first-sync}
 ```
 
-A declared widget works like a built-in directive, with the forms, primary, attributes, binding, title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#10-widgetsname).
+A declared widget works like a built-in directive, with the [forms](syntax.md#forms-line-and-container), [primary](syntax.md#directive-lines), attributes, [binding](syntax.md#binding-what-a-directive-applies-to), title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#10-widgetsname).
 

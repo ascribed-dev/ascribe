@@ -1,14 +1,14 @@
 ---
 type: reference
 title: "`ascribe.toml`: where pages are published"
-description: "How the content model sets the site's consumer, the builds, how pages are listed, what crawlers are told, and where retired permalinks went."
+description: "How the content model sets which site generator publishes the site, the builds, how pages are listed, what crawlers are told, and where retired permalinks went."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [where pages are published](../contracts/content-model/output.md).
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [where pages are published](../contracts/content-model/output.md).
 
 ## 15. `[consumer]`
 @id {permalink=true}: consumer
-@summary: The consumer profile: how the site output fits a specific consumer, such as Astro, with its site address, base path, trailing slash, and slugger.
+@summary: Which site generator publishes the site output, such as Astro, and the site's address, base path, trailing slash, and slugger.
 
 @include: ../_fragments/content-model/consumer.md
 
@@ -16,7 +16,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 **Heading ids, image attributes, and assets** ([SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)) are part of the profile, not keys. The `astro` profile has exactly one way to do each:
 
-- **Heading ids, image attributes, and glossary links:** the site output writes each as a `<ascribe-attributes>` marker that the consumer's markdown plugin applies, so the consumer keeps its own heading, table-of-contents, and image processing, and a glossary link carries `data-ascribe-term`.
+- **Heading ids, image attributes, and glossary links:** the site output writes each as a `<ascribe-attributes>` marker that the site's Markdown plugin applies, so the site keeps its own heading, table-of-contents, and image processing, and a glossary link carries `data-ascribe-term`.
 - **Assets:** copies mirror their source paths inside each output, and images are referenced relatively so Astro's image processing still applies. Other files a page links to are published under `_ascribe/files/`.
 
 A later profile that offers a choice will add a key for it.
@@ -25,7 +25,7 @@ A later profile that offers a choice will add a key for it.
 
 **The outputs for agents** (`agents`, on by default when `site` is set) change what the plain-markdown output is, and add to the site output:
 
-- **The plain-markdown output is laid out by URL,** so it can be copied as it is to `base-path` beside the site: each page at its route with `.md` (`Guides/My Setup.md` → `guides/my-setup.md`, the root `index.md` → `index.md`), each opening with a line pointing at `llms.txt`, and after its title saying what the page is for, its type and its description (`> Reference · Every option.`); the files they link to under `_ascribe/files/`, linked by absolute URL; and `llms.txt`. A link to a page the build publishes, a glossary link included, leads to that page's Markdown, so an agent that follows it stays in Markdown, and its `#fragment` to the heading's anchor there: the slug of the heading as the Markdown writes it. That's the heading's id on the page, unless it has an `@id`, or is in a variant arm, whose label it ends with in the Markdown.
+- **The plain-markdown output is laid out by URL,** so it can be copied as it is to `base-path` beside the site: each page at its route with `.md` (`Guides/My Setup.md` → `guides/my-setup.md`, the root `index.md` → `index.md`), each opening with a line pointing at `llms.txt`, and after its title saying what the page is for, its type and its description (`> Reference · Every option.`); the files they link to under `_ascribe/files/`, linked by absolute URL; and `llms.txt`. A link to a page the build publishes, a glossary link included, leads to that page's Markdown, so an agent that follows it stays in Markdown, and its `#fragment` to the heading's anchor there: the slug of the heading as the Markdown writes it. That's the heading's id on the page, unless it has an `@id`, or is in one alternative of a [`@variant`](../writing/directives.md#variant) group, whose label it ends with in the Markdown.
 - **`llms.txt`** lists every page the build publishes as `- [Title](../url): description`, linking to its Markdown. Its heading is the title of the page at `base-path`, and its summary that page's description. Its sections are the project's [navigation](../navigation/index.md)'s: the content root's pages first, under its label, **Start** unless `ascribe.nav` gives another, then each top section, in order, named by its label, with the pages of the sections nested in it in reading order. A page is listed by its title, not its `nav-label`. With `[releases]`, its summary, and each page's opening line, end with the releases the build describes: a versioned build's line, the version a build filters for, or else each target's live lines, adding that what's marked planned is in none of them yet ([output-layout contract](../contracts/output-layout.md)). An index over 50,000 characters is split into one `llms.txt` per top section, which the root file links to. A page's description is the field its type marks [`role = "description"`](index.md#54-field-roles), as plain text, or the field's `default` when the page leaves the field out or empty; a type without one lists its pages without descriptions.
 - **Each page of the site output** opens with a pointer to `llms.txt` and the page's Markdown, which the element library hides from sight ([element contract §8]({repo}/blob/main/packages/elements/CONTRACT.md#8-ascribe-for-agents)).
 
@@ -85,6 +85,6 @@ The list changes, as operators add bots and rename them. Ascribe's release proce
 
 ## 19. `[permalinks]`
 
-`ascribe.toml` has no `[permalinks]` any more. What happened to a [permalink](../writing/directives.md#permalinks) that no heading or page declares now, retired with a reason, or moved to another permalink or to a page, is recorded in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), keyed `go:<name>`, with the rest of where the docs' addresses went (SPEC §7.10). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
+`ascribe.toml` has no `[permalinks]` any more. What happened to a [permalink](../writing/directives.md#permalinks) that no heading or page declares now, retired with a reason, or moved to another permalink or to a page, is recorded in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), keyed `go:<name>`, with the rest of where the docs' addresses went ([SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
 
 [`ascribe addresses init`](../publishing/redirects.md#cli-addresses-init) moves a project's `[permalinks.retired]` and `[permalinks.aliases]` into `ascribe.addresses`, and removes the table. Until it does, the table is an error at the key that says so (`model-unknown-key`).

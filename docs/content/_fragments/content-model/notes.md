@@ -2,7 +2,7 @@ Note types ([SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)), the values of `@not
 
 @snippet: code:examples/content-models/full.toml#notes
 
-`<type>` is the note type (`key` rule).
+`<type>` is the note type: a lowercase letter, then lowercase letters, digits, or `-` (a [key](../../content-model/index.md#12-names)).
 
 @include: ../../_generated/content-model-notes.md
 

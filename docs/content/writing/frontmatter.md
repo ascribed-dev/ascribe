@@ -4,7 +4,7 @@ title: Frontmatter
 description: "Pages and fragments, and the keys a file's frontmatter takes: the reserved ones, and those its content type declares."
 ---
 
-A file may start with YAML frontmatter between `---` lines. Its content type in `ascribe.toml` says which keys it takes, and every page takes a `title` ([`[types.<name>]`](../content-model/index.md#4-typesname-and-fragments)). Nine keys more are reserved: every page takes them, whatever its type, and no type can declare them. The [Ascribe specification]({repo}/blob/main/SPEC.md#21-files) is the normative definition.
+A file may start with YAML frontmatter between `---` lines. Its content type in `ascribe.toml` says which keys it takes, and every page takes a `title` ([`[types.<name>]`](../content-model/index.md#4-typesname-and-fragments)). Nine keys more are reserved: every page takes them, whatever its type, and no type can declare them. The [Ascribe specification]({repo}/blob/main/SPEC.md#21-files) has the exact rules.
 
 ```markdown
 ---
@@ -58,7 +58,7 @@ A page's permalink follows the rules of an id, and shares one set of names with 
 
 ## Whole-page variants
 
-When a whole page differs by dimension, write separate pages and give each a `variant`, with the dimensions and values of a [`@variant`](directives.md#variant) arm:
+When a whole page differs by dimension, write separate pages and give each a `variant`, with the dimensions and values a [`@variant`](directives.md#variant) alternative would carry:
 
 ```yaml
 ---

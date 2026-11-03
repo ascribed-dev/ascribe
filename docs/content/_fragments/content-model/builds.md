@@ -1,4 +1,4 @@
-Named builds ([SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)). Each sets a variant mode and an availability mode. These are [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)'s examples, in `ascribe.toml`:
+Named builds ([SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)). Each sets a variant mode and an availability mode. These are the specification's examples, written in `ascribe.toml`:
 
 ```toml
 [builds.site]

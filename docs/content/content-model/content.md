@@ -4,7 +4,7 @@ title: "`ascribe.toml`: what pages hold"
 description: "The content model's note types, phrases, glossary, images, and widgets: what a page can hold beyond its type's fields."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [what pages hold](../contracts/content-model/content.md).
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [what pages hold](../contracts/content-model/content.md).
 
 ## 6. `[notes.<type>]`
 
@@ -26,7 +26,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 To set one up, see [Set up a glossary](glossary.md).
 
-**Matching:** a term is found as a whole word, never inside one, and where two terms overlap, as `API key` and `API` do, the longer is linked. Only prose is searched, so a term in a heading, link text, code, raw HTML, or a directive's primary identifier stays as it is. A glossary page doesn't link the terms it shows, and a build doesn't link a term whose heading it leaves out, or that has no definition in it.
+**Matching:** a term is found as a whole word, never inside one, and where two terms overlap, as `API key` and `API` do, the longer is linked. Only prose is searched, so a term in a heading, link text, code, raw HTML, or an identifier after a directive's colon, such as an `@id`'s, stays as it is. A glossary page doesn't link the terms it shows, and a build doesn't link a term whose heading it leaves out, or that has no definition in it.
 
 **Rules.** A path in `pages` names a page that's there, with its name's case as it is on disk (`model-glossary-page`). The rest are checked with the project, since terms are read from pages:
 
@@ -49,7 +49,7 @@ To set one up, see [Set up a glossary](glossary.md).
 **Rules:**
 
 - A widget with container form can't have a required primary, since a container opener's primary is empty ([SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)), and a container-only widget's primary is `"none"` (`model-widget-container-primary`).
-- A groupable widget is container-only, since the arms of a group are containers ([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)) (`model-widget-groupable-form`).
+- A groupable widget is container-only, since each alternative of a group, an arm, is a container ([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)) (`model-widget-groupable-form`).
 - A widget with line form needs a `binding`, and one without it can't have one (`model-widget-binding`).
 
 What the site output writes for a widget, its element's tag name and attributes, is set by the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md).

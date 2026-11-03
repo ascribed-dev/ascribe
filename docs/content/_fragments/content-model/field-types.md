@@ -1,7 +1,7 @@
 Two related type languages:
 
-- **Field types** describe frontmatter fields (`[types.<name>.frontmatter]`, `[fragments.frontmatter]`). They cover the [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations) set: string, number, boolean, date, enumeration, list, and object, each optional or with a default.
-- **Attribute types** describe attributes on images and widgets (`[images.attributes]`, `[widgets.<name>.attributes]`). They cover [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)'s set: string, enumeration, boolean, and number, plus set-valued keys.
+- **Field types** describe frontmatter fields (`[types.<name>.frontmatter]`, `[fragments.frontmatter]`). They cover every field type the specification has ([SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)): string, number, boolean, date, enumeration, list, and object, each optional or with a default.
+- **Attribute types** describe attributes on images and widgets (`[images.attributes]`, `[widgets.<name>.attributes]`). They cover every attribute type the specification has ([SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)): string, enumeration, boolean, and number, plus set-valued keys.
 
 Each entry is written either in **short form**, a string, or in **table form**, when it needs a default, a description, phrases, enumeration values that aren't simple words, or nested fields.
 
@@ -32,7 +32,7 @@ A field is **required** unless its type ends in `?` or it has a default. The sam
 | `object` | table form only | no | A YAML mapping whose keys are the object's `fields` (nested field types). Unknown keys are errors. |
 | any of the above + `?` | yes | yes | The same type, optional. |
 
-Grammar (ABNF, with the rules of SPEC Appendix A):
+Grammar (ABNF, with the rules of the specification's grammar, [SPEC Appendix A]({repo}/blob/main/SPEC.md#appendix-a-grammar)):
 
 @include: ../field-type-grammar.md
 

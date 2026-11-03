@@ -4,7 +4,7 @@ title: "`ascribe.toml`: checks and the editor"
 description: "How the content model sets the checks' levels and the editor's build, what an absent section means, and how the file is validated."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The rules for a loader are in the contract's [checks and the editor](../contracts/content-model/checks.md).
+Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [checks and the editor](../contracts/content-model/checks.md).
 
 ## 22. `[checks]`
 @id {permalink=true}: 22-checks
@@ -114,4 +114,4 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 
 ## 25. Validation
 
-A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its code and how to fix it. The [contract's §25](../contracts/content-model/validation.md#25-validation-rules) states each rule for someone writing a loader.
+A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule Ascribe holds `ascribe.toml` to is listed in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its code and how to fix it. The [contract's §25](../contracts/content-model/validation.md#25-validation-rules) states each rule for someone building a tool that reads `ascribe.toml`.

@@ -4,7 +4,7 @@ title: Memo files
 description: "A memo longer than a line or two, in a file of its own in `memos/`: what it's about, where it's placed, and what `ascribe check` reports."
 ---
 
-A memo says why a page is written the way it is, for whoever changes it next. One a line or two long goes in the page, as [`@memo`](directives.md#memo). A longer one goes in a file of its own, a **memo file**, in the folder `memos/` beside `ascribe.toml`. Neither is ever published. This page describes memo files, and [Leave a memo for whoever edits next](memos.md) says when to write one; the [Ascribe specification]({repo}/blob/main/SPEC.md#77-memo-files) is the normative definition.
+A memo says why a page is written the way it is, for whoever changes it next. One a line or two long goes in the page, as [`@memo`](directives.md#memo). A longer one goes in a file of its own, a **memo file**, in the folder `memos/` beside `ascribe.toml`. Neither is ever published. This page describes memo files, and [Leave a memo for whoever edits next](memos.md) says when to write one; the [Ascribe specification]({repo}/blob/main/SPEC.md#77-memo-files) has the exact rules.
 
 ## Write a memo file
 
@@ -23,7 +23,7 @@ doesn't mention the agent.
 
 - **`about`**, required, names what the memo is about: a page or fragment by its path from the content root (`install-agent.md`), a heading as the path, `#`, and its id (`install-agent.md#install-agent`), a glossary term by its id (`term:api-key`), or an entry of `ascribe.toml` as `phrase:product`, `feature:sso`, `dimension:deployment`, `note:warning`, or `widget:release-note`. A heading in a fragment is named in the fragment. A term is a heading on a glossary page, so a memo about `term:api-key` is on that heading, as one about `glossary.md#api-key` is.
 
-  A path is written as a link's is: `%20` and the rest are decoded, so a file whose name has a `#` is written with `%23`, and a `%` with `%25`. The first `#` starts the heading's id. A path that starts like an entry, such as `term:basics.md`, is written `./term:basics.md`. Names and paths are compared as written, so `phrase:Product` names no phrase. SPEC §7.7 and its rule `about-target` say exactly how `about` is read.
+  A path is written as a link's is: `%20` and the rest are decoded, so a file whose name has a `#` is written with `%23`, and a `%` with `%25`. The first `#` starts the heading's id. A path that starts like an entry, such as `term:basics.md`, is written `./term:basics.md`. Names and paths are compared as written, so `phrase:Product` names no phrase. The exact rule for reading `about` is in the specification ([SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files), the rule `about-target`).
 - **`quote`**, which you can leave out, narrows the memo to the block that holds those words: a paragraph, a heading, a list item's paragraph, a code block, or a table, for instance. An entry of `ascribe.toml` has no words to quote; a term's are those of its section.
 - **The text** after the frontmatter is the memo, as you write it, read by nothing, as a [`@memo`](directives.md#memo)'s isn't.
 

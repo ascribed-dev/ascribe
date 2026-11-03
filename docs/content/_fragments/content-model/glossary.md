@@ -1,4 +1,4 @@
-The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): the pages that hold its terms, and how occurrences are matched. A term is a heading on a glossary page, marked [`@term`](../../writing/directives.md#term), and its definition is the paragraph under it. Authors don't mark terms where they're used; processors link them ([SPEC §9.2]({repo}/blob/main/SPEC.md#92-resolution) step 7).
+The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): the pages that hold its terms, and how occurrences are matched. A term is a heading on a glossary page, marked [`@term`](../../writing/directives.md#term), and its definition is the paragraph under it. You don't mark a term where you use it: Ascribe links it ([SPEC §9.2]({repo}/blob/main/SPEC.md#92-resolution) step 7).
 
 @snippet: code:examples/content-models/full.toml#glossary
 
@@ -21,7 +21,7 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 ```
 
 - **The term** is the heading's text, and **its id** is the heading's id, which the site output's `data-ascribe-term` names. An `@id` keeps the id when the heading's text changes.
-- **The definition** is the paragraph that opens the section, after the heading's directives, as plain text, with the build's phrases. A paragraph a fragment brings in counts, and a section that opens with a `@variant` group has the paragraph each arm opens with, in the builds that keep the arm. The site output shows it as the link's title, and the editor on hover; the JSON output lists it with each use. Keep it to a sentence or two, and put the rest in a second paragraph.
+- **The definition** is the paragraph that opens the section, after the heading's directives, as plain text, with the build's phrases. A paragraph a fragment brings in counts, and a section that opens with a `@variant` group has the paragraph each alternative opens with, in the builds that keep it. The site output shows it as the link's title, and the editor on hover; the JSON output lists it with each use. Keep it to a sentence or two, and put the rest in a second paragraph.
 - **A term follows its section in each build.** A build that removes the section, by `@available` or by a variant, has no such term, and a build that removes only its paragraph leaves it without a definition: either way, the build doesn't link it.
 - `@term`'s attributes override the glossary's settings for the term:
 
