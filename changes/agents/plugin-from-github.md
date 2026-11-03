@@ -1,0 +1,1 @@
+- **Claude Code adds the Ascribe plugin from GitHub, with no copy of the repository.** Its marketplace is at the repository's root: `/plugin marketplace add ascribed-dev/ascribe`. See [Claude Code](docs/content/agents/claude-code.md#the-plugin).

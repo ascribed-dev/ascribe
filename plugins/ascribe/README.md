@@ -26,12 +26,14 @@ npm install --save-dev @ascribed/cli
 
 or, for every project, install it globally (`npm install -g @ascribed/cli`) or put the binary from a [release](https://github.com/ascribed-dev/ascribe/releases) on your path, which starts quicker. The launcher is a POSIX shell script, run with `sh`; on Windows, that's the `sh` that comes with Git, which Claude Code needs there.
 
-Then, in Claude Code in a terminal, from a copy of the repository (its VS Code extension doesn't offer `/plugin`):
+Then add it in Claude Code in a terminal (its VS Code extension doesn't offer `/plugin`). Ascribe's repository is the plugin's marketplace, so Claude Code adds it from GitHub, without a copy of the repository:
 
 ```shell
-/plugin marketplace add ./plugins/ascribe
+/plugin marketplace add ascribed-dev/ascribe
 /plugin install ascribe@ascribe
 ```
+
+The plugin's version is the release's, and it's written for that release's `ascribe`. To match it to the `ascribe` you run, add its release's tag instead, `ascribed-dev/ascribe#v<version>`, where `<version>` is what `ascribe --version` prints. Added without a tag, the plugin is `main`'s, and Claude Code updates it when a release changes its version. From a copy of the repository, add the copy's folder: `/plugin marketplace add ./`.
 
 Use the plugin or a project's own hook entries (`ascribe agents sync --with-hook`), not both, or Claude hears about each problem twice. Claude Code doesn't start a plugin's language server in a cloud session; a project that works there writes its own entries, which Claude Code reads from the repository.
 
@@ -54,6 +56,6 @@ The stop hook still checks the whole project before Claude finishes.
 
 ## The files
 
-Every file here but this README is written by the `ascribe` binary, and a test fails when one differs: run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli plugin` to write them again. Its version is the release's.
+Every file here but this README is written by the `ascribe` binary, and so is the marketplace at the repository's root, `.claude-plugin/marketplace.json`; a test fails when one differs: run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli plugin` to write them again. Its version is the release's, and only the plugin's manifests name it.
 
 See [Agents](https://ascribed-dev.com/go/agents-guide/) in Ascribe's docs.
