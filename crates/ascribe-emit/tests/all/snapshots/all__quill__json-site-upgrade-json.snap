@@ -1,9 +1,10 @@
 ---
 source: crates/ascribe-emit/tests/all/quill.rs
+assertion_line: 45
 expression: text
 ---
 {
-  "schemaVersion": 1,
+  "schema_version": 2,
   "format": "ascribe-page",
   "build": "site",
   "path": "upgrade.md",
@@ -54,7 +55,7 @@ expression: text
             "page": "webhooks.md",
             "id": null,
             "url": "/webhooks/",
-            "textFilled": false
+            "text_filled": false
           },
           "children": [
             {
@@ -79,7 +80,7 @@ expression: text
             "page": "configure.md",
             "id": "set-the-api-key",
             "url": "/configure/#set-the-api-key",
-            "textFilled": true
+            "text_filled": true
           },
           "children": [
             {
@@ -111,7 +112,7 @@ expression: text
             "page": "webhooks.md",
             "id": null,
             "url": "/webhooks/",
-            "textFilled": false
+            "text_filled": false
           }
         },
         {
@@ -123,7 +124,7 @@ expression: text
             "page": "configure.md",
             "id": "set-the-api-key",
             "url": "/configure/#set-the-api-key",
-            "textFilled": true
+            "text_filled": true
           }
         }
       ],

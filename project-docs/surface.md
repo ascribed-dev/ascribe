@@ -845,6 +845,7 @@ The JSON the commands and the language server write, each with a schema:
 | `schemas/explain.schema.json` | ExplainReport | What `ascribe explain <CODE>` answers: one diagnostic. |
 | `schemas/fmt.schema.json` | FmtReport | What `ascribe fmt --format json` writes: one document. |
 | `schemas/init.schema.json` | InitReport | What `ascribe init` did. |
+| `schemas/json-page.schema.json` | JsonPage | A page of the JSON output: the page as the build resolved it, with every node's place in its source (the JSON output contract). |
 | `schemas/link.schema.json` | LinkReport | What `ascribe link <TARGET> --from <PAGE>` answers. |
 | `schemas/lsp-addresses.schema.json` | AddressesParams | The parameters of `ascribe/addresses`: what the last comparison found. |
 | `schemas/lsp-agent-prompt.schema.json` | AgentPromptResult | The answer to `ascribe/agentPrompt`, or `null` when there's nothing to prompt about: the file has no problem, the diagnostic is no longer reported, review is off, or the page or fragment didn't change. |
@@ -951,6 +952,8 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `contracts/content-model/sources.md` | `ascribe.toml` format contract: what pages draw from | reference |
 | `contracts/content-model/validation.md` | `ascribe.toml` format contract: validation rules | reference |
 | `contracts/content-model/variation.md` | `ascribe.toml` format contract: how content varies | reference |
+| `contracts/json-output.md` | JSON output contract | reference |
+| `contracts/json-output/schema.md` | JSON output: the schema | reference |
 | `contracts/json-reports.md` | JSON report contract | reference |
 | `contracts/json-reports/addresses.md` | JSON reports: `ascribe permalinks` and `ascribe addresses` | reference |
 | `contracts/json-reports/agents.md` | JSON reports: `ascribe agents` | reference |

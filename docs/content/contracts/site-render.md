@@ -187,7 +187,7 @@ A block's anchor is two HTML attributes on the block's own element:
 - **An include** is `<path>:<line>`: the file holding the `@include` and its line.
 - `data-ascribe-source` holds the block's source. When the block came through includes, `data-ascribe-via` holds them, outermost first, separated by single spaces. A block written in the page itself has no `data-ascribe-via`.
 
-To parse one, split at the last `:`; the path can't contain an unencoded `:`. These are the same facts as the JSON output's `source` (`crates/ascribe-emit/README.md`), without byte spans.
+To parse one, split at the last `:`; the path can't contain an unencoded `:`. These are the same facts as the JSON output's `source` ([JSON output contract](json-output.md#4-blocks)), without byte spans.
 
 ### 7.2 Which blocks have one
 

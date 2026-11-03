@@ -101,7 +101,7 @@ fn operation_the_json_output_writes_a_block_with_the_operation() {
         serde_json::json!({
             "type": "operation",
             "api": "public",
-            "operationId": "getUser",
+            "operation_id": "getUser",
             "method": "get",
             "path": "/users/{id}",
             "summary": "Get a user",
@@ -111,7 +111,7 @@ fn operation_the_json_output_writes_a_block_with_the_operation() {
     );
     assert_eq!(block(1)["type"], "operation");
     assert_eq!(block(1)["deprecated"], true);
-    assert!(block(1).get("operationId").is_none(), "{}", block(1));
+    assert!(block(1).get("operation_id").is_none(), "{}", block(1));
     // One that names no operation the spec has stays its directive.
     assert_eq!(block(2)["type"], "directive");
     assert_eq!(block(2)["name"], "operation");

@@ -33,7 +33,7 @@ Pages mirror their source paths relative to the content root:
 |---|---|
 | `site` | `guides/install.md` |
 | `plain` | `guides/install.md` |
-| `json` | `guides/install.json` |
+| `json` | `guides/install.json`, in the format the [JSON output contract](json-output.md) gives |
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 

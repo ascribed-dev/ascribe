@@ -1,9 +1,10 @@
 ---
 source: crates/ascribe-emit/tests/all/quill.rs
+assertion_line: 45
 expression: text
 ---
 {
-  "schemaVersion": 1,
+  "schema_version": 2,
   "format": "ascribe-page",
   "build": "site",
   "path": "quickstart.md",
@@ -21,7 +22,7 @@ expression: text
       "level": 2,
       "text": "Try in the browser",
       "id": "try-in-browser",
-      "sourceId": "try-in-browser",
+      "source_id": "try-in-browser",
       "explicit": true,
       "source": {
         "file": "quickstart.md",
@@ -37,7 +38,7 @@ expression: text
       "reference": "./playground.png",
       "kind": "image",
       "fragment": null,
-      "writtenIn": "quickstart.md",
+      "written_in": "quickstart.md",
       "span": [224, 278]
     }
   ],
@@ -46,7 +47,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "try-in-browser",
-      "sourceId": "try-in-browser",
+      "source_id": "try-in-browser",
       "explicit": true,
       "text": "Try in the browser",
       "inlines": [
@@ -164,7 +165,7 @@ expression: text
             "page": "install-agent.md",
             "id": null,
             "url": "/install-agent/",
-            "textFilled": false
+            "text_filled": false
           },
           "children": [
             {
@@ -196,7 +197,7 @@ expression: text
             "page": "install-agent.md",
             "id": null,
             "url": "/install-agent/",
-            "textFilled": false
+            "text_filled": false
           }
         }
       ]

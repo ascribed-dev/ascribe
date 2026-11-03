@@ -1,9 +1,10 @@
 ---
 source: crates/ascribe-emit/tests/all/quill.rs
+assertion_line: 45
 expression: text
 ---
 {
-  "schemaVersion": 1,
+  "schema_version": 2,
   "format": "ascribe-page",
   "build": "site",
   "path": "configure.md",
@@ -41,7 +42,7 @@ expression: text
       "level": 2,
       "text": "Set the API key",
       "id": "set-the-api-key",
-      "sourceId": "set-the-api-key",
+      "source_id": "set-the-api-key",
       "explicit": true,
       "source": {
         "file": "configure.md",
@@ -79,7 +80,7 @@ expression: text
             "page": "upgrade.md",
             "id": null,
             "url": "/upgrade/",
-            "textFilled": true
+            "text_filled": true
           },
           "children": [
             {
@@ -111,7 +112,7 @@ expression: text
             "page": "upgrade.md",
             "id": null,
             "url": "/upgrade/",
-            "textFilled": true
+            "text_filled": true
           }
         }
       ]
@@ -120,7 +121,7 @@ expression: text
       "type": "heading",
       "level": 2,
       "id": "set-the-api-key",
-      "sourceId": "set-the-api-key",
+      "source_id": "set-the-api-key",
       "explicit": true,
       "text": "Set the API key",
       "inlines": [
@@ -180,7 +181,7 @@ expression: text
             "page": "keys.md",
             "id": null,
             "url": "/keys/",
-            "textFilled": false
+            "text_filled": false
           },
           "children": [
             {
@@ -212,7 +213,7 @@ expression: text
             "page": "keys.md",
             "id": null,
             "url": "/keys/",
-            "textFilled": false
+            "text_filled": false
           }
         }
       ]

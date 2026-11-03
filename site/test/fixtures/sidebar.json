@@ -599,6 +599,15 @@
         "nested": true
       },
       {
+        "href": "/docs/contracts/json-output/",
+        "label": "JSON output contract"
+      },
+      {
+        "href": "/docs/contracts/json-output/schema/",
+        "label": "The schema",
+        "nested": true
+      },
+      {
         "href": "/docs/contracts/permalinks-list/",
         "label": "The permalinks list"
       },

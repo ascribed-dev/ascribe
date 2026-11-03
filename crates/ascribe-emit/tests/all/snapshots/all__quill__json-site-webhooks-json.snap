@@ -1,9 +1,10 @@
 ---
 source: crates/ascribe-emit/tests/all/quill.rs
+assertion_line: 45
 expression: text
 ---
 {
-  "schemaVersion": 1,
+  "schema_version": 2,
   "format": "ascribe-page",
   "build": "site",
   "path": "webhooks.md",
@@ -65,7 +66,7 @@ expression: text
             "page": "keys.md",
             "id": null,
             "url": "/keys/",
-            "textFilled": false
+            "text_filled": false
           },
           "children": [
             {
@@ -97,7 +98,7 @@ expression: text
             "page": "keys.md",
             "id": null,
             "url": "/keys/",
-            "textFilled": false
+            "text_filled": false
           }
         }
       ]
