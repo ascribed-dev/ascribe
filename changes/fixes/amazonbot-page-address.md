@@ -1,0 +1,1 @@
+- **Fixed:** The crawlers table links Amazon's Amazonbot page at its new address. The old one redirects there. See [where pages are published](docs/content/content-model/output.md).

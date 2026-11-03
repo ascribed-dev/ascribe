@@ -9,11 +9,11 @@
 | `search` | `OAI-SearchBot` | OpenAI | Follows it. | [2026-10-12](https://developers.openai.com/api/docs/bots) |
 | `search` | `Claude-SearchBot` | Anthropic | Follows it. | [2026-10-12](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler) |
 | `search` | `PerplexityBot` | Perplexity | Follows it. | [2026-10-12](https://docs.perplexity.ai/docs/resources/perplexity-crawlers) |
-| `search` | `Amzn-SearchBot` | Amazon | Follows it. When `robots.txt` doesn't name it, it follows the rules given to other search bots. | [2026-10-12](https://developer.amazon.com/amazonbot) |
+| `search` | `Amzn-SearchBot` | Amazon | Follows it. When `robots.txt` doesn't name it, it follows the rules given to other search bots. | [2026-10-12](https://developer.amazon.com/docs/amazonbot/amazonbot.html) |
 | `search` | `MistralAI-Index` | Mistral AI | Follows it. | [2026-10-12](https://docs.mistral.ai/robots) |
 | `on-request` | `ChatGPT-User` | OpenAI | May not follow it. | [2026-10-12](https://developers.openai.com/api/docs/bots) |
 | `on-request` | `Claude-User` | Anthropic | Follows it. | [2026-10-12](https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler) |
 | `on-request` | `Perplexity-User` | Perplexity | May not follow it. | [2026-10-12](https://docs.perplexity.ai/docs/resources/perplexity-crawlers) |
-| `on-request` | `Amzn-User` | Amazon | May not follow it. | [2026-10-12](https://developer.amazon.com/amazonbot) |
+| `on-request` | `Amzn-User` | Amazon | May not follow it. | [2026-10-12](https://developer.amazon.com/docs/amazonbot/amazonbot.html) |
 | `on-request` | `MistralAI-User` | Mistral AI | Follows it. | [2026-10-12](https://docs.mistral.ai/robots) |
 | `on-request` | `Meta-ExternalFetcher` | Meta | May not follow it. | [2026-10-12](https://developers.facebook.com/documentation/sharing/webmasters/web-crawlers) |
