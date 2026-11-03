@@ -13,15 +13,15 @@ ascribe diff --format html > review.html
 ## Add the preview to CI
 @id: add-the-report-to-ci
 
-This GitHub Actions job writes the preview on each pull request, uploads it, and links it from the run's summary, so a reviewer opens it from the pull request's checks. Change `--config docs` to your project's folder (the one with `ascribe.toml`), or drop it when that's the repository's root, and install `ascribe` however your other jobs do.
+This GitHub Actions job writes the preview on each pull request, uploads it, and links it from the run's summary, so a reviewer opens it from the pull request's checks. Add it to the `jobs` of the workflow that checks your docs, as [Everything in one workflow](../checks/ci.md#everything-in-one-workflow) does. It runs the `ascribe` your `package.json` pins, with `npm ci` and `npx`, as the check does, so a new release changes the preview only when you move the pin. When your project is in a folder of the repository, give both `ascribe diff` commands `--config` and the folder, the one with `ascribe.toml`.
 
-@snippet {lang=yaml}: code:.github/workflows/review.yml#job
+@snippet {lang=yaml}: code:examples/astro-site/.github/workflows/docs.yml#preview
 
 - **History.** `ascribe diff` compares with the merge base of the pull request's base branch and its head, as the pull request itself does, so the checkout needs enough history to find it: `fetch-depth: 0`. With less, `ascribe diff` stops and says so; `--base-exact` compares with the base branch's tip instead, which also lists changes made on the base branch since the pull request branched.
 - **The base.** `--base "origin/$GITHUB_BASE_REF"` names the pull request's base branch. Without it, `ascribe diff` uses the repository's default branch.
 - **Opening it.** `archive: false` uploads the file as it is instead of in a zip, so the summary's link opens it in the browser. The link needs read access to the repository, like the rest of the run.
 
-This repository runs this job on these docs, when a pull request changes them or the code their examples come from, and the same job on `examples/quill`, in [`.github/workflows/review.yml`]({repo}/blob/main/.github/workflows/review.yml): the job above is taken from that file. It also installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.
+This repository runs the same job on these docs, when a pull request changes them or the code their examples come from, and on `examples/quill`, in [`.github/workflows/review.yml`]({repo}/blob/main/.github/workflows/review.yml). It installs `@ascribed/cli@next` there, the nightly build of `main`, since these docs follow `main`.
 
 ## See also
 

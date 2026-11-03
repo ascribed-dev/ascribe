@@ -1,0 +1,1 @@
+- **The CI how-to has the whole pipeline in one workflow.** Every check, `astro build`, and the HTML preview, each with the `ascribe` the project pins, and how to read the check's JSON in another CI. See [Checks in CI](docs/content/checks/ci.md#everything-in-one-workflow).
