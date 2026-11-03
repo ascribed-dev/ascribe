@@ -1,0 +1,1 @@
+- **The language server's page has setups for Neovim and Helix.** It says the server reads no editor settings, and gives each of its own requests' parameters. See [The language server](docs/content/editor/language-server.md).

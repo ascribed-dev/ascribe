@@ -76,100 +76,9 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ## JSON
 
-One document per page, at the page's source path with `.json` for `.md`. `schemaVersion` is `1`. It changes only when a field is removed or changes meaning; consumers ignore fields they don't know. Spans are UTF-8 byte offsets, `[start, end]`, from the start of the file (frontmatter included); lines count from 1. Every `file` is a content path, so a consumer can point back at the source. Beside the pages, `generated` adds `_ascribe/nav.json`, the site output's navigation with its formatted labels as pieces.
+See the [JSON output contract](https://ascribed-dev.com/go/json-output-contract/), which says what each page's document holds, and its schema, [`schemas/json-page.schema.json`](../../schemas/json-page.schema.json), generated from the types in `src/json.rs` by `crates/ascribe-cli/src/shapes.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`). To change what a field says, change the type and its doc comment. `schema_version` is `JSON_SCHEMA_VERSION`, which changes only when a field is removed or changes meaning. Keys, and the names a field's values are, are snake_case. Beside the pages, `generated` adds `_ascribe/nav.json`, the site output's navigation with its formatted labels as pieces.
 
-### Page
-
-| Field | Type | Meaning |
-|---|---|---|
-| `schemaVersion` | number | `1` |
-| `format` | string | `"ascribe-page"` |
-| `build` | string | The build's name |
-| `path` | string | The page's source path, relative to the content root |
-| `route` | string | The page's root-relative URL, as the router made it |
-| `site` | string or null | `[consumer] site`, the origin to put before a root-relative URL |
-| `title` | string or null | The frontmatter `title`, phrases substituted, as plain text |
-| `frontmatter` | object or null | The frontmatter, with phrases substituted in the fields that ask for it, and fields that set `inline = "code"` as plain text |
-| `formatted` | object, when there is one | Each field that sets `inline = "code"`, as a list of `{type: "text" \| "code", value}` |
-| `availability` | object or null | The page's own availability (frontmatter `available`) |
-| `headings` | array | Every surviving heading: `level`, `text`, `id` (its page id), `sourceId`, `explicit`, `source` |
-| `assets` | array | Every surviving asset reference on the page: `source` (its source path), `path` (the copy's path in this output), `reference` (how this page refers to it), `kind` (`"image"` or `"link"`), `fragment`, `writtenIn` (the file the reference is written in), `span` |
-| `blocks` | array | The page's blocks |
-
-### Blocks
-
-Every block has a `type`, and:
-
-| Field | Meaning |
-|---|---|
-| `source` | `file`, `span`, `lines` (first and last), and `via`: the includes it came through, outermost first (`file`, `span`, `line`), absent for a page's own blocks |
-| `availability` | Its effective availability below page level: the innermost spec, with `enclosing` chaining outward to the scope it sits in. Absent when nothing but the page's availability applies |
-| `links` | The block's own links and images, resolved: `span`, `kind`, `destination`, `target` |
-| `glossary` | Glossary terms linked in its prose, and its links to a term's heading: `term`, `text`, `url`, `definition` |
-| `substitutions` | Phrases replaced in its text: `span` (over the source), `key`, `value` |
-| `snippet` | For a `code` block a `@snippet` became: `address` (as written), `path` (the code file, from the project root), and `lines` (the first and last lines of the file it covers), and `tested` when the file is a tested example. Its `source` is the `@snippet` line |
-
-`links`, `glossary`, and `substitutions` are absent when empty, and `snippet` is absent on every other block.
-
-A snippet's `tested` is present only when its source's `ascribe.examples.toml` makes the file an example ([decision #458c](../../project-docs/decisions/458c-tested-json.md)): `status`, one of `current`, `stale`, and `unobserved`, and `observations`, the observations current for the file in name order, each with its `name` and its `environment` as the observation has it, `os` and `arch` first, such as `{ "os": "linux", "arch": "x64", "node": "v24.9.0" }`. `observations` is empty unless the status is `current`.
-
-| `type` | Fields |
-|---|---|
-| `heading` | `level`, `id`, `sourceId`, `explicit`, `text`, `inlines`, and `summary` when its section has one |
-| `paragraph` | `inlines` |
-| `code` | `fenced`, `info`, `literal` |
-| `blockQuote` | `children` |
-| `list` | `ordered`, `start`, `tight`, `items` (each `{children}`) |
-| `html` | `literal` |
-| `thematicBreak` | |
-| `table` | `alignments`: each column's `none`, `left`, `center`, or `right`; `rows`: each `{header, cells}`, a cell being `{inlines}` |
-| `directive` | A line-form directive that survived: `name`, `attributes`, `title`, `primary`, `binding` (`own`, `heading`, `followingBlock`, `unbound`), `annotation` |
-| `operation` | An `@operation` that names an operation the spec has (SPEC §4.13): `api`, `operationId` when it has one, `method`, `path`, `summary` when it has one, `deprecated`, and `address`, the operation's in the published reference. Its `source` is the `@operation` line |
-| `container` | `name`, `attributes`, `title`, `children` |
-| `group` | `name`, `arms`: each `{label, attributes, title, span, children}` |
-
-An `@available` that survived the build is a `directive` with an `annotation`: `text` (the spec as shown; for a feature key, the spec it stands for), `display` (with the content model's labels), and `feature`. `attributes` is a list of `{key, values}` (a set has several values, a bare key none). A `title` and a text `primary` are inline lists. A `primary` is `{kind: "text", inlines}`, `{kind: "identifier", text}`, or `{kind: "line", text}`.
-
-An `@operation` whose link names no operation the spec has, which `ascribe check` reports, stays a `directive` block, with its link as its `identifier` primary.
-
-A heading's `summary` is its section's (SPEC §4.12): `form`, `text` for `@summary: text` and `paragraph` for `@summary` above a paragraph; `inlines`, the summary's text; and `source`, the `@summary` line for the text form and the paragraph for the other. The `@summary` line is a `directive` block too, where it's written, and the paragraph a `paragraph`.
-
-A group keeps its surviving arms only: a group a selection reduced to one arm isn't a group in the tree, but that arm's blocks, and one with none is gone. An arm's `label` is its title as plain text, or the display labels of the values it names.
-
-### Inlines
-
-Every inline has a `type` and a `span` in the block's file: `text` (`value`, decoded), `code`, `softBreak`, `hardBreak`, `html`, `emphasis` and `strong` (`children`), `link`, `image`, `phrase` (`key`, for a phrase the resolution left, which it doesn't).
-
-A `link` has `destination` (a page link's is its route and id, an external one's is as written), `title`, `children`, and `target`: the block's resolved link at the same span, or `null` for a glossary link (an ordinary link, listed in the block's `glossary`). An `image` has `destination`, `title`, `alt` (plain text), `attributes` (`{key, values}`, such as `width`), and `target`.
-
-A `target` has a `type`:
-
-| `type` | Fields |
-|---|---|
-| `external` | |
-| `page` | `page` (its source path), `id` (a page id, or null), `url`, `textFilled` (the link had no text and took the page's title), and, for a link out of a line of a versioned build, `line` (the line it leads to) |
-| `asset` | `source`, `path` (the copy), `reference` (as written on this page), `url`, `fragment` |
-| `operation` | `api` (its `[apis.<name>]`), `operationId`, or `method` and `path` for an operation with no id, and `address`, the operation's in the published reference |
-| `unresolved` | The build couldn't resolve it; the checks report why |
-
-### Example
-
-```json
-{
-  "schemaVersion": 1,
-  "format": "ascribe-page",
-  "build": "cloud",
-  "path": "keys.md",
-  "route": "/keys/",
-  "site": "https://docs.quill.dev",
-  "title": "API keys",
-  "headings": [{ "level": 2, "text": "Create a key", "id": "create-key", "sourceId": "create-key", "explicit": true, "source": { "file": "keys.md", "span": [93, 108], "lines": [5, 5] } }],
-  "assets": [],
-  "blocks": [{ "type": "heading", "level": 2, "id": "create-key", "…": "…" }]
-}
-```
-
-The full documents for Quill are the snapshots in `tests/all/snapshots/`.
+`tests/all/json_schema.rs` holds every page of every example and conformance case to the schema, and `tests/all/quill.rs` snapshots the full documents for Quill, in `tests/all/snapshots/`.
 
 ## Output ownership
 
@@ -177,4 +86,4 @@ See the [output-layout contract](https://ascribed-dev.com/go/output-layout-contr
 
 ## Tests
 
-`tests/all/plain.rs` (each construct), `tests/all/reading.rs` (what `ascribe search` reads agrees with the plain output, for every example and conformance case), `tests/all/agents.rs` (the outputs for agents), `tests/all/store.rs` (the output-layout contract), `tests/all/write.rs` (`write_outputs`), `tests/all/assets.rs` (the output works with the source removed), `tests/all/formatted.rs` (fields read with `inline = "code"`), and `tests/all/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/all/site.rs`, `tests/all/site_quill.rs`, `tests/all/site_assets.rs`, `tests/all/site_anchors.rs` (source anchors), `tests/all/render_fixtures.rs`, and `tests/all/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.
+`tests/all/plain.rs` (each construct), `tests/all/reading.rs` (what `ascribe search` reads agrees with the plain output, for every example and conformance case), `tests/all/agents.rs` (the outputs for agents), `tests/all/store.rs` (the output-layout contract), `tests/all/write.rs` (`write_outputs`), `tests/all/assets.rs` (the output works with the source removed), `tests/all/formatted.rs` (fields read with `inline = "code"`), `tests/all/json_schema.rs` (the JSON output against its schema), and `tests/all/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/all/site.rs`, `tests/all/site_quill.rs`, `tests/all/site_assets.rs`, `tests/all/site_anchors.rs` (source anchors), `tests/all/render_fixtures.rs`, and `tests/all/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.

@@ -1,0 +1,1 @@
+- **Behavior change: the `json` output is a contract, and its keys are snake_case.** Its `schema_version` is `2`, `schemaVersion` and `sourceId` are `schema_version` and `source_id`, and a block's `blockQuote` is `block_quote`. See [the JSON output contract](docs/content/contracts/json-output.md).

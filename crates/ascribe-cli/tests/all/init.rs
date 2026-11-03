@@ -410,3 +410,17 @@ fn getting_started_s_ascribe_toml_starts_with_what_init_writes() {
         "examples/getting-started/ascribe.toml no longer starts with what `ascribe init` writes:\n{written}"
     );
 }
+
+/// Getting started's project has the `ascribe.addresses` `ascribe init`
+/// writes, so the check the CI how-to takes from it meets the file a new
+/// project has, and its workflow compares it with the base (#1243).
+#[test]
+fn getting_started_has_the_ascribe_addresses_init_writes() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["init"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let written = fs::read_to_string(dir.path().join("ascribe.addresses")).unwrap();
+    let example = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../examples/getting-started/ascribe.addresses");
+    assert_eq!(fs::read_to_string(example).unwrap(), written);
+}

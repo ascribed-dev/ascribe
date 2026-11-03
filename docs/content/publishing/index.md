@@ -1,6 +1,6 @@
 ---
 type: concept
-title: Publishing
+title: Search engines and crawlers
 description: "What a project tells search engines and AI crawlers about its pages, and what it delivers to agents: listing, `robots.txt`, the response headers, `llms.txt`, and the Markdown versions."
 ---
 

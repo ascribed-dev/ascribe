@@ -27,7 +27,7 @@ use crate::store::{Contents, EmittedFile, FileKind};
 
 /// The version of the JSON schema. It changes only when a field is removed or
 /// changes meaning; fields can be added without a new version.
-pub const JSON_SCHEMA_VERSION: u32 = 1;
+pub const JSON_SCHEMA_VERSION: u32 = 2;
 
 /// The JSON emitter.
 #[derive(Clone, Copy, Debug, Default)]
@@ -82,40 +82,71 @@ impl Emitter for JsonEmitter {
 // ---------------------------------------------------------------------------
 // The document
 
+/// A page of the JSON output: the page as the build resolved it, with every
+/// node's place in its source (the JSON output contract). Spans are UTF-8
+/// byte offsets, `[start, end]`, from the start of the file, frontmatter
+/// included; lines count from 1.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
 struct PageDoc {
+    /// The format's version, `2`. It changes only when a field is removed or
+    /// changes meaning.
     schema_version: u32,
+    /// `"ascribe-page"`.
     format: &'static str,
+    /// The build's name.
     build: String,
+    /// The page's source path, relative to the content root.
     path: String,
+    /// The page's root-relative URL, as the router made it.
     route: String,
+    /// `[consumer] site`: the origin to put before a root-relative URL.
     site: Option<String>,
+    /// The frontmatter `title`, phrases substituted, as plain text.
     title: Option<String>,
+    /// The frontmatter, with phrases substituted in the fields that ask for
+    /// it, and each field that sets `inline = "code"` as plain text.
     frontmatter: Option<serde_json::Value>,
-    /// The fields read with `inline = "code"`, each as text and code
-    /// inlines; their plain text is in `frontmatter`.
+    /// Each field that sets `inline = "code"`, as a list of text and code
+    /// pieces (`{type, value}`); its plain text is in `frontmatter`.
     #[serde(skip_serializing_if = "serde_json::Map::is_empty")]
     formatted: serde_json::Map<String, serde_json::Value>,
+    /// The page's own availability (frontmatter `available`).
     availability: Option<AvailabilityJson>,
+    /// Every heading that survived the build, in order.
     headings: Vec<HeadingJson>,
+    /// Every asset reference on the page that survived the build.
     assets: Vec<AssetJson>,
+    /// The page's blocks.
     blocks: Vec<BlockJson>,
 }
 
+/// A heading of the page.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Heading"))]
 struct HeadingJson {
+    /// Its level, 1 to 6.
     level: u8,
+    /// Its text, as plain text.
     text: String,
+    /// Its page id: the id it has on the page.
     id: String,
+    /// Its source id: the id it has in its source file.
     source_id: String,
+    /// Whether an `@id` gave it its id.
     explicit: bool,
+    /// Where it's written.
     source: SourceJson,
 }
 
+/// An asset reference on the page.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Asset"))]
 struct AssetJson {
     /// The asset's source path, relative to the content root.
     source: String,
@@ -123,15 +154,21 @@ struct AssetJson {
     path: String,
     /// How this page refers to the copy.
     reference: String,
+    /// `image` or `link`.
     kind: &'static str,
+    /// The reference's fragment, without its `#`.
     fragment: Option<String>,
+    /// The file the reference is written in, relative to the content root.
     written_in: Option<String>,
+    /// The reference's span in that file.
     span: SpanJson,
 }
 
 /// A byte range in a source file, `[start, end]`, counted in UTF-8 bytes from
 /// the start of the file (frontmatter included).
 #[derive(Clone, Copy, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Span"))]
 struct SpanJson(usize, usize);
 
 impl From<Span> for SpanJson {
@@ -140,28 +177,42 @@ impl From<Span> for SpanJson {
     }
 }
 
+/// Where a node is written.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Source"))]
 struct SourceJson {
     /// The file the node is written in, relative to the content root.
     file: Option<String>,
+    /// Its span in that file.
     span: SpanJson,
     /// First and last line, counted from 1.
     lines: Option<[u32; 2]>,
-    /// The includes it came through, outermost first.
+    /// The includes it came through, outermost first; absent for a page's
+    /// own nodes.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     via: Vec<ViaJson>,
 }
 
+/// An include a node came through.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Via"))]
 struct ViaJson {
+    /// The file the `@include` is written in.
     file: Option<String>,
+    /// The `@include`'s span in that file.
     span: SpanJson,
+    /// The `@include`'s line, counted from 1.
     line: Option<u32>,
 }
 
+/// An availability: the page's own, or a block's effective one.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Availability"))]
 struct AvailabilityJson {
     /// The spec as written (for a feature key, the spec it stands for).
     text: String,
@@ -171,8 +222,11 @@ struct AvailabilityJson {
     /// lists release lines in `[releases]`.
     #[serde(skip_serializing_if = "Option::is_none")]
     targets: Option<Vec<AvailabilityTargetJson>>,
+    /// What it applies to: `page`, `section`, `block`, or `row`.
     scope: &'static str,
+    /// The feature key it was written as, when it was one.
     feature: Option<String>,
+    /// Where it's written.
     source: Option<SourceRef>,
     /// The scope it sits in, whose availability it inherits too. The chain
     /// stops before the page's availability, which is in the page's own
@@ -184,52 +238,85 @@ struct AvailabilityJson {
 /// One target of an availability spec: the element's attributes and its
 /// text (element contract §4).
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "AvailabilityTarget"))]
 struct AvailabilityTargetJson {
+    /// The target's name.
     target: String,
+    /// The dimension it's a value of.
     dimension: String,
+    /// Its lifecycle states.
     states: Vec<String>,
+    /// The versions it names; absent when it names none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     versions: Vec<String>,
-    /// `true` when the target's last version is in a planned line.
+    /// `true` when the target's last version is in a planned line; absent
+    /// otherwise.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     planned: bool,
+    /// The target as text.
     text: String,
 }
 
+/// A place in a source file.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 struct SourceRef {
+    /// The file, relative to the content root.
     file: Option<String>,
+    /// The span in that file.
     span: SpanJson,
 }
 
+/// A directive's attribute.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Attribute"))]
 struct AttrJson {
+    /// Its key.
     key: String,
+    /// Its values: several for a set, none for a bare key.
     values: Vec<String>,
 }
 
 // Blocks.
 
+/// A block: its `type` and the fields of that type, and what every block
+/// has.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Block"))]
 struct BlockJson {
     #[serde(flatten)]
     body: BlockBody,
+    /// Where it's written.
     source: SourceJson,
+    /// Its effective availability below page level: the innermost spec, with
+    /// `enclosing` chaining outward. Absent when nothing but the page's
+    /// availability applies.
     #[serde(skip_serializing_if = "Option::is_none")]
     availability: Option<AvailabilityJson>,
+    /// The block's own links and images, resolved; absent when it has none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     links: Vec<LinkJson>,
+    /// Glossary terms linked in its prose, and its links to a term's heading;
+    /// absent when it has none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     glossary: Vec<GlossaryJson>,
+    /// Phrases replaced in its text; absent when it has none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     substitutions: Vec<SubstitutionJson>,
+    /// For a `code` block a `@snippet` became, where its code comes from;
+    /// absent on every other block.
     #[serde(skip_serializing_if = "Option::is_none")]
     snippet: Option<SnippetJson>,
 }
 
 /// Where a code block that a `@snippet` became takes its code from.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Snippet"))]
 struct SnippetJson {
     /// The address, as written.
     address: String,
@@ -245,6 +332,8 @@ struct SnippetJson {
 
 /// A tested example's status, and the observations current for it.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Tested"))]
 struct TestedJson {
     /// `current`, `stale`, or `unobserved`.
     status: &'static str,
@@ -255,6 +344,8 @@ struct TestedJson {
 
 /// An observation current for an example.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Observation"))]
 struct ObservationJson {
     /// Its name: `default`, or the name `ascribe observe --name` gave it.
     name: String,
@@ -277,248 +368,440 @@ impl Serialize for Environment {
     }
 }
 
+#[cfg(feature = "json-schema")]
+impl schemars::JsonSchema for Environment {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Environment".into()
+    }
+
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({
+            "description": "An environment's names and values, in its order.",
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+        })
+    }
+}
+
+/// A block's type, and the fields of that type.
 #[derive(Serialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(tag = "type", rename_all = "snake_case")]
 enum BlockBody {
-    #[serde(rename_all = "camelCase")]
+    /// A heading.
+    #[serde(rename_all = "snake_case")]
     Heading {
+        /// Its level, 1 to 6.
         level: u8,
+        /// Its page id.
         id: Option<String>,
+        /// Its source id.
         source_id: Option<String>,
+        /// Whether an `@id` gave it its id.
         explicit: bool,
+        /// Its text, as plain text.
         text: Option<String>,
+        /// Its text.
         inlines: Vec<InlineJson>,
         /// The section's summary (SPEC §4.12), when it has one.
         #[serde(skip_serializing_if = "Option::is_none")]
         summary: Option<SummaryJson>,
     },
+    /// A paragraph.
     Paragraph {
+        /// Its text.
         inlines: Vec<InlineJson>,
     },
+    /// A code block.
     Code {
+        /// Whether it's fenced, rather than indented.
         fenced: bool,
+        /// Its info string.
         info: String,
+        /// Its code.
         literal: String,
     },
+    /// A block quote.
     BlockQuote {
+        /// Its blocks.
         children: Vec<BlockJson>,
     },
+    /// A list.
     List {
+        /// Whether it's numbered.
         ordered: bool,
+        /// The first item's number, for a numbered list.
         start: Option<u64>,
+        /// Whether it's tight: no blank line between its items.
         tight: bool,
+        /// Its items.
         items: Vec<ItemJson>,
     },
+    /// A block of HTML.
     Html {
+        /// The HTML.
         literal: String,
     },
+    /// A thematic break.
     ThematicBreak,
+    /// A table.
     Table {
         /// Each column's alignment: `none`, `left`, `center`, or `right`.
         alignments: Vec<&'static str>,
+        /// Its rows.
         rows: Vec<RowJson>,
     },
     /// A line-form directive that survived: `@available` with its annotation,
     /// or a `@note`, `@steps`, `@details`, or widget that binds the block
     /// that follows it.
     Directive {
+        /// Its name.
         name: String,
+        /// Its attributes.
         attributes: Vec<AttrJson>,
+        /// Its title.
         title: Option<Vec<InlineJson>>,
+        /// Its primary value.
         primary: Option<PrimaryJson>,
+        /// What it binds: `own`, `heading`, `following_block`, or `unbound`.
         binding: Option<&'static str>,
+        /// An `@available`'s spec.
         annotation: Option<AnnotationJson>,
     },
     /// An `@operation` that names an operation the spec has (SPEC §4.13).
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "snake_case")]
     Operation {
+        /// Its API, the name of its `[apis.<name>]`.
         api: String,
+        /// The operation's id, when it has one.
         #[serde(skip_serializing_if = "Option::is_none")]
         operation_id: Option<String>,
+        /// The operation's HTTP method.
         method: String,
+        /// The operation's path.
         path: String,
+        /// The operation's summary, when it has one.
         #[serde(skip_serializing_if = "Option::is_none")]
         summary: Option<String>,
+        /// Whether the spec marks it deprecated.
         deprecated: bool,
+        /// The operation's address in the published reference.
         address: String,
     },
+    /// A container directive.
     Container {
+        /// Its name.
         name: String,
+        /// Its attributes.
         attributes: Vec<AttrJson>,
+        /// Its title.
         title: Option<Vec<InlineJson>>,
+        /// Its blocks.
         children: Vec<BlockJson>,
     },
+    /// A group, such as `@variant`, with its surviving arms.
     Group {
+        /// Its name.
         name: String,
+        /// Its surviving arms.
         arms: Vec<ArmJson>,
     },
 }
 
+/// A list item.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Item"))]
 struct ItemJson {
+    /// Its blocks.
     children: Vec<BlockJson>,
 }
 
+/// A table row.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Row"))]
 struct RowJson {
+    /// Whether it's the header row.
     header: bool,
     /// The row's own availability, in its table's (SPEC §4.4).
     #[serde(skip_serializing_if = "Option::is_none")]
     availability: Option<AvailabilityJson>,
+    /// Its cells.
     cells: Vec<CellJson>,
 }
 
+/// A table cell.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Cell"))]
 struct CellJson {
+    /// Its text.
     inlines: Vec<InlineJson>,
 }
 
+/// A directive's primary value.
 #[derive(Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(tag = "kind", rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Primary"))]
 enum PrimaryJson {
-    Text { inlines: Vec<InlineJson> },
-    Identifier { text: String },
-    Line { text: String },
+    /// Text.
+    Text {
+        /// The text.
+        inlines: Vec<InlineJson>,
+    },
+    /// An identifier.
+    Identifier {
+        /// The identifier.
+        text: String,
+    },
+    /// The rest of the line, as written.
+    Line {
+        /// The line.
+        text: String,
+    },
 }
 
 /// A section's summary: its text, and the form that gives it, `text` for
 /// `@summary: text` and `paragraph` for `@summary` above a paragraph.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Summary"))]
 struct SummaryJson {
+    /// `text` or `paragraph`.
     form: &'static str,
+    /// The summary's text.
     inlines: Vec<InlineJson>,
+    /// The `@summary` line for the text form, and the paragraph for the
+    /// other.
     source: SourceJson,
 }
 
+/// An `@available`'s spec.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Annotation"))]
 struct AnnotationJson {
+    /// The spec as shown; for a feature key, the spec it stands for.
     text: String,
+    /// The spec with the content model's display labels.
     display: Option<String>,
+    /// The feature key it was written as, when it was one.
     feature: Option<String>,
 }
 
+/// A surviving arm of a group.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Arm"))]
 struct ArmJson {
     /// The arm's label: its title as plain text, or the display labels of the
     /// values it names.
     label: Option<String>,
+    /// Its attributes.
     attributes: Vec<AttrJson>,
+    /// Its title.
     title: Option<Vec<InlineJson>>,
+    /// Its span.
     span: SpanJson,
+    /// Its blocks.
     children: Vec<BlockJson>,
 }
 
 // Links, glossary, substitutions.
 
+/// A link or image of a block, resolved.
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Link"))]
 struct LinkJson {
+    /// Its span.
     span: SpanJson,
+    /// `link` or `image`.
     kind: &'static str,
+    /// Its destination, as written.
     destination: String,
+    /// What it resolved to.
     target: TargetJson,
 }
 
+/// What a link or image resolved to.
 #[derive(Serialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(tag = "type", rename_all = "snake_case")]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Target"))]
 enum TargetJson {
+    /// An external link.
     External,
-    #[serde(rename_all = "camelCase")]
+    /// A page the build publishes.
+    #[serde(rename_all = "snake_case")]
     Page {
+        /// The page's source path.
         page: String,
+        /// The page id it names, if any.
         id: Option<String>,
+        /// Its URL.
         url: String,
+        /// Whether the link had no text and took the page's title.
         text_filled: bool,
         /// The line a link out of a line leads to; absent for any other
         /// link.
         #[serde(skip_serializing_if = "Option::is_none")]
         line: Option<String>,
     },
-    #[serde(rename_all = "camelCase")]
+    /// An asset.
+    #[serde(rename_all = "snake_case")]
     Asset {
+        /// The asset's source path.
         source: String,
+        /// The copy's path in this output.
         path: String,
+        /// How this page refers to the copy.
         reference: String,
+        /// The copy's URL.
         url: Option<String>,
+        /// The fragment, without its `#`.
         fragment: Option<String>,
     },
-    #[serde(rename_all = "camelCase")]
+    /// An operation of an API spec.
+    #[serde(rename_all = "snake_case")]
     Operation {
+        /// Its API, the name of its `[apis.<name>]`.
         api: String,
         // An operation's id, or, when it has none, its method and path.
+        /// The operation's id, when it has one.
         #[serde(skip_serializing_if = "Option::is_none")]
         operation_id: Option<String>,
+        /// The operation's HTTP method, for an operation with no id.
         #[serde(skip_serializing_if = "Option::is_none")]
         method: Option<String>,
+        /// The operation's path, for an operation with no id.
         #[serde(skip_serializing_if = "Option::is_none")]
         path: Option<String>,
+        /// The operation's address in the published reference.
         address: String,
     },
+    /// The build couldn't resolve it; the checks report why.
     Unresolved,
 }
 
+/// A glossary term linked in a block.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "GlossaryTerm"))]
 struct GlossaryJson {
+    /// The term.
     term: String,
+    /// The text that links it.
     text: String,
+    /// The term's URL.
     url: String,
+    /// The term's definition, as plain text.
     definition: String,
 }
 
+/// A phrase replaced in a block's text.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Substitution"))]
 struct SubstitutionJson {
+    /// Its span over the source.
     span: SpanJson,
+    /// The phrase's key.
     key: String,
+    /// The text that replaced it.
     value: String,
 }
 
 // Inlines.
 
+/// An inline: its `type` and the fields of that type, and its span in the
+/// block's file.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "json-schema", schemars(rename = "Inline"))]
 struct InlineJson {
     #[serde(flatten)]
     body: InlineBody,
+    /// Its span in the block's file.
     span: SpanJson,
 }
 
+/// An inline's type, and the fields of that type.
 #[derive(Serialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(tag = "type", rename_all = "snake_case")]
 enum InlineBody {
+    /// Text.
     Text {
+        /// The text, decoded.
         value: String,
     },
+    /// A code span.
     Code {
+        /// Its content.
         value: String,
     },
+    /// A soft line break.
     SoftBreak,
+    /// A hard line break.
     HardBreak,
+    /// Inline HTML.
     Html {
+        /// The HTML.
         value: String,
     },
+    /// Emphasis.
     Emphasis {
+        /// What it emphasizes.
         children: Vec<InlineJson>,
     },
+    /// Strong emphasis.
     Strong {
+        /// What it emphasizes.
         children: Vec<InlineJson>,
     },
+    /// A link.
     Link {
+        /// A page link's route and id, or an external link's destination as
+        /// written.
         destination: String,
+        /// Its title.
         title: Option<String>,
+        /// The block's resolved link at the same span, or `null` for a
+        /// glossary link.
         target: Option<TargetJson>,
+        /// Its text.
         children: Vec<InlineJson>,
     },
+    /// An image.
     Image {
+        /// Its destination.
         destination: String,
+        /// Its title.
         title: Option<String>,
+        /// The block's resolved image at the same span.
         target: Option<TargetJson>,
+        /// Its alternative text, as plain text.
         alt: String,
+        /// Its attributes, such as `width`.
         attributes: Vec<AttrJson>,
     },
+    /// A phrase the resolution left, which it doesn't.
     Phrase {
+        /// The phrase's key.
         key: String,
     },
+}
+
+/// The schema of a page of the JSON output, for `schemas/`.
+#[cfg(feature = "json-schema")]
+pub fn page_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+    generator.root_schema_for::<PageDoc>()
 }
 
 // ---------------------------------------------------------------------------
@@ -899,7 +1182,7 @@ impl Writer<'_, '_> {
             binding: line.binding.map(|b| match b {
                 ascribe_syntax::Bound::Own => "own",
                 ascribe_syntax::Bound::Heading => "heading",
-                ascribe_syntax::Bound::FollowingBlock => "followingBlock",
+                ascribe_syntax::Bound::FollowingBlock => "following_block",
                 ascribe_syntax::Bound::Unbound => "unbound",
             }),
             annotation: block

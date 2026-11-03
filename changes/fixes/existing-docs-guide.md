@@ -1,0 +1,1 @@
+- **Fixed:** Bring existing docs shows what each check prints in a git repository. It now ends with a clean check. See [Bring existing docs to Ascribe](docs/content/existing-docs.md).

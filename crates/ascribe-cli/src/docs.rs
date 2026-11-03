@@ -415,6 +415,109 @@ fn the_command_reference_is_current() {
     }
 }
 
+/// Variables the sources read that the command reference's table leaves out,
+/// and why.
+const UNLISTED_VARIABLES: &[(&str, &str)] = &[(
+    "ASCRIBE_BLESS",
+    "only this repository's tests read it; the reference says so under the table",
+)];
+
+/// What comes before the name of a variable the code reads: Rust's
+/// `std::env::var("…")` and `var_os("…")`, a constant that names one
+/// (`const TODAY_VARIABLE: &str = "…"`), a shell script's `$…` and `${…}`,
+/// and TypeScript's `process.env["…"]` and `process.env.…`.
+const READS_OF_VARIABLES: &[&str] = &[
+    "var(\"",
+    "var_os(\"",
+    ": &str = \"",
+    "$",
+    "${",
+    "process.env[\"",
+    "process.env.",
+];
+
+/// The variables the reads in `text` name: Ascribe's own, `ASCRIBE_…`, and
+/// `NO_COLOR`. Another tool's, such as `HOME`, isn't Ascribe's to document.
+fn variables_read(text: &str, into: &mut std::collections::BTreeSet<String>) {
+    for read in READS_OF_VARIABLES {
+        for (at, _) in text.match_indices(read) {
+            let rest = &text[at + read.len()..];
+            let end = rest
+                .find(|c: char| !(c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_'))
+                .unwrap_or(rest.len());
+            let name = &rest[..end];
+            if name.starts_with("ASCRIBE_") || name == "NO_COLOR" {
+                into.insert(name.to_owned());
+            }
+        }
+    }
+}
+
+/// The source files of what Ascribe ships, under `dir`: Rust, shell, and
+/// TypeScript, leaving out tests and what's built.
+fn shipped_sources(dir: &std::path::Path, into: &mut Vec<PathBuf>) {
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        let name = path.file_name().unwrap().to_string_lossy();
+        if path.is_dir() {
+            if !matches!(name.as_ref(), "tests" | "test" | "node_modules" | "dist") {
+                shipped_sources(&path, into);
+            }
+        } else if [".rs", ".sh", ".ts"].iter().any(|ext| name.ends_with(ext)) {
+            into.push(path);
+        }
+    }
+}
+
+/// The environment variables in the command reference's table are those the
+/// code Ascribe ships reads: the binary's crates, the scripts it writes, and
+/// the packages. A variable added to the code fails this until the table has
+/// it, and one the code no longer reads fails it until the table drops it.
+#[test]
+fn the_command_reference_lists_every_environment_variable() {
+    let mut files = Vec::new();
+    for parent in ["crates", "packages"] {
+        for entry in std::fs::read_dir(repo().join(parent)).unwrap() {
+            let src = entry.unwrap().path().join("src");
+            if src.is_dir() {
+                shipped_sources(&src, &mut files);
+            }
+        }
+    }
+    let mut read = std::collections::BTreeSet::new();
+    for file in &files {
+        let text = std::fs::read_to_string(file).unwrap();
+        // A Rust file's unit tests are its own, after its first `#[cfg(test)]`.
+        let shipped = text.split("\n#[cfg(test)]").next().unwrap_or_default();
+        variables_read(shipped, &mut read);
+    }
+    for (name, _) in UNLISTED_VARIABLES {
+        read.remove(*name);
+    }
+
+    let page = std::fs::read_to_string(repo().join("docs/content/command/index.md")).unwrap();
+    let table = page
+        .split("\n## Environment variables\n")
+        .nth(1)
+        .expect("the command reference has a section `## Environment variables`");
+    let table = table.split("\n## ").next().unwrap_or_default();
+    let listed: std::collections::BTreeSet<String> = table
+        .lines()
+        .filter_map(|line| line.strip_prefix("| `"))
+        .filter_map(|line| line.split('`').next())
+        .map(str::to_owned)
+        .collect();
+
+    let missing: Vec<_> = read.difference(&listed).collect();
+    let gone: Vec<_> = listed.difference(&read).collect();
+    assert!(
+        missing.is_empty() && gone.is_empty(),
+        "docs/content/command/index.md's table of environment variables is out of date: \
+         read but not listed {missing:?}, listed but not read {gone:?}. Add or remove its row, \
+         or, for one only tests read, add it to UNLISTED_VARIABLES"
+    );
+}
+
 /// Compares each fragment with its file in `docs/content/_generated/`, or,
 /// with `ASCRIBE_BLESS`, writes it. A file there whose name starts with
 /// `prefix` and that isn't one of `fragments` is left over from something

@@ -50,7 +50,7 @@ pub use explain::{
 pub use link::{LinkAnswer, LinkKind, LinkLine, LinkOperation, LinkSuggestion, link};
 pub use model::{
     ModelNavPage, ModelNavSection, ModelReport, ModelSetting, ModelTerm, Section, model,
-    navigation, summary, terms,
+    navigation, navigation_summary, summary, terms,
 };
 pub use outline::{Outline, OutlineHeading, OutlineMemo, OutlineMemoState, outline};
 pub use permalinks::{PermalinksAnswer, Retire, RetireAnswer, SyncAnswer, VerifyAnswer};
