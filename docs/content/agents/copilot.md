@@ -6,7 +6,7 @@ description: "Set Ascribe up for GitHub Copilot, in VS Code and as the cloud age
 
 Copilot reads `AGENTS.md` and the skill that [`ascribe agents sync`](instructions.md) writes, and, with `--target copilot`, rules in `.github/instructions/` applied only to your pages. What else it needs depends on where it runs.
 
-Copilot's files are for a repository, so `--target copilot` and `--cloud` need one. Outside a git repository, `sync` treats your project's folder as the root and says so.
+Copilot's files are for a repository, so outside a git repository `--target copilot` and `--cloud` stop and write nothing (exit code `2`). Without them, `sync` treats your project's folder as the root and says so.
 
 ## In VS Code
 

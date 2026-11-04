@@ -32,11 +32,10 @@ It writes each template, its guide, and Ascribe's notes on its type into `templa
 [types.how-to]
 
 [types.how-to.frontmatter]
-title = "string"
 description = "string"
 ```
 
-The type names no template: a type with no `template` and no `guide` takes both from the lock, which records them under the type's name. A type that names either keeps what it names, which is how a project without the lock, or with a template written by hand, gives a type its template. In VS Code, the hover on the type's name in `ascribe.toml` says where its template comes from.
+It declares no `title`, which every page has already. The type names no template: a type with no `template` and no `guide` takes both from the lock, which records them under the type's name. A type that names either keeps what it names, which is how a project without the lock, or with a template written by hand, gives a type its template. In VS Code, the hover on the type's name in `ascribe.toml` says where its template comes from.
 
 A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, the lock with them. The rules [`ascribe agents sync`](../agents/instructions.md) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
 

@@ -1000,6 +1000,44 @@ fn link_operation() {
     );
 }
 
+/// `ascribe check --format concise` on a JSON example whose value the
+/// schema disagrees with: the output "Check a JSON example against its
+/// schema" shows.
+#[test]
+fn check_api_example() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n\
+         [types.guide]\n\n[types.guide.frontmatter]\ntitle = \"string\"\n\n\
+         [apis.users]\nspec = \"api/openapi.yaml\"\n\
+         reference = { renderer = \"redoc\", at = \"/api\" }\n",
+    );
+    write(
+        dir.path(),
+        "api/openapi.yaml",
+        "openapi: 3.1.0\ninfo:\n  title: Users\n  version: \"1.0\"\npaths:\n  /users:\n    post:\n\
+         \x20     operationId: createUser\n      requestBody:\n        content:\n\
+         \x20         application/json:\n            schema:\n              type: object\n\
+         \x20             required: [name, email]\n              properties:\n\
+         \x20               name: { type: string }\n\
+         \x20               email: { type: string, format: email }\n\
+         \x20     responses:\n        \"201\":\n          description: Created\n",
+    );
+    write(
+        dir.path(),
+        "docs/guides/users.md",
+        "---\ntype: guide\ntitle: Create a user\n---\n\nSend the user's name and email:\n\n\
+         ```json request=\"../../api/openapi.yaml#createUser\"\n\
+         { \"name\": 42, \"email\": \"ada@example.com\" }\n```\n",
+    );
+    expect(
+        "check-api-example.txt",
+        &stdout(&run(dir.path(), &["check", "--format", "concise"], 1)),
+    );
+}
+
 /// `ascribe rename` on a copy of `examples/quill`, run from its root: the
 /// command reference's example.
 #[test]

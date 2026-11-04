@@ -24,7 +24,7 @@ Ascribe's repository is the plugin's marketplace, so Claude Code adds it from Gi
 
 From a copy of the repository, add the copy's folder in place of `ascribed-dev/ascribe`.
 
-The plugin runs the `ascribe` binary the VS Code extension would (see [Which `ascribe` it runs](../editor/index.md#which-ascribe-it-runs)), with an environment variable in place of the setting: the one `ASCRIBE_PATH` names, then the project's `node_modules/.bin/ascribe`, then `ascribe` on your path. So a project that pins its version with `npm install --save-dev @ascribed/cli` gets that version in every tool, whatever is installed globally.
+The plugin finds `ascribe` much as the VS Code extension does (see [Which `ascribe` it runs](../editor/index.md#which-ascribe-it-runs)), with an environment variable in place of the setting: the one `ASCRIBE_PATH` names, then the project's `node_modules/.bin/ascribe`, then `ascribe` on your path, where the extension would run the binary it bundles. So a project that pins its version with `npm install --save-dev @ascribed/cli` gets that version in every tool, whatever is installed globally.
 
 The plugin has both kinds of manifest: `.claude-plugin/plugin.json`, which Copilot's CLI reads too, and the Agent Plugins `plugin.json`, which VS Code and Cursor read. To keep the language server's diagnostics out of the conversation on a project with many problems, see [the plugin's README](https://github.com/ascribed-dev/ascribe/tree/main/plugins/ascribe#readme); the stop hook still checks before Claude finishes.
 
