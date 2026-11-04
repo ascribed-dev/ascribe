@@ -9323,8 +9323,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1350"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs inaccuracies: writing, the content model, checks, and commands"
     },
     {
@@ -9364,7 +9367,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1341"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Docs inaccuracies: contracts and the editor"
     },
     {
@@ -9570,7 +9573,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1347"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Define your page types and fields: a how-to, with implementer notes moved to the contract"
     },
     {
@@ -9591,7 +9594,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1343"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Keep pages current: a how-to for owners and recheck dates"
     },
     {
@@ -9738,7 +9741,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1342"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "How Ascribe works: a one-page overview"
     },
     {
@@ -9856,7 +9859,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1346"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Prose: how-tos with numbered steps and task titles, and command reference moved out of them"
     },
     {
