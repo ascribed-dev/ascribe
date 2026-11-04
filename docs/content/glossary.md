@@ -51,7 +51,7 @@ See [Availability](#availability). It's a different thing from a [change mark](#
 ## Baseline
 @term
 
-The list in `ascribe.baseline` of the advice a project had when it was written, which `ascribe check` holds back so it reports only what's new.
+The list in `ascribe.baseline` of the advice a project had when it was written, which `ascribe check` leaves out so it reports only what's new.
 
 See [The baseline](checks/baseline.md).
 
