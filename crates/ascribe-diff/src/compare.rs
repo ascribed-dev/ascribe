@@ -265,6 +265,11 @@ pub struct Change {
     /// shown where it was.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+    /// Whether the block is a list item, whose first line starts with its
+    /// list marker. Not in the JSON, which says where a block is, not what
+    /// kind it is; the text leaves the marker out of an item's lines.
+    #[serde(skip)]
+    pub item: bool,
 }
 
 /// The kinds of block change.
@@ -901,6 +906,7 @@ fn to_change(found: Found<'_>) -> Change {
         after: None,
         parent: None,
         text: None,
+        item: false,
     };
     match found {
         Found::Changed { was, now } => {
@@ -917,12 +923,14 @@ fn to_change(found: Found<'_>) -> Change {
                 now: Some(now.anchor.clone()),
                 was: Some(was.anchor.clone()),
                 words,
+                item: now.kind == "item",
                 ..empty
             }
         }
         Found::Added { now } => Change {
             kind: ChangeKind::Added,
             now: Some(now.anchor.clone()),
+            item: now.kind == "item",
             ..empty
         },
         Found::Removed { was, after, parent } => Change {
@@ -931,6 +939,7 @@ fn to_change(found: Found<'_>) -> Change {
             after,
             parent,
             text: Some(was.all_text()),
+            item: was.kind == "item",
             ..empty
         },
         Found::Moved {
@@ -944,6 +953,7 @@ fn to_change(found: Found<'_>) -> Change {
             was: Some(was.anchor.clone()),
             after,
             parent,
+            item: now.kind == "item",
             ..empty
         },
     }
