@@ -44,7 +44,7 @@ An entry's value is where the name is **declared**: the path of the file it's wr
 - **`[moved]`** has an entry for each name `ascribe.addresses` moves to a page, keyed by its name, whose value is where, as the file writes it: a page's path from the content root, and `#` and a heading's id. Absent when there are none.
 - **`[retired]`** has an entry for each name `ascribe.addresses` retires, keyed by its name, whose value is why it was retired. Absent when there are none.
 
-A name is in one of the four tables, never two. The three tables were added to version 1: a list without them is a list with none, and a version of Ascribe that predates one reports a list with it as invalid rather than misread it.
+A name is in one of the four tables, never two. The three tables were added to version 1: a list without them is a list with none, and a version of Ascribe from before a table was added reports a list that has that table as invalid, rather than misread it.
 
 A place is where the name is written in the source, not the address a reader goes to: that's the site's address, the permalinks' path, and the name, the same in every build ([Permalinks](../permalinks/index.md)).
 
