@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/templates/index.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/command/references.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/templates/index.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -23,7 +23,7 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|frontmatter\|fragments\|dimensions\|lifecycle\|phrases\|features\|notes\|glossary\|images\|widgets\|releases\|builds\|sources\|apis\|from\|intended\|project\|versions\|consumer\|editor\|checks\|crawlers\|listing\|navigation]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
-| `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
+| `ascribe refs` |  | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]` | `text`, `json` |
 | `ascribe resolve` | Resolves a page for one build and writes it as the build's plain Markdown output by default, as `ascribe build --emit plain` writes it, or, with `--emit site`, as its site output. | `PAGE [--build <NAME>] [--emit plain\|site] [--frontmatter]` | `text`, `json` |
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW [--dry-run] [--force]` | `text`, `json` |
@@ -936,7 +936,8 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/vale.md` | Prose, through Vale | how-to |
 | `command/index.md` | Command reference | reference |
 | `command/project-files.md` | Files Ascribe writes | reference |
-| `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search` | reference |
+| `command/questions.md` | `ascribe explain`, `model`, `outline`, `resolve`, and `search` | reference |
+| `command/references.md` | `ascribe link`, `refs`, and `rename` | reference |
 | `command/site-output.md` | A page in the site output | reference |
 | `content-model/checks.md` | `ascribe.toml`: checks and the editor | reference |
 | `content-model/content.md` | `ascribe.toml`: what pages hold | reference |
@@ -1027,6 +1028,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `writing/syntax.md` | Directive syntax | reference |
 | `writing/variants.md` | Content that varies | tutorial |
 | `writing/write-a-page.md` | Write a page | how-to |
+| `writing/write-it-once.md` | Write it once | how-to |
 
 READMEs published with a package, a crate, or the repository:
 

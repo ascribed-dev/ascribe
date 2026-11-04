@@ -60,7 +60,7 @@ A file you commit is a record, not a cache. Without `ascribe.lock` and `sources/
 A few commands change files you wrote, in place, and only when you run them:
 
 - `ascribe.toml`: `ascribe vale eject` changes it, keeping its comments; `ascribe addresses init` takes its `[permalinks]` out; `ascribe templates eject` adds to its end; and `ascribe rename` changes it, keeping its comments.
-- Your pages: [`ascribe fmt`](../checks/check.md#cli-fmt), [`ascribe rename`](questions.md#cli-rename), and `ascribe check --fix` change them, and the editor's quick fixes change the file the problem is in.
+- Your pages: [`ascribe fmt`](../checks/check.md#cli-fmt), [`ascribe rename`](references.md#cli-rename), and `ascribe check --fix` change them, and the editor's quick fixes change the file the problem is in.
 - `ascribe.nav`: `ascribe rename` changes it, keeping its comments, and the editor's **Pages** view changes it as you drag in it.
 
 Outside the project, Ascribe keeps the repositories `ascribe sources` fetches, and the agents' hooks keep a check server's files, in a folder of your user's cache folder. Nothing there needs committing or keeping.

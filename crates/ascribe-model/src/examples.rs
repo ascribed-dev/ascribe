@@ -127,6 +127,10 @@ pub struct ExamplesConfig {
     pub test: Option<String>,
     /// What to note about where the test ran, in the order written.
     pub environment: Vec<EnvironmentEntry>,
+    /// Whether the tested line names the operating systems: `show-os`,
+    /// `true` unless the config says otherwise. Observations note the
+    /// operating system either way.
+    pub show_os: bool,
 }
 
 /// An `[environment]` entry.
@@ -169,11 +173,14 @@ fn read_config(text: &str, problems: &mut Vec<Problem>) -> Option<ExamplesConfig
     let parsed = parse_toml(text, problems)?;
     let root = parsed.get_ref();
     for (key, span, _) in entries(root) {
-        if !matches!(key, "include" | "ignore" | "test" | "environment") {
+        if !matches!(
+            key,
+            "include" | "ignore" | "test" | "show-os" | "environment"
+        ) {
             problems.push(Problem {
                 span,
                 detail: format!(
-                    "it has no key `{key}`; its keys are `include`, `ignore`, `test`, and `[environment]`"
+                    "it has no key `{key}`; its keys are `include`, `ignore`, `test`, `show-os`, and `[environment]`"
                 ),
             });
         }
@@ -221,6 +228,19 @@ fn read_config(text: &str, problems: &mut Vec<Problem>) -> Option<ExamplesConfig
             }
         },
     };
+    let show_os = match root.get("show-os") {
+        None => true,
+        Some(v) => match v.get_ref() {
+            DeValue::Boolean(b) => *b,
+            other => {
+                problems.push(Problem {
+                    span: sp(v),
+                    detail: format!("`show-os` is {}, not `true` or `false`", describe(other)),
+                });
+                true
+            }
+        },
+    };
     let mut environment = Vec::new();
     if let Some(v) = root.get("environment") {
         match v.get_ref() {
@@ -242,6 +262,7 @@ fn read_config(text: &str, problems: &mut Vec<Problem>) -> Option<ExamplesConfig
         ignore,
         test,
         environment,
+        show_os,
     })
 }
 
@@ -455,14 +476,16 @@ impl Observation {
 /// What the page says an example was tested with, from the observations
 /// that are current for it: each of `config`'s entries, in the config's
 /// order, then the operating systems, as in `Node 22.4.0 and 24.9.0 on
-/// Linux`.
+/// Linux`. With `show-os = false`, the entries alone: `Node 22.4.0`, or
+/// nothing when no entry has a value, which a page shows as `Tested`.
 ///
 /// An entry is said once, with each distinct shown value the observations
 /// have for it, in order: by version where every value is a dotted number,
 /// by text otherwise. One no observation has a value for is left out, and
 /// past [`LISTED_VALUES`] values it's said as how many and the lowest and
 /// highest: `Node, 5 versions from 18.20.0 to 24.9.0`. The operating systems
-/// are merged the same way, and always listed. Every label and value is made
+/// are merged the same way, and listed unless the config's `show-os` is
+/// `false` (decision #1147). Every label and value is made
 /// safe to show and cut ([`shown_text`]).
 pub fn tested_line(config: &ExamplesConfig, observations: &[&Observation]) -> String {
     // Each entry's words, and whether they list more than one value.
@@ -517,7 +540,9 @@ pub fn tested_line(config: &ExamplesConfig, observations: &[&Observation]) -> St
         [(a, listed_a), (b, listed_b)] if *listed_a || *listed_b => format!("{a}, and {b}"),
         _ => and_list(&parts.into_iter().map(|(p, _)| p).collect::<Vec<_>>()),
     };
-    if entries.is_empty() {
+    if !config.show_os {
+        entries
+    } else if entries.is_empty() {
         os
     } else {
         format!("{entries} on {os}")
@@ -927,7 +952,7 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
         assert_eq!(
             bad("include = [\"*\"]\nother = 1\n"),
             [
-                "it has no key `other`; its keys are `include`, `ignore`, `test`, and `[environment]`"
+                "it has no key `other`; its keys are `include`, `ignore`, `test`, `show-os`, and `[environment]`"
             ]
         );
         assert_eq!(
@@ -943,6 +968,10 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
         assert_eq!(
             bad("include = [\"*\"]\n[environment.node]\ncommand = \"x\"\nlang = \"y\"\n"),
             ["`environment.node` has no key `lang`; its keys are `label` and `command`"]
+        );
+        assert_eq!(
+            bad("include = [\"*\"]\nshow-os = \"no\"\n"),
+            ["`show-os` is a string, not `true` or `false`"]
         );
         assert!(bad("include = ")[0].contains("string"));
     }
@@ -1071,6 +1100,30 @@ typescript = { label = "TypeScript", command = "npx tsc --version" }
             ("c".into(), "3.0".into()),
         ];
         assert_eq!(obs.tested_line(&three), "a 1.0, b 2.0, and c 3.0 on macOS");
+    }
+
+    #[test]
+    fn the_tested_line_without_the_os() {
+        let config = ExamplesConfig::parse(&format!("show-os = false\n{CONFIG}")).expect("valid");
+        assert!(!config.show_os);
+        assert_eq!(
+            observation().tested_line(&config),
+            "Node 24.9.0 and TypeScript 5.9.2"
+        );
+        let mut macos = observation();
+        macos.environment[0].1 = "macos".into();
+        assert_eq!(
+            merged_line(&config, &[observation(), macos]),
+            "Node 24.9.0 and TypeScript 5.9.2"
+        );
+        // With no entry, nothing: a page says `Tested`.
+        let none = ExamplesConfig::parse("include = [\"*\"]\nshow-os = false\n").expect("valid");
+        assert_eq!(observation().tested_line(&none), "");
+        assert!(
+            ExamplesConfig::parse("include = [\"*\"]\n")
+                .expect("valid")
+                .show_os
+        );
     }
 
     fn observed(os: &str, values: &[(&str, &str)]) -> Observation {

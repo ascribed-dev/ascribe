@@ -21,6 +21,7 @@ In the source's folder, the one `[sources.<name>]` in `ascribe.toml` names with 
 - **`include`** lists the files that are examples, by the same patterns as a source's `include`, from this folder. **`ignore`** takes back files `include` matches.
 - **`test`** is a line of shell that tests them. It runs in this folder, as written, with `sh`, or `cmd` on Windows.
 - **`[environment]`** names what a reader wants to know about where the test ran. Each entry has a `command` whose first line is kept, and a `label`, the key when it has none. The page shows the label and the first dotted number in the line: `node --version` prints `v24.9.0`, shown as "Node 24.9.0". The operating system and architecture are always recorded, and only the system is shown.
+- **`show-os = false`** leaves the operating system out of the page, for examples whose output is the same on every platform: "Tested with Node 24.9.0". The observation still records it. With no `[environment]` entries either, the page says "Tested".
 
 An expected output is an example like any other: show it with a second `@snippet`, and have the test compare the program's output with it.
 

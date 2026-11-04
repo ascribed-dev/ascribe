@@ -2490,6 +2490,12 @@ ascribe-group {
   color: var(--ascribe-muted-color);
 }
 
+/* An empty line, from a config's `show-os = false` with no environment
+   entries, reads "Tested" alone. */
+.ascribe-code-tested:empty::before {
+  content: "Tested";
+}
+
 /* A code block's copy button (CONTRACT.md §12) -------------------------- */
 
 /* The script adds the button after a code block's <pre>, so with no script
