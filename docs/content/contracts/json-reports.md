@@ -5,7 +5,10 @@ description: "The JSON Schemas of what the `ascribe` commands write with `--form
 permalink: json-reports
 ---
 
-The commands that take `--format json` each write one JSON document, and this contract gives each document's schema. The schemas are JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. Each release's schemas are in `@ascribed/cli`, as `@ascribed/cli/schemas/<name>.schema.json`, so a project that pins the package has the schemas of the version it runs, and in the [`schemas/`]({repo}/tree/v{version}/schemas/) folder at the release's tag. A schema's `$id` is its address at that tag, such as `https://raw.githubusercontent.com/ascribed-dev/ascribe/v{version}/schemas/check.schema.json`, which never changes. The [command reference](../command/index.md) says what each command does, with an example of its document.
+The commands that take `--format json` each write one JSON document, and this contract gives each document's schema. The schemas are JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. Each release's schemas are in the [`schemas/`]({repo}/tree/v{version}/schemas/) folder at the release's tag. The [command reference](../command/index.md) says what each command does, with an example of its document.
+
+@available: ascribe planned
+The schemas are in `@ascribed/cli` too, as `@ascribed/cli/schemas/<name>.schema.json`, so a project that pins the package has the schemas of the version it runs. A schema's `$id` is its address at the release's tag, such as `https://raw.githubusercontent.com/ascribed-dev/ascribe/v{version}/schemas/check.schema.json`, which never changes.
 
 Every document follows these rules:
 
