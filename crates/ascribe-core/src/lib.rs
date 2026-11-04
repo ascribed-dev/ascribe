@@ -26,6 +26,7 @@
 //! | [`names`] | The names Ascribe puts on a page: elements, attributes, classes, and ids |
 //! | [`reserved`] | Attribute keys a content model can't declare (SPEC §7.2) |
 //! | [`consumer`] | The [`Slugger`], [`Router`], and [`ConsumerProfile`] traits (SPEC §9.5) |
+//! | [`yaml`] | [`yaml::Value`]: YAML read without a type, and the one place YAML's reading and writing options are set |
 //!
 //! Every other crate builds on these types, so a change here is a change to
 //! all of them.
@@ -49,6 +50,7 @@ pub mod reserved;
 pub mod schema;
 pub mod span;
 pub mod text_edit;
+pub mod yaml;
 
 /// The docs site's address, with no trailing slash. It's `[consumer] site` in
 /// `docs/ascribe.toml`, and a test in `ascribe-cli` checks that they agree.

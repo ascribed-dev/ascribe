@@ -487,18 +487,22 @@ fn without_target(output: &str, text: &str, target: &str, label: &str) -> Option
 /// The frontmatter's YAML with `target`'s entries in `available` cut to
 /// their target and dimension. `None` when it doesn't parse.
 fn frontmatter_without(yaml: &str, target: &str) -> Option<String> {
-    let mut value: serde_yaml_ng::Value = serde_yaml_ng::from_str(yaml).ok()?;
-    if let Some(serde_yaml_ng::Value::Sequence(entries)) = value.get_mut("available") {
+    let mut value: ascribe_core::yaml::Value = ascribe_core::yaml::from_str(yaml).ok()?;
+    if let Some(ascribe_core::yaml::Value::Sequence(entries)) = value.get_mut("available") {
         for entry in entries {
-            let serde_yaml_ng::Value::Mapping(map) = entry else {
+            let ascribe_core::yaml::Value::Mapping(map) = entry else {
                 continue;
             };
-            if map.get("target").and_then(serde_yaml_ng::Value::as_str) == Some(target) {
+            if map
+                .get("target")
+                .and_then(ascribe_core::yaml::Value::as_str)
+                == Some(target)
+            {
                 map.retain(|k, _| matches!(k.as_str(), Some("target" | "dimension")));
             }
         }
     }
-    serde_yaml_ng::to_string(&value).ok()
+    ascribe_core::yaml::to_string(&value).ok()
 }
 
 /// The site output's body with each `<ascribe-availability-target>` for

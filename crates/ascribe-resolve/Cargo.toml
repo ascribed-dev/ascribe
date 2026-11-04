@@ -9,7 +9,6 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
-serde_yaml_ng.workspace = true
 ascribe-core.workspace = true
 ascribe-model.workspace = true
 ascribe-syntax.workspace = true

@@ -44,7 +44,7 @@ let resolved = project.resolve_build(&build, &router);
 
 ## Dependencies
 
-It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crate of ours: `ascribe-check`, `ascribe-emit`, `ascribe-diff`, `ascribe-sources`, `ascribe-lsp`, and `ascribe-cli` all build on it. Outside the workspace it uses `serde_yaml_ng`, for frontmatter and specs, `serde_json`, and `boon`, the JSON Schema validator, which only `src/json_schema/` imports.
+It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crate of ours: `ascribe-check`, `ascribe-emit`, `ascribe-diff`, `ascribe-sources`, `ascribe-lsp`, and `ascribe-cli` all build on it. It reads frontmatter and specs with `ascribe_core::yaml`. Outside the workspace it uses `serde_json`, and `boon`, the JSON Schema validator, which only `src/json_schema/` imports.
 
 ## Tests
 

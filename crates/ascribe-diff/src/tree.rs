@@ -163,7 +163,7 @@ impl<'p> TreeBuilder<'p> {
                     );
                 }
             }
-            serde_yaml_ng::to_string(&f).ok()
+            ascribe_core::yaml::to_string(&f).ok()
         });
         let title = match page.formatted_title() {
             Some(segments) => Some(format!("{segments:?}")),

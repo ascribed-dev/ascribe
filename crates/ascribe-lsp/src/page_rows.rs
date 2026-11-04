@@ -18,6 +18,7 @@
 //! for the page with the rest of what it keeps.
 
 use ascribe_check::roles;
+use ascribe_core::yaml::Value;
 use ascribe_core::{LineIndex, Span};
 use ascribe_model::{Build, FieldRole, ListingFrom};
 use ascribe_resolve::{
@@ -26,7 +27,6 @@ use ascribe_resolve::{
 };
 use lsp_types::Range;
 use serde::Serialize;
-use serde_yaml_ng::Value;
 
 use crate::nav::Ctx;
 

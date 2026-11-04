@@ -150,7 +150,7 @@ fn field(text: &str, key: &str) -> Option<String> {
         .map(|(at, _)| at + 1)
         .find(|&at| body[at + 3..].starts_with(['\n', '\r']) || body.len() == at + 3)
         .or_else(|| body.starts_with("---").then_some(0))?;
-    let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(&body[..end]).ok()?;
+    let value: ascribe_core::yaml::Value = ascribe_core::yaml::from_str(&body[..end]).ok()?;
     value.get(key)?.as_str().map(str::to_owned)
 }
 

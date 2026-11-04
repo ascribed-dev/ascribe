@@ -1487,7 +1487,7 @@ fn projects_that_install_differently_get_a_server_each() {
     run(root, &["agents", "sync", "--cloud", "--agent"], 0);
     let agent = read(&root.join(".github/agents/ascribe-docs.md"));
     let front = agent.split("---\n").nth(1).unwrap_or_default();
-    let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap();
+    let value: ascribe_core::yaml::Value = ascribe_core::yaml::from_str(front).unwrap();
     let ours = value["mcp-servers"].as_mapping().unwrap();
     let names: Vec<&str> = ours.keys().filter_map(|k| k.as_str()).collect();
     assert_eq!(names, ["ascribe-docs", "ascribe"], "{agent}");

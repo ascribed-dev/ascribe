@@ -16,12 +16,12 @@ pub mod schemas;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+use ascribe_core::yaml::Value;
 use ascribe_core::{
     Applicability, Builtin, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics,
 };
 use ascribe_model::{Api, ApiReference, ContentModel, edit_distance};
 use ascribe_syntax::{Block, BlockKind, PrimaryValue};
-use serde_yaml_ng::Value;
 
 use crate::closest::closest_fixes;
 use crate::fs::{FileSystem, Probe};
@@ -288,7 +288,7 @@ pub fn read_spec(text: &str, json: bool) -> Result<Spec, String> {
     let value: Value = if json {
         serde_json::from_str(text).map_err(|e| e.to_string())?
     } else {
-        serde_yaml_ng::from_str(text).map_err(|e| e.to_string())?
+        ascribe_core::yaml::from_str(text).map_err(|e| e.to_string())?
     };
     let mut spec = spec_of(&value);
     let lines = operation_lines(text);

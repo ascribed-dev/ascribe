@@ -799,7 +799,7 @@ fn a_missing_title_takes_the_opening_heading() {
         // written as the text it stands for.
         (
             "# Quill: the agent \\*\n\nText.\n",
-            "---\ntitle: 'Quill: the agent *'\n---\n\nText.\n",
+            "---\ntitle: \"Quill: the agent *\"\n---\n\nText.\n",
         ),
         (
             "Install\n=======\n\nText.\n",

@@ -176,20 +176,19 @@ fn attribute_values(html: &str) -> Vec<&str> {
 }
 
 /// Every string in a YAML value, keys aside.
-fn yaml_strings<'a>(value: &'a serde_yaml_ng::Value, out: &mut Vec<&'a str>) {
+fn yaml_strings<'a>(value: &'a ascribe_core::yaml::Value, out: &mut Vec<&'a str>) {
     match value {
-        serde_yaml_ng::Value::String(s) => out.push(s),
-        serde_yaml_ng::Value::Sequence(items) => {
+        ascribe_core::yaml::Value::String(s) => out.push(s),
+        ascribe_core::yaml::Value::Sequence(items) => {
             for item in items {
                 yaml_strings(item, out);
             }
         }
-        serde_yaml_ng::Value::Mapping(map) => {
+        ascribe_core::yaml::Value::Mapping(map) => {
             for item in map.values() {
                 yaml_strings(item, out);
             }
         }
-        serde_yaml_ng::Value::Tagged(tagged) => yaml_strings(&tagged.value, out),
         _ => {}
     }
 }

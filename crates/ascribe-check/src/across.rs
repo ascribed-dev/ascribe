@@ -404,7 +404,7 @@ fn long_default_descriptions(project: &Project, issues: &mut Vec<Issue>) {
         let Some(text) = field
             .default
             .as_ref()
-            .and_then(serde_yaml_ng::Value::as_str)
+            .and_then(ascribe_core::yaml::Value::as_str)
             .and_then(|raw| ascribe_resolve::llms::description_text(model, raw))
         else {
             continue;

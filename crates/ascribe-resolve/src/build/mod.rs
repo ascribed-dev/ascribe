@@ -585,8 +585,10 @@ fn drop_unpublished(blocks: &mut Vec<ResolvedBlock>) {
 
 /// The frontmatter without its `intended` key; none when that was its only
 /// key.
-fn without_acknowledgements(mut frontmatter: serde_yaml_ng::Value) -> Option<serde_yaml_ng::Value> {
-    if let serde_yaml_ng::Value::Mapping(map) = &mut frontmatter
+fn without_acknowledgements(
+    mut frontmatter: ascribe_core::yaml::Value,
+) -> Option<ascribe_core::yaml::Value> {
+    if let ascribe_core::yaml::Value::Mapping(map) = &mut frontmatter
         && map.remove(INTENDED).is_some()
         && map.is_empty()
     {

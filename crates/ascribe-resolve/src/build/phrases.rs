@@ -8,9 +8,9 @@
 //! listed as a [`Substitution`] over the block's source text.
 
 use ascribe_core::Span;
+use ascribe_core::yaml::Value;
 use ascribe_model::{Build, ContentModel, ContentType, FieldType, inline};
 use ascribe_syntax::{BlockKind, Inline, InlineKind, LinkForm, Phrase};
-use serde_yaml_ng::Value;
 
 use super::inlines::own_lists_mut;
 use super::tree::{FormattedField, NAV_LABEL, NavLabel, ResolvedBlock, ResolvedKind, Substitution};

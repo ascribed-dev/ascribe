@@ -356,14 +356,14 @@ pub fn setup_steps(
 /// Checks that `text` is YAML with a `copilot-setup-steps` job whose steps
 /// are a list.
 fn parse_job(text: &str) -> Result<(), String> {
-    let value: serde_yaml_ng::Value =
-        serde_yaml_ng::from_str(text).map_err(|e| format!("it isn't YAML: {e}"))?;
+    let value: ascribe_core::yaml::Value =
+        ascribe_core::yaml::from_str(text).map_err(|e| format!("it isn't YAML: {e}"))?;
     let job = value
         .get("jobs")
         .and_then(|jobs| jobs.get(JOB))
         .ok_or_else(|| format!("it has no `{JOB}` job"))?;
     match job.get("steps") {
-        Some(serde_yaml_ng::Value::Sequence(_)) => Ok(()),
+        Some(ascribe_core::yaml::Value::Sequence(_)) => Ok(()),
         _ => Err(format!("its `{JOB}` job has no list of steps")),
     }
 }
@@ -788,7 +788,8 @@ jobs:
             assert_eq!(server["tools"].as_array().map(Vec::len), Some(TOOLS.len()));
             let agent = agent_md(&servers);
             let front = agent.split("---\n").nth(1).unwrap_or_default();
-            let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap_or_default();
+            let value: ascribe_core::yaml::Value =
+                ascribe_core::yaml::from_str(front).unwrap_or_default();
             let ours = &value["mcp-servers"]["ascribe"];
             assert_eq!(ours["tools"].as_sequence().map(Vec::len), Some(TOOLS.len()));
             // The agent and the settings start the server the same way.
@@ -857,7 +858,8 @@ jobs:
         let settings: Value = serde_json::from_str(&mcp_settings(&all)).unwrap_or_default();
         let agent = agent_md(&all);
         let front = agent.split("---\n").nth(1).unwrap_or_default();
-        let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap_or_default();
+        let value: ascribe_core::yaml::Value =
+            ascribe_core::yaml::from_str(front).unwrap_or_default();
         for server in &all {
             let json = &settings["mcpServers"][server.name.as_str()];
             let yaml = &value["mcp-servers"][server.name.as_str()];

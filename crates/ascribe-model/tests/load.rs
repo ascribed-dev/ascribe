@@ -216,9 +216,11 @@ fn full_covers_lifecycle_features_notes_widgets_and_fields() {
     assert!(matches!(m.type_named(Some("guide")), TypeMatch::One(t) if t.name == "guide"));
     assert_eq!(m.type_named(Some("guides")), TypeMatch::Unknown);
     assert_eq!(m.type_named(None), TypeMatch::Missing);
-    let page: serde_yaml_ng::Value = serde_yaml_ng::from_str("type: guide\ntitle: T").unwrap();
+    let page: ascribe_core::yaml::Value =
+        ascribe_core::yaml::from_str("type: guide\ntitle: T").unwrap();
     assert!(matches!(m.type_of(Some(&page)), TypeMatch::One(t) if t.name == "guide"));
-    let number: serde_yaml_ng::Value = serde_yaml_ng::from_str("type: 3\ntitle: T").unwrap();
+    let number: ascribe_core::yaml::Value =
+        ascribe_core::yaml::from_str("type: 3\ntitle: T").unwrap();
     assert_eq!(m.type_of(Some(&number)), TypeMatch::Unknown);
     assert!(
         m.is_fragment("includes/x.md")

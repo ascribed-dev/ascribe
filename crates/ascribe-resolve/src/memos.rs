@@ -113,9 +113,9 @@ impl MemoFile {
         };
         memo.body = body(&text, frontmatter.span.end());
         let yaml = text.get(frontmatter.content.range()).unwrap_or("");
-        let mapping = match serde_yaml_ng::from_str::<serde_yaml_ng::Value>(yaml) {
-            Ok(serde_yaml_ng::Value::Mapping(map)) => map,
-            Ok(serde_yaml_ng::Value::Null) => Default::default(),
+        let mapping = match ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(yaml) {
+            Ok(ascribe_core::yaml::Value::Mapping(map)) => map,
+            Ok(ascribe_core::yaml::Value::Null) => Default::default(),
             Ok(_) => {
                 memo.problem(
                     Invalid::Yaml("it isn't a mapping of keys to values".to_owned()),
@@ -149,7 +149,7 @@ impl MemoFile {
         for key in mapping.keys() {
             let name = key.as_str().map_or_else(
                 || {
-                    serde_yaml_ng::to_string(key)
+                    ascribe_core::yaml::to_string(key)
                         .unwrap_or_default()
                         .trim()
                         .to_owned()

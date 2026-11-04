@@ -11,7 +11,6 @@ publish.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-serde_yaml_ng.workspace = true
 similar = "3.2"
 ascribe-check.workspace = true
 ascribe-workspace.workspace = true

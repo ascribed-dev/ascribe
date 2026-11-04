@@ -1861,10 +1861,10 @@ impl ContentModel {
     /// The content type a page has, given its frontmatter (`None` when it
     /// has none, or it isn't valid YAML): the type its `type` names (SPEC
     /// §7.2). Don't call it for fragments.
-    pub fn type_of(&self, frontmatter: Option<&serde_yaml_ng::Value>) -> TypeMatch<'_> {
+    pub fn type_of(&self, frontmatter: Option<&ascribe_core::yaml::Value>) -> TypeMatch<'_> {
         match frontmatter.and_then(|f| f.get(TYPE_KEY)) {
             None => self.type_named(None),
-            Some(serde_yaml_ng::Value::String(name)) => self.type_named(Some(name)),
+            Some(ascribe_core::yaml::Value::String(name)) => self.type_named(Some(name)),
             Some(_) => TypeMatch::Unknown,
         }
     }

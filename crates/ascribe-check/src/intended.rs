@@ -11,6 +11,7 @@
 
 use ascribe_core::diagnostics::ACKNOWLEDGEABLE;
 use ascribe_core::intended::check_named;
+use ascribe_core::yaml::Value;
 use ascribe_core::{
     Applicability, DiagnosticSlug, FileId, Fix, Issue, Location, Place, Span, TextEdit, diagnostics,
 };
@@ -19,7 +20,6 @@ use ascribe_syntax::{
     Block, BlockKind, Bound, ParseOptions, PrimaryValue, bound_block, bound_heading, parse,
 };
 use ascribe_workspace::SourceFile;
-use serde_yaml_ng::Value;
 
 use crate::yaml::YamlIndex;
 use crate::{Diagnostic, Project};
@@ -336,7 +336,7 @@ fn frontmatter(
     out: &mut Vec<Acknowledgement>,
 ) {
     let text = file.text.get(content.range()).unwrap_or_default();
-    let Ok(Value::Mapping(map)) = serde_yaml_ng::from_str::<Value>(text) else {
+    let Ok(Value::Mapping(map)) = ascribe_core::yaml::from_str::<Value>(text) else {
         return;
     };
     let Some(Value::Sequence(items)) = map.get(FRONTMATTER_KEY) else {

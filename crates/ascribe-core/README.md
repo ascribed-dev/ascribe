@@ -22,10 +22,11 @@ Every crate builds on it, so a change here is a change to all of them.
 | `src/schema.rs` | `DirectiveSchema`, `builtin_schemas` | What each directive takes, and the built-in directives of SPEC §4. |
 | `src/reserved.rs` | `IMAGE_KEYS`, `WIDGET_KEYS`, `HTML_GLOBAL_ATTRIBUTES` | Attribute keys a content model can't declare (SPEC §7.2). |
 | `src/consumer.rs` | `Slugger`, `Router`, `ConsumerProfile` | The consumer profile's pieces as traits (SPEC §9.5), so resolution and the emitters don't depend on the crates that implement them. |
+| `src/yaml.rs` | `Value`, `Mapping`, `from_str`, `to_string` | YAML read without a type and written back, with `serde-saphyr`, which has no value type of its own. `from_str` and `to_string` are the one place its options are set, so every crate reads frontmatter, specs, and expectations the same way: YAML 1.2's scalars, with `yes` and `0755` strings (decision [#1289](../../project-docs/decisions/1289-serde-saphyr.md)). |
 
 ## Rules
 
-- **It depends on no other crate of ours,** and outside the workspace only on `serde` and `thiserror`, and `toml` in `build.rs`. A type that needs more belongs in the crate that needs it.
+- **It depends on no other crate of ours,** and outside the workspace only on `serde` and `thiserror`, `serde-saphyr` and `indexmap` for `yaml`, which every crate reads, and `toml` in `build.rs`. A type that needs more belongs in the crate that needs it.
 - **It never touches the file system.** `RelPath` is a path's spelling, not a file, and `normalize` and `relative_path` work on spellings too.
 - **A diagnostic is added in one place,** `data/diagnostics.toml`. `build.rs` generates its constant, and fails the build on a slug that isn't kebab-case, a slug listed twice, an `off-by-default` entry that isn't `configurable`, or a `review` entry without a `place`.
 
