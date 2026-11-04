@@ -26,7 +26,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 To set one up, see [Set up a glossary](glossary.md).
 
-**Matching:** a term is found as a whole word, never inside one, and where two terms overlap, as `API key` and `API` do, the longer is linked. Only prose is searched, so a term in a heading, link text, code, raw HTML, or an identifier after a directive's colon, such as an `@id`'s, stays as it is. A glossary page doesn't link the terms it shows, and a build doesn't link a term whose heading it leaves out, or that has no definition in it.
+**Matching.** A term is found as a whole word, never inside one, and where two terms overlap, as `API key` and `API` do, the longer is linked. Only prose is searched, so a term in a heading, link text, code, raw HTML, or an identifier after a directive's colon, such as an `@id`'s, stays as it is. A glossary page doesn't link the terms it shows, and a build doesn't link a term whose heading it leaves out, or that has no definition in it.
 
 **Rules.** A path in `pages` names a page that's there, with its name's case as it is on disk (`model-glossary-page`). The rest are checked with the project, since terms are read from pages:
 
@@ -46,7 +46,7 @@ To set one up, see [Set up a glossary](glossary.md).
 
 @include: ../_fragments/content-model/widgets.md
 
-**Rules:**
+**Rules.**
 
 - A widget with container form can't have a required primary, since a container opener's primary is empty ([SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)), and a container-only widget's primary is `"none"` (`model-widget-container-primary`).
 - A groupable widget is container-only, since each alternative of a group, an arm, is a container ([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)) (`model-widget-groupable-form`).

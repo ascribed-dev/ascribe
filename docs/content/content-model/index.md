@@ -101,7 +101,7 @@ Two projects beside each other, such as a product's docs and its landing site, o
 
 @include: ../_generated/content-model-project.md
 
-**Rules:** both paths are relative to the project root (`model-path-absolute`). Neither folder can be inside the other, and they can't be one folder (`model-output-overlaps-content`): a build would read its own output as source, or delete source as stale output. Ascribe tells them apart after resolving `.`, `..`, and, for folders that are there, symbolic links, so a link can't hide one inside the other.
+**Rules.** Both paths are relative to the project root (`model-path-absolute`). Neither folder can be inside the other, and they can't be one folder (`model-output-overlaps-content`): a build would read its own output as source, or delete source as stale output. Ascribe tells them apart after resolving `.`, `..`, and, for folders that are there, symbolic links, so a link can't hide one inside the other.
 
 @include: ../_fragments/content-model/project-defaults.md
 
