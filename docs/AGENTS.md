@@ -35,6 +35,7 @@ Each one's syntax is in the `ascribe` skill's `references/directives.md`, and in
 - `@id`
 - `@include`
 - `@variant`: dimensions `pm` (`npm`, `pnpm`), `release` (`ascribe`)
+- `@available`: targets such as `ascribe`
 - `@note`: types `note`, `tip`, `important`, `warning`, `caution`
 - `@steps`
 - `@details`

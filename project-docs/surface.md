@@ -679,11 +679,11 @@ The skill, offered to VS Code's chat:
 
 ## The plugin
 
-For agents. Read from `plugins/ascribe/`.
+For agents. Read from `plugins/ascribe/`, `.claude-plugin/marketplace.json`.
 
 | File | What it is |
 |---|---|
-| `plugins/ascribe/.claude-plugin/marketplace.json` | The manifest |
+| `.claude-plugin/marketplace.json` | The marketplace that lists it, which Claude Code adds from GitHub |
 | `plugins/ascribe/.claude-plugin/plugin.json` | The manifest |
 | `plugins/ascribe/.lsp.json` | The language server |
 | `plugins/ascribe/.mcp.json` | The MCP server |

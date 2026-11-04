@@ -501,15 +501,21 @@ function plugin(): Section {
     if (file.endsWith("SKILL.md")) return "The skill";
     if (file.includes("/skills/")) return "A reference the skill reads when it needs it";
     if (file.endsWith("README.md")) return "Its README, written by hand";
+    if (file.endsWith("marketplace.json")) {
+      return "The marketplace that lists it, which Claude Code adds from GitHub";
+    }
     return "The manifest";
   };
   return {
     title: "The plugin",
     for: "agents",
-    from: ["plugins/ascribe/"],
+    from: ["plugins/ascribe/", ".claude-plugin/marketplace.json"],
     body: table(
       ["File", "What it is"],
-      tracked("plugins/ascribe").map((file) => [code(file), part(file)]),
+      tracked(".claude-plugin/marketplace.json", "plugins/ascribe").map((file) => [
+        code(file),
+        part(file),
+      ]),
     ),
   };
 }

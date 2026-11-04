@@ -165,7 +165,7 @@ describe("the short form", () => {
   test("starts the plugin's description in each of its manifests", () => {
     const claude = JSON.parse(read("plugins/ascribe/.claude-plugin/plugin.json")) as Manifest;
     const agentPlugins = JSON.parse(read("plugins/ascribe/plugin.json")) as Manifest;
-    const marketplace = JSON.parse(read("plugins/ascribe/.claude-plugin/marketplace.json")) as {
+    const marketplace = JSON.parse(read(".claude-plugin/marketplace.json")) as {
       plugins: Manifest[];
     };
     for (const description of [
@@ -222,7 +222,7 @@ describe("the maker", () => {
     const named = { name: home.maker.name, url: home.maker.url };
     expect(manifest("plugins/ascribe/plugin.json").author).toEqual(named);
     expect(manifest("plugins/ascribe/.claude-plugin/plugin.json").author).toEqual(named);
-    const marketplace = JSON.parse(read("plugins/ascribe/.claude-plugin/marketplace.json")) as {
+    const marketplace = JSON.parse(read(".claude-plugin/marketplace.json")) as {
       owner: unknown;
     };
     expect(marketplace.owner).toEqual(named);
