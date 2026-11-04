@@ -299,7 +299,7 @@
 
 **Message:** `{key}` isn't a field of the content type `{type}`
 
-**Fix:** Fix the key's spelling or remove it, or declare the field in the content type's `frontmatter` (`[fragments.frontmatter]` for a fragment).
+**Fix:** Fix the key's spelling or remove it, or declare the field in the page type's `frontmatter` (`[fragments.frontmatter]` for a fragment).
 
 **Read more:** [Frontmatter values](../content-model/index.md#42-frontmatter-values) in the `ascribe.toml` reference.
 
@@ -313,7 +313,7 @@
 
 **Message:** the required field `{field}` is missing; the content type `{type}` needs it
 
-**Fix:** Add the field to the page's frontmatter, or give it a default in the content type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title.
+**Fix:** Add the field to the page's frontmatter, or give it a default in the page type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title.
 
 **Read more:** [Frontmatter values](../content-model/index.md#42-frontmatter-values) in the `ascribe.toml` reference.
 
@@ -383,7 +383,7 @@
 
 **Message:** this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: \{values}
 
-**Fix:** Add `type:` to the page's frontmatter, naming one of the content types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type.
+**Fix:** Add `type:` to the page's frontmatter, naming one of the page types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
@@ -397,7 +397,7 @@
 
 **Message:** `{type}` isn't a content type; the types are: \{values}
 
-**Fix:** Name one of the content types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it.
+**Fix:** Name one of the page types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 

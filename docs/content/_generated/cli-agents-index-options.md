@@ -1,7 +1,7 @@
 @memo: Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs; edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs` to rewrite it.
 - `--build <NAME>`: The build whose pages to index. Needed when `ascribe.toml` has more than one build.
 - `--into <FILE>`: Write the index into this file, between its markers, instead of printing it. The rest of the file is left as it is, and a file without the markers gets the block at its end.
-- `--pages <DIR>`: Also copy each page's Markdown version into this folder, and point the index's addresses into it: for a package that ships its docs. The addresses are from the folder of the file the index is written into, or from the current directory when it's printed.
+- `--pages <DIR>`: Also copy each page's Markdown version into this folder, and point the index's addresses into it: for a package that ships its docs. The addresses are from the folder of the file the index is written into, or from the current folder when it's printed.
 - `--dry-run`: Say what it would change, and change nothing.
 - `--force`: Change files even when git couldn't put them back as they are: ones with changes not committed, ones git doesn't track, or ones in no repository.
 - `--format <FORMAT>`: How to show the answer.

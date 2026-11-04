@@ -12,7 +12,7 @@ The fields of [`schemas/drift.schema.json`]({repo}/blob/v{version}/schemas/drift
 | `base.commit` | `string` | yes | no | The commit it names. |
 | `base.merge_base` | `string` | yes | yes | The merge base of that commit and `HEAD`, which the comparison reads; `null` with `--base-exact`, which reads `commit`. |
 | `repository` | `object` | yes | no | Where the project is. |
-| `repository.root` | `string` | yes | no | The repository's top-level directory, as git prints it. |
+| `repository.root` | `string` | yes | no | The repository's top-level folder, as git prints it. |
 | `repository.project_prefix` | `string` | yes | no | The project's folder inside it, with a trailing `/`, or empty when the project is at the repository's root. |
 | `pages` | `object[]` | yes | no | Every page with an example that changed or broke, in path order. |
 | `pages[].path` | `string` | yes | no | The page's content path. |

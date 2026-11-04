@@ -79,7 +79,7 @@ key = "content-root"
 kind = "text"
 type = "string (path)"
 default = "docs"
-description = '''The content root ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It must exist and be a directory.'''
+description = '''The content root ([SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)): the folder holding every source file. Paths in links and includes that begin with `/` are relative to it. It must exist and be a folder.'''
 
 [[setting]]
 table = "project"
@@ -429,7 +429,7 @@ key = "label"
 kind = "text"
 type = "string"
 default-text = "built-in types: `Note`, `Tip`, `Important`, `Warning`, `Caution`; new types: **required**"
-description = '''The display label, used where a note's type is shown as text, such as the plain-markdown output's `**Tip: …**` ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)).'''
+description = '''The display label, used where a note's type is shown as text, such as the plain Markdown output's `**Tip: …**` ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)).'''
 
 # ---- 11. `[phrases]` ----------------------------------------------------------
 
@@ -564,7 +564,7 @@ table = "widgets.<name>"
 key = "plain-fallback"
 kind = "text"
 type = "string"
-description = '''Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing.'''
+description = '''Plain-text fallback for the plain Markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing.'''
 
 [[setting]]
 table = "widgets.<name>"
@@ -573,7 +573,7 @@ kind = "choice"
 type = "string"
 choices = ["keep", "drop"]
 default = "keep"
-description = '''For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`.'''
+description = '''For a widget that wraps content, whether the plain Markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`.'''
 
 [[setting]]
 table = "widgets.<name>"
@@ -605,7 +605,7 @@ table = "consumer"
 key = "site"
 kind = "text"
 type = "string (URL)"
-description = '''The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)). Without it, plain-markdown links are root-relative (they start with `base-path`) and `ascribe build` warns.'''
+description = '''The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain Markdown output needs it to write absolute links ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)). Without it, plain-Markdown links are root-relative (they start with `base-path`) and `ascribe build` warns.'''
 
 [[setting]]
 table = "consumer"
@@ -639,7 +639,7 @@ key = "html"
 kind = "switch"
 type = "boolean"
 default = true
-description = '''**HTML passthrough.** Whether the site generator renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`.'''
+description = '''**HTML passthrough.** Whether the site generator renders raw HTML in Markdown. The site output's custom elements need it, so the `astro` profile supports only `true`.'''
 
 [[setting]]
 table = "consumer"
@@ -730,7 +730,7 @@ key = "path"
 kind = "text"
 type = "string (path)"
 default-text = "**required** without `git`"
-description = '''The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one.'''
+description = '''The source's folder, relative to the project root. It must exist, be a folder, and be inside the git repository the project is in, when the project is in one.'''
 
 [[setting]]
 table = "sources.<name>"

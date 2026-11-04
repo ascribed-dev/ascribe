@@ -29,7 +29,7 @@ pub struct Args {
     /// `note:<type>`, `widget:<name>`, or a line of a release target,
     /// `release:<target>@<version>` (`release:self-managed@3.4`).
     ///
-    /// A path is from the current directory, or from the content root.
+    /// A path is from the current folder, or from the content root.
     #[arg(value_name = "TARGET")]
     pub target: String,
 

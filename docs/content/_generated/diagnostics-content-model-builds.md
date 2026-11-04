@@ -475,15 +475,15 @@
 
 ### ASC186 `model-listing-type`
 @id {permalink=true}: ASC186
-@summary: `[listing.types]` names something that isn't a content type.
+@summary: `[listing.types]` names something that isn't a page type.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** `[listing.types]` names something that isn't a content type.
+**When:** `[listing.types]` names something that isn't a page type.
 
 **Message:** `{type}` in `[listing.types]` isn't a content type; use one of: \{values}
 
-**Fix:** Name a content type the project declares in `[types]`, or `page` when it declares none.
+**Fix:** Name a page type the project declares in `[types]`, or `page` when it declares none.
 
 **Read more:** [`[listing]`](../content-model/output.md#17-listing) in the `ascribe.toml` reference.
 

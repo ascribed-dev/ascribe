@@ -128,9 +128,9 @@ struct ProblemsJson {
     /// The problems acknowledged as intended, with their reasons, in file
     /// order.
     acknowledged: Capped<AcknowledgedEntry>,
-    /// How many advice `ascribe.baseline` holds back, which the counts
-    /// leave out: the backlog the project has put off. Left out when there
-    /// are none, and with `--no-baseline`.
+    /// How many advice are baselined, listed in `ascribe.baseline`, which the
+    /// counts leave out: the project's backlog. Left out when there are none,
+    /// and with `--no-baseline`.
     #[serde(skip_serializing_if = "is_zero")]
     baselined: usize,
     /// The command that lists each problem: `ascribe check`, as JSON.
@@ -187,7 +187,7 @@ struct FileCount {
 struct InventoryJson {
     /// How many pages.
     pages: usize,
-    /// How many pages of each content type, most first.
+    /// How many pages of each type, most first.
     by_type: Vec<TypeCount>,
     /// How many pages each owner has, most first: the value of the
     /// frontmatter field the page's type marks `role = "owner"`.

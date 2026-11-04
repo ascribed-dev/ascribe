@@ -63,7 +63,7 @@ On every command:
 
 | Option | What it's for |
 |---|---|
-| `--config <PATH>` | The content model, `ascribe.toml`, or a directory that holds one. |
+| `--config <PATH>` | The content model, `ascribe.toml`, or a folder that holds one. |
 | `--color <WHEN>` | When to color text output. |
 
 ## The language

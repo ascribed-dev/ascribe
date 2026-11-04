@@ -59,7 +59,7 @@
       ]
     },
     "text": {
-      "description": "The section as the plain output writes it, in Markdown, with each\nimage as its alt text.",
+      "description": "The section as the plain Markdown output writes it, in Markdown, with each\nimage as its alt text.",
       "type": "string"
     },
     "title": {

@@ -8,7 +8,7 @@
           "type": "string"
         },
         "reason": {
-          "description": "Why it was retired, as the docs' authors wrote it.",
+          "description": "Why it was retired, as the docs' writers wrote it.",
           "type": "string"
         }
       },

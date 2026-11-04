@@ -47,7 +47,7 @@ pub struct Args {
     #[arg(value_name = "PATHS")]
     pub paths: Vec<PathBuf>,
 
-    /// Search only the pages of this content type.
+    /// Search only the pages of this page type.
     #[arg(long = "type", value_name = "NAME")]
     pub page_type: Option<String>,
 

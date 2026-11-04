@@ -1,0 +1,1 @@
+- **The generated reference pages use the settled terms too.** The commands' help, the diagnostics reference, and the JSON and `ascribe.toml` field tables say page type, folder, and the plain Markdown output. See [the glossary](docs/content/glossary.md).

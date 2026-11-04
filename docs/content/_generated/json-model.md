@@ -45,7 +45,7 @@ The fields of [`schemas/model.schema.json`]({repo}/blob/v{version}/schemas/model
 | `glossary[].id` | `string` | yes | no | Its id: its heading's id. |
 | `glossary[].term` | `string` | yes | no | The term: its heading's text. |
 | `glossary[].aliases` | `string[]` | yes | no | Other ways it's written. |
-| `glossary[].match` | `string` | yes | no | Which occurrences are linked: `first` on each page, `every` one, or only those an author links (`marked`). |
+| `glossary[].match` | `string` | yes | no | Which occurrences are linked: `first` on each page, `every` one, or only those a writer links (`marked`). |
 | `glossary[].case_sensitive` | `boolean` | yes | no | Whether an occurrence must match its case. |
 | `glossary[].page` | `string` | yes | no | The file its heading is written in, from the content root: its glossary page, or a fragment the page includes. |
 | `glossary[].line` | `integer` | yes | no | The heading's line in that file, from 1. |
@@ -160,4 +160,4 @@ The fields of [`schemas/model.schema.json`]({repo}/blob/v{version}/schemas/model
 | --- | --- | --- | --- | --- |
 | `source` | `string` | yes | no | Its path from the content root. |
 | `label` | `string` | yes | no | Its label as plain text: its `nav-label`, else its title, else its file name without `.md`. |
-| `type` | `string` | no | no | Its content type's name, when it has one. |
+| `type` | `string` | no | no | Its page type's name, when it has one. |

@@ -1306,7 +1306,7 @@ row = "Frontmatter | Key the file's content type or the fragment schema doesn't 
 message = "`{key}` isn't a field of the content type `{type}`"
 messages.suggestion = "`{key}` isn't a field of the content type `{type}`; did you mean `{suggestion}`?"
 messages.fragment = "`{key}` isn't a field of the fragment schema, [fragments.frontmatter]"
-fix = "Fix the key's spelling or remove it, or declare the field in the content type's `frontmatter` (`[fragments.frontmatter]` for a fragment)."
+fix = "Fix the key's spelling or remove it, or declare the field in the page type's `frontmatter` (`[fragments.frontmatter]` for a fragment)."
 example.wrong = '''
 ---
 title: Install Quill
@@ -1334,7 +1334,7 @@ spec = "7.2"
 reference = "content-model/index.md#42-frontmatter-values"
 row = "Frontmatter | Required field missing"
 message = "the required field `{field}` is missing; the content type `{type}` needs it"
-fix = "Add the field to the page's frontmatter, or give it a default in the content type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title."
+fix = "Add the field to the page's frontmatter, or give it a default in the page type. A page with no `title` that opens with a level-1 heading has a fix that makes the heading its title."
 example.wrong = '''
 ---
 type: guide
@@ -1623,7 +1623,7 @@ messages.glossary-terms = "`{key}` isn't a key of `[{table}]`: a term is a headi
 messages.intended-term = "`{key}` isn't a key of `[[{table}]]`: a glossary term is acknowledged with `@intended` at the top of its section, under its heading"
 messages.consumer-headers = "`headers` isn't a key of `[consumer]` any more: write `host = \"netlify\"`, which writes Netlify's `_headers` and `_redirects` into each build's site output"
 messages.permalinks-moved = "`[permalinks]` isn't a table of ascribe.toml any more: ascribe.addresses records each retired permalink and alias, as `go:<name>`; run `ascribe addresses init` to move them there"
-fix = "Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = \"netlify\"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it. `ascribe.toml` has no `[permalinks]`: `ascribe addresses init` moves its retired permalinks and aliases into `ascribe.addresses`, as `go:<name>` keys of `[retired]` and `[moved]`."
+fix = "Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A page type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = \"netlify\"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it. `ascribe.toml` has no `[permalinks]`: `ascribe addresses init` moves its retired permalinks and aliases into `ascribe.addresses`, as `go:<name>` keys of `[retired]` and `[moved]`."
 
 [[diagnostic]]
 code = "ASC062"
@@ -1692,7 +1692,7 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#12-names"
 group = "file"
-when = "A name the content model declares, such as a dimension, a value, or a content type, breaks the rules for that kind of name"
+when = "A name the content model declares, such as a dimension, a value, or a page type, breaks the rules for that kind of name"
 message = "`{name}` isn't a valid {role} name: {rule}"
 fix = "Rename it following the rule the message gives."
 
@@ -1722,7 +1722,7 @@ reference = "content-model/index.md#13-paths-and-patterns"
 group = "project"
 when = "A path in `ascribe.toml` is absolute, where it must be relative to `ascribe.toml`"
 message = "`{key}` must be a path relative to ascribe.toml, not an absolute path"
-fix = "Write the path relative to the directory of `ascribe.toml`."
+fix = "Write the path relative to the folder of `ascribe.toml`."
 
 [[diagnostic]]
 code = "ASC069"
@@ -1734,10 +1734,10 @@ evidence = []
 spec = "2.2"
 reference = "content-model/index.md#3-project"
 group = "project"
-when = "The content root doesn't exist, or isn't a directory"
+when = "The content root doesn't exist, or isn't a folder"
 message = "content root `{path}` doesn't exist"
 messages.not-directory = "content root `{path}` isn't a directory"
-fix = "Create the directory, or correct `[project] content-root`."
+fix = "Create the folder, or correct `[project] content-root`."
 
 [[diagnostic]]
 code = "ASC070"
@@ -1749,11 +1749,11 @@ evidence = []
 spec = "9.4"
 reference = "content-model/index.md#3-project"
 group = "project"
-when = "The output directory and the content root are the same, or one is inside the other"
+when = "The output folder and the content root are the same, or one is inside the other"
 message = "output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source"
 messages.content-inside-output = "content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output"
 messages.same = "output directory and content root are both `{path}`"
-fix = "Keep the output directory and the content root apart: neither inside the other, and not the same. The default output directory, `.ascribe/build`, is outside the default content root, `docs`."
+fix = "Keep the output folder and the content root apart: neither inside the other, and not the same. The default output folder, `.ascribe/build`, is outside the default content root, `docs`."
 
 [[diagnostic]]
 code = "ASC074"
@@ -1765,7 +1765,7 @@ evidence = []
 spec = "2.1"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
-when = "A content type, or the fragments' frontmatter, declares a field the specification or an output reserves"
+when = "A page type, or the fragments' frontmatter, declares a field the specification or an output reserves"
 message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
 messages.fragment-accepted = "`{field}` is reserved by the Ascribe spec and every fragment accepts it; remove it from `[fragments.frontmatter]`"
@@ -2755,7 +2755,7 @@ when = "`inline` is on a field that isn't a page type's top-level string field, 
 message = "inline = \"code\" only works on string fields, and `{field}` is \"{type}\""
 messages.value = "inline must be \"code\", not \"{value}\""
 messages.nested = "inline = \"code\" only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
-fix = "Remove `inline`, or set it to \"code\" on a string field of a content type's `frontmatter`."
+fix = "Remove `inline`, or set it to \"code\" on a string field of a page type's `frontmatter`."
 
 [[diagnostic]]
 code = "ASC142"
@@ -2866,7 +2866,7 @@ message = "role = \"{role}\" only works on a {expected} field, and `{field}` is 
 messages.value = "role must be \"description\", \"recheck-date\", or \"owner\", not \"{value}\""
 messages.nested = "role only works on a page type's top-level fields, its own or `[frontmatter]`'s, and `{field}` is in {place}"
 messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
-fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, `role = \"recheck-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
+fix = "Give `role = \"description\"` to one string field of a page type's `frontmatter`, `role = \"recheck-date\"` to one date field, and `role = \"owner\"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
 
 [[diagnostic]]
 code = "ASC149"
@@ -2895,9 +2895,9 @@ spec = "7.2"
 reference = "content-model/index.md#54-field-roles"
 configurable = true
 area = "pages"
-when = "A page's content type marks a field `role = \"description\"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at"
+when = "A page's type marks a field `role = \"description\"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at"
 message = "this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title"
-fix = "Add the field the content type marks with `role = \"description\"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for."
+fix = "Add the field the page type marks with `role = \"description\"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for."
 
 [[diagnostic]]
 code = "ASC151"
@@ -2943,7 +2943,7 @@ reference = "content-model/index.md#54-field-roles"
 configurable = true
 area = "pages"
 place = "page"
-when = "A page's content type marks a field `role = \"recheck-date\"` (or `\"review-date\"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`"
+when = "A page's type marks a field `role = \"recheck-date\"` (or `\"review-date\"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`"
 message = "this page was due for a recheck on {date}; check it still holds, then move `{field}` to the next recheck"
 fix = "Read the page against what it describes and correct what has changed, then set its recheck date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."
 
@@ -3104,7 +3104,7 @@ spec = "9.4"
 reference = "content-model/index.md#54-field-roles"
 configurable = true
 area = "outputs"
-when = "The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a content type's default for its description field, is longer than 300 characters as `llms.txt` writes it"
+when = "The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a page type's default for its description field, is longer than 300 characters as `llms.txt` writes it"
 message = "this description is {length} characters, and its line in llms.txt reads best under {limit}; shorten it to one sentence"
 fix = "Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short."
 example.wrong = '''
@@ -3273,7 +3273,7 @@ when = "`ascribe report delivery`: the published site fails, or warns on, a chec
 message = "the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: {result}. Report it at {issues}"
 messages.warning = "the site passes the delivery spec's `{check}` check with a warning, which what Ascribe writes should pass without one: {result}. Report it at {issues}"
 messages.unfetched = "the delivery spec's `{check}` check couldn't fetch every address it tried, so it doesn't say yet whether what Ascribe writes passes: {result}. Run the report again"
-fix = "First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing. When the message says an address couldn't be fetched, the checker got no answer, which may be the network's doing: run the report again, and look into the address only when it keeps failing."
+fix = "First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain Markdown output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing. When the message says an address couldn't be fetched, the checker got no answer, which may be the network's doing: run the report again, and look into the address only when it keeps failing."
 
 [[diagnostic]]
 code = "ASC172"
@@ -3454,9 +3454,9 @@ evidence = ["allowed-values"]
 spec = "7.2"
 reference = "content-model/output.md#17-listing"
 group = "listing"
-when = "`[listing.types]` names something that isn't a content type"
+when = "`[listing.types]` names something that isn't a page type"
 message = "`{type}` in `[listing.types]` isn't a content type; use one of: {values}"
-fix = "Name a content type the project declares in `[types]`, or `page` when it declares none."
+fix = "Name a page type the project declares in `[types]`, or `page` when it declares none."
 
 [[diagnostic]]
 code = "ASC187"
@@ -3600,14 +3600,14 @@ evidence = []
 spec = "7.2"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
-when = "A content type's `template` or `guide` doesn't exist, or is inside the content root or the output directory, or outside the project's folder"
+when = "A page type's `template` or `guide` doesn't exist, or is inside the content root or the output folder, or outside the project's folder"
 message = "`{path}`, the {key} of content type `{type}`, doesn't exist"
 messages.case = "`{path}`, the {key} of content type `{type}`, doesn't exist; `{actual}` differs from it only in case"
 messages.inside-content = "`{path}`, the {key} of content type `{type}`, is inside the content root `{content}`, where it would be read as a page"
 messages.output = "`{path}`, the {key} of content type `{type}`, is inside the output directory `{output}`, which a build writes and removes"
 messages.outside = "`{path}`, the {key} of content type `{type}`, is outside the folder ascribe.toml is in"
 messages.link = "`{path}`, the {key} of content type `{type}`, leads through a symbolic link to a file outside the folder ascribe.toml is in"
-fix = "Name a file by its path from the folder ascribe.toml is in, with its name's case as it is on disk, outside the content root and the output directory: `template = \"templates/how-to.md\"`. A type's template and guide are read by people and tools starting a page, and aren't pages themselves."
+fix = "Name a file by its path from the folder ascribe.toml is in, with its name's case as it is on disk, outside the content root and the output folder: `template = \"templates/how-to.md\"`. A type's template and guide are read by people and tools starting a page, and aren't pages themselves."
 
 [[diagnostic]]
 code = "ASC194"
@@ -3619,7 +3619,7 @@ evidence = []
 spec = "none"
 reference = "content-model/index.md#41-page-types"
 group = "content-types"
-when = "A content type's template can't be read, or isn't a page Ascribe can read"
+when = "A page type's template can't be read, or isn't a page Ascribe can read"
 message = "can't read `{path}`, the template of content type `{type}`: {reason}"
 messages.parse = "`{path}`, the template of content type `{type}`, isn't a page Ascribe can read: on its line {line}, {detail}"
 messages.lock = "`{lock}` gives content type `{type}` the {key} `{path}`, and {reason}"
@@ -3636,8 +3636,8 @@ spec = "none"
 reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
-when = "A draft (a page with `draft: true`) of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. In a page that publishes it's `template-placeholder-published`, an error. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found"
-summary = "A draft of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value"
+when = "A draft (a page with `draft: true`) of a type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. In a page that publishes it's `template-placeholder-published`, an error. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found"
+summary = "A draft of a type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value"
 message = "this page still has its template's placeholder `{placeholder}`; write what it asks for in its place"
 messages.field = "`{field}` is still the template's `{value}`; write this page's own"
 fix = "Write the page's own text where the template's placeholder is, the text in braces. The template's instructions are memos, which are never published: follow each, then delete it or keep it. A field the template fills in, such as `title`, gets the page's own value. The check finds only what was never touched: a placeholder with a word changed isn't reported, so read the page through before publishing it."
@@ -3653,7 +3653,7 @@ spec = "7.2"
 reference = "content-model/index.md#41-page-types"
 row = "Frontmatter | Page names no content type, in a project that declares types"
 message = "this page doesn't say what type it is; give it `type:` in its frontmatter, with one of: {values}"
-fix = "Add `type:` to the page's frontmatter, naming one of the content types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type."
+fix = "Add `type:` to the page's frontmatter, naming one of the page types `ascribe.toml` declares, such as `type: how-to`. A page's type says which fields its frontmatter has, and which template and guide it's written from. In the editor, a quick fix adds each type."
 example.wrong = '''
 ---
 title: Install Quill
@@ -3688,7 +3688,7 @@ message = "`{type}` isn't a content type; the types are: {values}"
 messages.suggestion = "`{type}` isn't a content type; did you mean `{suggestion}`? The types are: {values}"
 messages.none = "`{type}` isn't a content type: this project declares none, so its pages don't name one"
 messages.not-a-name = "`type` names a content type, so it's a string, but it's {found}; the types are: {values}"
-fix = "Name one of the content types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it."
+fix = "Name one of the page types `ascribe.toml` declares, spelled as it is there, or declare the type in `[types.<name>]`. A project that declares no types has no `type` on its pages: remove it."
 example.wrong = '''
 ---
 type: giude
@@ -4252,8 +4252,8 @@ spec = "none"
 reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
-when = "A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at"
-summary = "A page of a content type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings"
+when = "A page of a type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at"
+summary = "A page of a type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings"
 message = "the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it"
 fix = "Write the section's text under its heading. The template gives it only memos, its instructions to the writer, which are never published, so left as it is the section builds as a heading with nothing under it. Follow each memo, then delete it or keep it. If the page doesn't need the section, remove its heading and its memos."
 
@@ -4461,7 +4461,7 @@ spec = "none"
 reference = "content-model/checks.md#22-checks"
 when = "`ascribe.baseline` has an entry that no problem of the project matches any more: the problem was fixed, or the text it was about changed. Reported at the entry's line, when `ascribe check` reads the baseline and checks the whole project for every build"
 message = "ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`"
-fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](https://ascribed-dev.com/go/baseline/)."
+fix = "Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hide a later problem of the same check whose text happens to be the same. See [The baseline](https://ascribed-dev.com/go/baseline/)."
 
 [[diagnostic]]
 code = "ASC244"
@@ -5205,8 +5205,8 @@ spec = "none"
 reference = "content-model/index.md#41-page-types"
 configurable = true
 area = "pages"
-when = "A page that publishes, one without `draft: true`, of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value, found as `template-placeholder-left` finds them. In a draft, it's that advice instead, so a page being written isn't covered in errors"
-summary = "A page that publishes, of a content type that names a template, still has one of the template's placeholders, or a frontmatter field with the template's value"
+when = "A page that publishes, one without `draft: true`, of a type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value, found as `template-placeholder-left` finds them. In a draft, it's that advice instead, so a page being written isn't covered in errors"
+summary = "A page that publishes, of a type that names a template, still has one of the template's placeholders, or a frontmatter field with the template's value"
 message = "this page publishes with its template's placeholder `{placeholder}`; write what it asks for in its place, or mark the page `draft: true` until it's ready"
 messages.field = "this page publishes with `{field}` still the template's `{value}`; write this page's own, or mark the page `draft: true` until it's ready"
 fix = "Write the page's own text where the template's placeholder is, the text in braces, and the page's own value in each field the template fills in, such as `title`. A placeholder in a page that publishes is never meant: readers see the template's words. While the page isn't ready, mark it `draft: true` in its frontmatter: no build publishes it, and what's left to fill in is advice. `ascribe new` starts a page that way."
@@ -5297,8 +5297,8 @@ spec = "none"
 reference = "writing/directives.md#steps"
 configurable = true
 area = "pages"
-when = "A page of the content type named `how-to` has no `@steps` and no heading that starts with a step's number, such as `1. Install` or `Step 1: Install`, once includes are expanded. A page of any other type isn't looked at"
-summary = "A page of the content type named `how-to` has no `@steps` and no heading numbered as a step"
+when = "A page of the type named `how-to` has no `@steps` and no heading that starts with a step's number, such as `1. Install` or `Step 1: Install`, once includes are expanded. A page of any other type isn't looked at"
+summary = "A page of the type named `how-to` has no `@steps` and no heading numbered as a step"
 message = "this how-to has no steps; write the task as a numbered list under `@steps`, so readers and agents can follow it a step at a time"
 fix = "Write what the reader does as a numbered list, one action to a step, starting each with a verb, and put `@steps` on the line above it: the site numbers it as a procedure and an agent reads it as one. A task long enough for a section to each step can number its headings instead, as `## 1. Install`. A how-to that has no steps may be another type of page: a concept that explains, or a reference to look things up in."
 example.model = '''

@@ -9,7 +9,7 @@ The fields of [`schemas/resolve.schema.json`]({repo}/blob/v{version}/schemas/res
 | `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
 | `page` | `string` | yes | no | The page, as a path from the content root. |
 | `build` | `string` | yes | no | The build. |
-| `emit` | `Emit` | yes | no | Which output `text` is written as: `plain`, the build's plain output, or `site`, its site output. |
+| `emit` | `Emit` | yes | no | Which output `text` is written as: `plain`, the build's plain Markdown output, or `site`, its site output. |
 | `not_published` | `string` | yes | yes | Why the build doesn't publish the page, when it doesn't; `text` is empty then. |
 | `route` | `string` | yes | yes | The page's route in the build's site. |
 | `text` | `string` | yes | no | The page as the output `emit` names writes it: with its frontmatter first when asked for. |
@@ -18,5 +18,5 @@ The fields of [`schemas/resolve.schema.json`]({repo}/blob/v{version}/schemas/res
 
 | Value | Description |
 | --- | --- |
-| `"plain"` | The plain output: fully resolved CommonMark with no HTML. |
+| `"plain"` | The plain Markdown output: fully resolved CommonMark with no HTML. |
 | `"site"` | The site output: Markdown with Ascribe's elements, as a site's integration receives it. |

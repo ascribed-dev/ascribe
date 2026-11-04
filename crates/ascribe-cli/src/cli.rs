@@ -142,9 +142,9 @@ pub struct Cli {
 /// Options every subcommand accepts, before or after its name.
 #[derive(Debug, clap::Args)]
 pub struct Global {
-    /// The content model, `ascribe.toml`, or a directory that holds one.
+    /// The content model, `ascribe.toml`, or a folder that holds one.
     ///
-    /// By default, the nearest `ascribe.toml` in the current directory or a
+    /// By default, the nearest `ascribe.toml` in the current folder or a
     /// parent, so the commands work from anywhere inside a project. Not for
     /// `lsp`, whose project comes from the editor, `init`, which starts
     /// one, or `observe`, which runs in a folder of code.

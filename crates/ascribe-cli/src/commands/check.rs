@@ -31,8 +31,8 @@ use crate::shell::quote;
 /// Arguments of `ascribe check`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// Files and directories to report on, relative to the current
-    /// directory.
+    /// Files and folders to report on, relative to the current
+    /// folder.
     ///
     /// The whole project is still checked, since links, includes, and ids
     /// need it, and only the problems that count for these paths are
@@ -54,7 +54,7 @@ pub struct Args {
     pub stdin: bool,
 
     /// The file standard input is checked as, relative to the current
-    /// directory. Only with `--stdin`.
+    /// folder. Only with `--stdin`.
     #[arg(long, requires = "stdin", value_name = "PATH")]
     pub path: Option<PathBuf>,
 
@@ -179,8 +179,8 @@ pub struct Args {
     #[arg(long)]
     pub vale: bool,
 
-    /// Report the advice `ascribe.baseline` holds back too, without reading
-    /// the file.
+    /// Report the advice `ascribe.baseline` lists too, without reading the
+    /// file.
     ///
     /// By default, a problem the baseline lists isn't reported while it's
     /// advice, and is counted instead, and an entry that matches nothing is

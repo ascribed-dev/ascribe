@@ -11,5 +11,5 @@ The fields of [`schemas/permalinks-verify.schema.json`]({repo}/blob/v{version}/s
 | `found` | `string[]` | yes | no | The names the list has, as permalinks, or moved to another permalink or a page, in the order given, each once. |
 | `retired` | `object[]` | yes | no | The names the list has as retired, in the order given, each once. |
 | `retired[].name` | `string` | yes | no | The name. |
-| `retired[].reason` | `string` | yes | no | Why it was retired, as the docs' authors wrote it. |
+| `retired[].reason` | `string` | yes | no | Why it was retired, as the docs' writers wrote it. |
 | `missing` | `string[]` | yes | no | The names it doesn't have at all, in the order given, each once. |

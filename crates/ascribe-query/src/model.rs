@@ -330,7 +330,7 @@ pub struct ModelNavPage {
     /// Its label as plain text: its `nav-label`, else its title, else its
     /// file name without `.md`.
     pub label: String,
-    /// Its content type's name, when it has one.
+    /// Its page type's name, when it has one.
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_name: Option<String>,
 }
@@ -635,7 +635,7 @@ pub struct ModelTerm {
     /// Other ways it's written.
     pub aliases: Vec<String>,
     /// Which occurrences are linked: `first` on each page, `every` one, or
-    /// only those an author links (`marked`).
+    /// only those a writer links (`marked`).
     #[serde(rename = "match")]
     pub match_mode: &'static str,
     /// Whether an occurrence must match its case.

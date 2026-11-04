@@ -29,7 +29,7 @@
           "type": "array"
         },
         "file": {
-          "description": "The file, relative to the project root (the directory of\n`ascribe.toml`), with `/` separators; a file outside it as it was\nfound.",
+          "description": "The file, relative to the project root (the folder of\n`ascribe.toml`), with `/` separators; a file outside it as it was\nfound.",
           "type": "string"
         }
       },

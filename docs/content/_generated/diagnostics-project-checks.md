@@ -265,7 +265,7 @@ Content with no mark reads as the scope around it, so a mark is removed only whe
 
 **Message:** ascribe.baseline holds back `{check}` in `{file}`, and nothing there matches it any more; run `ascribe baseline prune`
 
-**Fix:** Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hold back a later problem of the same check whose text happens to be the same. See [The baseline](../checks/baseline.md).
+**Fix:** Run `ascribe baseline prune`, which removes every entry that matches nothing, and commit ascribe.baseline. Left in the file, the entry would hide a later problem of the same check whose text happens to be the same. See [The baseline](../checks/baseline.md).
 
 **Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.
 

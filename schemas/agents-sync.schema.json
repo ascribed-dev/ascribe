@@ -43,7 +43,7 @@
           "type": "boolean"
         },
         "path": {
-          "description": "Its path, from the current directory, `/`-separated.",
+          "description": "Its path, from the current folder, `/`-separated.",
           "type": "string"
         },
         "read_by": {

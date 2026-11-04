@@ -15,9 +15,9 @@ The fields of [`schemas/check.schema.json`]({repo}/blob/v{version}/schemas/check
 | `diagnostics[].code` | `string` | yes | no | The code, such as `ASC036`. |
 | `diagnostics[].slug` | `string` | yes | no | The diagnostic's name, such as `link-target-missing`. |
 | `diagnostics[].severity` | `string` | yes | no | `error`, `warning`, or `advice`. Advice never fails the command. More severities may be added; a reader treats one it doesn't know as it treats advice. |
-| `diagnostics[].next` | `string` | yes | no | The kind of next step: `fix` when Ascribe can make the edit, `choose` when the author picks among things Ascribe can list, `write` when it needs writing or judgment, `outside` when nothing in the source can fix it, and `review` when it may be fine as it is. |
+| `diagnostics[].next` | `string` | yes | no | The kind of next step: `fix` when Ascribe can make the edit, `choose` when the writer picks among things Ascribe can list, `write` when it needs writing or judgment, `outside` when nothing in the source can fix it, and `review` when it may be fine as it is. |
 | `diagnostics[].message` | `string` | yes | no | What's wrong, and what to do about it. |
-| `diagnostics[].file` | `string` | yes | no | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
+| `diagnostics[].file` | `string` | yes | no | The file, relative to the project root (the folder of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
 | `diagnostics[].range` | `Range` | yes | no | Where in the file. |
 | `diagnostics[].related` | `object[]` | yes | no | Other places that explain it. |
 | `diagnostics[].related[].file` | `string` | yes | no | The file, as a diagnostic's `file` is. |
@@ -45,7 +45,7 @@ The fields of [`schemas/check.schema.json`]({repo}/blob/v{version}/schemas/check
 | `summary.warnings` | `integer` | yes | no | How many warnings. |
 | `summary.advice` | `integer` | yes | no | How many advice. |
 | `summary.acknowledged` | `integer` | no | no | How many problems are acknowledged as intended. Left out when there are none. |
-| `summary.baselined` | `integer` | no | no | How many problems `ascribe.baseline` holds back, which `diagnostics` leaves out and which are advice. Left out when there are none, and with `--no-baseline`. |
+| `summary.baselined` | `integer` | no | no | How many problems are baselined, listed in `ascribe.baseline`, which `diagnostics` leaves out and which are advice. Left out when there are none, and with `--no-baseline`. |
 | `summary.by_code` | `object[]` | no | no | With `--summary`: how many diagnostics have each code, most first. |
 | `summary.by_code[].code` | `string` | yes | no | The code, such as `ASC036`. |
 | `summary.by_code[].slug` | `string` | yes | no | The diagnostic's name, such as `link-target-missing`. |

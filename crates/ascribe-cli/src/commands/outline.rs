@@ -15,7 +15,7 @@ use crate::exit;
 /// Arguments of `ascribe outline`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// The page or fragment: a path from the current directory, or from the
+    /// The page or fragment: a path from the current folder, or from the
     /// content root.
     #[arg(value_name = "PAGE")]
     pub page: PathBuf,

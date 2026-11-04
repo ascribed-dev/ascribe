@@ -809,7 +809,7 @@ export interface Entry {
   severity: string;
   /**
    * The kind of next step: `fix` when Ascribe can make the edit,
-   * `choose` when the author picks among things Ascribe can list,
+   * `choose` when the writer picks among things Ascribe can list,
    * `write` when it needs writing or judgment, `outside` when nothing in
    * the source can fix it, and `review` when it may be fine as it is.
    */
@@ -817,7 +817,7 @@ export interface Entry {
   /** What's wrong, and what to do about it. */
   message: string;
   /**
-   * The file, relative to the project root (the directory of
+   * The file, relative to the project root (the folder of
    * `ascribe.toml`), with `/` separators. `ascribe.toml` for a
    * content-model problem.
    */
@@ -1421,7 +1421,7 @@ export interface ModelNavPage {
    * file name without `.md`.
    */
   label: string;
-  /** Its content type's name, when it has one. */
+  /** Its page type's name, when it has one. */
   type?: string;
 }
 
@@ -1691,7 +1691,7 @@ export interface ModelTerm {
   aliases: string[];
   /**
    * Which occurrences are linked: `first` on each page, `every` one, or
-   * only those an author links (`marked`).
+   * only those a writer links (`marked`).
    */
   match: string;
   /** Whether an occurrence must match its case. */
@@ -2705,9 +2705,9 @@ export interface Summary {
    */
   acknowledged?: number;
   /**
-   * How many problems `ascribe.baseline` holds back, which `diagnostics`
-   * leaves out and which are advice. Left out when there are none, and
-   * with `--no-baseline`.
+   * How many problems are baselined, listed in `ascribe.baseline`, which
+   * `diagnostics` leaves out and which are advice. Left out when there are
+   * none, and with `--no-baseline`.
    */
   baselined?: number;
   /** With `--summary`: how many diagnostics have each code, most first. */
@@ -2718,7 +2718,7 @@ export interface Summary {
 
 /** A file in `ascribe agents sync --format json`. */
 export interface SyncFile {
-  /** Its path, from the current directory, `/`-separated. */
+  /** Its path, from the current folder, `/`-separated. */
   path: string;
   /** Whether it changed: with `check`, whether it's out of date. */
   changed: boolean;

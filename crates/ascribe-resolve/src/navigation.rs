@@ -225,7 +225,7 @@ pub struct NavPage<'a> {
     /// Its label in pieces, when it's read with inline markup, as the title
     /// is.
     pub formatted: Option<&'a [Segment]>,
-    /// Its content type's name, when it has one.
+    /// Its page type's name, when it has one.
     pub type_name: Option<&'a str>,
 }
 

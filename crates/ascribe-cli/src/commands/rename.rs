@@ -32,13 +32,13 @@ pub struct Args {
     /// value), a heading's id (`keys.md#rotate-keys`), or a page or fragment
     /// (`keys.md`), which moves.
     ///
-    /// A path is from the current directory, or from the content root.
+    /// A path is from the current folder, or from the content root.
     #[arg(value_name = "TARGET")]
     pub target: String,
 
     /// The new name: a phrase's key, a value, or an id. For a page or
     /// fragment, where it moves to, read as TARGET is: from the current
-    /// directory, or from the content root.
+    /// folder, or from the content root.
     #[arg(value_name = "NEW")]
     pub new: String,
 
@@ -303,7 +303,7 @@ pub(crate) struct RenameJson {
 #[derive(Debug, Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct FileJson {
-    /// The file, from the current directory.
+    /// The file, from the current folder.
     file: String,
     /// Its whole text after the rename.
     text: String,
@@ -315,9 +315,9 @@ struct FileJson {
 #[derive(Debug, Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct MovedJson {
-    /// Where it is, from the current directory.
+    /// Where it is, from the current folder.
     from: String,
-    /// Where it goes, from the current directory. Its folder is made when
+    /// Where it goes, from the current folder. Its folder is made when
     /// it isn't there.
     to: String,
 }

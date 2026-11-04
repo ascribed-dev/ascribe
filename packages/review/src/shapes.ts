@@ -358,7 +358,7 @@ export interface ReportData {
 
 /** The repository, in the report. */
 export interface RepositoryInfo {
-  /** The repository's top-level directory, as git prints it. */
+  /** The repository's top-level folder, as git prints it. */
   root: string;
   /**
    * The project's folder inside it, with a trailing `/`, or empty when

@@ -117,7 +117,7 @@
           "type": "string"
         },
         "file": {
-          "description": "The file, relative to the project root (the directory of\n`ascribe.toml`), with `/` separators. `ascribe.toml` for a\ncontent-model problem.",
+          "description": "The file, relative to the project root (the folder of\n`ascribe.toml`), with `/` separators. `ascribe.toml` for a\ncontent-model problem.",
           "type": "string"
         },
         "fixes": {
@@ -136,7 +136,7 @@
           "type": "string"
         },
         "next": {
-          "description": "The kind of next step: `fix` when Ascribe can make the edit,\n`choose` when the author picks among things Ascribe can list,\n`write` when it needs writing or judgment, `outside` when nothing in\nthe source can fix it, and `review` when it may be fine as it is.",
+          "description": "The kind of next step: `fix` when Ascribe can make the edit,\n`choose` when the writer picks among things Ascribe can list,\n`write` when it needs writing or judgment, `outside` when nothing in\nthe source can fix it, and `review` when it may be fine as it is.",
           "type": "string"
         },
         "range": {
@@ -382,7 +382,7 @@
           "type": "integer"
         },
         "baselined": {
-          "description": "How many problems `ascribe.baseline` holds back, which `diagnostics`\nleaves out and which are advice. Left out when there are none, and\nwith `--no-baseline`.",
+          "description": "How many problems are baselined, listed in `ascribe.baseline`, which\n`diagnostics` leaves out and which are advice. Left out when there are\nnone, and with `--no-baseline`.",
           "minimum": 0,
           "type": "integer"
         },

@@ -17,7 +17,7 @@ use crate::exit;
 /// Arguments of `ascribe resolve`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// The page: a path from the current directory, or from the content
+    /// The page: a path from the current folder, or from the content
     /// root. Or `go:` and a permalink's name, for the help a product shows
     /// for it: its title, summary, and text, as the build's
     /// `_ascribe/help.json` has them, and its address.

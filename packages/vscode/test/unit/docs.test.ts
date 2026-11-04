@@ -183,7 +183,7 @@ function commandTable(): string {
 function actionTable(): string {
   let out = `${ACTIONS_HEADER}| Action | What it does | Where it applies |\n|---|---|---|\n`;
   for (const action of ACTIONS) {
-    const lightbulb = action.lightbulb ? " Also in the lightbulb." : "";
+    const lightbulb = action.lightbulb ? " Also in the light bulb." : "";
     out += `| **${action.title}** | ${cell(action.description)}.${lightbulb} | ${cell(action.where)} |\n`;
   }
   return out;

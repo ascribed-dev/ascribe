@@ -24,7 +24,7 @@ pub const SUMMARY_BUDGET: usize = 4_000;
 pub struct Args {
     /// A file or folder in the project, to find its `ascribe.toml` from.
     ///
-    /// By default, the current directory.
+    /// By default, the current folder.
     #[arg(value_name = "PATH")]
     pub path: Option<PathBuf>,
 

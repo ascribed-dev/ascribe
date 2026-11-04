@@ -10,7 +10,7 @@ The fields of [`schemas/agents-sync.schema.json`]({repo}/blob/v{version}/schemas
 | `check` | `boolean` | yes | no | Whether it ran with `--check`, which writes nothing. |
 | `written` | `boolean` | yes | no | Whether it wrote the files: false with `--check` or `--dry-run`. |
 | `files` | `object[]` | yes | no | Each file, in the order it was first planned. |
-| `files[].path` | `string` | yes | no | Its path, from the current directory, `/`-separated. |
+| `files[].path` | `string` | yes | no | Its path, from the current folder, `/`-separated. |
 | `files[].changed` | `boolean` | yes | no | Whether it changed: with `check`, whether it's out of date. |
 | `files[].read_by` | `Agent[]` | yes | no | The agents that read it. |
 | `notes` | `string[]` | yes | no | The notes for the person running it, which it also writes to standard error. |

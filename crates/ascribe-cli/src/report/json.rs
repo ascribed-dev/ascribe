@@ -113,9 +113,9 @@ struct Summary {
     /// are none.
     #[serde(skip_serializing_if = "is_zero")]
     acknowledged: usize,
-    /// How many problems `ascribe.baseline` holds back, which `diagnostics`
-    /// leaves out and which are advice. Left out when there are none, and
-    /// with `--no-baseline`.
+    /// How many problems are baselined, listed in `ascribe.baseline`, which
+    /// `diagnostics` leaves out and which are advice. Left out when there are
+    /// none, and with `--no-baseline`.
     #[serde(skip_serializing_if = "is_zero")]
     baselined: usize,
     /// With `--summary`: how many diagnostics have each code, most first.
@@ -223,7 +223,7 @@ pub(crate) struct Entry {
     /// it treats advice.
     severity: &'static str,
     /// The kind of next step: `fix` when Ascribe can make the edit,
-    /// `choose` when the author picks among things Ascribe can list,
+    /// `choose` when the writer picks among things Ascribe can list,
     /// `write` when it needs writing or judgment, `outside` when nothing in
     /// the source can fix it, and `review` when it may be fine as it is.
     next: &'static str,
@@ -233,7 +233,7 @@ pub(crate) struct Entry {
     rule: Option<String>,
     /// What's wrong, and what to do about it.
     message: String,
-    /// The file, relative to the project root (the directory of
+    /// The file, relative to the project root (the folder of
     /// `ascribe.toml`), with `/` separators. `ascribe.toml` for a
     /// content-model problem.
     file: String,

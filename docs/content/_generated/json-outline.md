@@ -11,7 +11,7 @@ The fields of [`schemas/outline.schema.json`]({repo}/blob/v{version}/schemas/out
 | `file` | `string` | yes | no | The page's file from the project root, as `ascribe check` reports it. |
 | `fragment` | `boolean` | yes | no | Whether it's a fragment, which pages include rather than link to. |
 | `title` | `string` | yes | yes | Its title (frontmatter `title`). |
-| `type` | `string` | yes | yes | Its content type; `null` for a fragment, or when no one type applies. |
+| `type` | `string` | yes | yes | Its page type; `null` for a fragment, or when no one type applies. |
 | `build` | `string` | yes | yes | The build the headings are limited to, with `--build`. |
 | `not_published` | `string` | yes | yes | Why that build doesn't publish the page, when it doesn't; there are no headings then. |
 | `memos` | `OutlineMemo[]` | yes | no | The memo files about the page as a whole, in path order. A detached memo isn't listed. |
