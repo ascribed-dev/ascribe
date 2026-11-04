@@ -153,7 +153,7 @@ Reread the landing page's "Where it's going" (`site/home/content/index.md`): an 
 node scripts/release/version.ts 0.2.0
 ```
 
-This sets the version in `Cargo.toml` (and `Cargo.lock`), every published `package.json`, and the extension's `ascribe.minServerVersion`, which makes the extension warn about a project binary older than itself. Lower `minServerVersion` by hand if the release still works with older binaries.
+This sets the version in `Cargo.toml` (and `Cargo.lock`), every published `package.json`, each JSON Schema's `$id` in `schemas/` and the docs' copies, which `@ascribed/cli` ships, and the extension's `ascribe.minServerVersion`, which makes the extension warn about a project binary older than itself. Lower `minServerVersion` by hand if the release still works with older binaries.
 
 Then release the docs' line, naming the version after it as `--next`:
 
