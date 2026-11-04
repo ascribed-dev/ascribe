@@ -43,7 +43,7 @@ Name the release your team runs, as its number, such as `{version}` (a leading `
 
 Every project `ascribe init` started has [`ascribe.addresses`](../publishing/redirects.md), and `ascribe check` compares the addresses the docs publish with the base's, so a page that moved without a record fails the pull request. That's why the workflow gives `actions/checkout` `fetch-depth: 0`, for the history, and names the base: on a pull request, the branch it targets; on a push, the commit before the push, compared as it is. The push that creates `main`, a new repository's first, has no commit before it: there, the check names no base, and compares the pushed commit with itself.
 
-Without the history, as `actions/checkout`'s default gives, or with a base that isn't there, as after a force-push or with `--base` on the push that creates the branch, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) says the addresses weren't compared, a warning `--deny-warnings` fails on. A workflow that leaves out `fetch-depth: 0` or `--base` fails the project's first pull request this way.
+Without the history, as `actions/checkout`'s default gives, or with a base that isn't there, as after a force-push or with `--base` on the push that creates the branch, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) says the addresses weren't compared, a warning `--deny-warnings` fails on. A workflow that leaves out `fetch-depth: 0` or `--base` fails the project's first pull request this way ([Troubleshooting](../troubleshooting.md#addresses-base-unreadable)).
 
 ## Keep tested examples tested
 
