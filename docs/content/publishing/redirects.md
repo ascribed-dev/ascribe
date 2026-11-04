@@ -173,6 +173,13 @@ The build then forwards every address under each former value to the same source
 
 A second change composes with the first: under `base-path = ["/docs/", "/guide/"]`, an address under either forwards straight to today's, in one step. A page lost in the same change, as one deleted with it, is still a warning of its own. So is a page whose build became an older line, under the line's folder, since no setting moved it: its address and its Markdown version's are lost together, even when `agents` was turned off in the same change. `trailing-slash` isn't kept: a host matches an address with or without its final `/`.
 
+### Before the first deploy
+@id: before-the-first-deploy
+
+The check takes what the base has as published, deployed or not. So a project that changes `base-path` after its pages' first commit, as [setting up an Astro site](../astro/index.md#from-getting-started) can, is told its addresses moved, though no site ever served them, and under `--deny-warnings` the check fails.
+
+Set the routing settings in `[consumer]` before the pages' first commit, and there's nothing to report. When a commit already has them, record the change all the same, with `ascribe check --fix`: the `[former]` value it writes only forwards addresses no one has, so it does no harm, and the check passes. Once the change is on the default branch, the base has the new value, so you can take the old one out of `[former]`, in a commit of its own, and the check still passes.
+
 ## The base
 @id {permalink=true}: addresses-base
 

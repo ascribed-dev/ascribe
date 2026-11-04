@@ -7,7 +7,7 @@ permalink: write-a-page
 
 Most pages need the same few things: a callout, a procedure, a block readers can open when they want the detail, links to the pages around it, a picture, a name written once, and a part several pages share. This guide builds one page that has each of them, a step at a time, and says where the rest of each one's rules are.
 
-It's for a writer with a project already, as [Getting started](../getting-started.md) sets one up. The page is the `configure.md` that guide's `install.md` links to, so its `ascribe.toml` already declares the phrases `{product}` and `{version}` used below.
+It's for a writer with a project already, as [Getting started](../getting-started.md) sets one up. The page is the `configure.md` that guide's home page, `index.md`, links to, so its `ascribe.toml` already declares the phrases `{product}` and `{version}` used below.
 
 ## 1. Start the page
 @id: start-the-page

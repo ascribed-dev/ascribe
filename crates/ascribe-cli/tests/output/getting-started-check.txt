@@ -1,5 +1,5 @@
 [ASC036] Error: `configure.md` doesn't exist
-    ╭─[ docs/install.md:31:22 ]
+    ╭─[ docs/index.md:31:22 ]
     │
  31 │ Next, [configure it](configure.md).
     │                      ──────┬─────
