@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Work with an agent
-description: "The loop an agent runs on an Ascribe project: edit a page, check it, fix what's reported, and ask the commands that answer what it would otherwise guess."
+description: "Have your agent edit a page, check it, fix what's reported, and ask the commands that answer what it would otherwise guess."
 ---
 
 An agent working alone runs one loop: edit a page, check it, fix what's reported, and check the whole project before it finishes. `AGENTS.md` and the skill teach it the loop ([Write the agent files](instructions.md)), and [hooks](hooks.md) run the checks for an agent that forgets.

@@ -99,7 +99,7 @@ With `--format json`, it writes the same in the document its [schema](../contrac
 @id {permalink=true}: cli-observe
 @summary: Runs the test of a folder of tested examples, and when it passes, writes down what it passed with, in `examples.observations/`.
 
-Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is: with npm, or on the path where there's no Node ([Install](../install.md)).
+Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is: with npm, or on the path where there's no Node ([Install Ascribe](../install.md)).
 
 @include: ../_generated/cli-observe-options.md
 

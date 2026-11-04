@@ -45,7 +45,7 @@ Specification: [§4.1]({repo}/blob/main/SPEC.md#41-id).
 
 ### Permalinks
 
-`{permalink=true}` makes the id a **permalink** as well: a name for the section that something outside the docs can link to, at an address of its own, `go/<id>` under the site's base path or [`permalink-path`](../content-model/output.md#consumer), which forwards to the section wherever it is. [Permalinks](../permalinks/index.md) says how a product links to one, how its CI checks those links, and what to do when a section moves or goes away.
+`{permalink=true}` makes the id a **permalink** as well: a name for the section that something outside the docs can link to, at an address of its own, `go/<id>` under the site's base path or [`permalink-path`](../content-model/output.md#consumer), which forwards to the section wherever it is. [Link to the docs from your product](../permalinks/index.md) says how a product links to one, how its CI checks those links, and what to do when a section moves or goes away.
 
 ```markdown
 ## `ascribe check`

@@ -1,7 +1,7 @@
 ---
 type: how-to
-title: The project report
-description: "Reading `ascribe report` and acting on each section, from the problems and pages it counts to the external links and the published site, and running it every day in CI."
+title: Act on the project report
+description: "Read `ascribe report` and act on each section, from the problems and pages it counts to the external links and the published site, and run it every day in CI."
 ---
 
 `ascribe check` answers "is this change fine?", quickly, on every edit and every pull request. `ascribe report` answers "what state is this project in?": it counts what the checks find across the whole project, lists what each build leaves out, and runs what's too slow or too networked for a check, such as following every external link. Every problem in it says what kind of next step it needs, as the editor does.
@@ -62,6 +62,8 @@ team = { type = "enum(platform, api)?", role = "owner" }
 ```
 
 Without one, every page is counted as having no owner, and the report leaves that line out.
+
+[Keep pages current](../content-model/keep-current.md) adds an owner and a recheck date to a project's pages, and runs the inventory every week in CI.
 
 For each source with an `ascribe.examples.toml`, it counts the snippets that show one of the source's [tested examples](../examples/tested.md), and how many of those are current, stale, and unobserved: each `@snippet` line once, in pages and fragments alike. A source in another repository is counted from the copies [`ascribe sources fetch`](../examples/sources.md#cli-sources-fetch) puts in its folder. [When an example changes](../examples/tested.md#when-an-example-changes) says what to do about a stale one.
 
@@ -159,4 +161,5 @@ This repository runs this job on these docs, in [`.github/workflows/report.yml`]
 
 - [`ascribe report`](report-command.md#cli-report): every option, and the JSON.
 - [Check external links](external-links.md): acting on what `links` finds.
+- [Keep pages current](../content-model/keep-current.md): owners and recheck dates, and the inventory on a schedule.
 - [What to measure](../agents/measuring.md): what the published site delivers to agents, and what happens to the pages after a deploy, which the report can't see.

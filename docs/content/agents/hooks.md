@@ -9,7 +9,7 @@ A hook is a command your agent runs at a point in its work. Ascribe's hooks chec
 ## Add the hooks
 
 @steps
-1. Put the release's binary on your path, with `brew install ascribed-dev/tap/ascribe` or the install script ([Install](../install.md#without-node) has both). `npm install -g @ascribed/cli` works too, but the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks.
+1. Put the release's binary on your path, with `brew install ascribed-dev/tap/ascribe` or the install script ([Install Ascribe](../install.md#without-node) has both). `npm install -g @ascribed/cli` works too, but the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks.
 2. Write the entries that run the hooks, for the targets you name or already have:
 
    ```shell

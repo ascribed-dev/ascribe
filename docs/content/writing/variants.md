@@ -82,7 +82,7 @@ In VS Code, the preview's **Build** picker shows a page as any build has it, and
 
 ## Publishing more than one build
 
-A site publishes one build: `ascribe({ build: "site" })` in Astro's configuration names it (see [Astro](../astro/index.md)). Another build is for another output: a second site, or plain Markdown for a product's help panel, built from the same pages. Run `ascribe build --build windows` to build one alone.
+A site publishes one build: `ascribe({ build: "site" })` in Astro's configuration names it (see [Publish a site with Astro](../astro/index.md)). Another build is for another output: a second site, or plain Markdown for a product's help panel, built from the same pages. Run `ascribe build --build windows` to build one alone.
 
 ## Summary
 

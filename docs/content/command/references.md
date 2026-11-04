@@ -124,7 +124,7 @@ With `--format json`, it writes what it changed as one document, instead of a li
 
 - `files`: each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was.
 - `moved`: the page's `from` and `to`, when one moved.
-- `recorded`: each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/redirects.md#cli-addresses-move) writes one.
+- `recorded`: each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/addresses.md#cli-addresses-move) writes one.
 - `written`: `true`, and `false` with `--dry-run`. The MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing.
 
 Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.

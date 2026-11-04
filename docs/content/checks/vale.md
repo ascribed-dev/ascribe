@@ -1,7 +1,7 @@
 ---
 type: how-to
-title: Prose, through Vale
-description: "Checking your pages' prose with Vale, from Ascribe's quiet preset or your own Vale configuration, in the editor and in `ascribe check`."
+title: Check prose with Vale
+description: "Check your pages' prose with Vale, from Ascribe's quiet preset or your own Vale configuration, in the editor and in `ascribe check`."
 permalink: vale
 ---
 
@@ -95,7 +95,7 @@ A path is a program in the repository, so the editor asks you before it runs it,
 
 ## From the preset to a configuration of your own
 
-When turning rules off isn't enough, say to add a style package or rules of your own, run [`ascribe vale eject`](#cli-vale-eject) in the project. It writes the preset out as your own configuration, and from then on the files are yours to change: Ascribe never writes them again. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
+When turning rules off isn't enough, say to add a style package or rules of your own, run [`ascribe vale eject`](vale-command.md#cli-vale-eject) in the project. It writes the preset out as your own configuration, and from then on the files are yours to change: Ascribe never writes them again. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
 
 ## Use a published style guide
 
@@ -108,7 +108,7 @@ Vale publishes packages of rules for the common style guides, such as `Google`, 
    ascribe vale eject
    ```
 
-   It writes `.vale.ini` and a `.vale/` styles folder, and points `[checks.vale]` at `.vale.ini` ([`ascribe vale eject`](#cli-vale-eject)).
+   It writes `.vale.ini` and a `.vale/` styles folder, and points `[checks.vale]` at `.vale.ini` ([`ascribe vale eject`](vale-command.md#cli-vale-eject)).
 
 2. In `.vale.ini`, name the package with `Packages`, before the first section, and add it to `BasedOnStyles`:
 
@@ -134,30 +134,8 @@ A published style guide finds far more than the preset does, and many of its rul
 
 Commit `.vale.ini` and the `.vale/` folder, with the package `vale sync` downloaded into it. Then every machine and CI check the same rules, with no download, since Ascribe never runs `vale sync`. To take a newer version of the package, run `vale sync` again and commit what changed. Don't commit `.ascribe/`, which holds the project's vocabulary and is written again each time Vale runs.
 
-## `ascribe vale`
-@id {permalink=true}: cli-vale
-
-@summary
-Sets up Vale for a project. Vale itself is run by `ascribe check --vale` and the editor.
-
-### `ascribe vale eject`
-@id {permalink=true}: cli-vale-eject
-@summary: Writes the preset `[checks.vale]` names out as the project's own Vale configuration, `.vale.ini` and a `.vale/` styles folder, and points `[checks.vale]` at it.
-
-Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder in the project's folder, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments.
-
-It lists each file it wrote, `ascribe.toml` last. It changes `ascribe.toml` only when git could put it back, as every [command that writes](../command/index.md#commands-that-write) does: with changes not committed, it's refused, and named, unless you pass `--force`. With `--dry-run`, it says what it would write, and writes nothing.
-
-@include: ../_generated/cli-vale-eject-options.md
-
-With `--format json`, it writes the preset and the files in the document its [schema](../contracts/json-reports.md#ascribe-vale-eject) describes.
-
-| Code | Meaning |
-|---|---|
-| `0` | The preset is the project's own now |
-| `2` | It wrote nothing: no `ascribe.toml`, a content model with errors, a `[checks.vale]` that names no preset, a `.vale.ini` or `.vale` that's there already, or, without `--force`, an `ascribe.toml` git couldn't put back. Or a file couldn't be written; the files it wrote before that stay. |
-
 ## See also
 
+- [`ascribe vale`](vale-command.md): `ascribe vale eject`'s options, output, and exit codes.
 - [`[checks.vale]`](../content-model/checks.md#checksvale): every key.
 - [Prose, through Vale](diagnostics/output-checks.md#prose-through-vale): the two diagnostics.

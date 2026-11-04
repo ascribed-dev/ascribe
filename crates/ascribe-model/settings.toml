@@ -868,7 +868,7 @@ key = "command"
 kind = "text"
 type = "string"
 default = "vale"
-description = '''The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. A path is a program in the project: the editor asks before it runs one, and the agents' hooks don't run one ([Prose, through Vale](../checks/vale.md#where-vale-runs)).'''
+description = '''The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. A path is a program in the project: the editor asks before it runs one, and the agents' hooks don't run one ([Check prose with Vale](../checks/vale.md#where-vale-runs)).'''
 
 [[setting]]
 table = "checks.vale"

@@ -829,6 +829,15 @@ A file or a folder that moves also edits `ascribe.nav`
 it, or is taken out when it leaves the folder, and a folder's `folder`, with
 its nested sections', follows it.
 
+Four commands are the client's to run, and the server never runs them:
+`ascribe.showReferences` and `ascribe.showMemos` (below),
+`ascribe.selectRange`, which the quick fix that writes a term's definition
+carries with the range to select after its edit, and `ascribe.copyCommand`,
+which the quick fix **Copy the command** on `example-stale` and
+`example-unobserved` carries with the line of shell that observes the
+example's source again, to put on the clipboard (`src/examples.rs`). A client
+that doesn't register one gets a lens or quick fix that does nothing.
+
 Find All References answers in `ascribe.toml` too: on a content model entry's
 declaration (a phrase's key, or the table header of a feature, dimension,
 note type, widget, or page content type), the places that use that entry, as

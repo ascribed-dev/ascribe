@@ -13,9 +13,15 @@ ascribe diff --format html > review.html
 ## Add the preview to CI
 @id: add-the-report-to-ci
 
-This GitHub Actions job writes the preview on each pull request, uploads it, and links it from the run's summary, so a reviewer opens it from the pull request's checks. Add it to the `jobs` of the workflow that checks your docs, as [Everything in one workflow](../checks/ci.md#everything-in-one-workflow) does. It runs the `ascribe` your `package.json` pins, with `npm ci` and `npx`, as the check does, so a new release changes the preview only when you move the pin. When your project is in a folder of the repository, give both `ascribe diff` commands `--config` and the folder, the one with `ascribe.toml`.
+This GitHub Actions job writes the preview on each pull request, uploads it, and links it from the run's summary, so a reviewer opens it from the pull request's checks. It runs the `ascribe` your `package.json` pins, with `npm ci` and `npx`, as the check does, so a new release changes the preview only when you move the pin.
 
-@snippet {lang=yaml}: code:examples/astro-site/.github/workflows/docs.yml#preview
+@steps
+1. Add the job to the `jobs` of the workflow that checks your docs, as [Everything in one workflow](../checks/ci.md#everything-in-one-workflow) does:
+
+   @snippet {lang=yaml}: code:examples/astro-site/.github/workflows/docs.yml#preview
+
+2. When your project is in a folder of the repository, give both `ascribe diff` commands `--config` and the folder, the one with `ascribe.toml`.
+3. Open a pull request that changes a page. When the job has run, open the preview from the link in the run's summary.
 
 - **History.** `ascribe diff` compares with the merge base of the pull request's base branch and its head, as the pull request itself does, so the checkout needs enough history to find it: `fetch-depth: 0`. With less, `ascribe diff` stops and says so; `--base-exact` compares with the base branch's tip instead, which also lists changes made on the base branch since the pull request branched.
 - **The base.** `--base "origin/$GITHUB_BASE_REF"` names the pull request's base branch. Without it, `ascribe diff` uses the repository's default branch.

@@ -5,7 +5,7 @@ description: "The Ascribe review app in `astro dev`'s toolbar: its panel, what i
 permalink: review-in-the-site-preview
 ---
 
-In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same [marks](how-it-works.md#the-marks) and threads as the editor's [page preview](../editor/review.md), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. The integration's [`review` option](../astro/reference.md#options) can leave it out. [Review](index.md#review-in-the-site-preview) walks through reviewing a pull request with it; this page is the reference for the site's side.
+In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same [marks](how-it-works.md#the-marks) and threads as the editor's [page preview](../editor/review.md), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. The integration's [`review` option](../astro/reference.md#options) can leave it out. [Review a pull request](index.md#review-in-the-site-preview) walks through reviewing a pull request with it; this page is the reference for the site's side.
 
 ## The panel
 

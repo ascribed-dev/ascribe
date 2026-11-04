@@ -122,7 +122,7 @@ The head at the top shows the page's title, its type ("fragment" for a fragment)
 |---|---|---|
 | **Problems** | The page's problems, an icon per severity with its count, or "none" | The Problems panel, kept to the page |
 | **Description** | Its length, or "missing" | The field in the frontmatter |
-| **Review** | "overdue, since 3 October" or "due in 12 days" | The field |
+| **Recheck** | "overdue, since 3 October" or "due in 12 days" | The field |
 | **Template** | "2 placeholders left, how-to template": what its [type's template](../templates/index.md#whats-left-to-fill-in) still leaves to fill in | **Go to Next Placeholder** |
 | **Size** | "31,200 of 50,000 characters, in site" | Nothing; its tooltip says which build and the limit |
 | **Example** | Each [tested example](../examples/tested.md) the page shows, with its state | The file its `@snippet` shows, beside the page |
@@ -240,7 +240,7 @@ In Health:
 
 - **Problems** is VS Code's problems for the page, counted as the status bar counts them, leaving out a severity there's none of. Its filter's **Show Active File Only** keeps the Problems panel to the page.
 - **Description** is shown "missing" where [`page-description-missing`](../checks/diagnostics/content-checks.md#ASC150) reports the page. Its length is its field's default's when the page leaves the field out or empty. It's measured against the 300 characters its line in `llms.txt` reads best under, when the project publishes one, and led by "too long", with a warning, only where [`description-too-long`](../checks/diagnostics/output-checks.md#ASC163) reports it.
-- **Review** comes from the field with the [`recheck-date` role](../content-model/index.md#54-field-roles), as [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
+- **Recheck** comes from the field with the [`recheck-date` role](../content-model/index.md#54-field-roles), as [`recheck-overdue`](../checks/diagnostics/content-checks.md#ASC153) compares it with today, with a warning only where that check reports the page.
 - **Size** is the page's Markdown in the build where it's largest, measured as [`page-size`](../content-model/checks.md#22-checks) measures it. It's shown always, so a page is seen growing toward the limit, and led by "too large" once it reaches it.
 - **Example** is each tested example a `@snippet` of the page shows: its state first, tested, changed since it was tested, or not tested, then its address, what it was tested with, and the heading it's under.
 

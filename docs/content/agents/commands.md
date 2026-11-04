@@ -12,7 +12,7 @@ description: "Set a repository up for AI agents, and serve a project's tools ove
 @id {permalink=true}: cli-agents
 
 @summary
-Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Agents](index.md).
+Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Set up your agent](index.md).
 
 ### `ascribe agents sync`
 @id {permalink=true}: cli-agents-sync

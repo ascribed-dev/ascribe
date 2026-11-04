@@ -196,7 +196,7 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§25](#25-validation-rules) |
 | Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§20](sources.md#20-sourcesname) |
 | Acknowledgements of a content model entry's or an image's problems (§4.9) | `[[intended]]` | [§22.1](checks.md#221-intended) |
-| Retired permalinks and aliases (§7.6) | `[permalinks]` | [§19](output.md#19-permalinks) |
+| Retired and moved permalinks (§7.6) | None: they're entries of `ascribe.addresses` (§7.10), and `[permalinks]` is a replaced key | [§19](output.md#19-permalinks) |
 | The project's own `robots.txt` lines (§7.2, §9.4) | `[crawlers]` | [§18](output.md#18-crawlers) |
 | How the site's, a folder's, or a type's pages are listed (§2.1, §7.2) | `[listing]` | [§17](output.md#17-listing) |
 | The OpenAPI specs pages link into (§7.11) | `[apis.<name>]` | [§21](sources.md#21-apisname) |

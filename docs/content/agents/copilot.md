@@ -1,6 +1,6 @@
 ---
 type: how-to
-title: GitHub Copilot
+title: Set up GitHub Copilot
 description: "Set Ascribe up for GitHub Copilot, in VS Code and as the cloud agent that works on GitHub."
 ---
 

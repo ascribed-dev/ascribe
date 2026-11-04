@@ -4,7 +4,7 @@ title: "`ascribe permalinks`"
 description: "Keep a project's list of permalinks, check a product's names against it, and retire a permalink with a reason."
 ---
 
-`ascribe permalinks` keeps a project's list of permalinks, checks a product's names against it, and retires a permalink with a reason. [Permalinks](index.md) is the task the commands are used in, and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/addresses.md#ascribe-permalinks-sync).
+`ascribe permalinks` keeps a project's list of permalinks, checks a product's names against it, and retires a permalink with a reason. [Link to the docs from your product](index.md) is the task the commands are used in, and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/addresses.md#ascribe-permalinks-sync).
 
 @include: ../_fragments/command-options.md
 

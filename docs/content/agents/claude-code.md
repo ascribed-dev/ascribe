@@ -1,6 +1,6 @@
 ---
 type: how-to
-title: Claude Code
+title: Set up Claude Code
 description: "Give Claude Code the skill, the MCP server, the stop hook, the language server, and commands in one install, with the Ascribe plugin."
 ---
 
@@ -17,10 +17,18 @@ The Ascribe plugin, in `plugins/ascribe/` in [Ascribe's repository]({repo}), giv
 
 Ascribe's repository is the plugin's marketplace, so Claude Code adds it from GitHub, with no copy of the repository. In Claude Code in a terminal (its VS Code extension doesn't offer `/plugin`):
 
-```shell
-/plugin marketplace add ascribed-dev/ascribe
-/plugin install ascribe@ascribe
-```
+@steps
+1. Add the marketplace:
+
+   ```shell
+   /plugin marketplace add ascribed-dev/ascribe
+   ```
+
+2. Install the plugin:
+
+   ```shell
+   /plugin install ascribe@ascribe
+   ```
 
 From a copy of the repository, add the copy's folder in place of `ascribed-dev/ascribe`.
 

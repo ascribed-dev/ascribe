@@ -99,7 +99,7 @@ External links
 
 ## See also
 
-- [The project report](report.md): the rest of what `ascribe report` says about a project.
+- [Act on the project report](report.md): the rest of what `ascribe report` says about a project.
 - [`ascribe report`](report-command.md#cli-report): every option, and the JSON.
 - [`[checks.links]`](../content-model/checks.md#checkslinks): every setting.
 - [Files Ascribe writes](../command/project-files.md): the rest of `.ascribe/`.

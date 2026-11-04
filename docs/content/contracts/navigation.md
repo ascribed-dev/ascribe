@@ -60,7 +60,7 @@ Each build's site output has its share of the project's [navigation](../navigati
 | `page` | A section's own page, when the build publishes and offers it: its `index.md`, or the page beside the folder with its name. Absent otherwise. |
 | `pages` | A section's pages in order, its own page never among them. |
 | `sections` | A section's nested sections that keep a page in the build, in order. |
-| `source` | A page's path from the content root, with `/`: the key its record has in `_ascribe/pages.json` ([output-layout contract §1.3](output-layout.md#13-the-page-records)), and its path in the site output, so a collection entry's file joins to it. Routes aren't repeated here: a page's route is its record's. |
+| `source` | A page's path from the content root, with `/`: the `source` of its record in `_ascribe/pages.json` ([output-layout contract §1.3](output-layout.md#13-the-page-records)), which is keyed by route, and its path in the site output, so a collection entry's file joins to it. Routes aren't repeated here: a page's route is its record's. |
 | `type` | A page's content type. Absent for a page whose type isn't declared, which `ascribe check` reports. |
 
 ## 2. Placing a nested section
@@ -78,6 +78,6 @@ The pages in reading order are a section's `page`, then its `pages`, each follow
 
 ## 4. What a reader can rely on
 
-- Every `source` is a page the build publishes, that isn't `unlisted`, and has a record in `pages.json`. A page is in the file once, but for the page beside a nested folder, which is in its parent's `pages` and is the nested section's `page`.
+- Every `source` is a page the build publishes, that isn't `unlisted`, and has a record in `pages.json`. A page is in the file once, but for the page beside a folder with its name, which is in its parent's `pages`, `root`'s for a top folder (§2), and is that folder's section's `page`.
 - The file is the same text for the same project and build on every platform.
 - A later version may add keys; it doesn't change these.

@@ -25,7 +25,7 @@ See [Keep the addresses you've published](publishing/redirects.md). A snippet's 
 
 An AI program, such as Claude Code or GitHub Copilot, that writes a project's docs with Ascribe's tools, or reads the docs a site publishes.
 
-Most pages mean the agent you work with on the docs, as [Agents](agents/index.md) does. The outputs for agents, [`[consumer] agents`](content-model/output.md#consumer), and [`ascribe report delivery`](checks/report.md#the-site-and-agents) are about the agents that read the published site, and [`ascribe agents index`](agents/product-index.md) writes for a product's own agents.
+Most pages mean the agent you work with on the docs, as [Set up your agent](agents/index.md) does. The outputs for agents, [`[consumer] agents`](content-model/output.md#consumer), and [`ascribe report delivery`](checks/report.md#the-site-and-agents) are about the agents that read the published site, and [`ascribe agents index`](agents/product-index.md) writes for a product's own agents.
 
 ## Availability
 @term
@@ -102,7 +102,7 @@ See [the preview](editor/preview.md).
 
 A name for a page or a heading, such as `go/weave-config`, whose address leads to it wherever it moves, for linking to the docs from outside them.
 
-See [Permalinks](permalinks/index.md) and [`@id`'s permalinks](writing/directives.md#permalinks).
+See [Link to the docs from your product](permalinks/index.md) and [`@id`'s permalinks](writing/directives.md#permalinks).
 
 ## Phrase
 @term {aliases=phrases, match=marked}
@@ -137,14 +137,14 @@ See [Release lines](versions/lines.md). Pages about versions call it a line. Els
 
 What `ascribe report` says about the state of a whole project: its problems, inventory, builds, pages, external links, and published site.
 
-See [The project report](checks/report.md). The [HTML preview](#html-preview), which `ascribe diff --format html` writes for a pull request, is part of [review](#review), not this.
+See [Act on the project report](checks/report.md). The [HTML preview](#html-preview), which `ascribe diff --format html` writes for a pull request, is part of [review](#review), not this.
 
 ## Review
 @term {aliases=reviews, match=marked}
 
 Reading a pull request's changes as readers will see the pages, in the page preview, the site preview, or the HTML preview, and commenting there.
 
-See [Review](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). When to check a page again is its [recheck date](#recheck-date), not a review.
+See [Review a pull request](review/index.md). A diagnostic whose next step is `review` may be fine as it is: see [What to do next](checks/diagnostics.md#what-to-do-next). When to check a page again is its [recheck date](#recheck-date), not a review.
 
 ## Site preview
 @term
