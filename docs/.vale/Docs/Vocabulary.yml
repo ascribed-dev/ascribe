@@ -1,0 +1,11 @@
+# Words from the compiler's own code, which a writer reading the guides
+# doesn't know: say what happens instead. Contracts may use them.
+extends: existence
+message: "'%s' is an implementer's word; say what happens to the page instead."
+level: warning
+ignorecase: true
+tokens:
+  - loader
+  - processor
+  - emitter
+  - normative

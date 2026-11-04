@@ -19,7 +19,7 @@ Paths are from the folder that holds `ascribe.toml`, except where a row says the
 
 | File | What writes it | Commit it |
 |---|---|---|
-| `.ascribe/build/` | [`ascribe build`](../checks/check.md#cli-build), and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere ([output layout](../contracts/output-layout.md)). | No |
+| `.ascribe/build/` | [`ascribe build`](../checks/check.md#cli-build), and `@ascribed/astro` when it builds. It's the default output folder; `[project] output-dir` puts it elsewhere ([output layout](../contracts/output-layout.md)). | No |
 | `.ascribe/preview/` | [`ascribe preview`](../checks/check.md#cli-preview): the build's pages rendered as HTML, which it serves on this computer and renders again as you edit. | No |
 | `.ascribe/vale/` | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words ([Check prose with Vale](../checks/vale.md#the-projects-own-words)). | No |
 | `.ascribe/cache/` | [`ascribe report links`](../checks/report-command.md#cli-report), which keeps the answers it reuses in `.ascribe/cache/links/` ([Answers it reuses](../checks/external-links.md#answers-it-reuses)). | No |

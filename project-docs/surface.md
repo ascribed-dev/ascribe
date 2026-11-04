@@ -1080,7 +1080,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 
 | File | What writes it | Commit it |
 |---|---|---|
-| `.ascribe/build/` | `ascribe build`, and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere. | No |
+| `.ascribe/build/` | `ascribe build`, and `@ascribed/astro` when it builds. It's the default output folder; `[project] output-dir` puts it elsewhere. | No |
 | `.ascribe/preview/` | `ascribe preview`: the build's pages rendered as HTML, which it serves on this computer and renders again as you edit. | No |
 | `.ascribe/vale/` | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words. | No |
 | `.ascribe/cache/` | `ascribe report links`, which keeps the answers it reuses in `.ascribe/cache/links/`. | No |

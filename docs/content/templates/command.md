@@ -45,7 +45,7 @@ ascribe templates eject how-to
 
 @include: ../_generated/cli-templates-eject-options.md
 
-For each template, it writes the template, its guide, and Ascribe's notes on the type into `templates/`, beside `ascribe.toml`, or into `--to`'s folder, which is a path from the current folder. The folder must be inside the folder `ascribe.toml` is in, and outside the content root and the output directory, where no type can name a file. Then it adds the type at the end of `ascribe.toml`, changing nothing above it, so its comments and order stay as they are:
+For each template, it writes the template, its guide, and Ascribe's notes on the type into `templates/`, beside `ascribe.toml`, or into `--to`'s folder, which is a path from the current folder. The folder must be inside the folder `ascribe.toml` is in, and outside the content root and the output folder, where no type can name a file. Then it adds the type at the end of `ascribe.toml`, changing nothing above it, so its comments and order stay as they are:
 
 ```toml
 [types.how-to]

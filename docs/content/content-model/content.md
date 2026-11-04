@@ -4,7 +4,7 @@ title: "`ascribe.toml`: what pages hold"
 description: "The content model's note types, phrases, glossary, images, and widgets: what a page can hold beyond its type's fields."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [what pages hold](../contracts/content-model/content.md).
+These sections of `ascribe.toml` set what a page can hold beyond its type's fields: note types, phrases, the glossary, images, and widgets. It's part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section; the exact rules are in the contract's [what pages hold](../contracts/content-model/content.md).
 
 ## 6. `[notes.<type>]`
 

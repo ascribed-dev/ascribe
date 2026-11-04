@@ -172,7 +172,7 @@ built cloud: 3 pages, 2 assets (site, plain, json)
 
 ### Outputs
 
-Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/build/` being the default output directory, with a manifest beside it (`<output>.manifest.json`) listing every file it wrote. Every output is self-contained: images and other files that pages use are copied into it.
+Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/build/` being the default output folder, with a manifest beside it (`<output>.manifest.json`) listing every file it wrote. Every output is self-contained: images and other files that pages use are copied into it.
 
 | Output | What it is | For |
 |---|---|---|
@@ -182,7 +182,7 @@ Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/bui
 
 Without `[consumer] site` in `ascribe.toml`, the plain Markdown output's links are root-relative instead of absolute, and the build says so.
 
-A rebuild replaces its previous output. It removes only files its own manifest listed, and never overwrites a file it didn't write: a file in the way is an error. Two builds can't write to one output directory at once.
+A rebuild replaces its previous output. It removes only files its own manifest listed, and never overwrites a file it didn't write: a file in the way is an error. Two builds can't write to one output folder at once.
 
 ### Exit codes
 @id: build-exit-codes
@@ -191,7 +191,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 |---|---|
 | `0` | Built |
 | `1` | The checks found errors; nothing was written |
-| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` builds without the file), another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
+| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, an `ascribe.baseline` with a line that doesn't parse (`--no-baseline` builds without the file), another build writing to the output folder, a file in the output folder that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
 ## `ascribe preview`
 @id {permalink=true}: cli-preview

@@ -78,7 +78,7 @@ What pages are, on this page:
 
 ### 2.1 Taking from another project
 
-Two projects beside each other, such as a product's docs and its landing site, often share facts: the releases, the site's address, a phrase or two. One of them writes each, and the other takes it with `[from]`, so it's written once, and a change to it reaches both. Ascribe's own landing site takes its releases, its address, and the source its examples come from from the docs' `ascribe.toml`.
+Two projects beside each other, such as a product's docs and its landing site, often share facts: the releases, the site's address, a phrase or two. One of them writes each, and the other takes it with `[from]`, so it's written once, and a change to it reaches both. Ascribe's own landing site takes its releases, its address, and the source of its examples from the docs' `ascribe.toml`.
 
 @include: ../_fragments/content-model/from.md
 

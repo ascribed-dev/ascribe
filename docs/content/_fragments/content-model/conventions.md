@@ -27,7 +27,7 @@ Several kinds of name appear in the file. Each kind has a rule, from the specifi
 | widget name | The specification, `widget-name` | Lowercase words of letters and digits joined by single hyphens, with at least one hyphen; starting with a letter | Widget names |
 | build name | This reference | A letter, then letters, digits, `_`, `-`, or `.` | Build names |
 
-Dimension names follow the stricter `key` rule, not just `name-word`, because they're also written as attribute keys in `@variant {deployment=cloud}` ([SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes), §4.3).
+A dimension's name must be a key, a lowercase letter, then lowercase letters, digits, or `-`, not just a `name-word`, because they're also written as attribute keys in `@variant {deployment=cloud}` ([SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes), §4.3).
 
 Build names allow `.` so that names like `self-managed-3.3` work. A name containing `.` must be quoted in a TOML header: `[builds."self-managed-3.3"]`.
 

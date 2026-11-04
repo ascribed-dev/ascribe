@@ -1,0 +1,9 @@
+# Comparisons that lean on another tool's behavior or ownership instead of
+# saying what Ascribe does.
+extends: existence
+message: "'%s' explains by comparison; say what happens instead."
+level: suggestion
+ignorecase: true
+tokens:
+  - 'as \w+ does'
+  - "is \\w+'s, not"
