@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Write it once
-description: "Writing a name once as a phrase and a passage once as a fragment, including the fragment on several pages, or one section of it, and choosing between a phrase, a fragment, and a variant."
+description: "Write a name once as a phrase and a passage once as a fragment, include the fragment on several pages, or one section of it, and choose between a phrase, a fragment, and a variant."
 ---
 
 When several pages say the same thing, each copy is a place to forget when it changes. Ascribe keeps one copy: a **phrase** for a name or a value, and a **fragment** for a passage, which pages include. This guide makes a fragment of what a reader needs before they start, includes it on two pages and one section of it on a third, and adds a phrase the fragment uses.
@@ -20,7 +20,8 @@ Three things keep one copy of something, and each fits a different kind of repet
 
 A phrase and a fragment are the same for every reader on every page; a variant is one page that's different for different readers. They combine: a fragment can use phrases and hold variants.
 
-## Make a fragment
+## 1. Make a fragment
+@id: make-a-fragment
 
 A file is a **fragment** when any part of its path starts with `_`, so every file in a folder named `_fragments/` is one. A fragment isn't published on its own, has no `type`, and names nothing in its frontmatter but `intended`, so it usually has none. [Files](frontmatter.md#files) has the rest of the rule, and `ascribe.toml`'s [`[fragments]`](../content-model/index.md#4-typesname-and-fragments) can name other files fragments by pattern.
 
@@ -40,7 +41,8 @@ You need {product} {version} or later, [installed](../install.md), and a docs re
 
 Each heading has an [`@id`](directives.md#id), so a page can include its section by a name that stays when the heading's text changes. The links start with `../` because they're written from the `_fragments/` folder: [Links in a fragment](#links-in-a-fragment) says why.
 
-## Include it on two pages
+## 2. Include it on two pages
+@id: include-it-on-two-pages
 
 Include the whole fragment where each page needs it. In `docs/configure.md`:
 
@@ -60,7 +62,8 @@ And in `docs/sync.md`:
 
 The path is relative to the page, or to the content root when it starts with `/`, so `/_fragments/prerequisites.md` works from a page in any folder. The fragment's headings keep the levels they're written with, so its `##` heading sits beside each page's own. Change the fragment, and both pages change with it.
 
-## Include one section of it
+## 3. Include one section of it
+@id: include-one-section-of-it
 
 A page that needs only part of a fragment includes the section of one heading, by its id. `docs/rotate-token.md` needs the access section without its heading, which would sit oddly under the page's own text:
 
@@ -74,7 +77,8 @@ When the token expires, make a new one with the same access:
 - `{heading=false}` leaves out the section's own heading, and keeps the rest. Without `#id`, it does nothing, and Ascribe warns.
 - An included id is one of the page's, and ids on a page must be unique, so a page doesn't include the whole fragment and a section of it too. `ascribe check` reports the id that would be on the page twice.
 
-## Add a phrase
+## 4. Add a phrase
+@id: add-a-phrase
 
 The fragment names `{cloud}`, the name of the hosted product, which `ascribe.toml` doesn't declare yet. Until it does, `{cloud}` is literal text, and `ascribe check` warns about it. Add it to `[phrases]`:
 
@@ -89,15 +93,8 @@ Each output writes `Quill Cloud` wherever a page or a fragment writes `{cloud}`:
 
 `ascribe check` reports a phrase's value written out, such as `Quill Cloud` in a page's prose, and offers to write the phrase. [Phrases](inline.md#phrases) has every rule.
 
-## Links in a fragment
-
-A relative link or image path in a fragment resolves from the **fragment's** folder, not from the page that includes it. That's why the fragment above links to `../install.md`: from `docs/_fragments/`, the install page is one folder up. The link then works on every page that includes the fragment, wherever that page is.
-
-- **Link to a page, never to a fragment.** A fragment isn't published, so a link to it is an error, and `ascribe check` offers a page that includes it instead.
-- **A heading a fragment brings in belongs to each page that includes it.** Link to it through one of those pages: `[what you need](sync.md#prerequisites)`.
-- **Check a link from the fragment.** `ascribe link install.md --from docs/_fragments/prerequisites.md` says what to write.
-
-## Check it
+## 5. Check it
+@id: check-it
 
 Run the check on the project:
 
@@ -106,3 +103,11 @@ npx ascribe check
 ```
 
 It reports a fragment path or an id that isn't there, an id that two includes put on one page, a link to a fragment, and `{cloud}` text before the phrase is declared. [`@include`](directives.md#include) has the rest of the rules.
+
+## Links in a fragment
+
+A relative link or image path in a fragment resolves from the **fragment's** folder, not from the page that includes it. That's why the fragment above links to `../install.md`: from `docs/_fragments/`, the install page is one folder up. The link then works on every page that includes the fragment, wherever that page is.
+
+- **Link to a page, never to a fragment.** A fragment isn't published, so a link to it is an error, and `ascribe check` offers a page that includes it instead.
+- **A heading a fragment brings in belongs to each page that includes it.** Link to it through one of those pages: `[what you need](sync.md#prerequisites)`.
+- **Check a link from the fragment.** `ascribe link install.md --from docs/_fragments/prerequisites.md` says what to write.
