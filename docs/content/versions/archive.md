@@ -71,15 +71,15 @@ No live line's output changes, and the command proves it by building before and 
 
 Each address 3.4 published should go somewhere: to the same page in the current line, to the page that replaced it there, or to its page in the archive. The command lists them, the replaced pages in its text and every address in its JSON, each as `from` and `to`.
 
-In a project that keeps [`ascribe.addresses`](../publishing/redirects.md), the retirement records each address that goes to a page in the current line there, in the same change, as a `[moved]` entry keyed by the address:
+In a project that keeps [`ascribe.addresses`](../publishing/redirects.md), the retirement records each address that goes to a page in the current line there, in the same change, as an entry keyed by the address in the table of the build whose line published it, `[moved.site]` for `site@3.4`:
 
 ```toml
-[moved]
+[moved.site]
 "/3.4/configure-legacy/" = "configure.md"
 "/3.4/install-agent/" = "install-agent.md"
 ```
 
-The build then writes their redirects, `ascribe addresses list` shows them, and `ascribe check --base` doesn't report the 3.4 build as gone: a line `[releases]` archives left on purpose. An address that goes to the archive isn't recorded, since an entry leads to a page of the project, so add those to your host's redirects yourself. Without `ascribe.addresses`, nothing is recorded: add every address to your host's redirects.
+The builds declared as `site` then write their redirects, and no other build does, `ascribe addresses list` shows them, and `ascribe check --base` doesn't report the 3.4 build as gone: a line `[releases]` archives left on purpose. An address that goes to the archive isn't recorded, since an entry leads to a page of the project, so add those to your host's redirects yourself. Without `ascribe.addresses`, nothing is recorded: add every address to your host's redirects.
 
 ### 6. Remove what no line has
 

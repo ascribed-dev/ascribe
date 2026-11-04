@@ -41,26 +41,107 @@ use crate::project::ADDRESSES_FILE_ID;
 const SOFT_404: usize = 3;
 
 /// The problems with `here`'s entries, each at its key, in file order: its
-/// `[moved]` table's, then its `[retired]` table's, then the soft 404s.
+/// `[moved]` table's, then each build's, `[moved.<build>]`, then its
+/// `[retired]` table's, then the soft 404s. A build's table is checked as
+/// the builds declared with its name read the file, against those builds
+/// alone; one naming a build the project doesn't have is
+/// `addresses-build-unknown`.
 pub fn entries(here: &Here<'_>, base: Option<&Base>) -> Vec<Diagnostic> {
     let mut out = Vec::new();
     let declared = here.index.declared_permalinks();
-    for (table, map) in [("moved", &here.file.moved), ("retired", &here.file.retired)] {
+    let model = here.index.model();
+    let mut check = |here: &Here<'_>, table: Table<'_>, map: &BTreeMap<String, Entry>| {
         for (key, entry) in map {
             let at = Location::new(ADDRESSES_FILE_ID, entry.span);
             if let Some(found) = whether_kept(here, base, &declared, table, key, at) {
                 out.push(found);
                 continue;
             }
-            if table == "moved" {
+            if table.name != "retired" {
                 out.extend(not_a_page(here, base, &declared, key, &entry.value, at));
-                out.extend(chain(here, key, &entry.value, at));
+                out.extend(chain(here, table, key, &entry.value, at));
                 out.extend(anchor_collision(here, key, &entry.value, at));
             }
         }
+    };
+    let real = here.file;
+    check(
+        here,
+        Table {
+            name: "moved",
+            build: None,
+            real,
+        },
+        &real.moved,
+    );
+    let mut unknown = Vec::new();
+    for (build, table) in &real.builds {
+        if !model.builds.iter().any(|b| b.declared_name() == build) {
+            unknown.push((build, table.span));
+            continue;
+        }
+        let view = real.in_build(build);
+        let builds: Vec<_> = here
+            .builds
+            .iter()
+            .filter(|b| super::declared_name(model, &b.build) == build)
+            .cloned()
+            .collect();
+        let in_build = Here {
+            file: view.as_ref(),
+            builds: &builds,
+            ..*here
+        };
+        let name = format!("moved.{build}");
+        check(
+            &in_build,
+            Table {
+                name: &name,
+                build: Some(build),
+                real,
+            },
+            &table.entries,
+        );
+    }
+    check(
+        here,
+        Table {
+            name: "retired",
+            build: None,
+            real,
+        },
+        &real.retired,
+    );
+    for (build, span) in unknown {
+        let mut names: Vec<String> = Vec::new();
+        for b in &model.builds {
+            let name = format!("`{}`", b.declared_name());
+            if !names.contains(&name) {
+                names.push(name);
+            }
+        }
+        let issue = Issue::new(
+            diagnostics::ADDRESSES_BUILD_UNKNOWN,
+            Location::new(ADDRESSES_FILE_ID, span),
+        )
+        .with_arg("build", build.clone())
+        .with_arg("builds", listed(&names));
+        out.push(Diagnostic::from_issue(&issue));
     }
     out.extend(soft_404s(here));
     out
+}
+
+/// The table an entry is in: its name, as a message gives it, the build
+/// whose table it is, and the file as written, which a fix edits.
+#[derive(Clone, Copy)]
+struct Table<'a> {
+    /// `moved`, `retired`, or `moved.<build>`.
+    name: &'a str,
+    /// The build, for a build's table.
+    build: Option<&'a str>,
+    /// The file as written.
+    real: &'a ascribe_model::AddressFile,
 }
 
 /// `addresses-file-deleted`, at `ascribe.toml`: the base had an
@@ -90,7 +171,7 @@ fn whether_kept(
     here: &Here<'_>,
     base: Option<&Base>,
     declared: &[DeclaredPermalink],
-    table: &'static str,
+    table: Table<'_>,
     key: &str,
     at: Location,
 ) -> Option<Diagnostic> {
@@ -100,10 +181,10 @@ fn whether_kept(
         let issue = Issue::new(diagnostics::ADDRESSES_ENTRY_LIVE, at)
             .with_variant("permalink")
             .with_arg("key", key.to_owned())
-            .with_arg("table", table)
+            .with_arg("table", table.name)
             .with_arg("name", name.to_owned())
             .with_arg("place", permalink.place());
-        return Some(with_removal(here, issue, key));
+        return Some(with_removal(here, table, issue, key));
     }
     let live = match parsed {
         Key::Source(path) => RelPath::parse(path).is_ok_and(|p| here.index.file(&p).is_some()),
@@ -117,8 +198,8 @@ fn whether_kept(
     if live {
         let issue = Issue::new(diagnostics::ADDRESSES_ENTRY_LIVE, at)
             .with_arg("key", key.to_owned())
-            .with_arg("table", table);
-        return Some(with_removal(here, issue, key));
+            .with_arg("table", table.name);
+        return Some(with_removal(here, table, issue, key));
     }
     // An address another source publishes now: one the key had at the
     // base, or, for an address key, the address itself.
@@ -145,20 +226,23 @@ fn whether_kept(
         return Some(Diagnostic::from_issue(&issue));
     }
     let base = base?;
-    let in_base_file = base.file.as_ref().is_some_and(|f| f.entry(key).is_some());
+    let in_base_file = base
+        .file
+        .as_ref()
+        .is_some_and(|f| f.has_key(table.build, key));
     if matches!(parsed, Key::Address(_)) || in_base_file || !had.is_empty() {
         return None;
     }
     let issue = Issue::new(diagnostics::ADDRESSES_ENTRY_UNPUBLISHED, at)
         .with_arg("key", key.to_owned())
-        .with_arg("table", table);
-    Some(with_removal(here, issue, key))
+        .with_arg("table", table.name);
+    Some(with_removal(here, table, issue, key))
 }
 
 /// `issue`, with the safe fix that removes the entry for `key`.
-fn with_removal(here: &Here<'_>, mut issue: Issue, key: &str) -> Diagnostic {
-    let mut after = here.file.clone();
-    after.remove(key);
+fn with_removal(here: &Here<'_>, table: Table<'_>, mut issue: Issue, key: &str) -> Diagnostic {
+    let mut after = table.real.clone();
+    after.remove_in(table.build, key);
     if let Some(fix) = here.fix("Remove the entry".to_owned(), &after, true) {
         issue = issue.with_fix(fix);
     }
@@ -275,31 +359,58 @@ fn not_a_page(
 /// `addresses-chain` for `key`, forwarded to `value`, when `value` is
 /// another entry's key, or a heading on a page that's one; with the safe
 /// fix that forwards it to where the chain ends, or retires it for the
-/// reason the chain ends at. A cycle has no fix.
-fn chain(here: &Here<'_>, key: &str, value: &str, at: Location) -> Option<Diagnostic> {
+/// reason the chain ends at. A cycle has no fix, and nor has an entry of a
+/// build's table whose chain ends at a retired entry: `[retired]` is every
+/// build's.
+fn chain(
+    here: &Here<'_>,
+    table: Table<'_>,
+    key: &str,
+    value: &str,
+    at: Location,
+) -> Option<Diagnostic> {
     let file = here.file;
     let next = |value: &str| file.step(value);
     let first = next(value)?;
+    // An entry of a build's table leading straight to a retired entry is
+    // how a build retires its own address (`AddressFile::record_retired`).
+    if table.build.is_some() && file.retired.contains_key(value) {
+        return None;
+    }
     let issue = Issue::new(diagnostics::ADDRESSES_CHAIN, at)
         .with_arg("key", key.to_owned())
         .with_arg("value", value.to_owned());
     let mut seen: HashSet<String> = HashSet::from([key.to_owned()]);
     let mut current = value.to_owned();
-    let mut after = file.clone();
+    let mut after = table.real.clone();
+    let mut fixable = true;
     let end = loop {
         if !seen.insert(current.clone()) {
             break None;
         }
         match next(&current) {
             Some(Step::Moved(to)) => current = to,
-            Some(Step::Retired(reason)) => {
-                after.record_retired(key, &reason);
-                break Some(());
-            }
+            Some(Step::Retired(reason)) => match table.build {
+                Some(_) => {
+                    fixable = false;
+                    break Some(());
+                }
+                None => {
+                    after.record_retired(key, &reason);
+                    break Some(());
+                }
+            },
             None => {
-                after
-                    .moved
-                    .insert(key.to_owned(), Entry::new(current.clone()));
+                match table.build {
+                    Some(build) => {
+                        after.record_move_in(build, key, &current);
+                    }
+                    None => {
+                        after
+                            .moved
+                            .insert(key.to_owned(), Entry::new(current.clone()));
+                    }
+                }
                 break Some(());
             }
         }
@@ -309,7 +420,7 @@ fn chain(here: &Here<'_>, key: &str, value: &str, at: Location) -> Option<Diagno
         (Step::Retired(_), _) => issue.with_variant("retired"),
         (Step::Moved(to), _) => issue.with_arg("next", to.clone()),
     };
-    let issue = match end.and_then(|()| {
+    let issue = match end.filter(|()| fixable).and_then(|()| {
         here.fix(
             "Forward it to where the chain ends".to_owned(),
             &after,
@@ -364,10 +475,12 @@ fn anchor_collision(here: &Here<'_>, key: &str, value: &str, at: Location) -> Op
 }
 
 /// `addresses-soft-404` for each index page that [`SOFT_404`] or more
-/// `[moved]` entries forward to, at the first of them.
+/// `[moved]` entries forward to, a build's table's with them, at the first
+/// of them.
 fn soft_404s(here: &Here<'_>) -> Vec<Diagnostic> {
     let mut to: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
-    for entry in here.file.moved.values() {
+    let builds = here.file.builds.values().flat_map(|t| t.entries.values());
+    for entry in here.file.moved.values().chain(builds) {
         let value = entry.value.as_str();
         if value == "index.md" || value.ends_with("/index.md") {
             to.entry(value).or_default().push(entry);

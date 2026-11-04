@@ -1210,6 +1210,12 @@ fn retire_records_the_lines_addresses_in_the_addresses_file_and_the_build_redire
         "docs/old.md",
         "---\ntitle: Old\navailable: prod (ga 0.9, removed 1.1)\n---\n\nGone in 1.1.\n",
     );
+    // A build that never published the line (#1251).
+    write(
+        dir.path(),
+        "ascribe.toml",
+        &format!("{RETIRING}\n[builds.cloud]\nvariants = {{ deployment = \"cloud\" }}\n"),
+    );
     let init = ascribe(dir.path(), &["addresses", "init"]);
     assert_eq!(code_of(&init), 0, "{}", stderr(&init));
     git(dir.path(), &["add", "-A"]);
@@ -1228,7 +1234,9 @@ fn retire_records_the_lines_addresses_in_the_addresses_file_and_the_build_redire
     );
     let file = read(dir.path(), "ascribe.addresses");
     assert!(
-        file.contains("[moved]\n\"/1.0/both/\" = \"both.md\"\n\"/1.0/prod/\" = \"prod.md\"\n"),
+        file.contains(
+            "[moved]\n\n[moved.site]\n\"/1.0/both/\" = \"both.md\"\n\"/1.0/prod/\" = \"prod.md\"\n"
+        ),
         "{file}"
     );
     assert!(!file.contains("old"), "{file}");
@@ -1243,6 +1251,25 @@ fn retire_records_the_lines_addresses_in_the_addresses_file_and_the_build_redire
     let listed = stdout(&list);
     assert!(listed.contains("/1.0/both/ -> /both/ (301"), "{listed}");
     assert!(listed.contains("/1.0/prod/ -> /prod/ (301"), "{listed}");
+    // Only the build whose line published them redirects them.
+    let cloud = ascribe(dir.path(), &["addresses", "list", "--build", "cloud"]);
+    assert_eq!(code_of(&cloud), 0, "{}", stderr(&cloud));
+    assert!(!stdout(&cloud).contains("/1.0/"), "{}", stdout(&cloud));
+    // A build's entry that leads to a retired page is retired in that build
+    // alone.
+    write(
+        dir.path(),
+        "ascribe.addresses",
+        "version = 1\n\n[moved]\n\n[moved.site]\n\"/1.0/prod/\" = \"gone.md\"\n\n[retired]\n\"gone.md\" = \"Removed.\"\n",
+    );
+    let site = ascribe(dir.path(), &["addresses", "list", "--build", "site"]);
+    assert!(
+        stdout(&site).contains("/1.0/prod/ retired (/1.0/prod/): Removed."),
+        "{}",
+        stdout(&site)
+    );
+    let cloud = ascribe(dir.path(), &["addresses", "list", "--build", "cloud"]);
+    assert!(!stdout(&cloud).contains("/1.0/"), "{}", stdout(&cloud));
 }
 
 #[test]

@@ -562,3 +562,111 @@ fn many_addresses_forwarded_to_an_index_are_a_soft_404() {
         )]
     );
 }
+
+#[test]
+fn a_build_s_table_accounts_for_that_build_s_addresses_alone() {
+    let base = [("setup.md", PAGE)];
+    let now = [("install.md", PAGE)];
+    // Every build that published the page has its table.
+    assert!(
+        lost(
+            &base,
+            &now,
+            "[moved.cloud]\n\"setup.md\" = \"install.md\"\n[moved.self-managed]\n\"setup.md\" = \"install.md\"\n"
+        )
+        .is_empty()
+    );
+    // One build's table leaves the other's addresses lost.
+    let found = lost(
+        &base,
+        &now,
+        "[moved.cloud]\n\"setup.md\" = \"install.md\"\n",
+    );
+    assert_eq!(
+        messages(&found),
+        [(
+            diagnostics::ADDRESS_LOST.as_str(),
+            Severity::Warning,
+            "setup.md was published at /docs/setup and /docs/setup.md, and nothing publishes them now in the build `self-managed`"
+        )]
+    );
+}
+
+#[test]
+fn a_build_s_table_naming_no_build_is_an_error() {
+    let (found, _) = checked(
+        &[("install.md", PAGE)],
+        &[("install.md", PAGE)],
+        &[],
+        "[moved.site]\n\"/3.4/install\" = \"install.md\"\n",
+    );
+    assert_eq!(
+        messages(&found),
+        [(
+            "addresses-build-unknown",
+            Severity::Error,
+            "`[moved.site]` names a build ascribe.toml doesn't declare, so no build writes its redirects; the builds are `cloud` and `self-managed`"
+        )]
+    );
+}
+
+#[test]
+fn a_build_s_entry_is_checked_against_that_build_and_fixed_in_its_table() {
+    let (found, text) = checked(
+        &[("a.md", PAGE), ("b.md", PAGE), ("c.md", PAGE)],
+        &[("c.md", PAGE)],
+        &[],
+        "[moved]\n\"b.md\" = \"c.md\"\n[moved.cloud]\n\"a.md\" = \"b.md\"\n",
+    );
+    assert!(found.iter().any(|d| d.slug.as_str() == "addresses-chain"));
+    let chain = found
+        .iter()
+        .find(|d| d.slug.as_str() == "addresses-chain")
+        .expect("a chain");
+    let after = fixed(&text, chain, "Forward it to where");
+    assert!(
+        after.contains("[moved.cloud]\n\"a.md\" = \"c.md\"\n"),
+        "{after}"
+    );
+}
+
+#[test]
+fn a_build_s_entry_the_base_s_file_has_is_kept() {
+    let (found, _) = checked(
+        &[("index.md", PAGE)],
+        &[("index.md", PAGE)],
+        &[],
+        "[moved.cloud]\n\"keys.md\" = \"index.md\"\n",
+    );
+    // Without it in the base's file, the base never published `keys.md`.
+    assert_eq!(slugs(&found), ["addresses-entry-unpublished"]);
+    let now = project(&[("index.md", PAGE)]);
+    let builds = every_build(&now);
+    let text = file("[moved.cloud]\n\"keys.md\" = \"index.md\"\n").to_toml();
+    let here_file = AddressFile::parse(&text, FileId::new(1)).expect("a valid file");
+    let here = Here {
+        file: &here_file,
+        text: &text,
+        index: &now,
+        builds: &builds,
+    };
+    let mut base = Base::of(&project(&[("index.md", PAGE)]));
+    base.file = Some(here_file.clone());
+    assert!(entries(&here, Some(&base)).is_empty());
+}
+
+#[test]
+fn a_build_s_entry_leading_to_a_retired_page_retires_it_in_that_build() {
+    let base = [("setup.md", PAGE), ("index.md", PAGE)];
+    let now = [("index.md", PAGE)];
+    let text = "[moved.cloud]\n\"setup.md\" = \"gone.md\"\n[moved.self-managed]\n\"setup.md\" = \"gone.md\"\n[retired]\n\"gone.md\" = \"Removed.\"\n";
+    // Accounted for in each build, and not a chain to flatten.
+    let (found, _) = checked(&base, &now, &[], text);
+    assert!(
+        !found
+            .iter()
+            .any(|d| matches!(d.slug.as_str(), "address-lost" | "addresses-chain")),
+        "{:?}",
+        messages(&found)
+    );
+}

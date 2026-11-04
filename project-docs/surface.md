@@ -118,7 +118,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `crates/ascribe-core/data/diagnostics.toml`.
 
-276 in all. By severity: 62 advice, 183 error, 31 warning. By level: 246 file, 30 page. By kind of next step: 57 choose, 23 fix, 12 outside, 13 review, 171 write.
+277 in all. By severity: 62 advice, 184 error, 31 warning. By level: 247 file, 30 page. By kind of next step: 58 choose, 23 fix, 12 outside, 13 review, 171 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -398,6 +398,7 @@ For people and agents. Read from `crates/ascribe-core/data/diagnostics.toml`.
 | `ASC286` | `template-placeholder-published` | error | write | this page publishes with its template's placeholder `{placeholder}`; write what it asks for in its place, or mark the page `draft: true` until it's ready |
 | `ASC287` | `github-alert` | warning | fix | `{marker}` is GitHub's alert syntax, which Ascribe shows as a plain block quote that starts with `{marker}`; write the quote as `{note}` |
 | `ASC288` | `phrase-text-written` | advice | review | `{text}` is the value of the phrase `{key}`; write `{key}`, so the page changes with the value |
+| `ASC289` | `addresses-build-unknown` | error | choose | `[moved.{build}]` names a build ascribe.toml doesn't declare, so no build writes its redirects; the builds are {builds} |
 
 ## The VS Code extension
 
