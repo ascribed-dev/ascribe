@@ -63,8 +63,8 @@ pub fn dialect(document: &Value) -> Dialect {
 
 /// A YAML document as JSON: each key as text, as a spec's status codes are
 /// meant (`200:` is the key `"200"`), and a tag left off its value.
-pub(crate) fn json_of(yaml: &serde_yaml_ng::Value) -> Value {
-    use serde_yaml_ng::Value as Yaml;
+pub(crate) fn json_of(yaml: &ascribe_core::yaml::Value) -> Value {
+    use ascribe_core::yaml::Value as Yaml;
     match yaml {
         Yaml::Null => Value::Null,
         Yaml::Bool(b) => Value::Bool(*b),
@@ -86,18 +86,16 @@ pub(crate) fn json_of(yaml: &serde_yaml_ng::Value) -> Value {
                 .filter_map(|(k, v)| Some((key_of(k)?, json_of(v))))
                 .collect(),
         ),
-        Yaml::Tagged(tagged) => json_of(&tagged.value),
     }
 }
 
-fn key_of(key: &serde_yaml_ng::Value) -> Option<String> {
-    use serde_yaml_ng::Value as Yaml;
+fn key_of(key: &ascribe_core::yaml::Value) -> Option<String> {
+    use ascribe_core::yaml::Value as Yaml;
     match key {
         Yaml::String(s) => Some(s.clone()),
         Yaml::Number(n) => Some(n.to_string()),
         Yaml::Bool(b) => Some(b.to_string()),
         Yaml::Null => Some("null".to_owned()),
-        Yaml::Tagged(tagged) => key_of(&tagged.value),
         Yaml::Sequence(_) | Yaml::Mapping(_) => None,
     }
 }

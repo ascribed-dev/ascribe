@@ -70,7 +70,7 @@ pub struct FileIndex {
     /// The frontmatter, when the file has one that is valid YAML. A file
     /// whose frontmatter doesn't parse has `None`; the file-level checks
     /// report it.
-    pub frontmatter: Option<serde_yaml_ng::Value>,
+    pub frontmatter: Option<ascribe_core::yaml::Value>,
     /// The file's title: its frontmatter `title`, when that is a string.
     /// A link with no text takes it (SPEC §5.2).
     pub title: Option<String>,
@@ -122,7 +122,7 @@ impl FileIndex {
         self.frontmatter
             .as_ref()
             .and_then(|f| f.get(crate::DRAFT))
-            .and_then(serde_yaml_ng::Value::as_bool)
+            .and_then(ascribe_core::yaml::Value::as_bool)
             .unwrap_or(false)
     }
 
@@ -299,9 +299,9 @@ pub(crate) fn index_parsed(
     let frontmatter = document.frontmatter.as_ref().and_then(|fm| {
         let yaml = text.get(fm.content.range())?;
         // An empty frontmatter block reads as no keys.
-        match serde_yaml_ng::from_str::<serde_yaml_ng::Value>(yaml) {
-            Ok(serde_yaml_ng::Value::Null) => {
-                Some(serde_yaml_ng::Value::Mapping(Default::default()))
+        match ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(yaml) {
+            Ok(ascribe_core::yaml::Value::Null) => {
+                Some(ascribe_core::yaml::Value::Mapping(Default::default()))
             }
             Ok(value) => Some(value),
             Err(_) => None,

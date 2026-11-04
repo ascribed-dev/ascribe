@@ -122,7 +122,7 @@ pub fn resolve(
                 // A value parsed from YAML always writes back as YAML; were it
                 // not to, the page is still worth showing without its
                 // frontmatter.
-                let yaml = serde_yaml_ng::to_string(value).unwrap_or_default();
+                let yaml = ascribe_core::yaml::to_string(value).unwrap_or_default();
                 answer.text.push_str("---\n");
                 answer.text.push_str(&yaml);
                 if !yaml.ends_with('\n') {

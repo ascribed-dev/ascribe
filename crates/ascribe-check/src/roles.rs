@@ -5,10 +5,10 @@
 //! The checks report from these, and the language server's This page rows
 //! say the same from them, so the two can't disagree.
 
+use ascribe_core::yaml::Value;
 use ascribe_core::{Date, diagnostics};
 use ascribe_model::{Checks, ContentModel, Field};
 use ascribe_resolve::llms;
-use serde_yaml_ng::Value;
 
 /// Whether `page-description-missing` reports a page whose description
 /// field is `field` and whose frontmatter is `value`.

@@ -1,8 +1,8 @@
 //! Field types and attribute types: parsing the short
 //! form, reading the table form, and building fields and attribute schemas.
 
+use ascribe_core::yaml::Value;
 use ascribe_core::{AttributeSchema, AttributeType, DefaultValue, SetMember, Span, diagnostics};
-use serde_yaml_ng::Value;
 use toml::de::{DeTable, DeValue};
 
 use crate::inline::InlineMarkup;

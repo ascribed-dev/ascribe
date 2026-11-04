@@ -606,7 +606,7 @@ fn names_no_type(text: &str) -> bool {
     let Some(body) = frontmatter_text(text) else {
         return true;
     };
-    match serde_yaml_ng::from_str::<serde_yaml_ng::Value>(body) {
+    match ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(body) {
         Ok(value) => value.get(TYPE_KEY).is_none(),
         Err(_) => false,
     }
@@ -951,8 +951,8 @@ fn type_table(template: &Template, added: &Added, defaults: &Defaults, named: bo
 /// The names of the fields in a page's frontmatter, in order, but for
 /// `type`, which names the page's type rather than declaring a field.
 fn frontmatter_fields(page: &str) -> Vec<String> {
-    let Some(Ok(serde_yaml_ng::Value::Mapping(map))) =
-        frontmatter_text(page).map(serde_yaml_ng::from_str::<serde_yaml_ng::Value>)
+    let Some(Ok(ascribe_core::yaml::Value::Mapping(map))) =
+        frontmatter_text(page).map(ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>)
     else {
         return Vec::new();
     };

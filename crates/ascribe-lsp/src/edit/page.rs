@@ -157,7 +157,7 @@ fn find_row(blocks: &[Block], span: Span) -> Option<&ascribe_syntax::TableRow> {
 /// A scalar as YAML writes it: plain when it reads back as the same string,
 /// else double-quoted.
 fn yaml_scalar(text: &str) -> String {
-    let plain = serde_yaml_ng::from_str::<serde_yaml_ng::Value>(text)
+    let plain = ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(text)
         .ok()
         .is_some_and(|v| v.as_str() == Some(text));
     if plain && !text.contains(['#', '\n']) {
@@ -405,8 +405,8 @@ pub(crate) fn set_variant(page: &Page<'_>) -> Outcome {
         // A flow mapping, `variant: {pm: npm}`: written again as one, with
         // the dimension set.
         let text = page.text(key.inline);
-        let Ok(serde_yaml_ng::Value::Mapping(mut map)) =
-            serde_yaml_ng::from_str::<serde_yaml_ng::Value>(text)
+        let Ok(ascribe_core::yaml::Value::Mapping(mut map)) =
+            ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(text)
         else {
             return Err("The page's `variant` isn't a mapping; change it by hand.".to_owned());
         };

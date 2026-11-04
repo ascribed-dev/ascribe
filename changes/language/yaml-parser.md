@@ -1,0 +1,1 @@
+- **Frontmatter is read with a new YAML parser, `serde-saphyr`.** A YAML error's message changes and points at the problem itself, and the site output's frontmatter quotes strings with double quotes. See [frontmatter](docs/content/writing/frontmatter.md).

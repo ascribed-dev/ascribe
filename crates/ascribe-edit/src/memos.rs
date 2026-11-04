@@ -46,8 +46,8 @@ pub fn yaml(value: &str) -> String {
             .all(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '.' | '/' | '#'))
         && !value.starts_with(['-', '#', '.'])
         && matches!(
-            serde_yaml_ng::from_str::<serde_yaml_ng::Value>(value),
-            Ok(serde_yaml_ng::Value::String(read)) if read == value
+            ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(value),
+            Ok(ascribe_core::yaml::Value::String(read)) if read == value
         );
     if plain {
         value.to_owned()

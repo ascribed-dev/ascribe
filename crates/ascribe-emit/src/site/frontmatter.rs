@@ -47,9 +47,9 @@
 //! source: guides/install.md
 //! ```
 
+use ascribe_core::yaml::{Mapping, Value};
 use ascribe_model::{Listing, Segment};
 use ascribe_resolve::{DRAFT, NAV_LABEL, REPLACES, ResolvedPage};
-use serde_yaml_ng::{Mapping, Value};
 
 use super::blocks::availability_target;
 use super::element::escape;
@@ -98,10 +98,11 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
         Value::String("source".to_owned()),
         Value::String(page.path.to_string()),
     );
-    let yaml = serde_yaml_ng::to_string(&Value::Mapping(map)).map_err(|e| EmitError::Render {
-        page: page.path.to_string(),
-        message: format!("can't write the frontmatter: {e}"),
-    })?;
+    let yaml =
+        ascribe_core::yaml::to_string(&Value::Mapping(map)).map_err(|e| EmitError::Render {
+            page: page.path.to_string(),
+            message: format!("can't write the frontmatter: {e}"),
+        })?;
     Ok(format!("---\n{yaml}---\n\n"))
 }
 

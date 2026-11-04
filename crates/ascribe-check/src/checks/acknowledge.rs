@@ -6,9 +6,9 @@
 
 use ascribe_core::diagnostics::ACKNOWLEDGEABLE;
 use ascribe_core::intended::{NameProblem, PLACEHOLDER_REASON, check_named, is_placeholder};
+use ascribe_core::yaml::Value;
 use ascribe_core::{Issue, Location, Place, Span, diagnostics};
 use ascribe_syntax::{DirectiveLine, PrimaryValue};
-use serde_yaml_ng::Value;
 
 use super::Ctx;
 use super::text::suggest;

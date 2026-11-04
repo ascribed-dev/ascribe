@@ -18,7 +18,6 @@ ascribe-workspace.workspace = true
 ascribe-emit.workspace = true
 lsp-types = "0.97"
 serde_json.workspace = true
-serde_yaml_ng.workspace = true
 thiserror.workspace = true
 toml_edit.workspace = true
 

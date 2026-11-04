@@ -17,7 +17,7 @@ available:
   states:
   - preview
   versions:
-  - '3.3'
+  - "3.3"
   text: self-managed (preview, 3.3+)
 source: install-agent.md
 ---

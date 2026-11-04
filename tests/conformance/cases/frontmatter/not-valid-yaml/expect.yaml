@@ -4,4 +4,4 @@ spec: ["2.1", "8.2"]
 tags: [check]
 
 diagnostics:
-  - {slug: frontmatter-syntax, line: 3}
+  - {slug: frontmatter-syntax, line: 2}

@@ -265,7 +265,7 @@ fn page_level_availability_is_a_list_of_targets_in_the_frontmatter() {
     assert_eq!(
         out,
         "---\ntitle: Test\navailable:\n- target: cloud\n  dimension: deployment\n  states:\n  - ga\n  text: Quill Cloud (GA)\n\
-         - target: self-managed\n  dimension: deployment\n  states:\n  - preview\n  - ga\n  versions:\n  - '3.3'\n  - '3.5'\n  text: Self-managed (preview 3.3, GA 3.5)\n\
+         - target: self-managed\n  dimension: deployment\n  states:\n  - preview\n  - ga\n  versions:\n  - \"3.3\"\n  - \"3.5\"\n  text: Self-managed (preview 3.3, GA 3.5)\n\
          variant:\n  pm:\n  - npm\n  - yarn\nsource: index.md\n---\n\nBody.\n"
     );
     // No element is written for it: the layout renders that.
@@ -538,7 +538,7 @@ fn a_planned_version_says_so_in_every_output() {
 
     let out = site(&project, "site", "index.md");
     assert!(
-        out.contains("- target: self-managed\n  dimension: deployment\n  states:\n  - ga\n  versions:\n  - '3.6'\n  planned: true\n  text: Self-managed (planned, 3.6)\n"),
+        out.contains("- target: self-managed\n  dimension: deployment\n  states:\n  - ga\n  versions:\n  - \"3.6\"\n  planned: true\n  text: Self-managed (planned, 3.6)\n"),
         "{out}"
     );
     assert!(

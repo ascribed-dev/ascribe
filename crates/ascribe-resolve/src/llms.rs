@@ -31,9 +31,9 @@
 //! same ones, so what is reported is what is published.
 
 use ascribe_core::RelPath;
+use ascribe_core::yaml::Value;
 use ascribe_model::{AvailabilityMode, Build, ContentModel, Field, FieldRole};
 use ascribe_syntax::{BlockKind, ParseOptions};
-use serde_yaml_ng::Value;
 
 use std::collections::BTreeMap;
 
@@ -579,7 +579,7 @@ pub fn description_text(model: &ContentModel, raw: &str) -> Option<String> {
 /// content type marks `role = "description"`.
 pub fn description_field<'m>(
     model: &'m ContentModel,
-    frontmatter: Option<&serde_yaml_ng::Value>,
+    frontmatter: Option<&ascribe_core::yaml::Value>,
 ) -> Option<&'m Field> {
     let ty = model.type_of(frontmatter).found()?;
     ty.frontmatter.field_with_role(FieldRole::Description)

@@ -511,7 +511,7 @@ fn read_template(
     if let Some(fm) = &doc.frontmatter {
         let content = text.get(fm.content.range()).unwrap_or_default();
         if !content.trim().is_empty()
-            && let Err(e) = serde_yaml_ng::from_str::<serde_yaml_ng::Value>(content)
+            && let Err(e) = ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(content)
         {
             let at = e
                 .location()

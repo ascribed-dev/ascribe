@@ -1,7 +1,7 @@
 //! Helpers over the spanned TOML tree.
 
 use ascribe_core::Span;
-use serde_yaml_ng::Value;
+use ascribe_core::yaml::Value;
 use toml::Spanned;
 use toml::de::{DeTable, DeValue};
 

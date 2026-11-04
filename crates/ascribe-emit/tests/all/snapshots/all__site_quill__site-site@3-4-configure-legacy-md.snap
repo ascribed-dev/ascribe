@@ -13,8 +13,8 @@ available:
   - ga
   - removed
   versions:
-  - '3.4'
-  - '3.5'
+  - "3.4"
+  - "3.5"
   text: self-managed (GA 3.4, removed 3.5)
 source: configure-legacy.md
 ---

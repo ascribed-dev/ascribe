@@ -6,10 +6,10 @@
 //! can't set the level of.
 
 use ascribe_core::info_string::{self, InfoString, NearMissProblem};
+use ascribe_core::yaml::Value;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{FieldRole, FrontmatterSchema};
 use ascribe_syntax::{Block, BlockKind, CodeBlock};
-use serde_yaml_ng::Value;
 
 use super::Ctx;
 use crate::roles;

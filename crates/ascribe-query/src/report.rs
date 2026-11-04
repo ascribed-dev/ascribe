@@ -604,7 +604,7 @@ fn inventory(project: &Project, found: &[Diagnostic]) -> Inventory {
             .and_then(|t| t.frontmatter.field_with_role(FieldRole::Owner))
             .and_then(|field| file.frontmatter.as_ref()?.get(field.name.as_str()))
             .and_then(|value| match value {
-                serde_yaml_ng::Value::String(s) if !s.trim().is_empty() => {
+                ascribe_core::yaml::Value::String(s) if !s.trim().is_empty() => {
                     Some(s.trim().to_owned())
                 }
                 _ => None,
@@ -876,7 +876,7 @@ fn page_mark(
                     m.iter()
                         .filter_map(|(k, v)| {
                             let values = match v {
-                                serde_yaml_ng::Value::Sequence(list) => {
+                                ascribe_core::yaml::Value::Sequence(list) => {
                                     list.iter().filter_map(scalar).collect::<Vec<_>>().join("|")
                                 }
                                 v => scalar(v)?,
@@ -893,11 +893,11 @@ fn page_mark(
 }
 
 /// A YAML scalar as its text.
-fn scalar(value: &serde_yaml_ng::Value) -> Option<String> {
+fn scalar(value: &ascribe_core::yaml::Value) -> Option<String> {
     match value {
-        serde_yaml_ng::Value::String(s) => Some(s.clone()),
-        serde_yaml_ng::Value::Number(n) => Some(n.to_string()),
-        serde_yaml_ng::Value::Bool(b) => Some(b.to_string()),
+        ascribe_core::yaml::Value::String(s) => Some(s.clone()),
+        ascribe_core::yaml::Value::Number(n) => Some(n.to_string()),
+        ascribe_core::yaml::Value::Bool(b) => Some(b.to_string()),
         _ => None,
     }
 }

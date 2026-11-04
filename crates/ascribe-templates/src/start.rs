@@ -378,8 +378,8 @@ pub fn empty_fields(page_type: &ContentType) -> impl Iterator<Item = &Field> {
 /// A type's name as the value of `type`: plain, as a page's is written,
 /// unless YAML would read it as something other than that string.
 fn type_value(name: &str) -> String {
-    match serde_yaml_ng::from_str::<serde_yaml_ng::Value>(name) {
-        Ok(serde_yaml_ng::Value::String(s)) if s == name => name.to_owned(),
+    match ascribe_core::yaml::from_str::<ascribe_core::yaml::Value>(name) {
+        Ok(ascribe_core::yaml::Value::String(s)) if s == name => name.to_owned(),
         _ => yaml_string(name),
     }
 }

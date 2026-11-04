@@ -37,11 +37,11 @@
 //!
 //! [`FileSystem`]: ascribe_resolve::FileSystem
 
+use ascribe_core::yaml::Value;
 use ascribe_core::{DiagnosticSlug, Issue, Location, Span, diagnostics};
 use ascribe_model::{ContentModel, TYPE_KEY};
 use ascribe_resolve::DRAFT;
 use ascribe_syntax::{Block, BlockKind, Bound, Heading, Inline, InlineKind, ParseOptions, parse};
-use serde_yaml_ng::Value;
 
 use super::Ctx;
 use crate::yaml::YamlIndex;
@@ -76,7 +76,7 @@ impl Template {
         let mut template = Template::default();
         if let Some(fm) = &doc.frontmatter
             && let Some(content) = text.get(fm.content.range())
-            && let Ok(Value::Mapping(map)) = serde_yaml_ng::from_str::<Value>(content)
+            && let Ok(Value::Mapping(map)) = ascribe_core::yaml::from_str::<Value>(content)
         {
             for (key, value) in map {
                 let filled = match &value {
@@ -490,7 +490,7 @@ pub(crate) fn places(template: &Template, text: &str, model: &ContentModel) -> V
     let mut out = Vec::new();
     if let Some(fm) = &doc.frontmatter
         && let Some(content) = text.get(fm.content.range())
-        && let Ok(value) = serde_yaml_ng::from_str::<Value>(content)
+        && let Ok(value) = ascribe_core::yaml::from_str::<Value>(content)
     {
         let index = YamlIndex::build(content, fm.content.start());
         for (field, expected) in &template.fields {

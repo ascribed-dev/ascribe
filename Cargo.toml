@@ -62,6 +62,8 @@ clap = { version = "4", features = ["derive"] }
 # Upstream comrak, only for the CommonMark suite (tests/commonmark), which
 # compares the fork against it. The binary renders with the fork.
 comrak = { version = "0.55", default-features = false }
+# The order of a YAML mapping's keys, in `ascribe_core::yaml`.
+indexmap = "2"
 insta = { version = "1", features = ["yaml"] }
 proptest = "1"
 # JSON Schemas of the JSON the commands and the language server write. Only
@@ -69,7 +71,10 @@ proptest = "1"
 schemars = { version = "1", default-features = false, features = ["derive", "std"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml_ng = "0.10"
+# YAML: frontmatter, specs, and the other YAML files a project holds, read
+# and written through `ascribe_core::yaml`, which sets its options. The
+# default `comments` feature isn't used.
+serde-saphyr = { version = "2.1", default-features = false, features = ["deserialize", "serialize"] }
 sha2 = "0.11"
 thiserror = "2"
 toml = "1.1"

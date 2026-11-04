@@ -8,6 +8,7 @@
 //! missing field, is reported at the file's first line (SPEC §8.1).
 
 use ascribe_core::Router;
+use ascribe_core::yaml::Value;
 use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{
     FieldRole, FrontmatterSchema, Listing, ListingLevel, Purpose, TYPE_KEY, TypeMatch,
@@ -18,7 +19,6 @@ use ascribe_resolve::{
     reference_target,
 };
 use ascribe_syntax::{Block, BlockKind, Frontmatter, Inline, InlineKind, ParseOptions};
-use serde_yaml_ng::Value;
 
 use super::Ctx;
 use super::text::{quoted_and, suggest};
@@ -40,7 +40,7 @@ impl Ctx<'_> {
                 let value = if content.trim().is_empty() {
                     Value::Null
                 } else {
-                    match serde_yaml_ng::from_str::<Value>(content) {
+                    match ascribe_core::yaml::from_str::<Value>(content) {
                         Ok(v) => v,
                         Err(e) => {
                             // SPEC §8.2: at the YAML
@@ -139,14 +139,14 @@ impl Ctx<'_> {
         // A `title` that's there, but not a string, is another problem.
         if let Some(fm) = frontmatter {
             let content = self.file.text.get(fm.content.range()).unwrap_or_default();
-            match serde_yaml_ng::from_str::<Value>(content) {
+            match ascribe_core::yaml::from_str::<Value>(content) {
                 _ if content.trim().is_empty() => {}
                 Ok(Value::Null) => {}
                 Ok(Value::Mapping(map)) if !map.contains_key(TITLE) => {}
                 _ => return,
             }
         }
-        let Ok(value) = serde_yaml_ng::to_string(title) else {
+        let Ok(value) = ascribe_core::yaml::to_string(title) else {
             return;
         };
         let line = format!("{TITLE}: {value}");
@@ -804,7 +804,6 @@ fn describe(v: &Value) -> String {
         Value::String(_) => "a string".into(),
         Value::Sequence(_) => "a list".into(),
         Value::Mapping(_) => "a mapping".into(),
-        Value::Tagged(t) => describe(&t.value),
     }
 }
 
@@ -842,6 +841,6 @@ fn keeps_plain(raw: &str, span: Span, text: &str) -> bool {
         return false;
     };
     let fixed = format!("{before}{text}{after}");
-    let parsed = serde_yaml_ng::from_str::<Value>(&format!("d: {fixed}"));
+    let parsed = ascribe_core::yaml::from_str::<Value>(&format!("d: {fixed}"));
     matches!(parsed, Ok(v) if v.get("d").and_then(Value::as_str) == Some(fixed.as_str()))
 }

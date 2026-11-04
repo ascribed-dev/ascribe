@@ -12,7 +12,7 @@ available:
   states:
   - ga
   versions:
-  - '3.5'
+  - "3.5"
   text: self-managed (GA, 3.5+)
 source: configure.md
 ---
