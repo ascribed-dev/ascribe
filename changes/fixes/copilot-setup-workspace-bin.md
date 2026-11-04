@@ -1,1 +1,1 @@
-- **Fixed:** In an npm or Yarn workspace, Copilot's setup steps and MCP server now find a pinned `ascribe` in the root's `node_modules/.bin`, where it installs, as the hooks do. See [GitHub Copilot](docs/content/agents/copilot.md).
+- **Fixed:** Copilot's setup steps find `ascribe` where an npm or Yarn workspace installs it. They and the MCP server use the root's `node_modules/.bin`, as the hooks do. See [GitHub Copilot](docs/content/agents/copilot.md).
