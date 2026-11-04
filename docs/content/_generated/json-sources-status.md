@@ -1,137 +1,29 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/sources-status.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/sources-status.schema.json`]({repo}/blob/v{version}/schemas/sources-status.schema.json):
+The fields of [`schemas/sources-status.schema.json`]({repo}/blob/v{version}/schemas/sources-status.schema.json):
 
-```json
-{
-  "$defs": {
-    "CopyState": {
-      "description": "The state of a copy.",
-      "oneOf": [
-        {
-          "const": "current",
-          "description": "It's the file the lock pins, and a snippet uses it, or it's the\nsource's tested examples' config or one of their observations.",
-          "type": "string"
-        },
-        {
-          "const": "changed",
-          "description": "It isn't the file the lock pins.",
-          "type": "string"
-        },
-        {
-          "const": "missing",
-          "description": "The lock lists it, and it isn't there.",
-          "type": "string"
-        },
-        {
-          "const": "unlocked",
-          "description": "It's there, and the lock doesn't list it.",
-          "type": "string"
-        },
-        {
-          "const": "unused",
-          "description": "No snippet names it.",
-          "type": "string"
-        },
-        {
-          "const": "not_copied",
-          "description": "A snippet names it, and it hasn't been copied.",
-          "type": "string"
-        },
-        {
-          "const": "not_at_pin",
-          "description": "A snippet names it, and it isn't in the repository at the pin.",
-          "type": "string"
-        }
-      ]
-    },
-    "CopyStatus": {
-      "description": "A file of a source's copies.",
-      "properties": {
-        "path": {
-          "description": "Its path in the source.",
-          "type": "string"
-        },
-        "state": {
-          "$ref": "#/$defs/CopyState",
-          "description": "Its state."
-        }
-      },
-      "required": [
-        "path",
-        "state"
-      ],
-      "type": "object"
-    },
-    "SourceStatus": {
-      "description": "One source's pin and copies.",
-      "properties": {
-        "branch": {
-          "description": "The branch an update follows; `None` for the repository's default.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "commit": {
-          "description": "Its pin, when it has one to this repository.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "files": {
-          "description": "Each copy, and each file snippets name with none, by path.",
-          "items": {
-            "$ref": "#/$defs/CopyStatus"
-          },
-          "type": "array"
-        },
-        "git": {
-          "description": "Its repository.",
-          "type": "string"
-        },
-        "name": {
-          "description": "The source.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "git",
-        "branch",
-        "commit",
-        "files"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/sources-status.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe sources status --format json` writes: each source's pin and\nthe state of its copies, read from the files alone.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "sources": {
-      "description": "Each source in another repository, in declaration order.",
-      "items": {
-        "$ref": "#/$defs/SourceStatus"
-      },
-      "type": "array"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "sources"
-  ],
-  "title": "SourcesStatusReport",
-  "type": "object"
-}
-```
+**`SourcesStatusReport`**: What `ascribe sources status --format json` writes: each source's pin and the state of its copies, read from the files alone.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `sources` | `object[]` | yes | no | Each source in another repository, in declaration order. |
+| `sources[].name` | `string` | yes | no | The source. |
+| `sources[].git` | `string` | yes | no | Its repository. |
+| `sources[].branch` | `string` | yes | yes | The branch an update follows; `None` for the repository's default. |
+| `sources[].commit` | `string` | yes | yes | Its pin, when it has one to this repository. |
+| `sources[].files` | `object[]` | yes | no | Each copy, and each file snippets name with none, by path. |
+| `sources[].files[].path` | `string` | yes | no | Its path in the source. |
+| `sources[].files[].state` | `CopyState` | yes | no | Its state. |
+
+**`CopyState`**: The state of a copy. One of:
+
+| Value | Description |
+| --- | --- |
+| `"current"` | It's the file the lock pins, and a snippet uses it, or it's the source's tested examples' config or one of their observations. |
+| `"changed"` | It isn't the file the lock pins. |
+| `"missing"` | The lock lists it, and it isn't there. |
+| `"unlocked"` | It's there, and the lock doesn't list it. |
+| `"unused"` | No snippet names it. |
+| `"not_copied"` | A snippet names it, and it hasn't been copied. |
+| `"not_at_pin"` | A snippet names it, and it isn't in the repository at the pin. |

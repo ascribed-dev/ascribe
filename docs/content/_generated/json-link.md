@@ -1,283 +1,49 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/link.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/link.schema.json`]({repo}/blob/v{version}/schemas/link.schema.json):
+The fields of [`schemas/link.schema.json`]({repo}/blob/v{version}/schemas/link.schema.json):
 
-```json
-{
-  "$defs": {
-    "LinkKind": {
-      "description": "What a link target is.",
-      "oneOf": [
-        {
-          "const": "page",
-          "description": "A page.",
-          "type": "string"
-        },
-        {
-          "const": "heading",
-          "description": "A heading on a page.",
-          "type": "string"
-        },
-        {
-          "const": "fragment",
-          "description": "A fragment, which pages include and links can't name.",
-          "type": "string"
-        },
-        {
-          "const": "file",
-          "description": "A file that isn't a page, which a build copies: an image or a\ndownload.",
-          "type": "string"
-        },
-        {
-          "const": "external",
-          "description": "A URL with a scheme.",
-          "type": "string"
-        },
-        {
-          "const": "operation",
-          "description": "An operation of a declared API's spec: a link to the spec with a\nfragment.",
-          "type": "string"
-        },
-        {
-          "const": "missing",
-          "description": "Nothing: no file has that path.",
-          "type": "string"
-        }
-      ]
-    },
-    "LinkLine": {
-      "description": "Where a link goes in one line of a versioned build (SPEC §5.2).",
-      "properties": {
-        "build": {
-          "description": "The line's build: the declared build for the current line, and\n`<build>@<line>` for each other.",
-          "type": "string"
-        },
-        "leads_to": {
-          "description": "For a link out of the line, the line it leads to.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "line": {
-          "description": "The line, as `[releases.<target>]` writes it.",
-          "type": "string"
-        },
-        "page": {
-          "description": "The page it lands on, as a path from the content root: the target,\nor the page that takes its place in the line. `null` when no live\nline publishes the target, which is `link-page-dropped`.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "build",
-        "line",
-        "page",
-        "leads_to"
-      ],
-      "type": "object"
-    },
-    "LinkOperation": {
-      "description": "An operation of a declared API's spec (`[apis.<name>]`), as a link to it\nnames it.",
-      "properties": {
-        "address": {
-          "description": "Its address in the published reference, as the editor's build writes\nthe link; `null` when the reference has none for it: an operation\nwith no id, under an address pattern.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "api": {
-          "description": "The API's name.",
-          "type": "string"
-        },
-        "deprecated": {
-          "description": "Whether the spec marks it `deprecated`.",
-          "type": "boolean"
-        },
-        "method": {
-          "description": "Its method, in lowercase.",
-          "type": "string"
-        },
-        "operation_id": {
-          "description": "Its `operationId`; `null` for an operation with none, which a link\nnames by its method and path.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "path": {
-          "description": "Its path, as the spec writes it.",
-          "type": "string"
-        },
-        "summary": {
-          "description": "Its `summary`, when it has one.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "tag": {
-          "description": "Its first tag, when it has one.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "api",
-        "operation_id",
-        "method",
-        "path",
-        "summary",
-        "tag",
-        "deprecated",
-        "address"
-      ],
-      "type": "object"
-    },
-    "LinkSuggestion": {
-      "description": "A target a link could name instead.",
-      "properties": {
-        "href": {
-          "description": "The destination to write.",
-          "type": "string"
-        },
-        "id": {
-          "description": "The heading id, if it's a heading.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "path": {
-          "description": "The page, as a path from the content root.",
-          "type": "string"
-        },
-        "title": {
-          "description": "The page's title, or the heading's text.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "href",
-        "path",
-        "id",
-        "title"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/link.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe link <TARGET> --from <PAGE>` answers.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "closest": {
-      "description": "The closest targets that exist, best first, when it doesn't.",
-      "items": {
-        "$ref": "#/$defs/LinkSuggestion"
-      },
-      "type": "array"
-    },
-    "exists": {
-      "description": "Whether a link from that page to the target works. An external URL\ncounts as existing; it isn't checked.",
-      "type": "boolean"
-    },
-    "from": {
-      "description": "The page the link is written on, as the command was given it: a path\nfrom the folder it was run in, as `ascribe check` names a file.",
-      "type": "string"
-    },
-    "href": {
-      "description": "The destination to write on that page, when the target exists.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "id": {
-      "description": "The heading id after `#`, if any.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "kind": {
-      "$ref": "#/$defs/LinkKind",
-      "description": "What the target is."
-    },
-    "lines": {
-      "description": "Where a link to a page goes in each line of each versioned build,\nnewest first; absent when the target isn't a page or no build is\nversioned.",
-      "items": {
-        "$ref": "#/$defs/LinkLine"
-      },
-      "type": "array"
-    },
-    "operation": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/LinkOperation"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "The operation a link to a declared API's spec names, when the spec\nhas it; absent for any other target."
-    },
-    "path": {
-      "description": "The file it names, as a path from the content root; `null` for an\nexternal URL, or a file that doesn't exist.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "problem": {
-      "description": "Why it doesn't work, when it doesn't.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "target": {
-      "description": "The target, as given.",
-      "type": "string"
-    },
-    "title": {
-      "description": "The page's title, or the heading's text: what a link with no text\nshows.",
-      "type": [
-        "string",
-        "null"
-      ]
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "from",
-    "target",
-    "exists",
-    "kind",
-    "path",
-    "id",
-    "title",
-    "href",
-    "problem",
-    "closest"
-  ],
-  "title": "LinkReport",
-  "type": "object"
-}
-```
+**`LinkReport`**: What `ascribe link <TARGET> --from <PAGE>` answers.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `from` | `string` | yes | no | The page the link is written on, as the command was given it: a path from the folder it was run in, as `ascribe check` names a file. |
+| `target` | `string` | yes | no | The target, as given. |
+| `exists` | `boolean` | yes | no | Whether a link from that page to the target works. An external URL counts as existing; it isn't checked. |
+| `kind` | `LinkKind` | yes | no | What the target is. |
+| `path` | `string` | yes | yes | The file it names, as a path from the content root; `null` for an external URL, or a file that doesn't exist. |
+| `id` | `string` | yes | yes | The heading id after `#`, if any. |
+| `title` | `string` | yes | yes | The page's title, or the heading's text: what a link with no text shows. |
+| `href` | `string` | yes | yes | The destination to write on that page, when the target exists. |
+| `problem` | `string` | yes | yes | Why it doesn't work, when it doesn't. |
+| `closest` | `object[]` | yes | no | The closest targets that exist, best first, when it doesn't. |
+| `closest[].href` | `string` | yes | no | The destination to write. |
+| `closest[].path` | `string` | yes | no | The page, as a path from the content root. |
+| `closest[].id` | `string` | yes | yes | The heading id, if it's a heading. |
+| `closest[].title` | `string` | yes | yes | The page's title, or the heading's text. |
+| `lines` | `object[]` | no | no | Where a link to a page goes in each line of each versioned build, newest first; absent when the target isn't a page or no build is versioned. |
+| `lines[].build` | `string` | yes | no | The line's build: the declared build for the current line, and `<build>@<line>` for each other. |
+| `lines[].line` | `string` | yes | no | The line, as `[releases.<target>]` writes it. |
+| `lines[].page` | `string` | yes | yes | The page it lands on, as a path from the content root: the target, or the page that takes its place in the line. `null` when no live line publishes the target, which is `link-page-dropped`. |
+| `lines[].leads_to` | `string` | yes | yes | For a link out of the line, the line it leads to. |
+| `operation` | `object` | no | no | The operation a link to a declared API's spec names, when the spec has it; absent for any other target. |
+| `operation.api` | `string` | yes | no | The API's name. |
+| `operation.operation_id` | `string` | yes | yes | Its `operationId`; `null` for an operation with none, which a link names by its method and path. |
+| `operation.method` | `string` | yes | no | Its method, in lowercase. |
+| `operation.path` | `string` | yes | no | Its path, as the spec writes it. |
+| `operation.summary` | `string` | yes | yes | Its `summary`, when it has one. |
+| `operation.tag` | `string` | yes | yes | Its first tag, when it has one. |
+| `operation.deprecated` | `boolean` | yes | no | Whether the spec marks it `deprecated`. |
+| `operation.address` | `string` | yes | yes | Its address in the published reference, as the editor's build writes the link; `null` when the reference has none for it: an operation with no id, under an address pattern. |
+
+**`LinkKind`**: What a link target is. One of:
+
+| Value | Description |
+| --- | --- |
+| `"page"` | A page. |
+| `"heading"` | A heading on a page. |
+| `"fragment"` | A fragment, which pages include and links can't name. |
+| `"file"` | A file that isn't a page, which a build copies: an image or a download. |
+| `"external"` | A URL with a scheme. |
+| `"operation"` | An operation of a declared API's spec: a link to the spec with a fragment. |
+| `"missing"` | Nothing: no file has that path. |

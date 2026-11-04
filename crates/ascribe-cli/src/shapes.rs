@@ -7,7 +7,8 @@
 //! - the TypeScript types of the packages that read the JSON, in each one's
 //!   `src/shapes.ts`, which replace the types they declared by hand;
 //! - the published schemas in the docs, `docs/content/_generated/json-*.md`,
-//!   which the JSON reports contract and the JSON output contract include.
+//!   which the JSON reports contract and the JSON output contract include:
+//!   each schema's fields as tables (`fields.rs`), with a link to the schema.
 //!
 //! Each schema's `$id` is its address at the release's tag, written from the
 //! crate's version, so a release rewrites it with everything else that names
@@ -19,6 +20,7 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+mod fields;
 mod typescript;
 
 use std::collections::BTreeMap;
@@ -691,13 +693,14 @@ fn each_package_has_the_generated_types() {
 fn the_docs_show_the_published_schemas() {
     let mut stale = Vec::new();
     for shape in SHAPES.iter().filter(|s| s.published) {
+        let schema = schema(shape);
         let fragment = format!(
             "@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, \
              with schemas/{file}.schema.json; change the types, then run `{BLESS}` to rewrite it.\n\
-             [`schemas/{file}.schema.json`]({{repo}}/blob/v{{version}}/schemas/{file}.schema.json):\n\n\
-             ```json\n{schema}```\n",
+             The fields of [`schemas/{file}.schema.json`]({{repo}}/blob/v{{version}}/schemas/{file}.schema.json):\n\n\
+             {tables}",
             file = shape.file,
-            schema = pretty(&schema(shape)),
+            tables = fields::tables(shape.title, &schema),
         );
         check(
             &format!("docs/content/_generated/json-{}.md", shape.file),

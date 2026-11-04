@@ -1,151 +1,28 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/fmt.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/fmt.schema.json`]({repo}/blob/v{version}/schemas/fmt.schema.json):
+The fields of [`schemas/fmt.schema.json`]({repo}/blob/v{version}/schemas/fmt.schema.json):
 
-```json
-{
-  "$defs": {
-    "Edit": {
-      "description": "One edit of a fix.",
-      "properties": {
-        "new_text": {
-          "description": "The text that replaces it.",
-          "type": "string"
-        },
-        "range": {
-          "$ref": "#/$defs/Range",
-          "description": "The text it replaces."
-        }
-      },
-      "required": [
-        "range",
-        "new_text"
-      ],
-      "type": "object"
-    },
-    "FmtFile": {
-      "description": "A file and the edits that format it.",
-      "properties": {
-        "edits": {
-          "description": "The edits, each replacing the text of its range in the file as it\nwas before formatting. They don't overlap, and are in file order.",
-          "items": {
-            "$ref": "#/$defs/Edit"
-          },
-          "type": "array"
-        },
-        "file": {
-          "description": "The file, relative to the project root (the directory of\n`ascribe.toml`), with `/` separators; a file outside it as it was\nfound.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file",
-        "edits"
-      ],
-      "type": "object"
-    },
-    "Pos": {
-      "description": "A position in a file.",
-      "properties": {
-        "column": {
-          "description": "The column, from 1, in Unicode characters (not bytes or UTF-16\nunits).",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "line": {
-          "description": "The line, from 1.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "offset": {
-          "description": "The byte offset from the start of the file.",
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "line",
-        "column",
-        "offset"
-      ],
-      "type": "object"
-    },
-    "Range": {
-      "description": "A span of a file. `end` is just past its last character; an empty range\n(an insertion) has equal positions.",
-      "properties": {
-        "end": {
-          "$ref": "#/$defs/Pos",
-          "description": "Just past its last character."
-        },
-        "start": {
-          "$ref": "#/$defs/Pos",
-          "description": "Its first character."
-        }
-      },
-      "required": [
-        "start",
-        "end"
-      ],
-      "type": "object"
-    },
-    "RefusedFile": {
-      "description": "A file left alone.",
-      "properties": {
-        "file": {
-          "description": "The file, as a formatted file's `file` is.",
-          "type": "string"
-        },
-        "reason": {
-          "description": "Why, as `ascribe check` words it.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file",
-        "reason"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/fmt.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe fmt --format json` writes: one document. Fields can be\nadded without a new `schema_version`, so a reader ignores fields it\ndoesn't know.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "files": {
-      "description": "Each file that changed, or with `--check` or `--dry-run` would change, in path\norder, with the edits that format it.",
-      "items": {
-        "$ref": "#/$defs/FmtFile"
-      },
-      "type": "array"
-    },
-    "refused": {
-      "description": "The files left alone because a symbolic link on the way to them\nleads to a file that isn't a source file of the content root.",
-      "items": {
-        "$ref": "#/$defs/RefusedFile"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "written": {
-      "description": "Whether the files were rewritten: `false` with `--check` or\n`--dry-run`, which write nothing.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "written",
-    "files",
-    "refused"
-  ],
-  "title": "FmtReport",
-  "type": "object"
-}
-```
+**`FmtReport`**: What `ascribe fmt --format json` writes: one document. Fields can be added without a new `schema_version`, so a reader ignores fields it doesn't know.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `written` | `boolean` | yes | no | Whether the files were rewritten: `false` with `--check` or `--dry-run`, which write nothing. |
+| `files` | `object[]` | yes | no | Each file that changed, or with `--check` or `--dry-run` would change, in path order, with the edits that format it. |
+| `files[].file` | `string` | yes | no | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators; a file outside it as it was found. |
+| `files[].edits` | `object[]` | yes | no | The edits, each replacing the text of its range in the file as it was before formatting. They don't overlap, and are in file order. |
+| `files[].edits[].range` | `object` | yes | no | The text it replaces. |
+| `files[].edits[].range.start` | `Pos` | yes | no | Its first character. |
+| `files[].edits[].range.end` | `Pos` | yes | no | Just past its last character. |
+| `files[].edits[].new_text` | `string` | yes | no | The text that replaces it. |
+| `refused` | `object[]` | yes | no | The files left alone because a symbolic link on the way to them leads to a file that isn't a source file of the content root. |
+| `refused[].file` | `string` | yes | no | The file, as a formatted file's `file` is. |
+| `refused[].reason` | `string` | yes | no | Why, as `ascribe check` words it. |
+
+**`Pos`**: A position in a file.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `line` | `integer` | yes | no | The line, from 1. |
+| `column` | `integer` | yes | no | The column, from 1, in Unicode characters (not bytes or UTF-16 units). |
+| `offset` | `integer` | yes | no | The byte offset from the start of the file. |

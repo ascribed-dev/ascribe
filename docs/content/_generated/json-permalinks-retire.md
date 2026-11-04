@@ -1,66 +1,15 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/permalinks-retire.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/permalinks-retire.schema.json`]({repo}/blob/v{version}/schemas/permalinks-retire.schema.json):
+The fields of [`schemas/permalinks-retire.schema.json`]({repo}/blob/v{version}/schemas/permalinks-retire.schema.json):
 
-```json
-{
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/permalinks-retire.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe permalinks retire` did.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "created": {
-      "description": "Whether `ascribe.addresses` was made, since the project had none.",
-      "type": "boolean"
-    },
-    "list_changed": {
-      "description": "Whether `ascribe.permalinks` was changed to record them. Only a name\nthe content no longer declares is recorded as retired.",
-      "type": "boolean"
-    },
-    "reason": {
-      "description": "The reason each was given; none when each leads to `to`.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "retired": {
-      "description": "The names retired, each written in `ascribe.addresses` as\n`go:<name>`: in `[retired]`, or, with `to`, in `[moved]`, in order.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "to": {
-      "description": "Where each address leads now, as written in `ascribe.addresses`;\nnone when it shows the reason.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "written": {
-      "description": "Whether the files were written: false with `--dry-run`, which says\nwhat would change.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "retired",
-    "reason",
-    "to",
-    "created",
-    "list_changed",
-    "written"
-  ],
-  "title": "PermalinksRetireReport",
-  "type": "object"
-}
-```
+**`PermalinksRetireReport`**: What `ascribe permalinks retire` did.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `retired` | `string[]` | yes | no | The names retired, each written in `ascribe.addresses` as `go:<name>`: in `[retired]`, or, with `to`, in `[moved]`, in order. |
+| `reason` | `string` | yes | yes | The reason each was given; none when each leads to `to`. |
+| `to` | `string` | yes | yes | Where each address leads now, as written in `ascribe.addresses`; none when it shows the reason. |
+| `created` | `boolean` | yes | no | Whether `ascribe.addresses` was made, since the project had none. |
+| `list_changed` | `boolean` | yes | no | Whether `ascribe.permalinks` was changed to record them. Only a name the content no longer declares is recorded as retired. |
+| `written` | `boolean` | yes | no | Whether the files were written: false with `--dry-run`, which says what would change. |

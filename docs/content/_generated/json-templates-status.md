@@ -1,336 +1,77 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/templates-status.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/templates-status.schema.json`]({repo}/blob/v{version}/schemas/templates-status.schema.json):
+The fields of [`schemas/templates-status.schema.json`]({repo}/blob/v{version}/schemas/templates-status.schema.json):
 
-```json
-{
-  "$defs": {
-    "Change": {
-      "description": "Whether the project has changed a template, or a file of one, since the\ncopy.",
-      "oneOf": [
-        {
-          "const": "unchanged",
-          "description": "The file is what was written.",
-          "type": "string"
-        },
-        {
-          "const": "changed",
-          "description": "The file isn't what was written.",
-          "type": "string"
-        },
-        {
-          "const": "deleted",
-          "description": "The file isn't there.",
-          "type": "string"
-        },
-        {
-          "const": "unknown",
-          "description": "Nothing is remembered of what was written, so it can't be told.",
-          "type": "string"
-        }
-      ]
-    },
-    "FileKind": {
-      "description": "Which of a template's files a file is.",
-      "oneOf": [
-        {
-          "const": "template",
-          "description": "The template, which a page is copied from.",
-          "type": "string"
-        },
-        {
-          "const": "guide",
-          "description": "Their guide.",
-          "type": "string"
-        },
-        {
-          "const": "notes",
-          "description": "Ascribe's notes on the type.",
-          "type": "string"
-        }
-      ]
-    },
-    "FileStatus": {
-      "description": "A file of a template the project took.",
-      "properties": {
-        "kind": {
-          "$ref": "#/$defs/FileKind",
-          "description": "Which of the template's files it is."
-        },
-        "matches_set": {
-          "description": "Whether the file is the set's text now; null when it isn't there, or\nthe set doesn't have it.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "path": {
-          "description": "The file, from the folder `ascribe.toml` is in.",
-          "type": "string"
-        },
-        "project": {
-          "$ref": "#/$defs/Change",
-          "description": "Whether the project has changed the file since the copy."
-        },
-        "sections": {
-          "description": "What's different in the set by section, when the set changed it and\nthe project didn't, so the file is what was written; otherwise null.",
-          "items": {
-            "$ref": "#/$defs/SectionChange"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "upstream": {
-          "$ref": "#/$defs/UpstreamChange",
-          "description": "Whether the set's text has changed since the copy."
-        }
-      },
-      "required": [
-        "path",
-        "kind",
-        "upstream",
-        "project",
-        "matches_set",
-        "sections"
-      ],
-      "type": "object"
-    },
-    "NotTaken": {
-      "description": "A template of the set the project doesn't have.",
-      "properties": {
-        "name": {
-          "description": "Its name.",
-          "type": "string"
-        },
-        "summary": {
-          "description": "Their index's summary of it.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "summary"
-      ],
-      "type": "object"
-    },
-    "Record": {
-      "description": "What `templates.lock` remembers of a template.",
-      "oneOf": [
-        {
-          "const": "entry",
-          "description": "An entry, with a hash of each file as written.",
-          "type": "string"
-        },
-        {
-          "const": "no_lock",
-          "description": "There's no `templates.lock` where it was looked for.",
-          "type": "string"
-        },
-        {
-          "const": "no_entry",
-          "description": "The lock is there, and has no entry for it.",
-          "type": "string"
-        },
-        {
-          "const": "invalid_lock",
-          "description": "The lock is there, and isn't one eject wrote.",
-          "type": "string"
-        }
-      ]
-    },
-    "SectionChange": {
-      "description": "A section that's different in the set.",
-      "properties": {
-        "change": {
-          "$ref": "#/$defs/SectionChangeKind",
-          "description": "How it's different."
-        },
-        "heading": {
-          "description": "The section's heading, as written; null for what comes before the\nfirst heading, frontmatter included.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "heading",
-        "change"
-      ],
-      "type": "object"
-    },
-    "SectionChangeKind": {
-      "description": "How a section is different in the set.",
-      "oneOf": [
-        {
-          "const": "added",
-          "description": "The set has it, and the copy doesn't.",
-          "type": "string"
-        },
-        {
-          "const": "removed",
-          "description": "The copy has it, and the set doesn't.",
-          "type": "string"
-        },
-        {
-          "const": "changed",
-          "description": "Both have it, with different text.",
-          "type": "string"
-        }
-      ]
-    },
-    "SetRelease": {
-      "description": "Which release of theirs a set was converted from.",
-      "properties": {
-        "commit": {
-          "description": "The tag's commit.",
-          "type": "string"
-        },
-        "repository": {
-          "description": "Their repository.",
-          "type": "string"
-        },
-        "tag": {
-          "description": "Their release's tag.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "repository",
-        "tag",
-        "commit"
-      ],
-      "type": "object"
-    },
-    "TemplateStatus": {
-      "description": "A template the project took: its lock entry, its type, or both.",
-      "properties": {
-        "copied_from": {
-          "description": "Their release the copy was made from, as the lock records it; null\nwithout an entry.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "files": {
-          "description": "Its files: the template, their guide, and Ascribe's notes.",
-          "items": {
-            "$ref": "#/$defs/FileStatus"
-          },
-          "type": "array"
-        },
-        "lock": {
-          "description": "The lock its entry is in, or the one looked in when there's no entry,\nfrom the folder `ascribe.toml` is in.",
-          "type": "string"
-        },
-        "lock_problem": {
-          "description": "Why the lock can't be read, when `record` is `invalid_lock`; otherwise\nnull.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "name": {
-          "description": "Its name, which is its type's.",
-          "type": "string"
-        },
-        "project": {
-          "$ref": "#/$defs/Change",
-          "description": "Whether the project has changed its copy: `changed` when any of its\nfiles has, or is gone."
-        },
-        "record": {
-          "$ref": "#/$defs/Record",
-          "description": "What `templates.lock` remembers of it."
-        },
-        "upstream": {
-          "$ref": "#/$defs/UpstreamChange",
-          "description": "Whether the set has changed it since the copy: `changed` when any of\nits files has."
-        }
-      },
-      "required": [
-        "name",
-        "record",
-        "lock",
-        "lock_problem",
-        "copied_from",
-        "upstream",
-        "project",
-        "files"
-      ],
-      "type": "object"
-    },
-    "UpstreamChange": {
-      "description": "Whether the set has changed a template, or a file of one, since the copy.",
-      "oneOf": [
-        {
-          "const": "unchanged",
-          "description": "The set's text is what was written.",
-          "type": "string"
-        },
-        {
-          "const": "changed",
-          "description": "The set's text isn't what was written.",
-          "type": "string"
-        },
-        {
-          "const": "unknown",
-          "description": "Nothing is remembered of what was written, so it can't be told.",
-          "type": "string"
-        },
-        {
-          "const": "removed",
-          "description": "The set no longer has it.",
-          "type": "string"
-        }
-      ]
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/templates-status.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe templates status` found: for each template the project\ntook, whether the set and the project have changed it since the copy, and\neach template of the set it doesn't have.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "not_taken": {
-      "description": "Each template of the set the project doesn't have, in the set's\norder.",
-      "items": {
-        "$ref": "#/$defs/NotTaken"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "set": {
-      "$ref": "#/$defs/SetRelease",
-      "description": "The set this `ascribe` carries, which the copies are compared with."
-    },
-    "templates": {
-      "description": "Each template the project took, in the set's order, then any the set\nno longer has, by name.",
-      "items": {
-        "$ref": "#/$defs/TemplateStatus"
-      },
-      "type": "array"
-    },
-    "upstream_changed": {
-      "description": "Whether the set has changed a template the project took since the\ncopy, as `templates.lock` remembers it, or no longer has one. What\n`--exit-code` exits with 1 for.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "set",
-    "upstream_changed",
-    "templates",
-    "not_taken"
-  ],
-  "title": "TemplatesStatusReport",
-  "type": "object"
-}
-```
+**`TemplatesStatusReport`**: What `ascribe templates status` found: for each template the project took, whether the set and the project have changed it since the copy, and each template of the set it doesn't have.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `set` | `object` | yes | no | The set this `ascribe` carries, which the copies are compared with. |
+| `set.repository` | `string` | yes | no | Their repository. |
+| `set.tag` | `string` | yes | no | Their release's tag. |
+| `set.commit` | `string` | yes | no | The tag's commit. |
+| `upstream_changed` | `boolean` | yes | no | Whether the set has changed a template the project took since the copy, as `templates.lock` remembers it, or no longer has one. What `--exit-code` exits with 1 for. |
+| `templates` | `object[]` | yes | no | Each template the project took, in the set's order, then any the set no longer has, by name. |
+| `templates[].name` | `string` | yes | no | Its name, which is its type's. |
+| `templates[].record` | `Record` | yes | no | What `templates.lock` remembers of it. |
+| `templates[].lock` | `string` | yes | no | The lock its entry is in, or the one looked in when there's no entry, from the folder `ascribe.toml` is in. |
+| `templates[].lock_problem` | `string` | yes | yes | Why the lock can't be read, when `record` is `invalid_lock`; otherwise null. |
+| `templates[].copied_from` | `string` | yes | yes | Their release the copy was made from, as the lock records it; null without an entry. |
+| `templates[].upstream` | `UpstreamChange` | yes | no | Whether the set has changed it since the copy: `changed` when any of its files has. |
+| `templates[].project` | `Change` | yes | no | Whether the project has changed its copy: `changed` when any of its files has, or is gone. |
+| `templates[].files` | `object[]` | yes | no | Its files: the template, their guide, and Ascribe's notes. |
+| `templates[].files[].path` | `string` | yes | no | The file, from the folder `ascribe.toml` is in. |
+| `templates[].files[].kind` | `FileKind` | yes | no | Which of the template's files it is. |
+| `templates[].files[].upstream` | `UpstreamChange` | yes | no | Whether the set's text has changed since the copy. |
+| `templates[].files[].project` | `Change` | yes | no | Whether the project has changed the file since the copy. |
+| `templates[].files[].matches_set` | `boolean` | yes | yes | Whether the file is the set's text now; null when it isn't there, or the set doesn't have it. |
+| `templates[].files[].sections` | `object[]` | yes | yes | What's different in the set by section, when the set changed it and the project didn't, so the file is what was written; otherwise null. |
+| `templates[].files[].sections[].heading` | `string` | yes | yes | The section's heading, as written; null for what comes before the first heading, frontmatter included. |
+| `templates[].files[].sections[].change` | `SectionChangeKind` | yes | no | How it's different. |
+| `not_taken` | `object[]` | yes | no | Each template of the set the project doesn't have, in the set's order. |
+| `not_taken[].name` | `string` | yes | no | Its name. |
+| `not_taken[].summary` | `string` | yes | no | Their index's summary of it. |
+
+**`Record`**: What `templates.lock` remembers of a template. One of:
+
+| Value | Description |
+| --- | --- |
+| `"entry"` | An entry, with a hash of each file as written. |
+| `"no_lock"` | There's no `templates.lock` where it was looked for. |
+| `"no_entry"` | The lock is there, and has no entry for it. |
+| `"invalid_lock"` | The lock is there, and isn't one eject wrote. |
+
+**`UpstreamChange`**: Whether the set has changed a template, or a file of one, since the copy. One of:
+
+| Value | Description |
+| --- | --- |
+| `"unchanged"` | The set's text is what was written. |
+| `"changed"` | The set's text isn't what was written. |
+| `"unknown"` | Nothing is remembered of what was written, so it can't be told. |
+| `"removed"` | The set no longer has it. |
+
+**`Change`**: Whether the project has changed a template, or a file of one, since the copy. One of:
+
+| Value | Description |
+| --- | --- |
+| `"unchanged"` | The file is what was written. |
+| `"changed"` | The file isn't what was written. |
+| `"deleted"` | The file isn't there. |
+| `"unknown"` | Nothing is remembered of what was written, so it can't be told. |
+
+**`FileKind`**: Which of a template's files a file is. One of:
+
+| Value | Description |
+| --- | --- |
+| `"template"` | The template, which a page is copied from. |
+| `"guide"` | Their guide. |
+| `"notes"` | Ascribe's notes on the type. |
+
+**`SectionChangeKind`**: How a section is different in the set. One of:
+
+| Value | Description |
+| --- | --- |
+| `"added"` | The set has it, and the copy doesn't. |
+| `"removed"` | The copy has it, and the set doesn't. |
+| `"changed"` | Both have it, with different text. |

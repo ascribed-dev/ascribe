@@ -1,76 +1,15 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/permalinks-verify.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/permalinks-verify.schema.json`]({repo}/blob/v{version}/schemas/permalinks-verify.schema.json):
+The fields of [`schemas/permalinks-verify.schema.json`]({repo}/blob/v{version}/schemas/permalinks-verify.schema.json):
 
-```json
-{
-  "$defs": {
-    "RetiredName": {
-      "description": "A name the list has as retired.",
-      "properties": {
-        "name": {
-          "description": "The name.",
-          "type": "string"
-        },
-        "reason": {
-          "description": "Why it was retired, as the docs' authors wrote it.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "reason"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/permalinks-verify.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe permalinks verify` answers.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "found": {
-      "description": "The names the list has, as permalinks, or moved to another permalink\nor a page, in the order given, each once.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "list": {
-      "description": "The list checked against, as given.",
-      "type": "string"
-    },
-    "missing": {
-      "description": "The names it doesn't have at all, in the order given, each once.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "retired": {
-      "description": "The names the list has as retired, in the order given, each once.",
-      "items": {
-        "$ref": "#/$defs/RetiredName"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "list",
-    "found",
-    "retired",
-    "missing"
-  ],
-  "title": "PermalinksVerifyReport",
-  "type": "object"
-}
-```
+**`PermalinksVerifyReport`**: What `ascribe permalinks verify` answers.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `list` | `string` | yes | no | The list checked against, as given. |
+| `found` | `string[]` | yes | no | The names the list has, as permalinks, or moved to another permalink or a page, in the order given, each once. |
+| `retired` | `object[]` | yes | no | The names the list has as retired, in the order given, each once. |
+| `retired[].name` | `string` | yes | no | The name. |
+| `retired[].reason` | `string` | yes | no | Why it was retired, as the docs' authors wrote it. |
+| `missing` | `string[]` | yes | no | The names it doesn't have at all, in the order given, each once. |

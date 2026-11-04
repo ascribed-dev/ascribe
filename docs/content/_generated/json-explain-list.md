@@ -1,60 +1,13 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/explain-list.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/explain-list.schema.json`]({repo}/blob/v{version}/schemas/explain-list.schema.json):
+The fields of [`schemas/explain-list.schema.json`]({repo}/blob/v{version}/schemas/explain-list.schema.json):
 
-```json
-{
-  "$defs": {
-    "ListedDiagnostic": {
-      "description": "A diagnostic in the list.",
-      "properties": {
-        "code": {
-          "description": "The code.",
-          "type": "string"
-        },
-        "severity": {
-          "description": "`error`, `warning`, or `advice`.",
-          "type": "string"
-        },
-        "slug": {
-          "description": "The slug.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "code",
-        "slug",
-        "severity"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/explain-list.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe explain --list` answers: every diagnostic.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "diagnostics": {
-      "description": "Every diagnostic, in code order.",
-      "items": {
-        "$ref": "#/$defs/ListedDiagnostic"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "diagnostics"
-  ],
-  "title": "ExplainListReport",
-  "type": "object"
-}
-```
+**`ExplainListReport`**: What `ascribe explain --list` answers: every diagnostic.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `diagnostics` | `object[]` | yes | no | Every diagnostic, in code order. |
+| `diagnostics[].code` | `string` | yes | no | The code. |
+| `diagnostics[].slug` | `string` | yes | no | The slug. |
+| `diagnostics[].severity` | `string` | yes | no | `error`, `warning`, or `advice`. |

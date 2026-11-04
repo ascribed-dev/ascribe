@@ -1,0 +1,1 @@
+- **The JSON contracts show each schema's fields as tables.** Each field has its path, type, whether it's required or nullable, and its description, generated from the schema the page links. See [the JSON report contract](docs/content/contracts/json-reports.md#reading-the-tables).
