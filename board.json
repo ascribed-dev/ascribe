@@ -9354,8 +9354,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1341"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs inaccuracies: contracts and the editor"
     },
     {
@@ -9417,7 +9420,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1339"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
     },
     {
@@ -9560,8 +9563,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1347"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Define your page types and fields: a how-to, with implementer notes moved to the contract"
     },
     {
@@ -9578,8 +9584,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1343"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Keep pages current: a how-to for owners and recheck dates"
     },
     {
@@ -9617,8 +9626,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1345"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Troubleshooting for install, CI, Astro, and agents"
     },
     {
@@ -9719,8 +9731,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1342"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "How Ascribe works: a one-page overview"
     },
     {
@@ -9831,8 +9846,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1346"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Prose: how-tos with numbered steps and task titles, and command reference moved out of them"
     },
     {
@@ -9900,8 +9918,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1344"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Split `command/questions.md`, which is over the size limit for agents"
     },
     {
@@ -9918,7 +9939,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Hold the prose rules with checks: Vale rules for the docs, and two new content checks"
     },
     {
