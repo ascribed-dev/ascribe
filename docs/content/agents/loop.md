@@ -13,7 +13,7 @@ An agent working alone runs one loop: edit a page, check it, fix what's reported
 2. Check the file, in the form made for agents:
 
    ```shell
-   ascribe check guides/install.md --format concise --editor-build
+   ascribe check docs/guides/install.md --format concise --editor-build
    ```
 
    It writes one line per problem, `file:line: [code] message`, with what to change in the message. `--editor-build` checks only the editor's build, which is quick enough to run after every edit on a project of thousands of pages. [Checking some files](../checks/check.md#checking-some-files) has the other ways to narrow a check, such as one code's problems across the project.
@@ -39,11 +39,13 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 | [`ascribe refs <target>`](../command/references.md#cli-refs) | Every place that uses a page, a heading, a phrase, or another entry of the content model, such as the links to fix after renaming a heading |
 | [`ascribe search "<words>"`](../command/questions.md#cli-search) | Where the pages already say something, as their readers read it, with the line to edit: run before writing a page about a subject. It finds the words a phrase, a fragment, or a snippet puts on a page, which `grep` over the source can't |
 
-To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../command/references.md#cli-rename), which changes every use as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
+To rename a phrase, a dimension's value, a heading's id, or a page, an agent runs [`ascribe rename <target> <new>`](../command/references.md#cli-rename). It changes every use, as the editor's rename does, where a search and replace would miss some: the code a `@snippet {phrases=true}` shows, frontmatter fields, and the links on a page that moves.
 
 ## Fix it, or say it's intended
 
-A problem whose next step is `review` may be fine as it is: a page nothing links to because the site's sidebar does, say. Fixing it is still the first answer, and an agent should fix it unless you tell it the problem is intended. When it is, the answer is an [acknowledgement](../writing/directives.md#intended): the check's name and your reason, written where the check reports the problem, so the next person reads why. Don't acknowledge a problem to make a check pass, and don't let an agent do it on its own: a prompt about a review check says to acknowledge it only when you've said so. The editor's **Mark as intended, and write why** writes a placeholder reason, which is reported until you replace it.
+A problem whose next step is `review` may be fine as it is: a page nothing links to because the site's sidebar does, say. Fixing it is still the first answer, and an agent should fix it unless you tell it the problem is intended. When it is, the answer is an [acknowledgement](../writing/directives.md#intended): the check's name and your reason, written where the check reports the problem, so the next person reads why.
+
+Don't acknowledge a problem to make a check pass, and don't let an agent do it on its own: a prompt about a review check says to acknowledge it only when you've said so. The editor's **Mark as intended, and write why** writes a placeholder reason, which is reported until you replace it.
 
 ## Cursor, Codex, and other agents
 
@@ -60,4 +62,4 @@ What doesn't reach every agent is the hooks: Cursor's and Gemini CLI's hook form
 ascribe check --deny-warnings
 ```
 
-**In Cursor**, the Ascribe extension works as it does in VS Code, and **Prompt agent** can fill Cursor's chat in with `ascribe.agents.promptTarget` set to `cursor`. Cursor installs extensions from Open VSX, where Ascribe isn't, so install the `.vsix` for your platform from a [release](https://github.com/ascribed-dev/ascribe/releases) with **Extensions: Install from VSIX…**. Add the MCP server to `.cursor/mcp.json`.
+**In Cursor**, the Ascribe extension works as it does in VS Code, and **Prompt agent** can fill Cursor's chat in with `ascribe.agents.promptTarget` set to `cursor`. Cursor installs extensions from Open VSX, where Ascribe isn't, so install the `.vsix` for your platform from a [release]({repo}/releases) with **Extensions: Install from VSIX…**. Add the MCP server to `.cursor/mcp.json`.

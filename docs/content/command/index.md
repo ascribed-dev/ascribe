@@ -67,7 +67,9 @@ One that takes `--check`, such as `ascribe fmt`, `ascribe permalinks sync`, `asc
 
 @include: ../_generated/cli-global-options.md
 
-Without `--config`, a command's project is the nearest `ascribe.toml` at or above the current directory, or at or above the path it's given.
+Without `--config`, a command's project is the nearest `ascribe.toml` at or above the current folder, or at or above the path it's given.
+
+A path a command takes is from the current folder, as a shell's is: `ascribe check`, `ascribe fmt`, and `ascribe search` take paths that way alone, and `ascribe new` a path from the current folder inside the content root. The commands that take one page, `outline`, `link --from`, `refs`, `rename`, `resolve`, `diff`, `addresses move`, and `addresses retire`, also take its path from the content root, as links write it.
 
 When there's none, and the folder holds projects in its subfolders, as a repository with several does at its root, the error names their folders, so you can run the command in one, or pass `--config` with its folder: `the projects below it are in docs, handbook: run ascribe in one of them, or pass --config with its folder`. `ascribe agents sync` is the exception: there, it syncs each of them.
 

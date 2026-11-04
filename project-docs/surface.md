@@ -23,33 +23,33 @@ For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `doc
 | `ascribe model` | Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, builds, and sources with their folders and the files they make readable. | `[PATH] [--section types\|frontmatter\|fragments\|dimensions\|lifecycle\|phrases\|features\|notes\|glossary\|images\|widgets\|releases\|builds\|sources\|apis\|from\|intended\|project\|versions\|consumer\|editor\|checks\|crawlers\|listing\|navigation]` | `text`, `json` |
 | `ascribe outline` | Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. | `PAGE [--build <NAME>]` | `text`, `json` |
 | `ascribe link` | Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. | `TARGET --from <PAGE>` | `text`, `json` |
-| `ascribe refs` | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is. | `TARGET [--limit <N>]` | `text`, `json` |
+| `ascribe refs` |  | `TARGET [--limit <N>]` | `text`, `json` |
 | `ascribe search` | Finds where the pages say something, as their readers read it, and names the line to edit for each place. | `QUERY [PATHS]... [--type <NAME>] [--case] [--word] [--summary] [--build <NAME>]... [--limit <N>]` | `text`, `json` |
-| `ascribe resolve` | Resolves a page for one build and writes it as the build's plain Markdown output by default, as `ascribe build --emit plain` writes it, or, with `--emit site`, as its site output: the page as a reader of that build sees it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. | `PAGE [--build <NAME>] [--emit plain\|site] [--frontmatter]` | `text`, `json` |
+| `ascribe resolve` | Resolves a page for one build and writes it as the build's plain Markdown output by default, as `ascribe build --emit plain` writes it, or, with `--emit site`, as its site output. | `PAGE [--build <NAME>] [--emit plain\|site] [--frontmatter]` | `text`, `json` |
 | `ascribe rename` | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. | `TARGET NEW [--dry-run] [--force]` | `text`, `json` |
-| `ascribe baseline write` | Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. | `[--dry-run] [--force]` | `text`, `json` |
+| `ascribe baseline write` | Adds every advice-level problem `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. | `[--dry-run] [--force]` | `text`, `json` |
 | `ascribe baseline prune` | Removes the entries of `ascribe.baseline` that match nothing the project has any more: the problems that were fixed, and those whose text changed, which `ascribe check` reports as new. | `[--dry-run] [--force]` | `text`, `json` |
-| `ascribe versions list` | Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. |  | `text`, `json` |
-| `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). | `FROM TO` | `text`, `json`, `markdown` |
+| `ascribe versions list` | Shows each target's lines, newest first. |  | `text`, `json` |
+| `ascribe versions changes` | Says what differs between two lines of a target, from the marks alone, with nothing built. | `FROM TO` | `text`, `json`, `markdown` |
 | `ascribe versions release` | Releases a line: rewrites each mark's `planned` for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. | `LINE [--next <LINE>] [--dry-run] [--force]` | `text`, `json` |
-| `ascribe versions export` | Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
-| `ascribe versions retire` | Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. | `LINE [--url <URL>] [--dry-run] [--force] [--show-unused] [--remove-unused]` | `text`, `json` |
-| `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each name `ascribe.addresses` moves or retires as the file has it. | `[--check] [--dry-run] [--force]` | `text`, `json` |
+| `ascribe versions export` | Renders a line, live or planned, into a folder of HTML that needs nothing else, working from a disk with no server. | `LINE --to <DIR> [--build <NAME>] [--current <URL>]` | `text`, `json` |
+| `ascribe versions retire` | Takes the oldest live line out of the window once its archive is hosted. | `LINE [--url <URL>] [--dry-run] [--force] [--show-unused] [--remove-unused]` | `text`, `json` |
+| `ascribe permalinks sync` | Brings `ascribe.permalinks` up to date with the project, and makes it when there's none. | `[--check] [--dry-run] [--force]` | `text`, `json` |
 | `ascribe permalinks list` | Shows every permalink the content declares, with the file and line it's declared on, and each name `ascribe.addresses` moves or retires, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. |  | `text`, `json` |
 | `ascribe permalinks verify` | Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. | `[NAME]... [--from <FILE>] [--against <PATH>]` | `text`, `json` |
-| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason, or moves them to `--to`: it writes an entry for each in `ascribe.addresses`, keyed `go:` and the name, `[retired]`'s with the reason and `[moved]`'s with where it leads, making the file when there's none, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. | `[NAME]... [--reason <TEXT>] [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--dry-run] [--force]` | `text`, `json` |
+| `ascribe permalinks retire` | Retires permalinks on purpose, with a reason, or moves them to `--to`. | `[NAME]... [--reason <TEXT>] [--to <PAGE>] [--page <PAGE>] [--under <FOLDER>] [--dry-run] [--force]` | `text`, `json` |
 | `ascribe addresses init` | Makes `ascribe.addresses`, with its header, its `version`, and empty tables. | `[--dry-run] [--force]` | `text`, `json` |
 | `ascribe addresses move` | Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. | `[OLD] [NEW] [--from-git] [--base <REV>] [--base-exact] [--dry-run] [--force]` | `text`, `json` |
 | `ascribe addresses retire` | Records that a page, or a heading's id, or a permalink, `go:<name>`, was removed on purpose, with the reason, which is for whoever reads the file later. | `OLD --reason <TEXT> [--dry-run] [--force]` | `text`, `json` |
 | `ascribe addresses list` | Shows the redirects and retired addresses each build writes, as its `_ascribe/redirects.json` has them, and the entry of `ascribe.addresses` each comes from. | `[--build <NAME>]` | `text`, `json` |
 | `ascribe sources fetch` | Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. | `[NAME]... [--dry-run] [--force]` | `text`, `json` |
-| `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the tested examples whose status changed, and the pages whose examples changed, grouped as `ascribe drift` groups them. | `[NAME]... [--to <REV>] [--dry-run] [--force]` | `text`, `json`, `markdown` |
+| `ascribe sources update` | Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, and rewrites `ascribe.lock`. | `[NAME]... [--to <REV>] [--dry-run] [--force]` | `text`, `json`, `markdown` |
 | `ascribe sources status` | Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). |  | `text`, `json` |
 | `ascribe observe` | Runs the test of a folder of tested examples, and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. | `[--name <NAME>] [--check] [--dry-run] [--force] [--yes]` | `text`, `json` |
 | `ascribe templates list` | Shows each template the set has, in a line, with what it's for, and which release of theirs the set was converted from. |  | `text`, `json` |
 | `ascribe templates eject` | Writes each template named, with its guide and Ascribe's notes on its type, into the project, and adds its type to `ascribe.toml`. | `[NAME]... [--to <DIR>] [--keep-type] [--dry-run] [--force]` | `text`, `json` |
 | `ascribe templates status` | Says what's changed in the templates since the project took them: for each one, whether the set this `ascribe` carries has changed it since the copy, and whether the project has changed its copy; then each template of the set the project doesn't have. | `[--exit-code] [--diff <NAME>]` | `text`, `json` |
-| `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. | `[--dry-run] [--force]` | `text`, `json` |
+| `ascribe vale eject` | Writes the preset `[checks.vale]` names out as the project's own Vale configuration: `.vale.ini` and a `.vale/` styles folder in the project's folder, with the rules `off` names turned off in `.vale.ini`. | `[--dry-run] [--force]` | `text`, `json` |
 | `ascribe agents sync` | Writes your project's rules and the Ascribe skill where each `--target`'s agents read them. | `[--check] [--dry-run] [--force] [--target agents-md\|skills\|claude\|claude-rules\|copilot\|codex]... [--with-hook] [--cloud] [--agent] [--command <COMMAND>]` | `text`, `json` |
 | `ascribe agents rules` | Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. | `[PATH]` |  |
 | `ascribe agents index` | Writes a compact index of one build's docs, for the `AGENTS.md` of the product they're about: one line a page, with its title, its address, and its description, grouped in sections as the build's `llms.txt` is. | `[--build <NAME>] [--into <FILE>] [--pages <DIR>] [--dry-run] [--force]` | `text`, `json` |
@@ -94,7 +94,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 |---|---|---|
 | Top level: `spec` | The only other top-level keys are `[from]` (§2.1) and the tables in §3–§23, `[releases]` (§12.1) and `[[intended]]` (§22.1) among them. | §2 |
 | `[project]` | Where the source lives and where builds write. | §3 |
-| `[types.<name>]` and `[fragments]` | A **content type** is a frontmatter schema for a kind of page. | §4 |
+| `[types.<name>]` and `[fragments]` | A **page type** is a frontmatter schema for a kind of page. | §4 |
 | `[notes.<type>]` | Note types (SPEC §4.5), the values of `@note`'s `type` attribute. | §6 |
 | `[phrases]` | The phrases registry (SPEC §5.1). | §7 |
 | `[glossary]` | The glossary (SPEC §5.4): the pages that hold its terms, and how occurrences are matched. | §8 |
@@ -106,7 +106,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 | `[features.<key>]` | The features registry (SPEC §4.4): named availability specs, so a feature going generally available takes one edit. | §14 |
 | `[consumer]` | Which site generator publishes the site output, and how the output fits it: the **profile** (SPEC §9.5). | §15 |
 | `[builds.<name>]` | Named builds (SPEC §9.3). | §16 |
-| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type. | §17 |
+| `[listing]` | How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a page type. | §17 |
 | `[crawlers]` | What the project says to the crawlers that read its site: search engines, AI assistants, and anything else that fetches pages without a person. | §18 |
 | `[permalinks]` | `ascribe.toml` has no `[permalinks]` any more. | §19 |
 | `[sources.<name>]` | A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with `@snippet` (SPEC §7.3). | §20 |
@@ -995,6 +995,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `existing-docs.md` | Bring existing docs to Ascribe | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
+| `how-it-works.md` | How Ascribe works | concept |
 | `index.md` | Ascribe documentation | index |
 | `install.md` | Install Ascribe | how-to |
 | `navigation/index.md` | Navigation | reference |
@@ -1021,6 +1022,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/command.md` | `ascribe templates` and `ascribe new` | reference |
 | `templates/index.md` | Start pages from templates | how-to |
+| `troubleshooting.md` | Troubleshooting | troubleshooting |
 | `versions/archive.md` | Export and retire a line | how-to |
 | `versions/index.md` | Publish a site for each version | how-to |
 | `versions/lines.md` | Release lines | reference |
@@ -1077,6 +1079,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 | File | What writes it | Commit it |
 |---|---|---|
 | `.ascribe/build/` | `ascribe build`, and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere. | No |
+| `.ascribe/preview/` | `ascribe preview`: the build's pages rendered as HTML, which it serves on this computer and renders again as you edit. | No |
 | `.ascribe/vale/` | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words. | No |
 | `.ascribe/cache/` | `ascribe report links`, which keeps the answers it reuses in `.ascribe/cache/links/`. | No |
 | `.ascribe/history/` | `ascribe report links`, which keeps in `.ascribe/history/links.json` the last day each address answered, the day it started failing, and whether it was reported, and `ascribe report`, which keeps in `.ascribe/history/report.json` what its `problems` and `delivery` sections found, to say what's new next time. | No |

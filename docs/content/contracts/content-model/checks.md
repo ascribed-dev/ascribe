@@ -5,7 +5,7 @@ nav-label: "Checks and the editor"
 description: "The normative contract for the content model's checks, the editor's build, and defaults."
 ---
 
-Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [checks and the editor](../../content-model/checks.md).
+These sections of the contract are the rules of `[checks]`, with its `[[intended]]`, `[checks.vale]`, and `[checks.links]`, of `[editor]`, and of what an absent section means. They're part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [checks and the editor](../../content-model/checks.md).
 
 ## 22. `[checks]`
 
@@ -15,9 +15,7 @@ Each key of `[checks]` other than `vale` and `links` is a check's slug, as the [
 
 @include: ../../_generated/content-model-checks.md
 
-A check's own settings are listed with the check in the [diagnostics reference](../../checks/diagnostics/content-checks.md). `page-size` and `image-large` take `limit`, and so does `memo-long` from ascribe 0.4.0.
-
-`summary-long` takes `limit` too.
+A check's own settings are listed with the check in the [diagnostics reference](../../checks/diagnostics/content-checks.md). `page-size`, `image-large`, `memo-long`, and `summary-long` take `limit`.
 
 A level applies wherever the diagnostic is reported: by `ascribe check`, by `ascribe build`, and in the editor. `"off"` MUST NOT be reported, and advice MUST NOT fail `ascribe check`, with `--deny-warnings` or without. A check the diagnostics registry marks off by default (`off-by-default`) MUST NOT be reported unless `[checks]` names it: named with a level, it's reported at that level, and named as a table without `level`, at its registry severity.
 

@@ -11,12 +11,20 @@
         "label": "Getting started"
       },
       {
+        "href": "/docs/how-it-works/",
+        "label": "How Ascribe works"
+      },
+      {
         "href": "/docs/existing-docs/",
         "label": "Bring existing docs to Ascribe"
       },
       {
         "href": "/docs/install/",
         "label": "Install Ascribe"
+      },
+      {
+        "href": "/docs/troubleshooting/",
+        "label": "Troubleshooting"
       },
       {
         "href": "/docs/glossary/",

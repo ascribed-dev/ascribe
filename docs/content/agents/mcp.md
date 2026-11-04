@@ -27,7 +27,7 @@ Your agent's host starts the server, in the repository's root, and one server se
    }
    ```
 
-3. Start a new session, and check that the host lists the server's tools.
+3. Start a new session, and check that the host lists the server's tools. If it doesn't, see [Troubleshooting](../troubleshooting.md#mcp-tools-missing).
 
 This runs the `ascribe` on the host's path, which you install [on your path](../install.md#without-node), and it's what `sync` writes into `.mcp.json`: from a repository's root, no one command finds a project's own `ascribe` on every system.
 
@@ -65,4 +65,6 @@ When `@ascribed/cli` is in the `package.json` at the repository's root, as [Inst
 
 ## What it offers
 
-Its tools are the commands that answer questions; its resources are each directive's syntax, and each project's content model and rules; and its prompts are `new-page`, `fix`, and `review`, which many hosts show as slash commands. Every tool is read-only, so `ascribe_check` never runs [Vale](../checks/vale.md): `ascribe check --vale` in a shell, which your host asks you about, checks the prose. A tool's result is its command's JSON, whose schema is in the [JSON report contract](../contracts/json-reports.md), except for `ascribe_check`, `ascribe_refs`, and `ascribe_search`: with their default `response_format: "concise"`, the result is the command's concise text, one line each, and its `structuredContent` is that text as `{"concise": "…"}`. With `response_format: "detailed"`, they give the JSON. No tool gives an output schema, which would make the tool list about four times as long. [`ascribe mcp`](commands.md#cli-mcp) lists each tool and the command it runs, and the resources.
+Its tools are the commands that answer questions; its resources are each directive's syntax, and each project's content model and rules; and its prompts are `new-page`, `fix`, and `review`, which many hosts show as slash commands. Every tool is read-only, so `ascribe_check` never runs [Vale](../checks/vale.md): `ascribe check --vale` in a shell, which your host asks you about, checks the prose.
+
+A tool's result is its command's JSON, whose schema is in the [JSON report contract](../contracts/json-reports.md). `ascribe_check`, `ascribe_refs`, and `ascribe_search` are the exception: with their default `response_format: "concise"`, the result is the command's concise text, one line each, and its `structuredContent` is that text as `{"concise": "…"}`. With `response_format: "detailed"`, they give the JSON. No tool gives an output schema, which would make the tool list about four times as long. [`ascribe mcp`](commands.md#cli-mcp) lists each tool and the command it runs, and the resources.

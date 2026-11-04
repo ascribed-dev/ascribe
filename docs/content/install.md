@@ -5,18 +5,18 @@ description: "Install the `ascribe` command, in a project with npm, or on your p
 permalink: install
 ---
 
-There are two ways to have `ascribe`: in a project, with npm, which pins its version for everyone who works on the project and for CI; or on your path, from a release, where there's no Node, such as a Python or Go repository whose hooks or CI run `ascribe`. The latest release is {version}.
+There are two ways to have `ascribe`. In a project, with npm, its version is pinned for everyone who works on the project and for CI. On your path, from a release, it runs where there's no Node, such as a Python or Go repository whose hooks or CI run `ascribe`. The latest release is {version}.
 
 To install the editor, see [Editing](editor/index.md).
 
 ## Platforms
 
-Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later (2.39 for 0.1.1 and earlier), which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64). Intel Macs aren't supported.
+Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later, which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64). Intel Macs aren't supported. On an older glibc, `ascribe` doesn't start ([what to do](troubleshooting.md#glibc)).
 
 ## In a project, with npm
 @id: npm
 
-You need [Node.js](https://nodejs.org) {node} or later. In your project's directory:
+You need [Node.js](https://nodejs.org) {node} or later. In your project's folder:
 
 @variant {pm=npm}:
 ```sh
@@ -30,7 +30,7 @@ pnpm exec ascribe --version
 ```
 @end
 
-`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version in `package.json`. Run it as `npx ascribe` (`pnpm exec ascribe` with pnpm), or from a script in `package.json`. If `ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled.
+`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version in `package.json`. Run it as `npx ascribe` (`pnpm exec ascribe` with pnpm), or from a script in `package.json`. If `ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled ([Troubleshooting](troubleshooting.md#native-package)).
 
 @note {type=tip}: To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
 
@@ -81,7 +81,13 @@ Each [release]({repo}/releases) has an archive for each platform, `ascribe-<vers
 
 ## Which `ascribe` runs
 
-A machine can have more than one `ascribe`: the one on your path, the one `@ascribed/cli` pins in a project, and the one the editor's extension bundles. A bare `ascribe` runs your path's; `npx ascribe` runs the project's; the editor runs the one its `ascribe.path` setting names, when you set it, then the project's when there is one, and its own otherwise ([Which `ascribe` it runs](editor/index.md#which-ascribe-it-runs)), and puts that one first on the path of its terminals ([Agents](editor/agents.md#agents-in-vs-code) says how). `ascribe --version` says which version you're running.
+A machine can have more than one `ascribe`: the one on your path, the one `@ascribed/cli` pins in a project, and the one the editor's extension bundles.
+
+- A bare `ascribe` runs your path's.
+- `npx ascribe` runs the project's.
+- The editor runs the one its `ascribe.path` setting names, when you set it, then the project's when there is one, and its own otherwise ([Which `ascribe` it runs](editor/index.md#which-ascribe-it-runs)). It puts that one first on the path of its terminals ([Agents](editor/agents.md#agents-in-vs-code) says how).
+
+`ascribe --version` says which version you're running.
 
 ## Start a project
 

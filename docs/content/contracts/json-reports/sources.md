@@ -5,7 +5,7 @@ nav-label: "`ascribe sources` and `ascribe observe`"
 description: "The JSON Schemas of what `ascribe sources` and `ascribe observe` write with `--format json`."
 ---
 
-Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
+The JSON Schemas of what `ascribe sources` and `ascribe observe` write with `--format json`. Each document follows the rules of the [JSON report contract](../json-reports.md).
 
 
 

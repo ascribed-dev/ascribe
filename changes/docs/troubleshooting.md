@@ -1,0 +1,1 @@
+- **A troubleshooting page for installing, CI, Astro, and agents.** Each entry gives the text you see, its cause, and the fix. See [Troubleshooting](docs/content/troubleshooting.md).

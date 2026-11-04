@@ -4,7 +4,7 @@ title: "`ascribe.toml`: how content varies"
 description: "The content model's dimensions, versions and releases, lifecycle states, and features: what content varies along, and how a page says where it applies."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [how content varies](../contracts/content-model/variation.md).
+These sections of `ascribe.toml` say what content varies along, and how a page says where it applies: the dimensions, the versions and release lines, the lifecycle states, and the features. It's part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section; the exact rules are in the contract's [how content varies](../contracts/content-model/variation.md).
 
 ## 11. `[dimensions.<name>]`
 @id {permalink=true}: dimensions
@@ -14,7 +14,7 @@ Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#cont
 
 A target `[releases.<target>]` names, when no dimension has it, is a value of the implicit dimension `release` ([§12.1](#121-releasestarget)).
 
-**Rules.** A value can be in one dimension only (`model-dimension-value-shared`), since a bare target such as `cloud` in an availability spec has to mean one thing. Dimension names and values also take part in the one-role rule: a name can be a dimension name, a dimension value, a lifecycle state, or a feature key, but only one of them (`model-name-multiple-roles`), and none of them can be `planned`, the version word for a target's planned line.
+**Rules.** A value can be in one dimension only (`model-dimension-value-shared`), since a bare target such as `cloud` in an availability spec has to mean one thing. Dimension names and values also take part in the one-role rule: a name can be a dimension name, a dimension value, a lifecycle state, or a feature key, but only one of them (`model-name-multiple-roles`). None of them can be `planned`, the version word for a target's planned line.
 
 ---
 
@@ -56,7 +56,7 @@ Each line is a version, quoted, listed once, and every line of one target, in ev
 
 A mark's [`planned`](../writing/directives.md#the-planned-line) is the target's one planned line, so it's placed as that line's version; a target with no planned line, or more than one, makes it an error at the word, `available-planned-line`. [`ascribe versions release`](../versions/release.md#cli-versions-release) rewrites it to the version when the line ships.
 
-**A mark that does nothing.** A mark does nothing only where no output shows it: when every build that publishes its content is versioned by the mark's target or filtered for it, since a line's output leaves out a version at or before the oldest live line. Then two content checks report a mark:
+**A mark that does nothing.** A mark does nothing only where no output shows it: when every build that publishes its content is versioned by the mark's target or filtered for it. A line's output leaves out a version at or before the oldest live line, so such a build shows nothing of the mark. Then two content checks report it:
 
 | Check | Reports |
 |---|---|
@@ -66,7 +66,7 @@ A mark's [`planned`](../writing/directives.md#the-planned-line) is the target's 
 **A badge.** A build that badges availability and isn't versioned, such as one site, shows every version. So there:
 
 - `ascribe 0.1.1` still reads "since 0.1.1", and content in no line is still published, so `available-in-no-line` stays quiet.
-- When every version a mark names is before the oldest live line and every live line has the content, though, that badge says only that the content is older than any reader's line, so `available-same-in-every-line` reports it too, saying the badge is shown, with an unsafe fix, since removing the versions removes the badge.
+- When every version a mark names is before the oldest live line and every live line has the content, though, that badge says only that the content is older than any reader's line. So `available-same-in-every-line` reports it too, saying the badge is shown, with an unsafe fix, since removing the versions removes the badge.
 - A project that keeps such badges, as "new in 0.2", sets `available-same-in-every-line = "off"` in `[checks]`.
 
 **When the fix removes the mark.** When the mark would then be its target alone, generally available, and the target is the only value of its dimension, the mark says nothing even as a badge ("Available: Ascribe (GA)" in a project with one product), so the fix removes the mark instead of rewriting it: the `@available` line, the page's `available` key, or the row's `{available=…}`. It does so only when the mark names nothing else and no build filters for another target, since content with no mark applies everywhere, and there that's the one target. Content with no mark reads as the scope around it, though, so the fix rewrites the mark instead of removing it when it's:

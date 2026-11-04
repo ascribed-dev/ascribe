@@ -68,17 +68,17 @@ Moving a permalink to another heading or page makes the list behind, and doesn't
 
 [`ascribe permalinks sync`](../permalinks/command.md#cli-permalinks-sync) writes the list, and the editor's quick fix on `permalinks-list-behind` writes the same text. Writing the list:
 
-- adds an entry for each declared name the list doesn't have;
-- moves an entry whose place no longer declares its name to a place that does;
-- keeps an entry whose name isn't declared any more, so writing the list never hides a removal;
-- writes each name `ascribe.addresses` moves or retires to `[aliases]`, `[moved]`, or `[retired]`, moving a name there from `[permalinks]` when it was declared before.
+- Adds an entry for each declared name the list doesn't have.
+- Moves an entry whose place no longer declares its name to a place that does.
+- Keeps an entry whose name isn't declared any more, so writing the list never hides a removal.
+- Writes each name `ascribe.addresses` moves or retires to `[aliases]`, `[moved]`, or `[retired]`, moving a name there from `[permalinks]` when it was declared before.
 
 The text is the same for the same list on every platform: the comment, `version`, a blank line, `[permalinks]`, then one line for each name, sorted, then, when there are any, a blank line, `[aliases]`, and its lines, and the same for `[moved]` and `[retired]`, with `\n` line endings. So a change to the list is a change of a line or two in review.
 
 ## 5. Reading a copy
 
-A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]`, `[aliases]`, or `[moved]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../permalinks/command.md#cli-permalinks-verify) does this, and [Checking a product's links](../permalinks/index.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser, and:
+A copy of the file is all a tool needs to check a link: a name is a permalink of the docs when the copy's `[permalinks]`, `[aliases]`, or `[moved]` has it. A name in `[retired]` was a permalink, and isn't now: its address shows the reason, and a link to it should change. That says the name is declared, not that it has an address: a build gives it one only when it publishes the page or heading that declares it, so a marked heading in a fragment no page includes, or on a page no build publishes, is listed and leads nowhere (`fragment-unused` and `page-orphan` point at most of these). [`ascribe permalinks verify`](../permalinks/command.md#cli-permalinks-verify) does this, and [Checking a product's links](../permalinks/index.md#checking-a-products-links) shows it in CI. A tool of your own can read the file with any TOML parser. It should:
 
-- should fail on a `version` it doesn't know, rather than read it as version 1;
-- should fail on a name in `[retired]`, saying why it was retired;
-- shouldn't rely on the places, which change when the docs are reorganized; only the names are kept.
+- Fail on a `version` it doesn't know, rather than read it as version 1.
+- Fail on a name in `[retired]`, saying why it was retired.
+- Not rely on the places, which change when the docs are reorganized. Only the names are kept.
