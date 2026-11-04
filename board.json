@@ -9543,7 +9543,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1340"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Write it once: a guide to fragments, includes, and phrases"
     },
     {
@@ -9919,7 +9919,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1344"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Split `command/questions.md`, which is over the size limit for agents"
     },
     {
@@ -9934,6 +9934,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzhF0BEA",
       "labels": [
         "enhancement"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1348"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
