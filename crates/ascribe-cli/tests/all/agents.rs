@@ -956,6 +956,49 @@ fn in_a_workspace_the_hooks_run_the_binary_where_it_installs() {
 }
 
 #[test]
+fn in_a_workspace_the_setup_steps_put_the_binary_where_it_installs_on_the_path() {
+    // As the hooks' test: the root's `package.json` and lockfile, and the
+    // pin in `docs/package.json`.
+    let case = |lockfile: &str, lock: &str| {
+        let repo = tempfile::tempdir().unwrap();
+        let root = repo.path();
+        copy_dir(&examples().join("quill"), &root.join("docs"));
+        git_init(root);
+        write(
+            &root.join("package.json"),
+            "{\"private\": true, \"workspaces\": [\"docs\"]}\n",
+        );
+        write(&root.join(lockfile), lock);
+        write(&root.join("docs/package.json"), DEPENDS_ON_CLI);
+        sync(root, "docs", &["--cloud", "--with-hook", "--agent"]);
+        let steps = read(&root.join(SETUP_STEPS));
+        let agent = read(&root.join(".github/agents/ascribe-docs.md"));
+        let hooks = read(&root.join(".github/hooks/ascribe.json"));
+        (steps, agent, hooks)
+    };
+    let path = |bin: &str| format!("echo \"$GITHUB_WORKSPACE/{bin}\" >> \"$GITHUB_PATH\"\n");
+    let server =
+        |bin: &str| format!(r#"exec \"$(git rev-parse --show-toplevel)/{bin}/ascribe\" mcp"#);
+    // npm and Yarn hoist the binary to the workspace's root, where the
+    // hooks run it too.
+    for (lockfile, lock) in [
+        ("package-lock.json", ""),
+        ("yarn.lock", "# yarn lockfile v1\n"),
+    ] {
+        let (steps, agent, hooks) = case(lockfile, lock);
+        assert!(steps.contains(&path("node_modules/.bin")), "{steps}");
+        assert!(!steps.contains("docs/node_modules"), "{steps}");
+        assert!(agent.contains(&server("node_modules/.bin")), "{agent}");
+        assert!(hooks.contains("node_modules/.bin/ascribe"), "{hooks}");
+        assert!(!hooks.contains("docs/node_modules"), "{hooks}");
+    }
+    // pnpm links it beside the package that pins it.
+    let (steps, agent, _) = case("pnpm-lock.yaml", "");
+    assert!(steps.contains(&path("docs/node_modules/.bin")), "{steps}");
+    assert!(agent.contains(&server("docs/node_modules/.bin")), "{agent}");
+}
+
+#[test]
 fn with_plug_n_play_the_hooks_run_ascribe_from_the_path() {
     let repo = repository("quill");
     let root = repo.path();

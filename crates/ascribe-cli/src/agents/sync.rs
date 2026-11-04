@@ -622,11 +622,9 @@ fn install_of(here: &Path, root: &Path) -> Result<copilot::Install, SyncError> {
             && let Some(spec) = copilot::pinned_spec(&text)
         {
             let package = from_root(dir);
-            let bin = if package.is_empty() {
-                "node_modules/.bin".to_owned()
-            } else {
-                format!("{package}/node_modules/.bin")
-            };
+            // Empty only for Plug'n'Play, which the lockfiles below send to
+            // `plug_n_play` before it's used.
+            let bin = bin_of(dir, root)?.unwrap_or_default();
             let pinned = |install: &Path, command| copilot::Install::Pinned {
                 package: package.clone(),
                 install: from_root(install),
@@ -782,23 +780,31 @@ fn ascribe_command(here: &Path, root: &Path) -> Result<settings::Ascribe, SyncEr
             .and_then(copilot::pinned_spec)
             .is_some()
         {
-            let Some(bin_dir) = bin_folder(dir, root)? else {
+            let Some(bin) = bin_of(dir, root)? else {
                 break;
             };
-            let Some(rel) = relative_path(root, &bin_dir) else {
-                break;
-            };
-            let bin = rel
-                .join("node_modules/.bin/ascribe")
-                .map(|p| p.as_str().to_owned())
-                .unwrap_or_else(|_| "node_modules/.bin/ascribe".to_owned());
-            return Ok(settings::Ascribe::pinned(&bin));
+            return Ok(settings::Ascribe::pinned(&format!("{bin}/ascribe")));
         }
         if dir == root {
             break;
         }
     }
     Ok(settings::Ascribe::on_path())
+}
+
+/// The `node_modules/.bin` that holds the `ascribe` of the package at
+/// `package`, from `root`, `/`-separated, by `bin_folder`'s rule: the hooks
+/// and Copilot's setup steps both run it from here. `None` for Yarn's
+/// Plug'n'Play, or a folder outside `root`.
+fn bin_of(package: &Path, root: &Path) -> Result<Option<String>, SyncError> {
+    let Some(folder) = bin_folder(package, root)? else {
+        return Ok(None);
+    };
+    Ok(relative_path(root, &folder).map(|rel| {
+        rel.join("node_modules/.bin")
+            .map(|p| p.as_str().to_owned())
+            .unwrap_or_else(|_| "node_modules/.bin".to_owned())
+    }))
 }
 
 /// The folder whose `node_modules/.bin` holds the `ascribe` of the package
@@ -809,13 +815,18 @@ fn ascribe_command(here: &Path, root: &Path) -> Result<settings::Ascribe, SyncEr
 /// Yarn's Plug'n'Play, which writes no `node_modules/.bin`.
 fn bin_folder(package: &Path, root: &Path) -> Result<Option<PathBuf>, SyncError> {
     for lock_dir in package.ancestors() {
-        // Outside FileSystem: the repository's lockfiles, which aren't the
-        // project's.
-        if lock_dir.join("pnpm-lock.yaml").is_file() {
-            return Ok(Some(package.to_owned()));
-        }
-        if lock_dir.join("package-lock.json").is_file() {
-            return Ok(Some(lock_dir.to_owned()));
+        // In the order `install_of` reads them, so the steps put on the
+        // path the folder their command installs to.
+        for (file, _) in copilot::LOCKFILES {
+            // Outside FileSystem: the repository's lockfiles, which aren't
+            // the project's.
+            if lock_dir.join(file).is_file() {
+                return Ok(Some(if *file == "pnpm-lock.yaml" {
+                    package.to_owned()
+                } else {
+                    lock_dir.to_owned()
+                }));
+            }
         }
         if let Some(lock) = read(&lock_dir.join(copilot::YARN_LOCK))? {
             let yarnrc = read(&lock_dir.join(copilot::YARNRC))?;
