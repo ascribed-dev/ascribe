@@ -14,9 +14,16 @@ The report says what changed and how much. Whether the words still hold is for w
 
 ## Add the report to CI
 
-This GitHub Actions job writes the report to the run's summary on each pull request. It never fails the check: a changed example is something to read, not an error. Change `--config docs` to your project's folder (the one with `ascribe.toml`), or drop it when that's the repository's root, and install `ascribe` however your other jobs do.
+This GitHub Actions job writes the report to the run's summary on each pull request. It never fails the check: a changed example is something to read, not an error.
 
-@snippet {lang=yaml}: code:.github/workflows/drift.yml#job
+@steps
+1. Add the job to a workflow that runs on pull requests:
+
+   @snippet {lang=yaml}: code:.github/workflows/drift.yml#job
+
+2. Change `--config docs` to your project's folder (the one with `ascribe.toml`), or drop it when that's the repository's root.
+3. Install `ascribe` however your other jobs do.
+4. Open a pull request that changes an example's code. The run's summary lists the pages that show it.
 
 - **History.** Like `ascribe diff`, `ascribe drift` compares with the merge base of the pull request's base branch and its head, so the checkout needs `fetch-depth: 0`. With less, it stops and says to fetch more.
 - **The summary.** `--format markdown` writes the groups as Markdown, each page linked to its route on `[consumer] site`, and nothing when no example changed, so the summary stays empty on most pull requests.

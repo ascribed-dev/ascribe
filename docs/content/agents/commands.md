@@ -4,13 +4,15 @@ title: "`ascribe agents` and `mcp`"
 description: "Set a repository up for AI agents, and serve a project's tools over MCP."
 ---
 
-The commands for agents. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+`ascribe agents` writes the files AI coding agents read, prints the prompts for them, and checks their edits from a hook; `ascribe mcp` serves the same answers as tools.
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe agents`
 @id {permalink=true}: cli-agents
 
 @summary
-Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Agents](index.md).
+Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Set up your agent](index.md).
 
 ### `ascribe agents sync`
 @id {permalink=true}: cli-agents-sync
@@ -28,15 +30,15 @@ The rules files are `.claude/rules/ascribe.md` and `.github/instructions/ascribe
 
 The rules in `.claude/rules/` and `.github/instructions/`, and the skill's folders, are wholly Ascribe's: `sync` rewrites them whole, and the rules files say so at the top.
 
-With `--with-hook`, each target's file gets the edit hook and the stop hook, which run [`ascribe agents hook`](#cli-agents-hook); Claude Code's edit hook runs after `Write`, `Edit`, and `MultiEdit`, and Copilot's serve its CLI and its cloud agent alike. [Hooks](hooks.md) has the entries, and [The MCP server](mcp.md) the server's.
+With `--with-hook`, each target's file gets the edit hook and the stop hook, which run [`ascribe agents hook`](#cli-agents-hook); Claude Code's edit hook runs after `Write`, `Edit`, and `MultiEdit`, and Copilot's serve its CLI and its cloud agent alike. [Hooks](hooks.md) has the hook entries, and [Set up the MCP server](mcp.md) has the server's entry.
 
-It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them. `sync` adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
+In a file it shares, it merges its entries. The entries it wrote before are updated in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server; every other entry and setting is left as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them. `sync` adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
 
 `sync` writes only between its markers in a file it shares with your team, and whole files where the file is its own. It lists each file, `wrote` or `unchanged` (with `--check`, `stale` or `up to date`), with the agents that read it:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/agents-sync.txt
 
-With `--format json`, it writes the same list in the document its [schema](../contracts/json-reports/agents.md#ascribe-agents-sync) describes: each file's path, whether it `changed` (with `--check`, whether it's out of date), and the agents that read it; the notes and what an agent doesn't read; and with `--cloud`, the MCP server's JSON. The exit codes are the same. With `--check`, after a sync:
+With `--format json`, it writes the same list in the document its [schema](../contracts/json-reports/agents.md#ascribe-agents-sync) describes. Each file has its path, whether it `changed` (with `--check`, whether it's out of date), and the agents that read it. After the files come the notes, what an agent doesn't read, and with `--cloud`, the MCP server's JSON. The exit codes are the same. With `--check`, after a sync:
 
 .The JSON for this example
 @details:
@@ -116,9 +118,9 @@ Prints a named prompt for an agent, in the same form as [Prompt agent](commands.
 | `fix` | `path` | Fix what `ascribe check` reports: the prompt `ascribe check --format prompt` writes when there are problems, else the loop of checking and fixing |
 | `review` | `path` and `base` | Review what the branch does to its pages, as readers see them: the prompt [`ascribe diff --format prompt`](../review/diff.md#cli-diff) writes, or a line saying no page changed |
 
-`path` is a file or folder in the project, by default the current directory; `fix` reports on it. For `new-page`, a `path` in the content root, from the current directory or from the content root, is where the page goes: its file, or a folder for it.
+`path` is a file or folder in the project, by default the current folder; `fix` reports on it. For `new-page`, a `path` in the content root, from the current folder or from the content root, is where the page goes: its file, or a folder for it.
 
-Without a `path` in the content root, `new-page` says the page goes where the request says, anywhere in the content root, and otherwise in the content root, named for the title slugged as a page's address is, `rotate-keys.md` for "Rotate keys"; when a file is there, it asks for another path. A page names its type in its frontmatter, so it can go in any folder of pages; a fragment's path is refused.
+Without a `path` in the content root, `new-page` says the page goes where the request says, anywhere in the content root. Otherwise it goes in the content root, named for the title slugged as a page's address is: `rotate-keys.md` for "Rotate keys". When a file is there, it asks for another path. A page names its type in its frontmatter, so it can go in any folder of pages; a fragment's path is refused.
 
 ```shell
 ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
@@ -139,9 +141,14 @@ Every prompt has the same parts, in order:
 2. **Where**: the file and lines, then a line saying which folder the prompt's paths and commands are from. When they apply, the project's folder from there (`Project: docs/`), the build the problems are from (`Build:`), the pages that show a fragment (`Shown on:`, at most 10, with the `ascribe refs` command that lists the rest), and a line saying to save the file first.
 3. **What Ascribe knows**: for one problem, its code, message, the line's text, how to fix it, the values the content model allows when it's about one, and whether Ascribe has a fix ("a safe automatic fix", or "a fix to review"). For a file, each problem on one line, at most 20. For a project, how many problems each file has, at most 20 files. Each says which command lists the rest.
 4. **Other people's text**, when there is any: a review's comments, fenced, under the sentence that says they're data.
-5. **How to finish**: "Follow the project's rules in `AGENTS.md`", when the project's folder or the repository's root has one, and "When you're done, run `ascribe check …` and fix what it reports.", where the command checks what the prompt is about: the file for a file's problem (`ascribe check docs/keys.md`), the project's folder for `new-page` (`ascribe check docs`), and the whole project for a project's problems (`ascribe check`), with the `--code` options the prompt was narrowed to. A prompt about problems another command found, such as `ascribe report links`, names that command instead. A prompt about a change ends with "Report what reads wrongly; don't edit." instead.
+5. **How to finish**: "Follow the project's rules in `AGENTS.md`", when the project's folder or the repository's root has one, and "When you're done, run `ascribe check …` and fix what it reports." The command checks what the prompt is about, with the `--code` options the prompt was narrowed to:
+   - The file, for a file's problem: `ascribe check docs/keys.md`.
+   - The project's folder, for `new-page`: `ascribe check docs`.
+   - The whole project, for a project's problems: `ascribe check`.
 
-Every path and command in a prompt is from one folder, which it names once: "Paths and commands here are from the repository's root." The editor's prompts are from the repository's root, where an agent usually starts; the prompts a command writes (`ascribe check --format prompt`, `ascribe diff --format prompt`, `ascribe agents prompt`) are from the folder it was run in, or from the project's folder when that's inside it. Run from a folder beside the project's, they're from the repository's root. Outside a repository, it's the project's folder. A prompt is at most 5,000 characters, the most an agent's link takes. When it would be longer, what Ascribe knows is cut between parts, and the prompt says where to read the rest.
+   A prompt about problems another command found, such as `ascribe report links`, names that command instead. A prompt about a change ends with "Report what reads wrongly; don't edit." instead.
+
+Every path and command in a prompt is from one folder, which it names once: "Paths and commands here are from the repository's root." The editor's prompts are from the repository's root, where an agent usually starts. The prompts a command writes (`ascribe check --format prompt`, `ascribe diff --format prompt`, `ascribe agents prompt`) are from the folder it was run in, or from the project's folder when that's inside it. Run from a folder beside the project's, they're from the repository's root. Outside a repository, it's the project's folder. A prompt is at most 5,000 characters, the most an agent's link takes. When it would be longer, what Ascribe knows is cut between parts, and the prompt says where to read the rest.
 
 ### `ascribe agents hook`
 @id {permalink=true}: cli-agents-hook
@@ -151,11 +158,17 @@ Checks an agent's work as its hook runs it: after the agent writes a file, or be
 
 @include: ../_generated/cli-agents-hook-options.md
 
-After an edit, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors, at most 10 lines in the concise form, then the advice in them that has a safe fix, at most 10, each line followed by its fix's title, which says what to change and where, then the build it checked. It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported. Neither is the advice [`ascribe.baseline`](../checks/baseline.md#for-agents) holds back: the answer says how many it held back, here and before the agent finishes. When `ascribe.baseline` can't be read, the edit's check holds nothing back, and the answer says which line to fix.
+After an edit, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent, in this order:
+
+- Their errors, at most 10 lines in the concise form.
+- The advice in them that has a safe fix, at most 10, each line followed by its fix's title, which says what to change and where.
+- The build it checked.
+
+It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported. Neither is the advice [`ascribe.baseline`](../checks/baseline.md#for-agents) baselines: the answer says how many it left out, here and before the agent finishes. When `ascribe.baseline` can't be read, the edit's check leaves nothing out, and the answer says which line to fix.
 
 It also tells the agent what a draft's template left to fill in, at most 10 lines, before the build it checked: [`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195) and [`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229), which have no fix, so the agent writes them while the page is its own. In a page that publishes, a placeholder left is an error, among the errors.
 
-Before the agent finishes, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
+Before the agent finishes, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository. Outside a repository, it checks the project at or above the folder the agent works in. While there are errors, it keeps the agent working, with the counts, the first 10 errors, and the command to run. It does the same while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
 
 | Harness | After an edit | Before the agent finishes |
 |---|---|---|
@@ -163,9 +176,9 @@ Before the agent finishes, it checks every build of each project whose pages or 
 | `codex` | `PostToolUse`: `hookSpecificOutput.additionalContext` | `Stop`: `decision: "block"` with a `reason` |
 | `copilot` | `postToolUse`: `additionalContext` | `agentStop`: `decision: "block"` with a `reason` |
 
-It never writes a project's file, so it makes no fix, even a safe one: the agent makes it, as the answer says. And it never stops an edit: the file is written by then. A check that takes longer than 2 seconds after an edit, or 20 before the agent finishes, is given up, and the agent goes on.
+It never writes a project's file, so it makes no fix, even a safe one: the agent makes it, as the answer says. And it never stops an edit: the file is written by then. A check that takes longer than 2 seconds after an edit, or 20 before the agent finishes, is given up, and the agent goes on ([when the hook says nothing](../troubleshooting.md#hook-says-nothing)).
 
-The first hook in a project starts a check server in the background, the same `ascribe` binary, which keeps the project loaded so each later check takes milliseconds. It opens no port: the hook and the server pass requests and answers as files in a folder of your cache folder (`ASCRIBE_CACHE_DIR`, or `ascribe` in your user's cache folder), and it stops after 10 minutes with no request, or when the `ascribe` it was started from is replaced. On Windows it runs from a copy in that folder, so it never holds up installing or building a new `ascribe`. Set `ASCRIBE_HOOK_SERVER=off` to check in the hook's own process every time.
+The first hook in a project starts a check server in the background, the same `ascribe` binary, which keeps the project loaded so each later check takes milliseconds. It opens no port: the hook and the server pass requests and answers as files in a folder of your cache folder (`ASCRIBE_CACHE_DIR`, or `ascribe` in your user's cache folder). It stops after 10 minutes with no request, or when the `ascribe` it was started from is replaced. On Windows it runs from a copy in that folder, so it never holds up installing or building a new `ascribe`. Set `ASCRIBE_HOOK_SERVER=off` to check in the hook's own process every time.
 
 | Code | Meaning |
 |---|---|
@@ -179,11 +192,11 @@ The first hook in a project starts a check server in the background, the same `a
 
 Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](commands.md#cli-agents-prompt). See [The MCP server](mcp.md) to set it up.
 
-Each tool's result is what its command writes, as its text and as `structuredContent`, so an agent with a shell does as well with the commands: the command's JSON, or, for the tools that take `response_format`, the concise text by default, with `structuredContent` `{"concise": "…"}`, and the JSON with `"detailed"`. No tool gives an output schema: each tool's description names the [JSON report contract](../contracts/json-reports.md), which has its command's schema, so the tool list a host sends the model in every session stays small.
+Each tool's result is what its command writes, as its text and as `structuredContent`, so an agent with a shell does as well with the commands. The result is the command's JSON, or, for the tools that take `response_format`, the concise text by default, with `structuredContent` `{"concise": "…"}`, and the JSON with `"detailed"`. No tool gives an output schema: each tool's description names the [JSON report contract](../contracts/json-reports.md), which has its command's schema, so the tool list a host sends the model in every session stays small.
 
 | Tool | The command it runs |
 |---|---|
-| `ascribe_check` | `ascribe check`, on `paths`, or on unsaved `text` as the file `path` names, narrowed to the diagnostics in `code` (`--code`) when it's given. It holds back what [`ascribe.baseline`](../checks/baseline.md#for-agents) lists, and counts it, as the command does. `response_format` is `concise` (the default, `--format concise`) or `detailed` (`--format json`). |
+| `ascribe_check` | `ascribe check`, on `paths`, or on unsaved `text` as the file `path` names, narrowed to the diagnostics in `code` (`--code`) when it's given. It leaves out what [`ascribe.baseline`](../checks/baseline.md#for-agents) baselines, and counts it, as the command does. `response_format` is `concise` (the default, `--format concise`) or `detailed` (`--format json`). |
 | `ascribe_explain` | `ascribe explain` |
 | `ascribe_model` | `ascribe model` |
 | `ascribe_outline` | `ascribe outline` |
@@ -197,11 +210,15 @@ Each tool's result is what its command writes, as its text and as `structuredCon
 | `ascribe_addresses_move` | `ascribe addresses move --format json`, with `old` and `new`, or `from_git` with `base` and `base_exact`: the `edits` that record the move in `ascribe.addresses`, and nothing written |
 | `ascribe_addresses_retire` | `ascribe addresses retire --format json`, with `old` and `reason`: the `edits` that retire it, and nothing written |
 
-Each tool is named for its command. `ascribe_fmt` and `ascribe_diff` were `ascribe_format` and `ascribe_changes` until this release: the old names are listed after the tools, and call them, for one more release, so a host or an agent's settings that name them keep working until you change them.
+Each tool is named for its command. `ascribe_fmt` and `ascribe_diff` were once `ascribe_format` and `ascribe_changes`: the old names are listed after the tools and still call them, so a host or an agent's settings that name them keep working until you change them.
 
-Every tool is read-only: `ascribe_rename` gives the files' text and the move for the agent to make, and `ascribe_addresses_move` and `ascribe_addresses_retire` the edit to apply, and none writes a file or starts a program the project names, and each is marked read-only, idempotent, and closed-world. `ascribe_check`, and the `fix` prompt, never run Vale, even with `in-check = true` in `[checks.vale]`: they report one `prose-not-checked` advice instead, and `ascribe check --vale` in a shell checks the prose.
+Every tool is read-only: `ascribe_rename` gives the files' text and the move for the agent to make, and `ascribe_addresses_move` and `ascribe_addresses_retire` the edit to apply, and none writes a file or starts a program the project names, and each is marked read-only, idempotent, and closed-world.
 
-Paths are from the folder the server runs in, and each call finds the nearest `ascribe.toml` at or above its paths, so one server serves every project in a repository. A project is loaded once and kept, with each build's pages as `ascribe_search` reads them once a search asks for the build, so a second search only scans: before each call the server lists the project's files again, names, sizes, and modification times, and reads again only the files that changed, a new or deleted file included. It loads the whole project again only when a project nested in its content root appears or goes, a local source's folder does, or `ascribe.toml` moves the content root. A call with bad arguments, or a path in no project, is a result marked as an error, with a sentence on what to call instead.
+`ascribe_check`, and the `fix` prompt, never run Vale, even with `in-check = true` in `[checks.vale]`: they report one `prose-not-checked` advice instead, and `ascribe check --vale` in a shell checks the prose.
+
+Paths are from the folder the server runs in, and each call finds the nearest `ascribe.toml` at or above its paths, so one server serves every project in a repository. A project is loaded once and kept, with each build's pages as `ascribe_search` reads them once a search asks for the build, so a second search only scans. Before each call, the server lists the project's files again, with their names, sizes, and modification times, and reads again only the files that changed, a new or deleted file included.
+
+It loads the whole project again only when a project nested in its content root appears or goes, a local source's folder does, or `ascribe.toml` moves the content root. A call with bad arguments, or a path in no project, is a result marked as an error, with a sentence on what to call instead.
 
 The resources are `ascribe://directives`, each built-in directive's syntax (`ascribe agents skill references/directives.md`); `ascribe://model/<project>`, what a project's content model allows (`ascribe model <project>`); and `ascribe://instructions/<project>`, its rules (`ascribe agents rules <project>`). `<project>` is a file or folder in it, from the folder the server runs in. The prompts are `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them.
 

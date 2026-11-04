@@ -1,0 +1,1 @@
+- **The how-tos are numbered steps under task titles.** Each command's reference is on a reference page, such as `ascribe init`'s, which the how-to links to. See [Check pull requests in CI](docs/content/checks/ci.md).

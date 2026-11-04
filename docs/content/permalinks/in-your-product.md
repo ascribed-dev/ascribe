@@ -5,7 +5,7 @@ description: Show a section of the docs inside your product, in a tooltip, a sid
 permalink: help-in-a-product
 ---
 
-A product that links to the docs by [permalink](index.md) can show the section the permalink names where its user is: the first paragraph in a tooltip, the whole section in a side panel, or the answer beside an error message, with a link to read more. The text is the docs' own, for the product's release line, so nothing is copied into the product's strings to drift from them.
+A product that links to the docs by [permalink](index.md) can show the section the permalink names where its user is. That's the first paragraph in a tooltip, the whole section in a side panel, or the answer beside an error message, with a link to read more. The text is the docs' own, for the product's release line, so nothing is copied into the product's strings to drift from them.
 
 Every build writes the sections to `_ascribe/help.json` in its site output, beside the list of permalinks. A product copies the file into its own build, looks a permalink up by name, and shows its title, summary, text, or address. A product online can fetch its line's entry from the docs site instead, so a fix to the docs reaches it without a release, and fall back to its bundled copy.
 
@@ -16,7 +16,7 @@ One entry for each permalink the build publishes, and for each alias of one, key
 
 - **`title`:** the heading's text, or the page's title for a page's own permalink, as plain text.
 - **`summary`:** the section's [summary](#writing-summaries), when it has one; a page's own permalink has its description. Absent when there's none.
-- **`text`:** the whole section, as the plain output writes it: Markdown, with phrases and includes resolved, each variant arm under a heading of its own, availability as an `Available:` line, and each image as its alt text, since a product can't count on loading an image from the docs' site.
+- **`text`:** the whole section, as the plain Markdown output writes it. It's Markdown, with phrases and includes resolved, each variant arm under a heading of its own, and availability as an `Available:` line. Each image is its alt text, since a product can't count on loading an image from the docs' site.
 - **`choices`:** for a section with a switcher, the section with each arm chosen, keyed by dimension and value, such as `choices.pm.pnpm` (see [Show your reader's arm](#choosing-an-arm)).
 - **`address`:** the permalink's address, which a "Read more" link opens.
 - **`source`:** the page the section is on.
@@ -91,7 +91,7 @@ ascribe resolve go:prerequisites --build site --config examples/quill
 ## Show your reader's arm
 @id: choosing-an-arm
 
-A section with a [switcher](../writing/variants.md) has every arm in `text`, each under a heading of its own, as the plain output writes it. A product that knows its reader's choice, such as the package manager they installed it with, shows the section with that arm alone from `choices`: keyed by the switcher's dimension, then by each value its arms name, each the section as a build that selects that value writes it. Other groups in the section stay as they were, and a section with switchers on two dimensions has a key for each. The summary is the section's, the same for every choice. A product that doesn't know shows `text`.
+A section with a [switcher](../writing/variants.md) has every arm in `text`, each under a heading of its own, as the plain Markdown output writes it. A product that knows its reader's choice, such as the package manager they installed it with, shows the section with that arm alone, from `choices`. It's keyed by the switcher's dimension, then by each value its arms name, and each entry is the section as a build that selects that value writes it. Other groups in the section stay as they were, and a section with switchers on two dimensions has a key for each. The summary is the section's, the same for every choice. A product that doesn't know shows `text`.
 
 The program above, given `--choose pm=pnpm`, prints the `install-agent` section with its pnpm arm, and adds the choice to the address, which sets the reader's choice on the site:
 
@@ -124,7 +124,7 @@ The rule for a product:
 
 - **Fetch its own line's entry,** from the folder for the release it is.
 - **Check `line`.** Use the answer only when its `line` is the bundled file's, so a misconfigured address can't show another release's text.
-- **Fall back to the bundled copy** when it's offline, on any error or timeout, and when the docs no longer publish its line: once a line leaves the window, its addresses answer 404, and the bundled copy is the text that release shipped with.
+- **Fall back to the bundled copy** when it's offline, on any error or timeout, and when the docs no longer publish its line. Once a line leaves the window, its addresses answer 404, and the bundled copy is the text that release shipped with.
 
 The program above does all three when it's given its line's folder:
 

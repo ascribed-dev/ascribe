@@ -5,7 +5,7 @@ nav-label: "`ascribe report`"
 description: "The JSON Schema of what `ascribe report` writes with `--format json`."
 ---
 
-Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
+The JSON Schema of what `ascribe report` writes with `--format json`. The document follows the rules of the [JSON report contract](../json-reports.md).
 
 ## `ascribe report`
 

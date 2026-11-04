@@ -1,0 +1,1 @@
+- **The docs use one word for each idea, and the glossary defines them.** Problem and diagnostic, page type, change and availability marks, baseline, and the plain Markdown output each mean one thing, with new glossary entries. See [the glossary](docs/content/glossary.md).

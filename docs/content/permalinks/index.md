@@ -1,6 +1,6 @@
 ---
 type: how-to
-title: Permalinks
+title: Link to the docs from your product
 description: Link to the docs from your product by permalink, check those links in the product's CI, and keep them working when a section moves, gets a second name, or goes away.
 permalink: permalinks
 ---
@@ -11,7 +11,7 @@ This guide keeps a product's links to the docs working: linking to permalinks fr
 
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) lists the permalinks a page declares, its own and its headings', and each opens its line.
 
-## Link from your product
+## 1. Link from your product
 @id: linking-from-a-product
 
 A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../content-model/variation.md#dimensions):
@@ -32,15 +32,7 @@ docsLink("weave-config", { pm: "pnpm" });
 
 A parameter that names a dimension, with one of its values, sets the reader's choice, as if they'd picked the tab: this link opens the section with the `pnpm` tab showing. Anything else is ignored, so send what the product knows, without checking what the docs accept ([the parameters](../astro/reference.md#permalinks)).
 
-## What an agent gets
-@id: permalinks-for-agents
-
-An agent given a permalink, by `ascribe --help`, `ascribe explain`, or a diagnostic's link, gets the section it names in one fetch:
-
-- **Its section as Markdown,** at the address with `.md` in place of its end, `go/weave-config.md`, under the section's title. A host that answers a page asked for with `Accept: text/markdown` with its Markdown finds it for the address too, and the forwarding page names it, `<link rel="alternate" type="text/markdown">`, beside the JSON entry a product [fetches](in-your-product.md#fetching-the-entry).
-- **A `301` to the section,** with `host = "netlify"`, since an agent's fetcher doesn't follow the forwarding page ([permalinks on Netlify](../publishing/redirects.md#permalinks-on-netlify)). A retired permalink's address answers `410`.
-
-## Check the links in the product's CI
+## 2. Check the links in the product's CI
 @id: checking-a-products-links
 
 A product that links to the docs can check, in its own CI, that every name it links to is still a permalink there, without building or even having the docs. The docs commit their list of permalinks, `ascribe.permalinks`, which `ascribe permalinks sync` writes beside `ascribe.toml` ([The permalinks list](../contracts/permalinks-list.md)). Then `ascribe check` in the docs warns when a permalink is removed, and the product checks its names against a copy of the list:
@@ -59,9 +51,17 @@ jobs:
       - run: npx @ascribed/cli permalinks verify --against docs.permalinks --from docs-links.txt
 ```
 
-`docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](command.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave, so a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
+`docs-links.txt` lists the names the product links to, one on each line. [`ascribe permalinks verify`](command.md#cli-permalinks-verify) exits with 1, naming each name the list doesn't have, and each the docs retired, with the reason they gave. So a link to a section the docs removed, or never had, fails the product's pull request rather than reaching its users. An alias passes, as the permalink it leads to does.
 
 In the docs, `ascribe check` reports a list that's behind the content (`permalinks-list-behind`): a new permalink, or one that moved. Run `ascribe permalinks sync`, or take the editor's quick fix, and commit the list with the change; `ascribe permalinks sync --check` fails in CI when it wasn't. Moving a permalink to another page changes one line of the list and removes nothing. Deleting one is a warning (`permalink-lost`), which `sync` doesn't clear: restore the name, or record what happened to it ([when a section moves or goes away](index.md#moving-aliasing-and-retiring)).
+
+## What an agent gets
+@id: permalinks-for-agents
+
+An agent given a permalink, by `ascribe --help`, `ascribe explain`, or a diagnostic's link, gets the section it names in one fetch:
+
+- **Its section as Markdown,** at the address with `.md` in place of its end, `go/weave-config.md`, under the section's title. A host that answers a page asked for with `Accept: text/markdown` with its Markdown finds it for the address too, and the forwarding page names it, `<link rel="alternate" type="text/markdown">`, beside the JSON entry a product [fetches](in-your-product.md#fetching-the-entry).
+- **A `301` to the section,** with `host = "netlify"`, since an agent's fetcher doesn't follow the forwarding page ([permalinks on Netlify](../publishing/redirects.md#permalinks-on-netlify)). A retired permalink's address answers `410`.
 
 ## When a section moves or goes away
 @id: moving-aliasing-and-retiring
@@ -77,7 +77,9 @@ ascribe permalinks retire rotate-keys --to guides/security.md#keys
 ascribe permalinks retire legacy-sync --reason "The sync agent was removed in 4.0"
 ```
 
-[`ascribe permalinks retire`](command.md#cli-permalinks-retire) writes each to `ascribe.addresses`, `"go:rotate-keys" = "guides/security.md#keys"` in `[moved]` with `--to`, and `"go:legacy-sync" = "…"` in `[retired]` with `--reason`, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. A moved name's address leads to its new place, and `verify` accepts it. A retired name's address is a page that says the section was removed, with the reason, and a product's `verify` fails on the name, with the reason, so the product changes its link. In the editor, the quick fix on `permalink-lost` writes a retired entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page, or with `--under` for every page in a folder.
+[`ascribe permalinks retire`](command.md#cli-permalinks-retire) writes each to `ascribe.addresses`, `"go:rotate-keys" = "guides/security.md#keys"` in `[moved]` with `--to`, and `"go:legacy-sync" = "…"` in `[retired]` with `--reason`, and records it in `ascribe.permalinks`, so `ascribe check` no longer warns. A moved name's address leads to its new place, and `verify` accepts it. A retired name's address is a page that says the section was removed, with the reason, and a product's `verify` fails on the name, with the reason, so the product changes its link.
+
+In the editor, the quick fix on `permalink-lost` writes a retired entry with a placeholder reason, which is an error until you replace it. To retire every permalink on a page you're about to delete, run it with `--page` before deleting the page, or with `--under` for every page in a folder.
 
 Retire rather than delete the line from the list: a deleted line makes the address a 404 with nothing to say why, and a product's `verify` says only that the name is missing.
 

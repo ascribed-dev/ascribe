@@ -228,7 +228,7 @@ kind = "choice"
 type = "string"
 choices = ["description", "recheck-date", "owner"]
 only = "fields"
-description = '''What the field is for, which a check reads: `"description"`, `"recheck-date"` (or `"review-date"`, its old name, for a release), or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
+description = '''What the field is for, which a check reads: `"description"`, `"recheck-date"` (or `"review-date"`, its old name, which still works), or `"owner"`. Allowed only on a page type's top-level fields, its own or `[frontmatter]`'s. A field named for a role has it without `role`, unless the type gives it to another field. See §5.4.'''
 
 # ---- 6. `[dimensions.<name>]` -------------------------------------------------
 
@@ -868,7 +868,7 @@ key = "command"
 kind = "text"
 type = "string"
 default = "vale"
-description = '''The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. A path is a program in the project: the editor asks before it runs one, and the agents' hooks don't run one ([Prose, through Vale](../checks/vale.md#where-vale-runs)).'''
+description = '''The command that runs Vale. A path with a separator is from the project root; a bare name is looked up as the shell would. A path is a program in the project: the editor asks before it runs one, and the agents' hooks don't run one ([Check prose with Vale](../checks/vale.md#where-vale-runs)).'''
 
 [[setting]]
 table = "checks.vale"
@@ -979,7 +979,7 @@ table = ""
 key = "listing"
 kind = "table"
 type = "table"
-description = '''How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a content type.'''
+description = '''How pages are listed, set once for many: the whole site, the pages under a folder, or the pages of a page type.'''
 
 [[setting]]
 table = "listing"
@@ -1004,7 +1004,7 @@ key = "types"
 kind = "table"
 type = "table of strings"
 default = {}
-description = '''A listing for every page of a content type, keyed by the type's name.'''
+description = '''A listing for every page of a page type, keyed by the type's name.'''
 
 [[setting]]
 table = "listing"

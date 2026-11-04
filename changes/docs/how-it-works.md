@@ -1,0 +1,1 @@
+- **A new page, How Ascribe works, shows the whole system on one page.** It draws how pages go through the checks into builds and a site, and where the same checks run. See [How Ascribe works](docs/content/how-it-works.md).

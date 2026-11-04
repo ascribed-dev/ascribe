@@ -21,7 +21,13 @@ The agent goes first because its installer writes the config file that
 doesn't mention the agent.
 ```
 
-- **`about`**, required, names what the memo is about: a page or fragment by its path from the content root (`install-agent.md`), a heading as the path, `#`, and its id (`install-agent.md#install-agent`), a glossary term by its id (`term:api-key`), or an entry of `ascribe.toml` as `phrase:product`, `feature:sso`, `dimension:deployment`, `note:warning`, or `widget:release-note`. A heading in a fragment is named in the fragment. A term is a heading on a glossary page, so a memo about `term:api-key` is on that heading, as one about `glossary.md#api-key` is.
+- **`about`**, required, names what the memo is about:
+  - A page or fragment, by its path from the content root: `install-agent.md`.
+  - A heading, as the path, `#`, and its id: `install-agent.md#install-agent`.
+  - A glossary term, by its id: `term:api-key`.
+  - An entry of `ascribe.toml`: `phrase:product`, `feature:sso`, `dimension:deployment`, `note:warning`, or `widget:release-note`.
+
+  A heading in a fragment is named in the fragment. A term is a heading on a glossary page, so a memo about `term:api-key` is on that heading, as one about `glossary.md#api-key` is.
 
   A path is written as a link's is: `%20` and the rest are decoded, so a file whose name has a `#` is written with `%23`, and a `%` with `%25`. The first `#` starts the heading's id. A path that starts like an entry, such as `term:basics.md`, is written `./term:basics.md`. Names and paths are compared as written, so `phrase:Product` names no phrase. The exact rule for reading `about` is in the specification ([SPEC §7.7]({repo}/blob/main/SPEC.md#77-memo-files), the rule `about-target`).
 - **`quote`**, which you can leave out, narrows the memo to the block that holds those words: a paragraph, a heading, a list item's paragraph, a code block, or a table, for instance. An entry of `ascribe.toml` has no words to quote; a term's are those of its section.
@@ -45,7 +51,7 @@ Where a memo is is worked out each time it's read, from the pages as they are, a
 - **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/project-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.
 - **Detached.** `about` names nothing: the page was deleted, or it moved or the heading's id changed by hand rather than by a rename. It's a warning, [`memo-detached`](../checks/diagnostics/sources.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
 
-A rename keeps a memo attached: [`ascribe rename`](../command/questions.md#cli-rename), and renaming in the editor ([Refactoring](../editor/writing.md#refactoring)), rewrite the `about` of each memo that names what changes, in both folders, and leave its `quote` and its text as they are.
+A rename keeps a memo attached: [`ascribe rename`](../command/references.md#cli-rename), and renaming in the editor ([Refactoring](../editor/writing.md#refactoring)), rewrite the `about` of each memo that names what changes, in both folders, and leave its `quote` and its text as they are.
 
 A memo file that isn't one, with no frontmatter, no `about`, an `about` that isn't a target, or a key besides `about` and `quote`, is an error, [`memo-invalid`](../checks/diagnostics/sources.md#ASC225). `ascribe check` reports each problem on the memo file, at its `about` or `quote` line.
 
@@ -60,7 +66,10 @@ In `examples/quill`, the memo above is about the section of `install-agent.md` t
 - **`ascribe outline`** lists the memos about a page under it, and those about a section or a block in it under its heading, with each one's first line. An outdated memo says so, a personal one is listed as a personal memo, and a detached one isn't listed. With `--format json`, the page and each heading have `memos`, each with `personal` ([`ascribe outline`](../command/questions.md#cli-outline)). The MCP tool `ascribe_outline` returns the same.
 - **`ascribe refs`** lists each memo file about its target as a place, with the use `memo`, at the memo's `about` line, and `personal` true for a personal memo. A detached memo is listed under the target it names, so `ascribe refs` finds the memos about a page or heading that's gone.
 
-- **In VS Code**, a CodeLens above a heading or a block counts its memos and opens them, **This page** lists the memos about the heading at the cursor, and **Ascribe: Add a memo** writes one from the cursor, with `about` and `quote` filled in ([Memo files in the editor](../editor/actions.md#memo-files)).
+- **In VS Code** ([Memo files in the editor](../editor/actions.md#memo-files)):
+  - A CodeLens above a heading or a block counts its memos and opens them.
+  - **This page** lists the memos about the heading at the cursor.
+  - **Ascribe: Add a memo** writes one from the cursor, with `about` and `quote` filled in.
 
 - **Agents' prompts and rules** name the memos about the page they're about, or about what changed, a line each with the memo's path, and never its text. The rules say where to find a page's memos ([Memos in a prompt](../agents/prompts.md#memos-in-a-prompt)).
 

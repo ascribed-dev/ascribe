@@ -4,7 +4,9 @@ title: "`ascribe sources` and `observe`"
 description: "Fetch and update the code a project copies from other repositories, and record what tested a folder's examples."
 ---
 
-The commands that look after the code a project's pages show: the copies it keeps of its sources in other repositories, and the record of what tested its examples. [Docs in another repository](docs-repository.md) and [Tested examples](tested.md) are the tasks they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/sources.md).
+`ascribe sources` fetches and updates the copies a project keeps of its sources in other repositories, and `ascribe observe` records what tested a folder's examples. [Docs in another repository](docs-repository.md) and [Tested examples](tested.md) are the tasks they're used in, and the JSON each command writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/sources.md).
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe sources`
 @id {permalink=true}: cli-sources
@@ -42,7 +44,14 @@ With `--format json`, it writes what it did for each source, the files it couldn
 @id {permalink=true}: cli-sources-update
 @summary: Moves each source's pin to the head of its branch, or to `--to`, copies the files snippets use again, rewrites `ascribe.lock`, and says what changed.
 
-Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, the [tested examples](tested.md#when-the-code-is-in-another-repository) whose status changed, and the pages whose examples changed, grouped as [`ascribe drift`](../review/diff.md#cli-drift) groups them. With nothing to move, it changes no file and says so.
+Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, and rewrites `ascribe.lock`. Then it says what changed:
+
+- The commits between the old pin and the new: how many, and the first lines of the newest 20, or that the pin moved back.
+- The copies that changed.
+- The [tested examples](tested.md#when-the-code-is-in-another-repository) whose status changed.
+- The pages whose examples changed, grouped as [`ascribe drift`](../review/diff.md#cli-drift) groups them.
+
+With nothing to move, it changes no file and says so.
 
 A tested example snippets use is listed when the new pin changed its status: it went stale (the file changed, and its observation didn't follow), no observation lists it any more, or it's tested as it is now. Each is read from the copies, before and after.
 
@@ -90,7 +99,7 @@ With `--format json`, it writes the same in the document its [schema](../contrac
 @id {permalink=true}: cli-observe
 @summary: Runs the test of a folder of tested examples, and when it passes, writes down what it passed with, in `examples.observations/`.
 
-Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is: with npm, or on the path where there's no Node ([Install](../install.md)).
+Runs the test of a folder of [tested examples](tested.md), and when it passes, writes down what it passed with: `examples.observations/default.toml`, beside `ascribe.examples.toml`, or `examples.observations/<name>.toml` with `--name`. It's run in the code's folder, the one that holds `ascribe.examples.toml`, not the docs project's: it doesn't look in parent folders for a config, and doesn't read `ascribe.toml` or `--config`. For code in another repository, that's the code's repository: it refuses to run in a source's copies, which it knows from the `ascribe.lock` above them. So `ascribe` has to be installed where the code is: with npm, or on the path where there's no Node ([Install Ascribe](../install.md)).
 
 @include: ../_generated/cli-observe-options.md
 

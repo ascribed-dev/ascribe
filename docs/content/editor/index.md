@@ -5,7 +5,9 @@ description: "Installing the VS Code extension, which `ascribe` it runs, and a p
 permalink: editor-guide
 ---
 
-The Ascribe extension for VS Code turns the editor into an Ascribe authoring environment. Its features come from the [language server](language-server.md), `ascribe lsp`, which runs the same checks as `ascribe check`: what the editor reports is what CI reports.
+The Ascribe extension for VS Code checks pages as you type, previews them as the site shows them, and writes directives for you. Its features come from the [language server](language-server.md), `ascribe lsp`, which runs the same checks as `ascribe check`: what the editor reports is what CI reports.
+
+On these pages, the editor is VS Code with the extension. For any other editor, see [The language server](language-server.md).
 
 ## Install
 
@@ -15,7 +17,7 @@ Install **Ascribe** (`Ascribe.ascribe-vscode`) from the Visual Studio Marketplac
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-The extension activates in a workspace that has an `ascribe.toml` anywhere in it, and a workspace can hold several projects (see [Workspaces with several projects](settings.md#workspaces-with-several-projects)). It needs VS Code {vscode} or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
+The extension activates in a workspace that has an `ascribe.toml` anywhere in it, and a workspace can hold several projects (see [Workspaces with several projects](settings.md#workspaces-with-several-projects)). It needs VS Code {vscode} or later, and a trusted workspace, since it runs the project's `ascribe` binary. It runs on the [platforms](../install.md#platforms) `ascribe` runs on.
 
 ### Which `ascribe` it runs
 
@@ -29,7 +31,7 @@ A project that installs `@ascribed/cli` gets exactly the version it pins, in the
 
 ### The walkthrough
 
-After you install the extension, VS Code opens its walkthrough, **Get Started with Ascribe**, which goes through what a writer does first: open a project, preview a page, use the actions bar, look at the Ascribe sidebar, see what a build leaves out, and check the project in CI. To see it again, open **Help → Welcome**, or run **Welcome: Open Walkthrough…** and choose it. Its buttons act on the page you last had open.
+After you install the extension, VS Code opens its walkthrough, **Get Started with Ascribe**. It goes through what you do first: open a project, preview a page, use the actions bar, look at the Ascribe sidebar, see what a build leaves out, and check the project in CI. To see it again, open **Help → Welcome**, or run **Welcome: Open Walkthrough…** and choose it. Its buttons act on the page you last had open.
 
 ## What it does
 

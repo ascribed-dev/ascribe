@@ -50,7 +50,7 @@ planned = ["3.6"]
 "3.3" = {}
 ```
 
-Content marked for a planned version reads "planned" until its line ships, and a line whose `ends` has passed is reported until you archive it. The [`[releases]` reference](../content-model/variation.md#121-releasestarget) has each key and what the checks find in the marks once the list is there.
+Content marked for a planned version reads "planned" until its line ships, and a line whose `ends` has passed is reported until you archive it. The [`[releases]` reference](../content-model/variation.md#121-releasestarget) has each key and what the checks find in the availability marks once the list is there.
 
 ### 3. Version a build
 @id: build-a-site-for-each-line
@@ -113,7 +113,14 @@ Before a line ships, mark what's written for it with [`planned`](../writing/dire
 ascribe versions release "self-managed 3.6"
 ```
 
-It rewrites each `planned` for `self-managed` to `3.6`, as `self-managed planned` becomes `self-managed 3.6`, adds the line after it to `planned` when `--next` names one, and moves 3.6 from `planned` to `live`. Where no build is versioned by the target, it also moves the old current line to `archived`, with its `ends` date, if it has one, as `ended`, since such a project publishes one line, and removes or rewrites the marks that named a version in it, which every line left has; a project that builds a site for each line keeps the old line live until you [retire it](archive.md). Commit the change it writes: it's one commit, and `git checkout` undoes it. Run it with `--dry-run` first to see what it would do; [the command's reference](release.md#cli-versions-release) has when it refuses and why.
+What `versions release` does:
+
+- Rewrites each `planned` for `self-managed` to `3.6`, so `self-managed planned` becomes `self-managed 3.6`.
+- Adds the line after it to `planned`, when `--next` names one.
+- Moves 3.6 from `planned` to `live`.
+- Where no build is versioned by the target, moves the old current line to `archived`, with its `ends` date, if it has one, as `ended`, since such a project publishes one line. It then removes or rewrites the marks that named a version in it, which every line left has. A project that builds a site for each line keeps the old line live until you [retire it](archive.md).
+
+Commit the change it writes: it's one commit, and `git checkout` undoes it. Run it with `--dry-run` first to see what it would do; [the command's reference](release.md#cli-versions-release) has when it refuses and why.
 
 Then start the release notes from what the new line has that the one before didn't:
 

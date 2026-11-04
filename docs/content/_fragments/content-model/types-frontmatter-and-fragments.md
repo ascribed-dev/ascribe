@@ -10,4 +10,4 @@ Frontmatter is YAML. For type checking, it's parsed with the YAML 1.2 **core sch
 
 @include: ../../_generated/content-model-fragments.md
 
-Content types never apply to fragments: a fragment names no type, and `type` in a fragment's frontmatter is an error (`frontmatter-reserved-in-fragment`).
+Page types never apply to fragments: a fragment names no type, and `type` in a fragment's frontmatter is an error (`frontmatter-reserved-in-fragment`).

@@ -4,7 +4,7 @@ title: Release lines
 description: What a release line is, what each line's output holds and says about itself, how links go between lines, and what a site, the editor, and agents get from them.
 ---
 
-A product a team supports in more than one version needs docs for each. Ascribe makes them from one source, the marks the pages already have, in four levels a project opts into one at a time:
+A product a team supports in more than one version needs docs for each. Ascribe makes them from one source, the availability marks the pages already have, in four levels a project opts into one at a time:
 
 1. **No versions.** The default. Nothing to configure, and nothing changes.
 2. **One site that knows its versions.** [`[releases]`](../content-model/variation.md#121-releasestarget) lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.
@@ -21,7 +21,7 @@ A phrase can follow the list: `release = { line = "self-managed" }` makes `{rele
 
 A line keeps content whose `available` doesn't name the target, and content that's available for the target at some version in the line. Content that begins at `3.4.2` is in 3.4; so is content removed at `3.4.2`, since it was there at `3.4.0`. What isn't in a line is removed from its output, as a filtered build removes it: a section, a table row, or a whole page. The current line also keeps content marked for a version after it, shown as it is in any badge build, such as "3.6+".
 
-What's left is marked as a badge build marks it, but a version at or before the oldest live line isn't shown, since every reader has it: with 3.4 and 3.5 live, `self-managed 3.3` shows the target alone, `self-managed deprecated 3.2` shows "deprecated", and `self-managed 3.4.2` shows its version. A history keeps the state in effect when the window opens and what follows: with 3.5 and 3.6 live, `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` shows `self-managed (ga 3.5, deprecated 3.6)`. A build that isn't versioned shows them all.
+What's left is marked as a badge build marks it, but a version at or before the oldest live line isn't shown, since every reader has it. With 3.4 and 3.5 live, `self-managed 3.3` shows the target alone, `self-managed deprecated 3.2` shows "deprecated", and `self-managed 3.4.2` shows its version. A history keeps the state in effect when the window opens and what follows: with 3.5 and 3.6 live, `self-managed (preview 3.3, ga 3.5, deprecated 3.6)` shows `self-managed (ga 3.5, deprecated 3.6)`. A build that isn't versioned shows them all.
 
 A versioned build's `availability` is `badge`: a build that filters is already one version of one target. With one live line, the build writes what it would without `versions`, apart from `versions.json`, and older marks no longer show their versions. Every address in an older line's output starts with its folder: links between pages, the files they link to, and the canonical addresses in its page records.
 
@@ -40,7 +40,7 @@ A link to a page that isn't in a line still goes somewhere, in three steps:
    ```
 
    A link to either page lands on whichever one the line has. Neither page links to the other by hand, and a link keeps its `#id` when the page it lands on has a heading with that id, and drops it otherwise, with [`link-fragment-dropped`](../checks/diagnostics/content-checks.md#ASC221) advice.
-2. **The page in another line.** Otherwise the link leads to the page in the nearest line that has it, the closest newer line first. In 3.4, a link to a page new in 3.5 goes to `/docs/webhooks/`, and the line follows the link: "Webhooks (3.5)". A site styles it by its `data-ascribe-release-line` attribute; the plain output writes the line after the link.
+2. **The page in another line.** Otherwise the link leads to the page in the nearest line that has it, the closest newer line first. In 3.4, a link to a page new in 3.5 goes to `/docs/webhooks/`, and the line follows the link: "Webhooks (3.5)". A site styles it by its `data-ascribe-release-line` attribute; the plain Markdown output writes the line after the link.
 3. **Nowhere.** When no live line has the page, the link is [`link-page-dropped`](../checks/diagnostics/pages.md#ASC121), as in any build.
 
 A link from the current line to a page only an older line has is advice, [`link-into-older-line`](../checks/diagnostics/content-checks.md#ASC220): it's a reader on the newest docs sent back to an older line. [`replaces`](../writing/frontmatter.md#a-page-that-replaces-another) has its rules, and `ascribe link` says where a link goes in each line.
@@ -95,7 +95,7 @@ A site that isn't built with Astro has all a banner and a list of versions need 
 
 > Documentation for Self-managed 3.4. Support ends on 31 January 2027. See this page for 3.5.
 
-The last sentence links to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date, so a site can translate them; `Versions.astro`'s are `label`, `missing`, and `archived`.
+The last sentence links to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, so a site can translate them: `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date. `Versions.astro`'s are `label`, `missing`, and `archived`.
 
 The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(entries, { entry })`, or, with a site's own list, `sidebar(entries, { nav, entry })`.
 
@@ -105,13 +105,13 @@ The sidebar shows the pages of the page's own line when the layout passes the en
 
 The lines show wherever a build does, and a page that's the same in every line shows once:
 
-- **The editor.** Switch build lists a versioned build's lines under it, the current line first, and the build lens and the preview follow the line you choose: in 3.4, a page new in 3.5 is dimmed whole, and the preview is at the line's address, `/3.4/install/`. The editor checks every line of its build, and a problem only some lines have says which, such as "(only in build `site@3.4`)". A hover on a mark's version says which line it falls in, and a hover on `replaces` says which page each line publishes. [The editor](../editor/preview.md#the-build-youre-looking-at) has the rest.
+- **The editor.** Switch build lists a versioned build's lines under it, the current line first. The build lens and the preview follow the line you choose: in 3.4, a page new in 3.5 is dimmed whole, and the preview is at the line's address, `/3.4/install/`. The editor checks every line of its build, and a problem only some lines have says which, such as "(only in build `site@3.4`)". A hover on a mark's version says which line it falls in, and a hover on `replaces` says which page each line publishes. [The editor](../editor/preview.md#the-build-youre-looking-at) has the rest.
 - **Review.** `ascribe diff` lists a changed page once with the lines it changed in: "in every line" for a page the lines share, "only in 3.4" for a change inside a section only 3.4 has. The HTML preview lists the page once too, and switches between the lines it changed in. [Diff](../review/diff.md) has the details.
 - **The tools.** `ascribe resolve install.md --build site@3.4` resolves the page as that line publishes it, at its address under `/3.4/`, and so does `ascribe_resolve`. `ascribe model` has a `releases` section: each target's lines, with their status and the build that is each.
 
 ## For agents
 
-When the build publishes [the outputs for agents](../agents/index.md), on by default with a `[consumer] site`, each line has its own outputs for agents, in its plain output:
+When the build publishes [the outputs for agents](../agents/index.md), on by default with a `[consumer] site`, each line has its own outputs for agents, in its plain Markdown output:
 
 - **`llms.txt`** lists the line's pages, and its heading names the line: `# Loom (Self-managed 3.4)`. An older line's opens with a line pointing at the current line's: "This is an older version. The current version is 3.5: [llms.txt](https://docs.example.com/docs/llms.txt)."
 - **Each page's Markdown** opens with the line that says which version it is, [above](#what-an-older-line-says-about-itself).

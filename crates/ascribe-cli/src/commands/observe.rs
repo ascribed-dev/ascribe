@@ -449,12 +449,18 @@ fn observe(
     } else {
         let count = observation.files.len();
         let _ = writeln!(out, "{} passed.", terminal(&test));
+        // An empty tested line, from `show-os = false` with no entries,
+        // leaves its clause out.
+        let tested = if tested.is_empty() {
+            String::new()
+        } else {
+            format!(", {}", terminal(&tested))
+        };
         let _ = writeln!(
             out,
-            "{} {path}: {count} {}, {}.",
+            "{} {path}: {count} {}{tested}.",
             if dry_run { "Would write" } else { "Wrote" },
             if count == 1 { "file" } else { "files" },
-            terminal(&tested),
         );
         say_changes(out, changes);
     }

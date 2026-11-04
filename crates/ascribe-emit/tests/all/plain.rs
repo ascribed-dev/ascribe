@@ -243,6 +243,12 @@ fn info_string_pairs_the_checker_read_are_left_out() {
         ),
         "```json {1} title=\"New\"\n{}\n```\n\nTested with Node 24.\n"
     );
+    // An empty tested line, from `show-os = false` with no entries, says
+    // only that the example is tested.
+    assert_eq!(
+        body("```json tested=\"\"\n{}\n```\n"),
+        "```json\n{}\n```\n\nTested.\n"
+    );
     // A pair's word inside a quoted value is part of the value.
     assert_eq!(
         body("```yaml title=\"phrases=true\"\nv: {version}\n```\n"),

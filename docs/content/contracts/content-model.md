@@ -6,7 +6,7 @@ description: The normative contract for the content model file, with the rules a
 
 This is the normative contract for `ascribe.toml`, the content model file (SPEC §7): its tables and keys, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `ascribe-model` implements it. What each key is for, with examples, is in the [`ascribe.toml` reference](../content-model/index.md), which shares this page's key tables and section numbers.
 
-SPEC.md is normative for the language, and this contract for the file format. The decisions that settle what the spec leaves open are files in [`project-docs/decisions/`]({repo}/tree/main/project-docs/decisions), listed in [decision #689a]({repo}/blob/main/project-docs/decisions/689a-what-a-contract-page-holds.md).
+SPEC.md is normative for the language, and this contract for the file format. The decisions that settle what the Ascribe specification leaves open are files in [`project-docs/decisions/`]({repo}/tree/main/project-docs/decisions), listed in [decision #689a]({repo}/blob/main/project-docs/decisions/689a-what-a-contract-page-holds.md).
 
 Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-models) is valid under this contract: `minimal.toml` is the smallest valid model, `quill.toml` the model SPEC Appendix B assumes, and `full.toml` has every section and key.
 
@@ -89,7 +89,7 @@ On this page, what pages are:
 
 @include: ../_generated/content-model-project.md
 
-**Rules** (§25.2): `content-root` and `output-dir` MUST be relative (`model-path-absolute`). The content root MUST exist and be a directory (`model-content-root-missing`); the output directory need not exist. The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and the two MUST differ (`model-output-overlaps-content`), each compared after its `.` and `..` segments are normalized and, when both exist, its symbolic links resolved.
+**Rules** (§25.2): `content-root` and `output-dir` MUST be relative (`model-path-absolute`). The content root MUST exist and be a folder (`model-content-root-missing`); the output directory need not exist. The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and the two MUST differ (`model-output-overlaps-content`), each compared after its `.` and `..` segments are normalized and, when both exist, its symbolic links resolved.
 
 @include: ../_fragments/content-model/project-defaults.md
 
@@ -100,6 +100,8 @@ On this page, what pages are:
 @include: ../_fragments/content-model/types.md
 
 **The page title.** Every page type has `title`, a required `string` field, whether `[frontmatter]` or the type declares it or not, and a page's frontmatter `title` is its title wherever SPEC needs one (SPEC §5.2). A declaration of it MAY set `phrases = true` (§7) and `inline = "code"` (§5.3), and MUST NOT make it optional, give it a default, or give it another type (`model-field-reserved`).
+
+**A type's name in generated code.** A generated consumer schema (SPEC §9.6) MUST name each type's schema for the type: the site output's Zod schema exports a type named `reference-guide` as `referenceGuideSchema`, with the TypeScript type `ReferenceGuide`, and every type's schema in `schemas`, keyed by the type's name.
 
 **Frontmatter every type shares.** A page type's fields are `[frontmatter]`'s, in their order, each replaced whole by the type's own field of its name, then the type's other fields in theirs, with `title` first when neither declares it. Fields are never merged key by key.
 
@@ -136,7 +138,7 @@ Each output carries two forms of the value. The **plain text** is the value with
 |---|---|---|
 | Site output (its frontmatter) | The field's frontmatter value, for a layout's `<title>`, search, and sorting | `formatted.<field>`, as HTML (`<code>ascribe.toml</code> reference`), for a layout's heading and navigation |
 | Empty link text (SPEC §5.2) | Not used | The link text, with the title's code spans |
-| Plain-markdown output | Not used | The page's level-1 heading |
+| Plain Markdown output | Not used | The page's level-1 heading |
 | JSON output | `title` and `frontmatter.<field>` | `formatted.<field>`, a list of `{ "type": "text" \| "code", "value": … }` |
 | Generated Zod schema | The field, as `z.string()` | `formatted`, with a `z.string()` for each field |
 
@@ -153,9 +155,9 @@ A page type's top-level field MAY have a `role`, which says what the field is fo
 | Role | The field's type | Read by |
 |---|---|---|
 | `description` | `string` or `string?` | `page-description-missing`, which reports a page of the type whose field is absent, null, or blank. A field that's required or has a default is never absent, so the check skips it. |
-| `recheck-date` | `date` or `date?` | `recheck-overdue`, which reports a page whose date is before the day the check runs. `review-date`, its old name, names it too, for a release. |
+| `recheck-date` | `date` or `date?` | `recheck-overdue`, which reports a page whose date is before the day the check runs. `review-date`, its old name, names it too. |
 | `owner` | `string`, `string?`, or an `enum`, optional or not | `ascribe report inventory`, which counts pages by the field's value; a page without one counts as having no owner. |
 
-A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
+A type without a field with the role has none of that check's problems. A role changes no output: not the generated schemas, the JSON, or the pages.
 
 **Rules** (§25.3): the role is one of the three, on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s, and at most one field of a table has each role (`model-field-role`). A second field with a role keeps its type, and loses the role. A type's own field given a role with `role` has it, and a `[frontmatter]` field given the same role loses it, for that type. A role no field is given with `role` is the field's of the role's name, when its type is one the role takes; otherwise no field has it.

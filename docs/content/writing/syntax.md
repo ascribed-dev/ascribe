@@ -6,7 +6,7 @@ description: "How a directive is written: its line, attributes, forms, groups, t
 
 Ascribe source is CommonMark with a few additions: **directives**, lines that start with `@` and annotate the content around them; **title lines**, which give a directive a title; and **phrases**, reusable strings written `{key}`. Everything else is ordinary Markdown, and an Ascribe page read by a plain Markdown renderer still reads sensibly.
 
-This page is how a directive is written. Each built-in directive is in the [directive reference](directives.md), [phrases, links, and images](inline.md) are on a page of their own, and so is [frontmatter](frontmatter.md). Each section ends with a link to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
+This page shows how to write a directive. Each built-in directive is in the [directive reference](directives.md), [phrases, links, and images](inline.md) are on a page of their own, and so is [frontmatter](frontmatter.md). Each section ends with a link to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
 
 ## Directive lines
 
@@ -32,7 +32,7 @@ Anything else is text. `@astrojs/react` at the start of a line and `support@exam
 
 Spaces between the parts don't matter, and nothing else may be on the line: `@steps foo` is an error. Built-in names never contain a hyphen; project widget names always do.
 
-Attributes written without their braces, as in `@note type=warning: You need Node 20.`, are the same error, and it's the one reported for the line: the errors that would follow from it, such as the note applying to the heading below, aren't. When the keys are the directive's attributes, the fix adds the braces (`@note {type=warning}: …`), and `ascribe check --fix` applies it when a primary follows the colon.
+Attributes written without their braces, as in `@note type=warning: You need Node 20.`, are the same error as `@steps foo`, and it's the one reported for the line: the errors that would follow from it, such as the note applying to the heading below, aren't. When the keys are the directive's attributes, the fix adds the braces (`@note {type=warning}: …`), and `ascribe check --fix` applies it when a primary follows the colon.
 
 Specification: [§3.1]({repo}/blob/main/SPEC.md#31-syntax), [§3.2]({repo}/blob/main/SPEC.md#32-recognition).
 
@@ -136,7 +136,7 @@ A directive in line form applies to something, according to its **binding**:
 
 | Binding | Applies to | Directives |
 |---|---|---|
-| Self | Its own primary, or nothing | `@include`, `@snippet`; `@note` with a primary |
+| Self | Its own primary, or nothing | `@include`, `@snippet`, `@operation`; `@note` with a primary |
 | Heading | The heading above it, and that heading's section | `@id`, `@term`; `@summary` with a primary |
 | Following block | The next block in the same container | `@steps`; `@details`, `@note`, and `@summary` without a colon |
 | Heading or block | At the top of a section, the section; anywhere else, the next block | `@available`, `@intended`, `@memo` |
@@ -183,7 +183,15 @@ Specification: [§2.3]({repo}/blob/main/SPEC.md#23-escapes).
 
 ## Canonical form
 
-Ascribe accepts any spacing the syntax allows, and has one canonical spelling for each construct: one space between a name and `{`, no spaces inside braces or around `=` and `|`, attributes in the order their schema declares, values quoted only when needed, and no blank line between a directive and its block. `ascribe fmt` rewrites source into canonical form, changing only Ascribe constructs and never how a page renders; `ascribe fmt --check` reports files that would change.
+Ascribe accepts any spacing the syntax allows, and has one canonical spelling for each construct:
+
+- One space between a name and `{`.
+- No spaces inside braces or around `=` and `|`.
+- Attributes in the order their schema declares.
+- Values quoted only when needed.
+- No blank line between a directive and its block.
+
+`ascribe fmt` rewrites source into canonical form, changing only Ascribe constructs and never how a page renders; `ascribe fmt --check` reports files that would change.
 
 A general Markdown formatter that reflows paragraphs, such as Prettier with `proseWrap: always`, doesn't know that title and directive lines start new blocks, and joins them with the text below. Format Ascribe sources with `ascribe fmt`, and exclude them from other formatters.
 
