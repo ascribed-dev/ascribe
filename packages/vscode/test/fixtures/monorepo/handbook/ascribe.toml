@@ -37,4 +37,5 @@ build = "site"
 # description, which `description` is by its name.
 [checks]
 page-orphan = "off"
+page-opening-missing = "off"
 page-description-missing = "off"

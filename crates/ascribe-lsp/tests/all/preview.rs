@@ -139,7 +139,7 @@ fn unsaved_edits_are_in_the_answer() {
     assert!(html(&first).contains("Open the playground"));
 
     // Nothing is saved: the file on disk still says "Open the playground".
-    client.change(&page, 2, vec![edit((9, 0), (9, 4), "Launch")]);
+    client.change(&page, 2, vec![edit((11, 0), (11, 4), "Launch")]);
     let second = preview(&mut client, &page, None);
     assert_eq!(second["documentVersion"], 2);
     assert!(
@@ -158,8 +158,8 @@ fn unsaved_edits_are_in_the_answer() {
         &page,
         3,
         vec![edit(
-            (8, 0),
-            (8, 0),
+            (10, 0),
+            (10, 0),
             "![Logo](playground.png){width=32}\n\n",
         )],
     );

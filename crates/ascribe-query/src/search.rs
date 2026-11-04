@@ -1160,7 +1160,7 @@ mod tests {
         assert_eq!(
             found.nothing,
             Some(Nothing::Unpublished {
-                written: vec![("docs/keys.md".to_owned(), 10)],
+                written: vec![("docs/keys.md".to_owned(), 12)],
                 total: 1
             })
         );

@@ -30,3 +30,7 @@ availability = { filter = "cloud" }
 [builds."self-managed-3.5"]
 variants = { deployment = "self-managed" }
 availability = { filter = "self-managed 3.5" }
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

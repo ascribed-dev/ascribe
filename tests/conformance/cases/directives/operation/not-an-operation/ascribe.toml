@@ -8,4 +8,5 @@ spec = "api/openapi.yaml"
 reference = { renderer = "redoc", at = "/api/" }
 
 [checks]
+page-opening-missing = "off"
 api-operation-unreferenced = "off"

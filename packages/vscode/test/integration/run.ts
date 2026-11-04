@@ -200,14 +200,16 @@ const suites: Suite[] = [
         path.join(workspace, "docs"),
         { recursive: true },
       );
-      // Nothing links to broken.md, and its tests count every diagnostic.
+      // Nothing links to broken.md, which opens with a heading, and its
+      // tests count every diagnostic.
       const model = path.join(workspace, "ascribe.toml");
       const text = readFileSync(model, "utf8");
+      const off = 'page-orphan = "off"\npage-opening-missing = "off"\n';
       writeFileSync(
         model,
         text.includes("\n[checks]\n")
-          ? text.replace("\n[checks]\n", '\n[checks]\npage-orphan = "off"\n')
-          : `${text}\n[checks]\npage-orphan = "off"\n`,
+          ? text.replace("\n[checks]\n", `\n[checks]\n${off}`)
+          : `${text}\n[checks]\n${off}`,
       );
       return { "ascribe.path": realServer, ...startAll };
     },

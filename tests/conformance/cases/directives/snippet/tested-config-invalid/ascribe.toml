@@ -8,3 +8,7 @@ path = "code"
 
 [sources.later]
 path = "later"
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

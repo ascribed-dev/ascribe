@@ -33,7 +33,7 @@ doesn't mention the agent.
 - **`quote`**, which you can leave out, narrows the memo to the block that holds those words: a paragraph, a heading, a list item's paragraph, a code block, or a table, for instance. An entry of `ascribe.toml` has no words to quote; a term's are those of its section.
 - **The text** after the frontmatter is the memo, as you write it, read by nothing, as a [`@memo`](directives.md#memo)'s isn't.
 
-The files are every `.md` file in `memos/` and its subfolders. A file's name and its folder mean nothing to Ascribe, so name and arrange them as your team likes; a name or folder that starts with `.` is skipped. A memo is about one thing, with no author, no date, and nothing to finish: a reason, kept for as long as it holds.
+The files are every `.md` file in `memos/` and its subfolders. A file's name and its folder mean nothing to Ascribe, so name and arrange them as your team likes; a name or folder that starts with `.` is skipped. A memo is about one thing, with no writer, no date, and nothing to finish: a reason, kept for as long as it holds.
 
 `memos/` is outside the content root, so its files aren't pages. In a project whose content root is the folder `ascribe.toml` is in, it can't be: set `[project] content-root` to a folder below it, such as `"docs"`, and move the pages there. A [personal memo](memo-files.md#personal-memos) doesn't need that.
 
@@ -45,7 +45,7 @@ A memo is read by someone about to change the page, so it's short: over 2,000 ch
 
 ## Placed, outdated, and detached
 
-Where a memo is is worked out each time it's read, from the pages as they are, and nothing is written back to the file. A memo is in one of three states:
+Where a memo sits is worked out each time it's read, from the pages as they are, and nothing is written back to the file. A memo is in one of three states:
 
 - **Placed.** With no `quote`, it's on what `about` names. With one, it's on the first block of that page or section, in the order they're written, whose source holds the quote. Line breaks and runs of spaces count as one space, and case counts. A quote is found in one block: words that run across two paragraphs aren't.
 - **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/project-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.

@@ -125,7 +125,11 @@ fn markdown_path(page: &str) -> String {
 /// declared phrases: the project is empty), and lists what is recognized.
 pub fn recognize(pages: &[(String, String)]) -> Report {
     let mut report = Report::default();
-    let model = match ascribe_model::load_str("spec = \"0.1\"\n", FileId::new(0)) {
+    // How a page opens is a matter of writing, not of recognition.
+    let model = match ascribe_model::load_str(
+        "spec = \"0.1\"\n\n[checks]\npage-opening-missing = \"off\"\n",
+        FileId::new(0),
+    ) {
         Ok(model) => model,
         Err(_) => return report,
     };

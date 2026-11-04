@@ -1,0 +1,11 @@
+description: >-
+  A page that opens with a paragraph of its own is not reported: after a
+  level-1 heading that repeats the title, after a memo, an HTML comment, or a
+  directive bound to the paragraph, such as `@summary`. Neither is a page with
+  nothing after its frontmatter, nor a fragment, whatever it opens with.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics:
+  # The comment is reported by its own check.
+  - {slug: html-comment, file: passed-over.md, line: 5}

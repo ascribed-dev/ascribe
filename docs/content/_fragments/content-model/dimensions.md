@@ -2,6 +2,6 @@ A **dimension** is an axis content varies along ([SPEC §4.3]({repo}/blob/main/S
 
 @snippet: code:examples/content-models/full.toml#deployment
 
-`<name>` is the dimension's name (`key` rule, §1.2). It's written as an attribute key in `@variant`, as a key in `variant` frontmatter and build selections, and as a target in availability specs, where it stands for all its values.
+`<name>` is the dimension's name: a lowercase letter, then lowercase letters, digits, or `-` (§1.2). It's written as an attribute key in `@variant`, as a key in `variant` frontmatter and build selections, and as a target in availability specs, where it stands for all its values.
 
 @include: ../../_generated/content-model-dimensions.md

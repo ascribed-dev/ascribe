@@ -4,7 +4,7 @@ title: "`ascribe.toml`: where pages are published"
 description: "How the content model sets which site generator publishes the site, the builds, how pages are listed, what crawlers are told, and where retired permalinks went."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [where pages are published](../contracts/content-model/output.md).
+These sections of `ascribe.toml` set which site generator publishes the site, the builds, how pages are listed, what crawlers are told, and where retired permalinks went. It's part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section; the exact rules are in the contract's [where pages are published](../contracts/content-model/output.md).
 
 ## 15. `[consumer]`
 @id {permalink=true}: consumer

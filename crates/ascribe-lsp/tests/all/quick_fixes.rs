@@ -1244,7 +1244,9 @@ fn a_link_by_method_and_path_is_fixed_to_the_id() {
 fn rewritten_as_memo(body: &str) -> Option<String> {
     let f = quill();
     let path = f.path("docs/plans.md");
-    let text = format!("---\ntype: page\ntitle: Plans\ndescription: Plans.\n---\n\n{body}");
+    // The page opens with a paragraph, so the body can start with anything.
+    let opening = "---\ntype: page\ntitle: Plans\ndescription: Plans.\n---\n\nThe plans.\n\n";
+    let text = format!("{opening}{body}");
     write(&f, "docs/plans.md", &text);
     let mut client = Client::start(&f.root());
     client.settle();
@@ -1257,7 +1259,12 @@ fn rewritten_as_memo(body: &str) -> Option<String> {
     // Nothing links to the new page, which is all that's left.
     assert_eq!(client.codes(&path), ["page-orphan"]);
     let fixed = read(&f, "docs/plans.md");
-    Some(fixed[fixed.find("---\n\n").expect("frontmatter") + 5..].to_owned())
+    Some(
+        fixed
+            .strip_prefix(opening)
+            .expect("the opening, unchanged")
+            .to_owned(),
+    )
 }
 
 #[test]
@@ -1685,7 +1692,7 @@ fn renaming_a_page_s_id_records_it_in_the_addresses_file_when_there_is_one() {
             "textDocument/rename",
             json!({
                 "textDocument": { "uri": uri(&page).as_str() },
-                "position": { "line": 12, "character": 6 },
+                "position": { "line": 14, "character": 6 },
                 "newName": "rotate-a-key",
             }),
         )

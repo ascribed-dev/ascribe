@@ -813,7 +813,7 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
   it("renames a phrase as F2 on it in a page does, asking first", async () => {
     const api = await activated();
     // F2 on {cloud} in "Sign in to {cloud} and open …", as the action runs it.
-    await openAt(keys, 9, 13);
+    await openAt(keys, 11, 13);
     const before = api.actions.runs.length;
     api.actions.answerNext(["hosted"]);
     const f2 = await discarding(async () => {
@@ -841,24 +841,24 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
 
   it("inserts a phrase at the cursor of the last page, as Insert a phrase does", async () => {
     const api = await activated();
-    // After "Sign in to " on line 10.
-    const editor = await openAt(keys, 9, "Sign in to ".length);
-    const line = editor.document.lineAt(9).text;
+    // After "Sign in to " on line 12.
+    const editor = await openAt(keys, 11, "Sign in to ".length);
+    const line = editor.document.lineAt(11).text;
     await vscode.commands.executeCommand("ascribe.model.focus");
     const record = await api.ui.sidebar.act("insert", "phrase:product");
     assert.equal(record.done, true, [...record.messages, ...(record.run?.messages ?? [])].join());
-    const inserted = editor.document.lineAt(9).text;
+    const inserted = editor.document.lineAt(11).text;
     assert.equal(vscode.window.activeTextEditor?.document, editor.document);
     await vscode.commands.executeCommand("undo");
-    assert.equal(editor.document.lineAt(9).text, line);
+    assert.equal(editor.document.lineAt(11).text, line);
     // The action, at the same place, writes the same.
-    editor.selection = new vscode.Selection(9, "Sign in to ".length, 9, "Sign in to ".length);
+    editor.selection = new vscode.Selection(11, "Sign in to ".length, 11, "Sign in to ".length);
     const before = api.actions.runs.length;
     api.actions.answerNext(["product"]);
     await vscode.commands.executeCommand("ascribe.action.insertPhrase");
     const run = await waitFor("Insert a phrase", () => api.actions.runs[before]);
     assert.equal(run.done, true, run.messages.join());
-    assert.equal(editor.document.lineAt(9).text, inserted);
+    assert.equal(editor.document.lineAt(11).text, inserted);
     assert.ok(inserted.includes("{product}"), inserted);
     await vscode.commands.executeCommand("undo");
     await editor.document.save();
@@ -867,7 +867,7 @@ describe("the menus and filters of Pages and Content model on examples/quill", (
   it("shows the hint and changes nothing where the cursor can't take a phrase", async () => {
     const api = await activated();
     // A blank line between blocks.
-    const editor = await openAt(keys, 8, 0);
+    const editor = await openAt(keys, 10, 0);
     await vscode.commands.executeCommand("ascribe.model.focus");
     const record = await api.ui.sidebar.act("insert", "phrase:product");
     assert.equal(record.done, false);

@@ -136,7 +136,7 @@ describe("the editor's actions", () => {
   }
 
   it("is in a project in a page of it", async () => {
-    await open("keys.md", 9, 0);
+    await open("keys.md", 11, 0);
     await waitFor("ascribe.inProject", () => api.actions.inProject());
   });
 
@@ -156,7 +156,7 @@ describe("the editor's actions", () => {
 
   it("inserts a note and leaves its placeholder selected for typing", async () => {
     // The blank line between "Sign in to {cloud} …" and "## Rotate keys".
-    const editor = await open("keys.md", 10, 0);
+    const editor = await open("keys.md", 12, 0);
     const record = await run("insertNote", ["warning"]);
     assert.equal(record.done, true, record.messages.join());
     assert.equal(editor.document.getText(editor.selection), "Write the note here.");
@@ -183,7 +183,7 @@ describe("the editor's actions", () => {
   });
 
   it("copies a link to the section the cursor is in, from the content root", async () => {
-    await open("keys.md", 11, 5);
+    await open("keys.md", 13, 5);
     await vscode.env.clipboard.writeText("");
     const record = await run("copyLinkToSection");
     assert.equal(record.done, true, record.messages.join());
@@ -192,25 +192,25 @@ describe("the editor's actions", () => {
 
   it("links the selected text to the page picked", async () => {
     // "the playground" in "Open the playground at play.quill.dev …".
-    const editor = await open("quickstart.md", 9, 5, 9, 19);
+    const editor = await open("quickstart.md", 11, 5, 11, 19);
     const record = await run("linkSelection", ["keys.md"]);
     assert.equal(record.done, true, record.messages.join());
     assert.equal(
-      lines(editor)[9],
+      lines(editor)[11],
       "Open [the playground](keys.md) at play.quill.dev and paste a page of your docs.",
     );
   });
 
   it("inserts the phrase picked from the project's", async () => {
     // After "Sign" in "Sign in to {cloud} and open …".
-    const editor = await open("keys.md", 9, 4);
+    const editor = await open("keys.md", 11, 4);
     const record = await run("insertPhrase", ["product"]);
     assert.equal(record.done, true, record.messages.join());
-    assert.ok(lines(editor)[9]?.startsWith("Sign{product} in to {cloud}"), lines(editor)[9]);
+    assert.ok(lines(editor)[11]?.startsWith("Sign{product} in to {cloud}"), lines(editor)[11]);
   });
 
   it("says where an action applies, and changes nothing, where it doesn't", async () => {
-    const editor = await open("quickstart.md", 9, 4);
+    const editor = await open("quickstart.md", 11, 4);
     const record = await run("unwrapNote");
     assert.deepEqual(record, {
       action: "unwrapNote",
@@ -255,7 +255,7 @@ describe("the editor's actions", () => {
 
     it("lists the actions for a heading", async () => {
       // In "## Rotate keys", which has an @id.
-      await open("keys.md", 11, 5);
+      await open("keys.md", 13, 5);
       assert.deepEqual(await openBar(), [
         "-- Write",
         "Insert a phrase",
@@ -278,7 +278,7 @@ describe("the editor's actions", () => {
 
     it("lists the actions for a selection of prose", async () => {
       // "the playground" in "Open the playground at play.quill.dev …".
-      await open("quickstart.md", 9, 5, 9, 19);
+      await open("quickstart.md", 11, 5, 11, 19);
       assert.deepEqual(await openBar(), [
         "-- Structure",
         "Wrap in a note",
@@ -302,7 +302,7 @@ describe("the editor's actions", () => {
 
     it("lists the inserts for a blank line", async () => {
       // The blank line between "Sign in to {cloud} …" and "## Rotate keys".
-      await open("keys.md", 10, 0);
+      await open("keys.md", 12, 0);
       assert.deepEqual(await openBar(), [
         "-- Write",
         "Insert a note",
@@ -328,7 +328,7 @@ describe("the editor's actions", () => {
     });
 
     it("lists the fixes for a problem at the cursor first", async () => {
-      const editor = await open("keys.md", 9, 0);
+      const editor = await open("keys.md", 11, 0);
       const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
       assert.ok(await editor.edit((e) => e.insert(end, "\nA {flush} phrase.\n")));
       const [problem] = await diagnosticsOf(editor.document.uri, (all) =>
@@ -359,7 +359,7 @@ describe("the editor's actions", () => {
     });
 
     it("asks an action's questions in the same quick input", async () => {
-      const editor = await open("quickstart.md", 9, 4);
+      const editor = await open("quickstart.md", 11, 4);
       await openBar();
       const before = api.actions.runs.length;
       const bar = api.actions.bars.at(-1);
@@ -369,9 +369,9 @@ describe("the editor's actions", () => {
       await vscode.commands.executeCommand("workbench.action.acceptSelectedQuickOpenItem");
       const record = await waitFor("the action", () => api.actions.runs[before]);
       assert.equal(record.done, true, record.messages.join());
-      assert.match(lines(editor)[9] ?? "", /^@note( \{type=[a-z-]+\})?$/);
+      assert.match(lines(editor)[11] ?? "", /^@note( \{type=[a-z-]+\})?$/);
       assert.equal(
-        lines(editor)[10],
+        lines(editor)[12],
         "Open the playground at play.quill.dev and paste a page of your docs.",
       );
     });
@@ -404,20 +404,20 @@ describe("the editor's actions", () => {
       // written out is safe for a value with a space in it, such as "the
       // agent", and would write the other one as the phrase too. For an
       // ordinary word it's unsafe, so the other occurrence stays.
-      const editor = await open("keys.md", 20, 0);
-      const line = lines(editor)[20] ?? "";
+      const editor = await open("keys.md", 22, 0);
+      const line = lines(editor)[22] ?? "";
       const start = line.indexOf("agent.");
-      editor.selection = new vscode.Selection(20, start, 20, start + "agent".length);
+      editor.selection = new vscode.Selection(22, start, 22, start + "agent".length);
       // A refactoring saves the files it changes: put them back afterwards.
       const files = [uriOf("docs", "keys.md"), uriOf("ascribe.toml")];
       const saved = await Promise.all(files.map((uri) => vscode.workspace.fs.readFile(uri)));
       const record = await run("makePhrase", ["agent", "no"]);
       assert.equal(record.done, true, record.messages.join());
-      assert.ok(lines(editor)[20]?.includes("and restart the {agent}. To install the agent"));
+      assert.ok(lines(editor)[22]?.includes("and restart the {agent}. To install the agent"));
       const model = await vscode.workspace.openTextDocument(uriOf("ascribe.toml"));
       assert.ok(model.getText().includes('\napi = "https://api.quill.dev/v3/"\nagent = "agent"\n'));
       await vscode.commands.executeCommand("undo");
-      assert.equal(lines(editor)[20], line);
+      assert.equal(lines(editor)[22], line);
       for (const [i, uri] of files.entries()) {
         const bytes = saved[i];
         if (bytes) await vscode.workspace.fs.writeFile(uri, bytes);
@@ -426,7 +426,7 @@ describe("the editor's actions", () => {
 
     it("renames a phrase picked from the palette, far from its key, asking first", async () => {
       // A paragraph of the quickstart, with no phrase at the cursor.
-      await open("quickstart.md", 9, 4);
+      await open("quickstart.md", 11, 4);
       const record = await runAndDiscard("renamePhrase", ["cloud", "hosted"]);
       // The preview listed the key in ascribe.toml and the pages that use it.
       assert.equal(record.previewed, true, record.messages.join());
@@ -435,7 +435,7 @@ describe("the editor's actions", () => {
 
     it("changes nothing when the rename's preview is discarded", async () => {
       // In "{cloud}" of "Sign in to {cloud} and open …".
-      await open("keys.md", 9, 13);
+      await open("keys.md", 11, 13);
       const record = await runAndDiscard("renamePhrase", ["hosted"]);
       assert.equal(record.previewed, true);
       assert.equal(record.done, false);
@@ -448,7 +448,7 @@ describe("the editor's actions", () => {
   describe("the page's safe fixes", () => {
     /** keys.md with two problems a safe fix fixes, and one only an unsafe one does. */
     async function withProblems(): Promise<vscode.TextEditor> {
-      const editor = await open("keys.md", 9, 0);
+      const editor = await open("keys.md", 11, 0);
       // From the page as it is on disk, and its problems as the server has
       // them for it: not the ones a test before this one added.
       assert.equal(editor.document.isDirty, false);
@@ -529,7 +529,7 @@ describe("the editor's actions", () => {
   });
 
   it("opens the bar on the last page from the walkthrough, where no text editor is active", async () => {
-    await open("keys.md", 9, 0);
+    await open("keys.md", 11, 0);
     await vscode.commands.executeCommand(
       "workbench.action.openWalkthrough",
       "Ascribe.ascribe-vscode#start",
@@ -547,7 +547,7 @@ describe("the editor's actions", () => {
   });
 
   it("offers its rewrites in the lightbulb once the cursor's context is known", async () => {
-    const editor = await open("quickstart.md", 9, 4);
+    const editor = await open("quickstart.md", 11, 4);
     const titles = await waitFor("the lightbulb's actions", async () => {
       const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
         "vscode.executeCodeActionProvider",

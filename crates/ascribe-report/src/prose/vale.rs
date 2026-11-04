@@ -63,8 +63,15 @@ pub struct Action {
     pub name: String,
     /// What the action works with: for `replace`, the replacements; for
     /// `edit`, how to edit the match (`["truncate", " "]`). Vale before 3.21
-    /// gives no `Suggestions`, only this.
+    /// gives no `Suggestions`, only this. An alert with no action, such as
+    /// one from an `existence` rule, gives `null`, read as none.
+    #[serde(deserialize_with = "none_when_null")]
     pub params: Vec<String>,
+}
+
+/// A list Vale may give as `null`, as an empty one.
+fn none_when_null<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
+    Ok(Option::<Vec<String>>::deserialize(d)?.unwrap_or_default())
 }
 
 /// Vale couldn't say anything about the prose: it couldn't be run, failed,
@@ -351,6 +358,18 @@ mod tests {
         assert_eq!(a.action.name, "replace");
         assert_eq!(a.link, "https://example.com/typos");
         assert!(alerts.contains_key("sub/b.md"));
+    }
+
+    #[test]
+    fn reads_an_alert_with_no_action() {
+        let json = br#"{"a.md": [{"Action": {"Name": "", "Params": null},
+            "Suggestions": [], "Span": [1, 7], "Check": "Docs.PartOf",
+            "Description": "", "Link": "", "Message": "Open with what it covers.",
+            "Severity": "warning", "Match": "Part of", "Line": 1}]}"#;
+        let alerts = read(&request("vale"), json, b"").unwrap();
+        let a = &alerts["a.md"][0];
+        assert_eq!(a.check, "Docs.PartOf");
+        assert!(a.action.params.is_empty());
     }
 
     #[test]

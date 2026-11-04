@@ -9,3 +9,7 @@ include = ["src/**", "examples/**"]
 
 [sources.nested]
 path = "code/nested"
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

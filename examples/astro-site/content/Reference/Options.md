@@ -5,6 +5,8 @@ description: Every Loom option.
 permalink: options
 ---
 
+The options `loom.yaml` takes, grouped by what they configure.
+
 ## Weave options
 @id: weave-options
 

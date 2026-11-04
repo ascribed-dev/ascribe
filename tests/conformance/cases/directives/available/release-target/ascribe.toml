@@ -7,3 +7,7 @@ live = ["2.0", "2.1"]
 
 [releases.cli]
 live = ["0.4"]
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

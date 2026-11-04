@@ -7,3 +7,7 @@ content-root = "files"
 git = "https://github.com/acme/code.git"
 branch = "main"
 include = ["examples/**"]
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

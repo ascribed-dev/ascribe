@@ -14,6 +14,7 @@
 //! | `summary-missing`, `summary-long` | the page's permalinked headings and its sections' summaries |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //! | `heading-level-skipped` | the page's resolved headings |
+//! | `how-to-steps-missing` | a `how-to` page's resolved blocks and headings |
 //! | `page-size` | the page's plain Markdown, per build, rendered by the caller's [`PlainMarkdown`] |
 //! | `permalink-duplicate` | every page the build publishes |
 //!

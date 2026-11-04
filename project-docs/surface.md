@@ -118,7 +118,7 @@ For authors. Read from `docs/content/content-model/`, `docs/content/_fragments/c
 
 For people and agents. Read from `crates/ascribe-core/data/diagnostics.toml`.
 
-277 in all. By severity: 62 advice, 184 error, 31 warning. By level: 247 file, 30 page. By kind of next step: 58 choose, 23 fix, 12 outside, 13 review, 171 write.
+279 in all. By severity: 64 advice, 184 error, 31 warning. By level: 248 file, 31 page. By kind of next step: 58 choose, 23 fix, 12 outside, 13 review, 173 write.
 
 | Code | Name | Severity | Next step | Message |
 |---|---|---|---|---|
@@ -399,6 +399,8 @@ For people and agents. Read from `crates/ascribe-core/data/diagnostics.toml`.
 | `ASC287` | `github-alert` | warning | fix | `{marker}` is GitHub's alert syntax, which Ascribe shows as a plain block quote that starts with `{marker}`; write the quote as `{note}` |
 | `ASC288` | `phrase-text-written` | advice | review | `{text}` is the value of the phrase `{key}`; write `{key}`, so the page changes with the value |
 | `ASC289` | `addresses-build-unknown` | error | choose | `[moved.{build}]` names a build ascribe.toml doesn't declare, so no build writes its redirects; the builds are {builds} |
+| `ASC291` | `how-to-steps-missing` | advice | write | this how-to has no steps; write the task as a numbered list under `@steps`, so readers and agents can follow it a step at a time |
+| `ASC292` | `page-opening-missing` | advice | write | this page opens with {first}, not a paragraph; open the page with a sentence that says what it covers |
 
 ## The VS Code extension
 
@@ -1078,7 +1080,7 @@ For people and agents. Read from `docs/content/command/project-files.md`.
 
 | File | What writes it | Commit it |
 |---|---|---|
-| `.ascribe/build/` | `ascribe build`, and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere. | No |
+| `.ascribe/build/` | `ascribe build`, and `@ascribed/astro` when it builds. It's the default output folder; `[project] output-dir` puts it elsewhere. | No |
 | `.ascribe/preview/` | `ascribe preview`: the build's pages rendered as HTML, which it serves on this computer and renders again as you edit. | No |
 | `.ascribe/vale/` | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words. | No |
 | `.ascribe/cache/` | `ascribe report links`, which keeps the answers it reuses in `.ascribe/cache/links/`. | No |

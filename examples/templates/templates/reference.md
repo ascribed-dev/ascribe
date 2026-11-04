@@ -4,8 +4,8 @@ title: "Reference template"
 description: "{One sentence that says what this page lists and what a reader looks up in it.}"
 ---
 
-## \{Reference description}
 @memo: This section provides a structured list of settings, field descriptions, and other reference details. This document can serve as a standalone reference or complement other types of documentation, typically at the end of a procedural document, to provide additional context. Define the scope of this reference and how it relates to other documents if applicable.
+\{Reference description}
 
 ## \{Table name or other structured entry}
 

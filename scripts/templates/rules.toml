@@ -27,8 +27,14 @@
 #   placeholder, and stays one.
 # - `directives`: a directive line put before a line of theirs, at that line's
 #   indentation, such as `@steps` before a numbered procedure's first step.
+# - `opening`: the heading their template opens with, over what is the page's
+#   opening, taken off so the page opens with a paragraph, as
+#   `page-opening-missing` asks. A heading that's a label, such as
+#   `## Overview`, which the title already does the work of, is removed; one
+#   that's a placeholder in braces is kept as a paragraph of its words.
 
 [how-to]
+opening = "## Overview"
 description = "{One sentence that says what a reader can do once they've followed this page.}"
 
 # Their instructions to the writer.
@@ -60,6 +66,7 @@ memos = [
 ]
 
 [tutorial]
+opening = "## Overview"
 description = "{One sentence that says what a reader will have learned by the end of this tutorial.}"
 
 # Their instructions to the writer.
@@ -75,6 +82,7 @@ directive = "@steps"
 before = "1. {Write the step here. Use a verb to start.}"
 
 [reference]
+opening = "## {Reference description}"
 description = "{One sentence that says what this page lists and what a reader looks up in it.}"
 
 # Their instructions to the writer.

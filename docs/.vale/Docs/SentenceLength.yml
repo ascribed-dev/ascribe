@@ -1,0 +1,9 @@
+# A sentence over 45 words is hard to follow; split it. Contracts are
+# exempt, since a definition is sometimes one long sentence.
+extends: occurrence
+message: "This sentence has more than 45 words; split it."
+level: warning
+scope: sentence
+ignorecase: false
+max: 45
+token: '\b(\w+)\b'

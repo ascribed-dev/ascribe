@@ -15,6 +15,7 @@
 //! | `content` | A page's description and recheck date, code blocks' languages |
 //! | `comment` | HTML comments, which a memo would keep out of the published page |
 //! | `memo` | Container memos that say nothing |
+//! | `opening` | A page that doesn't open with a paragraph |
 //! | `phrase_text` | A phrase's value written out where the phrase could be |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
@@ -28,6 +29,7 @@ mod comment;
 mod content;
 mod frontmatter;
 mod memo;
+mod opening;
 mod phrase_text;
 mod refs;
 mod sources;
@@ -143,6 +145,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
     cx.title_from_heading(doc.frontmatter.as_ref(), &doc.blocks);
+    cx.check_opening(&doc.blocks);
     cx.collect_mark_scopes(&doc.blocks);
     cx.blocks(&doc.blocks);
     if cx.marked_examples {

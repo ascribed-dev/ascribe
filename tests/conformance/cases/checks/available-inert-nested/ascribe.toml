@@ -16,3 +16,7 @@ live = ["0.4.2"]
 
 [builds.site]
 versions = "ascribe"
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

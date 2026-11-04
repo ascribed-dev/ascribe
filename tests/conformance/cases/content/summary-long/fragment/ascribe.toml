@@ -1,5 +1,6 @@
 spec = "0.1"
 
 [checks]
+page-opening-missing = "off"
 summary-long = "advice"
 page-orphan = "off"

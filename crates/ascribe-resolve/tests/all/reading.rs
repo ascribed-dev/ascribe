@@ -405,7 +405,7 @@ fn the_thread_place_is_line_62_of_install_agent_through_the_phrase() {
     };
     assert_eq!(
         (project.path_of(file).unwrap().as_str(), line),
-        ("keys.md", 10)
+        ("keys.md", 12)
     );
     assert_eq!(found.pages, 2);
 }
@@ -527,7 +527,7 @@ fn searching_quill_finds_the_lines_that_name_quill_yaml_after_the_phrase() {
     let has = |want: (&str, u32)| lines.iter().any(|(p, l)| (p.as_str(), *l) == want);
     assert!(has(("install-agent.md", 62)), "{lines:?}");
     // `keys.md:10` says `quill` only in `{cloud}`'s value: the phrase's place.
-    assert!(!has(("keys.md", 10)), "{lines:?}");
+    assert!(!has(("keys.md", 12)), "{lines:?}");
     assert!(
         found
             .places

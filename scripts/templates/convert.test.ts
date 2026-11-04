@@ -236,6 +236,39 @@ test("an instruction of several lines too long for one is a container with their
   );
 });
 
+test("the heading over the opening comes off: a label goes, a placeholder stays as a paragraph", () => {
+  const body = (out: string) => out.slice(out.indexOf("---\n\n", 4) + 5);
+  expect(
+    body(
+      convertTemplate(
+        "t",
+        template(
+          "## Overview\n\nThis explains {the task}.\n\n{Optional: Say why.}\n\n## Steps\n\nDo it.",
+        ),
+        { ...rules, opening: "## Overview", memos: ["{Optional: Say why.}"] },
+      ),
+    ),
+  ).toBe("@memo: Optional: Say why.\nThis explains \\{the task}.\n\n## Steps\n\nDo it.\n");
+  expect(
+    body(
+      convertTemplate("t", template("## {Description}\n\n## Table\n\nRows."), {
+        ...rules,
+        opening: "## {Description}",
+      }),
+    ),
+  ).toBe("\\{Description}\n\n## Table\n\nRows.\n");
+  expect(() =>
+    convertTemplate("t", template("Text.\n\n## Overview\n\nMore."), {
+      ...rules,
+      opening: "## Overview",
+    }),
+  ).toThrow(
+    new ConversionError(
+      "t: the rule `opening` names `## Overview`, which isn't the heading the template opens with",
+    ),
+  );
+});
+
 test("an instruction that ends a list item, or one the rule doesn't find, stops the conversion", () => {
   const convert = (source: string, memo: string) => () =>
     convertTemplate("how-to", template(source), { ...rules, memos: [memo] });

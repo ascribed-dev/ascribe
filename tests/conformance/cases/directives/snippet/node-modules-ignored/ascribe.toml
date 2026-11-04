@@ -11,3 +11,7 @@ path = "code"
 [sources.own]
 path = "code"
 ignore = ["private/**"]
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

@@ -12,7 +12,7 @@ license = "MIT No Attribution License"
 ascribe = "0.3.2+dev (8b66d38e1640)"
 
 [template.files]
-"templates/how-to.md" = "sha256:391389b7a74bbfcbf8619b7c122f356ac46800bdf244f97afe5943225a9ac58a"
+"templates/how-to.md" = "sha256:75ed0c14d3fcf92f1a71304c651f1e3aae76ede4907e7ba5236047aeca511207"
 "templates/how-to.guide.md" = "sha256:df5131d0547ae2c4d164f6078ecb87170e36d86676a7f22a6ed858775e7196ff"
 
 [template.ascribe-files]
@@ -44,7 +44,7 @@ license = "MIT No Attribution License"
 ascribe = "0.3.2+dev (8b66d38e1640)"
 
 [template.files]
-"templates/tutorial.md" = "sha256:cea271d2aad37f988101b9418bcb1c2accd870ccbc8791b3b2709f6f89b79b50"
+"templates/tutorial.md" = "sha256:708875c79c6cb3b5f61bbf53a33e51934e7deda780368b279e561b116e2cdf05"
 "templates/tutorial.guide.md" = "sha256:f6fd7a466c461645eb3c5fcb97124c9c28006ff2b1fa070c49cfa6443355d18b"
 
 [template.ascribe-files]
@@ -60,7 +60,7 @@ license = "MIT No Attribution License"
 ascribe = "0.3.2+dev (8b66d38e1640)"
 
 [template.files]
-"templates/reference.md" = "sha256:a96ae0a81767f5431d064c0c7aa21533bd7d1bf02219223e1179c9d6a739cddf"
+"templates/reference.md" = "sha256:0c2991fbb6c2e83efd4bf2f9bffb22e66556b7e0566a44e94d654a5aa840aa3c"
 "templates/reference.guide.md" = "sha256:1f7296d6eb5883abffab43d694c82cac7c8f2c2a0b325921caa0a713a137b3ff"
 
 [template.ascribe-files]
