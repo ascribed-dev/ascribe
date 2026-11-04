@@ -109,7 +109,7 @@ Leave the text empty, as in the second link, and Ascribe fills in the page's tit
 An image is a Markdown image with alt text. Put the image file in your content folder, beside the page or in a folder of images, and link it by its path from the page:
 
 ```markdown
-![The Quill settings page, with Watch set to docs](images/settings.png){width=600}
+![The {product} settings page, with Watch set to docs](images/settings.png){width=600}
 ```
 
 The `{width=600}` block, directly after the image with no space, gives it attributes. Ascribe accepts only the attributes `ascribe.toml` declares, so declare `width` once:
@@ -170,7 +170,7 @@ description: Set up quill.yaml, connect Quill to your repository, and check the 
 2. Set `watch` to the folder your docs are in.
 3. Run `quill check` to confirm the agent can read it.
 
-![The Quill settings page, with Watch set to docs](images/settings.png){width=600}
+![The {product} settings page, with Watch set to docs](images/settings.png){width=600}
 
 .Every option of quill.yaml
 @details:
