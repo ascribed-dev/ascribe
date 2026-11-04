@@ -9,7 +9,8 @@ Most pages need the same few things: a callout, a procedure, a block readers can
 
 It's for a writer with a project already, as [Getting started](../getting-started.md) sets one up. The page is the `configure.md` that guide's `install.md` links to, so its `ascribe.toml` already declares the phrases `{product}` and `{version}` used below.
 
-## Start the page
+## 1. Start the page
+@id: start-the-page
 
 Create `docs/configure.md` with its frontmatter, the fields its type asks for, and an opening paragraph:
 
@@ -25,7 +26,8 @@ description: Set up quill.yaml, connect Quill to your repository, and check the 
 
 `type: page` is a type `ascribe.toml` declares, and `title` and `description` are the fields it asks for; [frontmatter](frontmatter.md) has the rest of what a page's frontmatter can say.
 
-## Write a name once, as a phrase
+## 2. Write a name once, as a phrase
+@id: write-a-name-once-as-a-phrase
 
 `{product}` above is a **phrase**: `ascribe.toml`'s `[phrases]` says what it stands for, and each output writes that in its place. Write the phrase wherever the product's name or version goes, in prose, headings, and links, so a rename or a release is one edit:
 
@@ -44,7 +46,8 @@ agent:
 
 `ascribe check` reports a phrase's value written out, such as `Quill 3.4.1`, and offers to write the phrase. See [phrases](inline.md#phrases).
 
-## Add a note
+## 3. Add a note
+@id: add-a-note
 
 A note is a callout. Write `@note`, its type if it isn't a plain note, and its text after a colon:
 
@@ -64,7 +67,8 @@ Every clone then syncs the same folders.
 
 A line starting with `.` directly above the note gives it a title, as `.Before you start` would. See [`@note`](directives.md#note).
 
-## Write the steps
+## 4. Write the steps
+@id: write-the-steps
 
 Put `@steps` directly above a numbered list to mark it as a procedure. The site shows it as one, and readers and agents can tell it from any other list:
 
@@ -77,7 +81,8 @@ Put `@steps` directly above a numbered list to mark it as a procedure. The site 
 
 A directive inside a step, such as a note, is indented to the step's text. See [`@steps`](directives.md#steps).
 
-## Fold away the detail
+## 5. Fold away the detail
+@id: fold-away-the-detail
 
 Some content most readers skip: every option of a file, or a long log. `@details` shows it collapsed, under a title readers click to open, so the title is required:
 
@@ -93,7 +98,8 @@ Some content most readers skip: every option of a file, or a long log. `@details
 
 Without the colon, `@details` folds away just the next block. See [`@details`](directives.md#details).
 
-## Link to another page
+## 6. Link to another page
+@id: link-to-another-page
 
 A link names the page's **file**, with a path relative to the page you're writing, and Ascribe writes each output's address for it. Add a heading's id after `#` to link to a section:
 
@@ -104,7 +110,8 @@ Install it first: [](install.md).
 
 Leave the text empty, as in the second link, and Ascribe fills in the page's title, or the heading's. `ascribe check` reports a link to a file or a heading that isn't there, so a page that moves doesn't leave a broken link behind. `ascribe outline <page>` lists a page's headings with their ids, and `ascribe link <target> --from <page>` says what to write. See [links](inline.md#links).
 
-## Add an image with a width
+## 7. Add an image with a width
+@id: add-an-image-with-a-width
 
 An image is a Markdown image with alt text. Put the image file in your content folder, beside the page or in a folder of images, and link it by its path from the page:
 
@@ -121,7 +128,8 @@ width = "number?"
 
 `ascribe check` reports an image that isn't there, or whose name differs in case, and one without alt text. See [images](inline.md#images).
 
-## Include a shared part
+## 8. Include a shared part
+@id: include-a-shared-part
 
 When several pages say the same thing, such as what a reader needs before they start, write it once in a **fragment**, a file whose name starts with `_`, and include it in each page.
 
