@@ -10164,8 +10164,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1361"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF-Rh4",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1368"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Generated reference pages: use the settled terms at their source in the code"
     }
   ]
