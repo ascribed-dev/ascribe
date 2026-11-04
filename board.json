@@ -9124,7 +9124,7 @@
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Getting started's handoff to the Astro guide: a conflicting `ascribe.toml`, a base-path warning, and two `@ascribed/cli` pins"
     },
     {
@@ -9327,7 +9327,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1350"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Docs inaccuracies: writing, the content model, checks, and commands"
     },
     {
