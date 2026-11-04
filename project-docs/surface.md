@@ -943,6 +943,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `content-model/content.md` | `ascribe.toml`: what pages hold | reference |
 | `content-model/glossary.md` | Set up a glossary | how-to |
 | `content-model/index.md` | `ascribe.toml` reference | reference |
+| `content-model/keep-current.md` | Keep pages current | how-to |
 | `content-model/output.md` | `ascribe.toml`: where pages are published | reference |
 | `content-model/page-types.md` | Define your page types and fields | how-to |
 | `content-model/sources.md` | `ascribe.toml`: what pages draw from | reference |
