@@ -772,11 +772,9 @@ fn plan_hooks(
 
 /// How the hooks run `ascribe`: the binary of `@ascribed/cli` when the
 /// nearest `package.json` from the project's folder up to the
-/// repository's root pins it, in the `node_modules` beside it, else
-/// `ascribe` on the path. It's decided from the committed files alone, not
-/// from whether `node_modules` is installed yet, so every machine writes
-/// the same hooks. Yarn's Plug'n'Play writes no `node_modules/.bin`, so a
-/// project that uses it runs `ascribe` on the path.
+/// repository's root pins it, else `ascribe` on the path. It's decided
+/// from the committed files alone, not from whether `node_modules` is
+/// installed yet, so every machine writes the same hooks.
 fn ascribe_command(here: &Path, root: &Path) -> Result<settings::Ascribe, SyncError> {
     for dir in here.ancestors() {
         if read(&dir.join("package.json"))?
@@ -784,12 +782,12 @@ fn ascribe_command(here: &Path, root: &Path) -> Result<settings::Ascribe, SyncEr
             .and_then(copilot::pinned_spec)
             .is_some()
         {
-            let Some(rel) = relative_path(root, dir) else {
+            let Some(bin_dir) = bin_folder(dir, root)? else {
                 break;
             };
-            if plug_n_play_at(dir, root)? {
+            let Some(rel) = relative_path(root, &bin_dir) else {
                 break;
-            }
+            };
             let bin = rel
                 .join("node_modules/.bin/ascribe")
                 .map(|p| p.as_str().to_owned())
@@ -803,26 +801,43 @@ fn ascribe_command(here: &Path, root: &Path) -> Result<settings::Ascribe, SyncEr
     Ok(settings::Ascribe::on_path())
 }
 
-/// Whether the nearest lockfile from `dir` up to `root` is Yarn's, with
-/// Plug'n'Play, which writes no `node_modules/.bin`.
-fn plug_n_play_at(dir: &Path, root: &Path) -> Result<bool, SyncError> {
-    for lock_dir in dir.ancestors() {
-        for (file, _) in copilot::LOCKFILES {
-            // Outside FileSystem: the repository's lockfiles, which aren't
-            // the project's.
-            if lock_dir.join(file).is_file() {
-                return Ok(false);
-            }
+/// The folder whose `node_modules/.bin` holds the `ascribe` of the package
+/// at `package`, by the nearest lockfile from there up to `root`: pnpm,
+/// and Yarn's `pnpm` linker, link each package's own bins beside it; npm
+/// and Yarn's `node-modules` linker hoist them to the lockfile's folder, a
+/// workspace's root. Without a lockfile, the package's folder. `None` for
+/// Yarn's Plug'n'Play, which writes no `node_modules/.bin`.
+fn bin_folder(package: &Path, root: &Path) -> Result<Option<PathBuf>, SyncError> {
+    for lock_dir in package.ancestors() {
+        // Outside FileSystem: the repository's lockfiles, which aren't the
+        // project's.
+        if lock_dir.join("pnpm-lock.yaml").is_file() {
+            return Ok(Some(package.to_owned()));
+        }
+        if lock_dir.join("package-lock.json").is_file() {
+            return Ok(Some(lock_dir.to_owned()));
         }
         if let Some(lock) = read(&lock_dir.join(copilot::YARN_LOCK))? {
             let yarnrc = read(&lock_dir.join(copilot::YARNRC))?;
-            return Ok(copilot::yarn_command(&lock, yarnrc.as_deref()).is_none());
+            if copilot::yarn_command(&lock, yarnrc.as_deref()).is_none() {
+                return Ok(None);
+            }
+            let pnpm_linker = yarnrc.as_deref().unwrap_or_default().lines().any(|line| {
+                line.trim()
+                    .strip_prefix("nodeLinker:")
+                    .is_some_and(|value| value.trim().trim_matches(['"', '\'']) == "pnpm")
+            });
+            return Ok(Some(if pnpm_linker {
+                package.to_owned()
+            } else {
+                lock_dir.to_owned()
+            }));
         }
         if lock_dir == root {
             break;
         }
     }
-    Ok(false)
+    Ok(Some(package.to_owned()))
 }
 
 /// The command the project in `here` runs Ascribe with, `given` or worked

@@ -917,6 +917,45 @@ fn the_hooks_dont_depend_on_whether_node_modules_is_installed() {
 }
 
 #[test]
+fn in_a_workspace_the_hooks_run_the_binary_where_it_installs() {
+    // Each workspace has its root's `package.json` and lockfile, and the
+    // pin in `docs/package.json`, and quill's files moved into `docs`.
+    let case = |lockfile: &str, lock: &str, yarnrc: Option<&str>| {
+        let repo = tempfile::tempdir().unwrap();
+        let root = repo.path();
+        copy_dir(&examples().join("quill"), &root.join("docs"));
+        git_init(root);
+        write(
+            &root.join("package.json"),
+            "{\"private\": true, \"workspaces\": [\"docs\"]}\n",
+        );
+        write(&root.join(lockfile), lock);
+        if let Some(yarnrc) = yarnrc {
+            write(&root.join(".yarnrc.yml"), yarnrc);
+        }
+        write(&root.join("docs/package.json"), DEPENDS_ON_CLI);
+        sync(root, "docs", &["--target", "claude", "--with-hook"]);
+        read(&root.join(".claude/settings.json"))
+    };
+    let edit = |bin: &str| {
+        format!(
+            r#""command": "\"$CLAUDE_PROJECT_DIR\"/{bin}/ascribe agents hook claude-code --event edit"#
+        )
+    };
+    // npm and Yarn hoist the binary to the workspace's root.
+    let settings = case("package-lock.json", "", None);
+    assert!(settings.contains(&edit("node_modules/.bin")), "{settings}");
+    let settings = case("yarn.lock", "# yarn lockfile v1\n", None);
+    assert!(settings.contains(&edit("node_modules/.bin")), "{settings}");
+    // pnpm links it beside the package that pins it.
+    let settings = case("pnpm-lock.yaml", "", None);
+    assert!(
+        settings.contains(&edit("docs/node_modules/.bin")),
+        "{settings}"
+    );
+}
+
+#[test]
 fn with_plug_n_play_the_hooks_run_ascribe_from_the_path() {
     let repo = repository("quill");
     let root = repo.path();
