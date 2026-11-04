@@ -53,7 +53,7 @@ Write and review in the editor, and write a thing once for every reader.
 
 1. [Editing](editor/index.md) and [the preview](editor/preview.md): the VS Code extension, its checks as you type, and the page as readers will see it.
 2. [Content that varies](writing/variants.md): one page for readers on different platforms or products.
-3. [Phrases](writing/inline.md#phrases) and [includes](writing/directives.md#include): write a name or a passage once, and use it on every page.
+3. [Write it once](writing/write-it-once.md): write a name once as a phrase and a passage once as a fragment, and use them on every page.
 4. [Set up a glossary](content-model/glossary.md) and [page templates](templates/index.md): link every page's terms to their definitions, and start a page of a known kind from a template.
 5. [Check prose with Vale](checks/vale.md) and [a published style guide](checks/vale.md#use-a-published-style-guide): check your prose as you save, and hold it to your style guide, such as Google's or Microsoft's.
 6. [Review in the preview](editor/review.md): what a change did, and a pull request's comments, beside the page.

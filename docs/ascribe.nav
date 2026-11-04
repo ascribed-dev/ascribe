@@ -14,7 +14,7 @@ pages = ["getting-started.md", "existing-docs.md", "install.md", "glossary.md"]
 [[sections]]
 folder = "writing/"
 label = "Writing pages"
-pages = ["write-a-page.md", "syntax.md", "directives.md", "frontmatter.md", "inline.md", "memo-files.md", "memos.md", "variants.md"]
+pages = ["write-a-page.md", "write-it-once.md", "syntax.md", "directives.md", "frontmatter.md", "inline.md", "memo-files.md", "memos.md", "variants.md"]
 
 [[sections]]
 folder = "templates/"

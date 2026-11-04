@@ -1,0 +1,1 @@
+- **Why Ascribe cites its sources and says what Ascribe doesn't do, by design and for now.** The landing page says why the checks work everywhere: includes, variants, and page types are part of the Markdown. See [Why Ascribe](https://ascribed-dev.com/why/).

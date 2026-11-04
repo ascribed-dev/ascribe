@@ -10,7 +10,8 @@ output-dir = ".ascribe/build"
 # What this project shares with the docs, taken from their file, so a claim
 # here is marked as the docs mark it and links where they link: the releases,
 # with their labels and planned label, commands that differ by package
-# manager, the `version` phrase, the source the examples come from, and the
+# manager, the `version`, `node`, and `glibc` phrases, the source the
+# examples come from, and the
 # site's address and routes. A release moves the docs' lines, and these with
 # them. Each is read as if written here, and can't be written here too.
 [from."../../docs/ascribe.toml"]
@@ -18,6 +19,8 @@ take = [
   "releases",
   "dimensions.pm",
   "phrases.version",
+  "phrases.node",
+  "phrases.glibc",
   "sources.code",
   "consumer.site",
   "consumer.trailing-slash",

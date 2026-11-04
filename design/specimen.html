@@ -1503,23 +1503,30 @@ pillar-proof:has(> ul ~ h3) {
   column-gap: 1.5rem;
 }
 
-/* A feature, with a dash of the gutter's color before it. */
+/* A feature, with a dash of the gutter's color before it. One rule, under
+the list's heading, which lines up across two lists side by side; a rule
+under each feature wouldn't, since their heights differ. */
 pillar-proof ul {
   margin: 0;
-  padding: 0;
+  padding: 0.5rem 0 0;
   border-top: 1px solid var(--border);
   list-style: none;
 }
 
+/* A list with no heading above it has nothing to rule off. */
+pillar-proof > ul:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
 pillar-proof li {
   position: relative;
-  padding: 0.7rem 0 0.7rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  padding: 0.4rem 0 0.4rem 1.25rem;
 }
 
 pillar-proof li::before {
   position: absolute;
-  top: 1.3rem;
+  top: 1rem;
   left: 0.1rem;
   width: 0.4rem;
   height: 2px;

@@ -32,6 +32,10 @@
         "label": "Write a page"
       },
       {
+        "href": "/docs/writing/write-it-once/",
+        "label": "Write it once"
+      },
+      {
         "href": "/docs/writing/syntax/",
         "label": "Directive syntax"
       },
