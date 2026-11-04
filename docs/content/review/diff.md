@@ -61,7 +61,7 @@ warning: the working tree has 3 errors; `ascribe check` lists them
 |---|---|
 | `0` | Compared, whether or not anything changed, and whether or not the working tree has errors |
 | `1` | With `--exit-code`: something changed |
-| `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
+| `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error ([no merge base](../troubleshooting.md#no-merge-base)). |
 
 ### The HTML preview
 @id: the-html-report

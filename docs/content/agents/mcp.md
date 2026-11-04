@@ -27,7 +27,7 @@ Your agent's host starts the server, in the repository's root, and one server se
    }
    ```
 
-3. Start a new session, and check that the host lists the server's tools.
+3. Start a new session, and check that the host lists the server's tools. If it doesn't, see [Troubleshooting](../troubleshooting.md#mcp-tools-missing).
 
 This runs the `ascribe` on the host's path, which you install [on your path](../install.md#without-node), and it's what `sync` writes into `.mcp.json`: from a repository's root, no one command finds a project's own `ascribe` on every system.
 

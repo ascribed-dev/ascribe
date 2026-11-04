@@ -32,7 +32,7 @@ In Claude Code, [the plugin](claude-code.md) has the stop hook too: use the plug
 
 The commands it names, such as `ascribe check`, are run as each project runs Ascribe, as [`sync` works it out](instructions.md#the-command-they-name): `npx ascribe check` in a project that installs `@ascribed/cli` with npm, for example. When you gave `sync` a `--command`, the entries pass it to the hook.
 
-Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. [`ascribe agents hook`](commands.md#cli-agents-hook) says exactly what each reports, and how the check server it starts keeps a check after an edit to milliseconds.
+Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up ([when the hook says nothing](../troubleshooting.md#hook-says-nothing)). [`ascribe agents hook`](commands.md#cli-agents-hook) says exactly what each reports, and how the check server it starts keeps a check after an edit to milliseconds.
 
 ## Prose, through Vale
 

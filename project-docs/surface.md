@@ -1022,6 +1022,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
 | `templates/command.md` | `ascribe templates` and `ascribe new` | reference |
 | `templates/index.md` | Start pages from templates | how-to |
+| `troubleshooting.md` | Troubleshooting | troubleshooting |
 | `versions/archive.md` | Export and retire a line | how-to |
 | `versions/index.md` | Publish a site for each version | how-to |
 | `versions/lines.md` | Release lines | reference |

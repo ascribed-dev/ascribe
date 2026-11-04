@@ -11,7 +11,7 @@ To install the editor, see [Editing](editor/index.md).
 
 ## Platforms
 
-Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later, which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64). Intel Macs aren't supported.
+Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc {glibc} or later, which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64). Intel Macs aren't supported. On an older glibc, `ascribe` doesn't start ([what to do](troubleshooting.md#glibc)).
 
 ## In a project, with npm
 @id: npm
@@ -30,7 +30,7 @@ pnpm exec ascribe --version
 ```
 @end
 
-`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version in `package.json`. Run it as `npx ascribe` (`pnpm exec ascribe` with pnpm), or from a script in `package.json`. If `ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled.
+`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version in `package.json`. Run it as `npx ascribe` (`pnpm exec ascribe` with pnpm), or from a script in `package.json`. If `ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled ([Troubleshooting](troubleshooting.md#native-package)).
 
 @note {type=tip}: To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
 

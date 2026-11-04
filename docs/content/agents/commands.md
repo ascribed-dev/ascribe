@@ -171,7 +171,7 @@ Before the agent finishes, it checks every build of each project whose pages or 
 | `codex` | `PostToolUse`: `hookSpecificOutput.additionalContext` | `Stop`: `decision: "block"` with a `reason` |
 | `copilot` | `postToolUse`: `additionalContext` | `agentStop`: `decision: "block"` with a `reason` |
 
-It never writes a project's file, so it makes no fix, even a safe one: the agent makes it, as the answer says. And it never stops an edit: the file is written by then. A check that takes longer than 2 seconds after an edit, or 20 before the agent finishes, is given up, and the agent goes on.
+It never writes a project's file, so it makes no fix, even a safe one: the agent makes it, as the answer says. And it never stops an edit: the file is written by then. A check that takes longer than 2 seconds after an edit, or 20 before the agent finishes, is given up, and the agent goes on ([when the hook says nothing](../troubleshooting.md#hook-says-nothing)).
 
 The first hook in a project starts a check server in the background, the same `ascribe` binary, which keeps the project loaded so each later check takes milliseconds. It opens no port: the hook and the server pass requests and answers as files in a folder of your cache folder (`ASCRIBE_CACHE_DIR`, or `ascribe` in your user's cache folder). It stops after 10 minutes with no request, or when the `ascribe` it was started from is replaced. On Windows it runs from a copy in that folder, so it never holds up installing or building a new `ascribe`. Set `ASCRIBE_HOOK_SERVER=off` to check in the hook's own process every time.
 
