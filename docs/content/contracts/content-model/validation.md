@@ -37,7 +37,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-content-root-missing` | The content root exists and is a directory. | `` content root `{path}` doesn't exist ``<br>`` content root `{path}` isn't a directory `` |
 | `model-output-overlaps-content` | The output directory isn't inside the content root, the content root isn't inside the output directory, and they differ (derived from the Ascribe specification). | `` output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source ``<br>`` content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output ``<br>`` output directory and content root are both `{path}` `` |
 
-### 25.3 Page types, fragments, and fields
+### 25.3 Content types, fragments, and fields
 
 | Slug | Rule | Message |
 |---|---|---|
