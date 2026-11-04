@@ -9416,9 +9416,6 @@
         "documentation",
         "enhancement"
       ],
-      "linked pull requests": [
-        "https://github.com/ascribed-dev/ascribe/pull/1339"
-      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In review",
       "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
@@ -9546,7 +9543,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1340"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Write it once: a guide to fragments, includes, and phrases"
     },
     {
