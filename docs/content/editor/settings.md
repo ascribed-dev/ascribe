@@ -26,9 +26,9 @@ Some folders hold an `ascribe.toml` that isn't a project to work on, and the edi
 
 Anything else whose `ascribe.toml` isn't a project, such as test fixtures, is left out with `ascribe.projects.exclude`: a list of glob patterns, from each workspace folder, in your workspace's settings, such as `"ascribe.projects.exclude": ["tests/**"]`.
 
-A project left out isn't listed in **Switch Project** and gets no language server, so its pages get no diagnostics and no preview. To bring one back, open its folder as a workspace folder of its own (**File > Add Folder to Workspace**): a workspace folder's own `ascribe.toml` is always a project, unless `files.exclude` or `ascribe.projects.exclude` names it. One that `ascribe.projects.exclude` leaves out comes back when you take its pattern out, and one git ignores comes back when git tracks its `ascribe.toml` (`git add -f`).
+A project left out isn't listed in **Switch Project** and gets no language server, so its pages aren't checked and have no preview. To bring one back, open its folder as a workspace folder of its own (**File > Add Folder to Workspace**): a workspace folder's own `ascribe.toml` is always a project, unless `files.exclude` or `ascribe.projects.exclude` names it. One that `ascribe.projects.exclude` leaves out comes back when you take its pattern out, and one git ignores comes back when git tracks its `ascribe.toml` (`git add -f`).
 
-A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
+A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and isn't checked.
 
 In the Problems panel, the source of each problem names the project whose server found it, such as `ascribe · handbook`, when the workspace has more than one project.
 
@@ -74,7 +74,7 @@ Each word you type must be there, in any case. **Set in ascribe.toml** keeps to 
 
 Each setting shows its name, its key (`[consumer] trailing-slash`), what it does, its default, and where the file sets it, as a link to the line (`ascribe.toml:12`), or that the file leaves it out. A bar beside a setting marks one the file sets, as VS Code's Settings editor marks what's changed.
 
-The tab shows every setting that's a switch, a choice, a number, or a short text, under a heading for its table (`[project]`, `[consumer]`, `[editor]`, and the rest), in the order of the [content model reference](../content-model/index.md). A table or a list is the file's to edit, and a part of the project with a name of its own, such as a content type or a build, is a card that opens the file at it.
+The tab shows every setting that's a switch, a choice, a number, or a short text, under a heading for its table (`[project]`, `[consumer]`, `[editor]`, and the rest), in the order of the [content model reference](../content-model/index.md). A table or a list is the file's to edit, and a part of the project with a name of its own, such as a page type or a build, is a card that opens the file at it.
 
 ### Changing a value
 

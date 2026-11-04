@@ -23,7 +23,7 @@ Two kinds of file have nothing to preview:
 - A file with no `ascribe.toml` above it: "This file isn't part of an Ascribe project (no ascribe.toml above it)."
 - A file in a project's folder but outside its content root, which the preview names with both: "handbook/README.md is in the project handbook, but outside its content root (handbook/pages), so there is no page to preview."
 
-The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts, loads nothing remote, and submits no forms, so raw HTML that needs any of these looks different in the preview than on the site. What the preview's page asks the extension to do is checked first: it opens only files in the project, or ones the preview itself linked to, and only the **Pull**, **Push**, and **Fetch** git commands it has buttons for.
+The preview shows images and files from the content root, and from folders elsewhere in the project that a page uses. For safety, it runs no inline scripts, loads nothing remote, and submits no forms, so raw HTML that needs any of these looks different in the preview than on the site. What the preview's page asks the extension to do is checked first: it opens only files in the project, or ones the preview itself linked to, and only the **Pull**, **Push**, and **Fetch** git commands it has buttons for.
 
 A [`@snippet`](../writing/directives.md#snippet) follows its code file on disk: when the file is saved, created, or deleted, by you or by a branch switch, every page that shows it, directly or through a fragment, is checked again, and the preview of one redraws. An unsaved edit to the code file isn't read until it's saved: a snippet shows the file as a build reads it. A file no snippet shows starts nothing.
 
@@ -46,7 +46,7 @@ The page preview's **Page | Site** switch, at the end of its toolbar, shows the 
 ## The build you're looking at
 @id: the-build-youre-looking-at
 
-Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](#the-build-lens) dims by it, and the [status bar](sidebar.md#the-status-bar) names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
+Each project has one **build you're looking at**, for the rest of the session: the preview renders it, the [build lens](#the-build-lens) dims by it, and the [status bar](sidebar.md#the-status-bar) names it. It starts as the editor build. **Switch build** (also **Ascribe: Switch Build**), which lists the project's builds and marks the editor build, and the preview's **Build** picker both change it, and in a workspace with several projects, each project keeps its own. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides which problems are shown: to change it, change `[editor] build` in `ascribe.toml`.
 
 A [versioned](../versions/index.md) build's lines are listed under it, the current line first, such as `site@3.4` for line 3.4: the preview of a line is at its address, and the lens dims what that line leaves out, a page new in a later line whole.
 

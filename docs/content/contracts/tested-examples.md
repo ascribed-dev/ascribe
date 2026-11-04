@@ -78,7 +78,7 @@ For a snippet of an example, the observations that can be read decide its status
 | stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/output-checks.md#ASC199), a warning |
 | unobserved | None lists it, or there's no observation | Nothing | [`example-unobserved`](../checks/diagnostics/output-checks.md#ASC200), advice |
 
-For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its diagnostic says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
+For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its problem says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
 
 ## 5. The tested line
 
@@ -93,7 +93,7 @@ A current example's code block carries `tested="…"` in its info string, after 
 - **The operating system** is `Linux`, `macOS`, or `Windows`, or the recorded name. The architecture isn't shown.
 - **A label or a value** has its control characters and runs of white space shown as one space, and is cut at 60 characters, with `…`. Each output escapes what it shows.
 
-The [site-render contract](site-render.md#51-a-tested-code-block) says how the site shows it, and the plain output writes "Tested with" and the line, and a full stop, on a line under the block, or "Tested." when the line is empty.
+The [site-render contract](site-render.md#51-a-tested-code-block) says how the site shows it, and the plain Markdown output writes "Tested with" and the line, and a full stop, on a line under the block, or "Tested." when the line is empty.
 
 ## 6. In the JSON output
 

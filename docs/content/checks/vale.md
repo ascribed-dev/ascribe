@@ -5,7 +5,7 @@ description: "Check your pages' prose with Vale, from Ascribe's quiet preset or 
 permalink: vale
 ---
 
-[Vale](https://vale.sh) checks prose: a word written twice, a misspelling, a term spelled two ways, and whatever else its rules look for. Ascribe runs it for you and reports what it finds as Ascribe diagnostics, at the right place in your source, beside the rest of your problems in the editor and in `ascribe check`.
+[Vale](https://vale.sh) checks prose: a word written twice, a misspelling, a term spelled two ways, and whatever else its rules look for. Ascribe runs it for you and reports what it finds as Ascribe problems, at the right place in your source, beside the rest of your problems in the editor and in `ascribe check`.
 
 Ascribe gives Vale your prose and nothing else. Frontmatter, directive lines, attribute blocks, and code never reach it, so Vale has nothing to say about Ascribe's syntax, and a phrase's text is checked where you wrote `{key}`. You install Vale; Ascribe never downloads it or anything for it.
 

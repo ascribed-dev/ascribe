@@ -31,7 +31,7 @@ When the target doesn't work, it says why and lists the closest targets that do:
 
 For a page or a heading, `Write:` gives the link with its title and with empty text, `[](../keys.md#rotate-keys)`, which shows the same title: either does, and the empty one is the smaller edit to a link that has no text.
 
-A URL with a scheme isn't checked: it exists as far as `link` knows. A file that isn't a page, such as an image, exists when the project has it. A link to an API's operation exists when the spec has it, and the answer says which: see [Link to operations in the editor](../openapi/editor.md#for-agents).
+A URL with a scheme isn't checked: it exists as far as `link` knows. A file that isn't a page, such as an image, exists when the project has it. A link to an API's operation exists when the OpenAPI spec has it, and the answer says which: see [Link to operations in the editor](../openapi/editor.md#for-agents).
 
 | Code | Meaning |
 |---|---|

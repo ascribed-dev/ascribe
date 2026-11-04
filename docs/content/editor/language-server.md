@@ -10,7 +10,7 @@ Every feature of the [VS Code extension](index.md) that isn't drawn on the scree
 @id {permalink=true}: cli-lsp
 @summary: Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself.
 
-Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error; the project it uses is sent to the editor as a log message when it starts. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level problems to report. Its logs go to standard error; the project it uses is sent to the editor as a log message when it starts. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
 
 ## Set up your editor
 
@@ -66,7 +66,7 @@ A server serves one project, the one `ascribe lsp` finds, so a server started at
 
 When it starts, the server sends a `window/logMessage` at Info with its version and the project it uses: `ascribe-lsp <version>: using the project at <path>`, or, when it finds none, `ascribe-lsp <version>: no ascribe.toml at or above <folder>`. A server with no project reports nothing. If an `ascribe.toml` is then created in the workspace folder itself, the server loads it, when the editor supports watching files for the server.
 
-When one project is nested in another's content root, the outer project's server leaves the nested project's files alone, open or not, so each file gets diagnostics from one server only. A nested project's `ascribe.toml` created or deleted while the server runs changes which files it checks, when the editor supports watching files for the server.
+When one project is nested in another's content root, the outer project's server leaves the nested project's files alone, open or not, so each file gets its problems from one server only. A nested project's `ascribe.toml` created or deleted while the server runs changes which files it checks, when the editor supports watching files for the server.
 
 ## What it asks of the editor
 
@@ -174,7 +174,7 @@ An empty `range` is the cursor; any other is a selection.
 }
 ```
 
-`kinds` names the lists to answer, and the result has those and no others. `range`, the cursor or a selection, is optional, and only `occurrences` reads it: the other places in the project's prose with the words it selects. `folder`, a folder in the content root, is optional too, and only `types` reads it: the content types a page started there can be. The document can be any of the project's files; from `ascribe.toml`, paths are written from the content root.
+`kinds` names the lists to answer, and the result has those and no others. `range`, the cursor or a selection, is optional, and only `occurrences` reads it: the other places in the project's prose with the words it selects. `folder`, a folder in the content root, is optional too, and only `types` reads it: the page types a page started there can be. The document can be any of the project's files; from `ascribe.toml`, paths are written from the content root.
 
 ### `ascribe/edit`
 

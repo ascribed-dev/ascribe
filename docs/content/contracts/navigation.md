@@ -61,7 +61,7 @@ Each build's site output has its share of the project's [navigation](../navigati
 | `pages` | A section's pages in order, its own page never among them. |
 | `sections` | A section's nested sections that keep a page in the build, in order. |
 | `source` | A page's path from the content root, with `/`: the `source` of its record in `_ascribe/pages.json` ([output-layout contract §1.3](output-layout.md#13-the-page-records)), which is keyed by route, and its path in the site output, so a collection entry's file joins to it. Routes aren't repeated here: a page's route is its record's. |
-| `type` | A page's content type. Absent for a page whose type isn't declared, which `ascribe check` reports. |
+| `type` | The page's type. Absent for a page whose type isn't declared, which `ascribe check` reports. |
 
 ## 2. Placing a nested section
 

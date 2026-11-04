@@ -4,7 +4,7 @@ title: Release lines
 description: What a release line is, what each line's output holds and says about itself, how links go between lines, and what a site, the editor, and agents get from them.
 ---
 
-A product a team supports in more than one version needs docs for each. Ascribe makes them from one source, the marks the pages already have, in four levels a project opts into one at a time:
+A product a team supports in more than one version needs docs for each. Ascribe makes them from one source, the availability marks the pages already have, in four levels a project opts into one at a time:
 
 1. **No versions.** The default. Nothing to configure, and nothing changes.
 2. **One site that knows its versions.** [`[releases]`](../content-model/variation.md#121-releasestarget) lists a target's lines: the live ones, the planned ones, when a line's support ends, and the ones that have left. One site still, with checks that the marks name versions the list knows, and "planned" worked out instead of kept by hand.

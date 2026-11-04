@@ -17,7 +17,7 @@ You can review in three places, and they show the same changes and the same comm
 
 The previews need VS Code or the site's dev server and a checkout. Someone who reviews without either, such as a product manager or a support engineer, reads the HTML preview and comments on GitHub: [Reviewers who don't use VS Code](#reviewers-who-dont-use-vs-code).
 
-[How review works](how-it-works.md) says what review compares, what its marks mean, and how its comments map to the pull request.
+[How review works](how-it-works.md) says what review compares, what its change marks mean, and how its comments map to the pull request.
 
 ## Review a pull request
 

@@ -12,7 +12,7 @@ description: "List a project's release lines, say what differs between two, rele
 @id {permalink=true}: cli-versions
 @summary: Lists a project's release lines, says what differs between two, releases one, exports one, and retires one.
 
-Lists a project's release lines, says what differs between two, releases one, exports one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/variation.md#121-releasestarget), and a line is named as a mark names it: the target, then the version, `"self-managed 3.4"`.
+Lists a project's release lines, says what differs between two, releases one, exports one, and retires one. Each reads the lines from `ascribe.toml`'s [`[releases]`](../content-model/variation.md#121-releasestarget), and a line is named as an availability mark names it: the target, then the version, `"self-managed 3.4"`.
 
 ### `ascribe versions list`
 @id {permalink=true}: cli-versions-list

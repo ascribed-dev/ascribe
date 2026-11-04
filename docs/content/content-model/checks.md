@@ -44,7 +44,7 @@ title-duplicate = "warning"
 limit = "200 KB"
 ```
 
-Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether. A check raised to `"error"` fails the check and stops the build, as an error does, though the page is still valid by the specification, and a review check raised this way can still be acknowledged. [Quieting a problem](../checks/check.md#quieting-a-problem) compares `[checks]` with the other ways to quiet one.
+Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether. A check raised to `"error"` fails the check and stops the build, as an error does, though the page is still valid by the specification, and a review check raised this way can still be acknowledged. [Quieting a problem](../checks/check.md#quieting-a-problem) compares `[checks]` with the other ways to set one aside.
 
 A check the diagnostics reference marks off by default, such as `summary-missing`, is off until `[checks]` names it. Named with a level, it's reported at that level. Named as a table without one, such as `[checks.summary-long]` with only a `limit`, it's reported at its default level ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)).
 
@@ -72,7 +72,7 @@ A glossary term is a heading, so it's acknowledged on its page instead, with [`@
 
 ### `[checks.vale]`
 
-Checks the prose with [Vale](https://vale.sh), a program the project installs: Ascribe gives it each page's prose, with phrases replaced by their text and without frontmatter, directive lines, attributes, or code, and reports its alerts as `prose` diagnostics at their place in the source. The editor runs it on a page when it's opened and saved; `ascribe check` runs it with `--vale`, or always with `in-check = true`. [Check prose with Vale](../checks/vale.md) has the steps.
+Checks the prose with [Vale](https://vale.sh), a program the project installs: Ascribe gives it each page's prose, with phrases replaced by their text and without frontmatter, directive lines, attributes, or code, and reports its alerts as `prose` problems at their place in the source. The editor runs it on a page when it's opened and saved; `ascribe check` runs it with `--vale`, or always with `in-check = true`. [Check prose with Vale](../checks/vale.md) has the steps.
 
 ```toml
 [checks.vale]
@@ -121,4 +121,4 @@ A broken link is `link-external-broken` and a moved one `link-external-moved`; b
 
 ## 25. Validation
 
-A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule Ascribe holds `ascribe.toml` to is listed in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its code and how to fix it. The [contract's §25](../contracts/content-model/validation.md#25-validation-rules) states each rule for someone building a tool that reads `ascribe.toml`.
+A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the problems. Every rule Ascribe holds `ascribe.toml` to is listed in the diagnostics reference, on [Diagnostics: the content model](../checks/diagnostics/content-model.md) and [Diagnostics: the content model's builds and site](../checks/diagnostics/content-model-builds.md), with its code and how to fix it. The [contract's §25](../contracts/content-model/validation.md#25-validation-rules) states each rule for someone building a tool that reads `ascribe.toml`.

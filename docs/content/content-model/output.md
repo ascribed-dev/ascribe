@@ -31,7 +31,7 @@ The root `index.md` (Astro's entry id `index`) is at `base-path`, which under `t
 
 The same router answers the reverse question, which page a route-like link names, for the `link-route` warning and its fix. Source files never contain routes ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)).
 
-**The outputs for agents** (`agents`, on by default when `site` is set) change what the plain-markdown output is, and add to the site output:
+**The outputs for agents** (`agents`, on by default when `site` is set) change what the plain Markdown output is, and add to the site output:
 
 - **The plain-markdown output is laid out by URL,** so it can be copied as it is to `base-path` beside the site. It holds:
   - Each page, at its route with `.md` (`Guides/My Setup.md` → `guides/my-setup.md`, the root `index.md` → `index.md`). Each opens with a line pointing at `llms.txt`, and after its title says what the page is for, with its type and its description (`> Reference · Every option.`).
@@ -44,7 +44,7 @@ The same router answers the reverse question, which page a route-like link names
 
 **The headers of a Markdown version.** Each build lists the response headers each Markdown version needs, `X-Robots-Tag` and a canonical `Link`, in `_ascribe/headers.json` in the site output ([output-layout contract](../contracts/output-layout.md#14-the-headers)). With `host = "netlify"`, the build writes them in Netlify's `_headers` too, which `@ascribed/astro` places at the site's root, beside the `_redirects` that [`ascribe.addresses`](../publishing/redirects.md) gives. Why a host sends them is in [Search engines and crawlers](../publishing/index.md#the-markdown-versions-headers).
 
-`@ascribed/astro` publishes the plain output with the site, and serves it in `astro dev`. With another generator, copy `<output-dir>/<build>/plain/` to the site's `base-path`. `ascribe check` then reports two advice checks: a description too long for its line in `llms.txt` (`description-too-long`), on the page that writes it, or once on a field's `default` in `ascribe.toml`, and an `llms.txt` still over the limit when it's split (`llms-section-large`).
+`@ascribed/astro` publishes the plain Markdown output with the site, and serves it in `astro dev`. With another generator, copy `<output-dir>/<build>/plain/` to the site's `base-path`. `ascribe check` then reports two advice checks: a description too long for its line in `llms.txt` (`description-too-long`), on the page that writes it, or once on a field's `default` in `ascribe.toml`, and an `llms.txt` still over the limit when it's split (`llms-section-large`).
 
 @include: ../_fragments/content-model/consumer-astro-settings.md
 

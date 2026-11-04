@@ -105,7 +105,7 @@ Ascribe build failed; fix the source and save to retry.
 **Solution.**
 
 @steps
-1. Read the diagnostics in Astro's terminal, or run `ascribe check`.
+1. Read the problems in Astro's terminal, or run `ascribe check`.
 2. Fix them, and save. The pages come back after the next clean build.
 
 ## The host doesn't list Ascribe's MCP tools

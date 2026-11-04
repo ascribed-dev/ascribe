@@ -18,7 +18,7 @@ Click your place in the changes for the breakdown. **More review actions** (**â‹
 
 Close the panel to get the page back; it stays closed or open as you move between pages. With the panel closed, a dot on the toolbar button says you have comments you haven't submitted.
 
-Review is on for the whole dev server, not one tab: once you start it, every page of the site that loads, in any tab or browser, shows the marks and threads without a click, until **Stop Review** or until `astro dev` stops.
+Review is on for the whole dev server, not one tab: once you start it, every page of the site that loads, in any tab or browser, shows the change marks and threads without a click, until **Stop Review** or until `astro dev` stops.
 
 Each mark's label and each thread's **Open source** opens the file at the line in your editor, through Vite's open-in-editor: set `LAUNCH_EDITOR` (for example, `LAUNCH_EDITOR=code`) to choose which.
 

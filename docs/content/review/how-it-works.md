@@ -1,7 +1,7 @@
 ---
 type: concept
 title: How review works
-description: What review compares, what its marks mean, how its comments map to the pull request, what it needs from GitHub, and what reaches GitHub.
+description: What review compares, what its change marks mean, how its comments map to the pull request, what it needs from GitHub, and what reaches GitHub.
 ---
 
 Review is one comparison shown in three places: the **page preview** in VS Code, the **site preview** under `astro dev`, and the **HTML preview** from CI. All three show the same changes with the same marks, and the two previews show the pull request's comments, with the same rules for where each lands. This page describes what's the same in all three. [Review a pull request](index.md) walks through reviewing a pull request; each place's own controls are on [Review in the preview](../editor/review.md), [Review in the site preview](site-preview.md), and [the HTML preview](diff.md#the-html-report).
@@ -14,7 +14,8 @@ It compares **resolved pages**, not files. A change to a fragment shows on every
 
 The previews follow your edits: the page preview as you type, saved or not, and the site preview each time a save rebuilds the site.
 
-## The marks
+## The change marks
+@id: the-marks
 
 Each changed block has a bar in its margin and a label:
 
