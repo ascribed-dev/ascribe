@@ -53,7 +53,7 @@ pnpm add @ascribed/astro
 
 It brings `@ascribed/cli`, the `ascribe` command for your platform, and `@ascribed/elements`. Astro's image processing also needs `sharp` (`npm install sharp`) if your project doesn't have it.
 
-`astro build` and `astro dev` run the `ascribe` of the `@ascribed/cli` that `@ascribed/astro` depends on, which is always of the same version as `@ascribed/astro` (or the binary its [`binary` option](reference.md#options) names). The editor, CI, and `npx ascribe` run the project's own, the one [Getting started](../getting-started.md) installs. Keep the two packages on the same version, and the package manager installs one `@ascribed/cli` that both run; with two versions, the site and the check can disagree about a page. Upgrade them together:
+`astro build` and `astro dev` run the `ascribe` of the `@ascribed/cli` that `@ascribed/astro` depends on, which is always of the same version as `@ascribed/astro` (or the binary its [`binary` option](reference.md#options) or the `ASCRIBE_BIN` environment variable names). The editor, CI, and `npx ascribe` run the project's own, the one [Getting started](../getting-started.md) installs. Keep the two packages on the same version, and the package manager installs one `@ascribed/cli` that both run; with two versions, the site and the check can disagree about a page. Upgrade them together:
 
 @variant {pm=npm}:
 ```sh
