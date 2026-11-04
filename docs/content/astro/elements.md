@@ -116,7 +116,7 @@ To leave it out, everywhere or around some blocks, set `--ascribe-copy-display` 
 }
 ```
 
-Restyle it with `--ascribe-copy-color`, `--ascribe-copy-background`, `--ascribe-copy-hover-background`, and `--ascribe-copy-focus-color`, or by selecting `.ascribe-copy`. Its words are the stylesheet's generated content, like the lead-ins below, and its name and what the live region says are read from them, so translating them translates all three:
+Restyle it with `--ascribe-copy-color`, `--ascribe-copy-background`, `--ascribe-copy-hover-background`, and `--ascribe-copy-focus-color`, or by selecting `.ascribe-copy`. Its words are the stylesheet's generated content, like the lead-ins above, and its name and what the live region says are read from them, so translating them translates all three:
 
 ```css
 .ascribe-copy::before {

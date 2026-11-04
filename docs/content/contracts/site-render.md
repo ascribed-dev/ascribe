@@ -191,7 +191,7 @@ To parse one, split at the last `:`; the path can't contain an unencoded `:`. Th
 
 ### 7.2 Which blocks have one
 
-Every block a reviewer could point at: headings, paragraphs, code blocks, lists and each list item, tables, block quotes, a paragraph holding only an image, thematic breaks, raw HTML blocks that start with an element, and each element the emitter writes (`ascribe-note`, `ascribe-steps`, `ascribe-tabs` and each `ascribe-tab`, `details`, `ascribe-availability`, project widgets, and `ascribe-group` and each element in it). Blocks inside containers have their own.
+Every block a reviewer could point at: headings, paragraphs, code blocks, lists and each list item, tables, block quotes, a paragraph holding only an image, thematic breaks, raw HTML blocks that start with an element, and each element the emitter writes (`ascribe-note`, `ascribe-steps`, `ascribe-tabs` and each `ascribe-tab`, `details`, `ascribe-availability`, `ascribe-operation`, project widgets, and `ascribe-group` and each element in it). Blocks inside containers have their own.
 
 - An element that wraps the block after it (a line-form `@note`, `@steps`, `@details`, or widget) spans the directive and that block. A line-form directive whose text is its content (`@note: Text.`) gives that text's paragraph its own line too.
 - `@summary` writes no element: the paragraph a `@summary` marks has its own anchor, its own lines, not the directive's, and `@summary: Text.` writes nothing, so it has none.
