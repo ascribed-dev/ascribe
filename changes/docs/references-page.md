@@ -1,0 +1,1 @@
+- **`ascribe link`, `ascribe refs`, and `ascribe rename` have a page of their own.** The questions page was over the size an agent reads in one piece, so these three moved; their old addresses forward. See [Links, references, and renames](docs/content/command/references.md).

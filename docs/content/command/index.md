@@ -25,7 +25,7 @@ Each command links to its section, with its options, output, and exit codes, on 
 | [`ascribe explain`](questions.md#cli-explain) | Says what a diagnostic means, and how to fix it. |
 | [`ascribe fmt`](../checks/check.md#cli-fmt) | Rewrites Ascribe constructs into canonical form. |
 | [`ascribe init`](init.md#cli-init) | Starts a project: writes its first `ascribe.toml`, and makes the folder its pages go in. |
-| [`ascribe link`](questions.md#cli-link) | Says whether a link works, written on a given page, and the destination to write there. |
+| [`ascribe link`](references.md#cli-link) | Says whether a link works, written on a given page, and the destination to write there. |
 | [`ascribe lsp`](../editor/language-server.md#cli-lsp) | Runs the language server, for an editor. |
 | [`ascribe mcp`](../agents/commands.md#cli-mcp) | Runs an MCP server, for an agent that has no shell, or a host that approves tools one by one. |
 | [`ascribe model`](questions.md#cli-model) | Shows the content model as `ascribe` reads it, with the defaults filled in. |
@@ -34,8 +34,8 @@ Each command links to its section, with its options, output, and exit codes, on 
 | [`ascribe outline`](questions.md#cli-outline) | Shows a page's title and type, and the headings a link to it can name. |
 | [`ascribe permalinks`](../permalinks/command.md#cli-permalinks) | Keeps the list of permalinks, checks a product's names against it, and retires a permalink. |
 | [`ascribe preview`](../checks/check.md#cli-preview) | Renders a build's pages as a site, serves it on this computer, and renders it again as you edit. |
-| [`ascribe refs`](questions.md#cli-refs) | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model. |
-| [`ascribe rename`](questions.md#cli-rename) | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it. |
+| [`ascribe refs`](references.md#cli-refs) | Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model. |
+| [`ascribe rename`](references.md#cli-rename) | Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it. |
 | [`ascribe report`](../checks/report-command.md#cli-report) | Reports what state a project is in, section by section. |
 | [`ascribe resolve`](questions.md#cli-resolve) | Resolves a page for one build and writes it as a reader of that build sees it. [A page in the site output](site-output.md) says what `--emit site` writes. |
 | [`ascribe search`](questions.md#cli-search) | Finds where the pages say something, as their readers read it, and names the line to edit. |

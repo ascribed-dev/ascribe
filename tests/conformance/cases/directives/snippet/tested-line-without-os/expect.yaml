@@ -1,0 +1,19 @@
+description: >-
+  With `show-os = false` in a source's `ascribe.examples.toml`, the tested
+  line names the environment entries alone, however many operating systems
+  the current observations were on. With no entries as well, it's empty,
+  `tested=""`, which an output shows as "Tested".
+spec: ["4.8", "7.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "An example observed on two operating systems, whose config doesn't show them:"
+          - code: "console.log(\"hello\");\n"
+            info: ts tested="Node 24.9.0"
+          - paragraph: "One whose config doesn't show them and has no entries:"
+          - code: "console.log(\"hello\");\n"
+            info: ts title="Say hello" tested=""

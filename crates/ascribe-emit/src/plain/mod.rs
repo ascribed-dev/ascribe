@@ -745,8 +745,12 @@ impl Renderer<'_> {
                 // A tested example says what it was tested with in a line of
                 // its own, which nothing styles (decision #458b), in place of
                 // its `tested` pair.
-                if let Some(tested) = InfoString::parse(&c.info).get("tested") {
-                    out.push(format!("Tested with {}.", escape(tested, true)));
+                // An empty one, from `show-os = false` with no entries, says
+                // only that it's tested.
+                match InfoString::parse(&c.info).get("tested") {
+                    Some("") => out.push("Tested.".to_owned()),
+                    Some(tested) => out.push(format!("Tested with {}.", escape(tested, true))),
+                    None => {}
                 }
                 out
             }

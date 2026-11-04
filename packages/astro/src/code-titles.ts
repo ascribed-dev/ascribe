@@ -16,7 +16,7 @@ type ShikiTransformer = NonNullable<
 
 /**
  * The value of the first `key=value` pair in a code block's meta, the info
- * string past its language, when it isn't empty. The meta has its Markdown
+ * string past its language, empty or not. The meta has its Markdown
  * escapes taken off, and is read as SPEC §3.3.1 reads an info string, as
  * `ascribe_core::info_string` does: words parted by spaces and tabs, a pair's
  * value a token or a quoted string in which `\"` and `\\` escape, and a pair
@@ -50,7 +50,7 @@ function metaValue(meta: string, key: string): string | undefined {
         value = meta.slice(j, end);
       }
     }
-    if (value !== undefined && pair?.[1] === key) return value || undefined;
+    if (value !== undefined && pair?.[1] === key) return value;
     i = end;
   }
   return undefined;
@@ -66,12 +66,16 @@ function wordEnd(text: string, from: number): number {
   return i;
 }
 
-/** The `title="…"` in a code block's meta, if it has one. */
+/** The `title="…"` in a code block's meta, if it has one that isn't empty. */
 export function codeTitle(meta: string): string | undefined {
-  return metaValue(meta, "title");
+  return metaValue(meta, "title") || undefined;
 }
 
-/** The `tested="…"` in a code block's meta, if it has one. */
+/**
+ * The `tested="…"` in a code block's meta, if it has one. An empty one is a
+ * config's `show-os = false` with no entries, and still makes a caption: the
+ * stylesheet reads it "Tested".
+ */
 export function codeTested(meta: string): string | undefined {
   return metaValue(meta, "tested");
 }
@@ -91,7 +95,7 @@ export function captioned(meta: string, block: ElementContent): Element | undefi
       type: "element",
       tagName: "div",
       properties: { className: [CLASS_CODE_TESTED] },
-      children: [{ type: "text", value: tested }],
+      children: tested === "" ? [] : [{ type: "text", value: tested }],
     });
   }
   return {

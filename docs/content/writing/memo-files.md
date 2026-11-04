@@ -45,7 +45,7 @@ Where a memo is is worked out each time it's read, from the pages as they are, a
 - **Outdated.** No block holds the quote: the words were changed since the memo was written. The memo stays on its page or section. It's advice, [`memo-outdated`](../checks/diagnostics/project-checks.md#ASC227): read the memo against the page, and quote the words it's about now, or change or delete it.
 - **Detached.** `about` names nothing: the page was deleted, or it moved or the heading's id changed by hand rather than by a rename. It's a warning, [`memo-detached`](../checks/diagnostics/sources.md#ASC226), which names the ids the page has when the heading is what's missing. Point `about` at what the memo is about now.
 
-A rename keeps a memo attached: [`ascribe rename`](../command/questions.md#cli-rename), and renaming in the editor ([Refactoring](../editor/writing.md#refactoring)), rewrite the `about` of each memo that names what changes, in both folders, and leave its `quote` and its text as they are.
+A rename keeps a memo attached: [`ascribe rename`](../command/references.md#cli-rename), and renaming in the editor ([Refactoring](../editor/writing.md#refactoring)), rewrite the `about` of each memo that names what changes, in both folders, and leave its `quote` and its text as they are.
 
 A memo file that isn't one, with no frontmatter, no `about`, an `about` that isn't a target, or a key besides `about` and `quote`, is an error, [`memo-invalid`](../checks/diagnostics/sources.md#ASC225). `ascribe check` reports each problem on the memo file, at its `about` or `quote` line.
 

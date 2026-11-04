@@ -86,4 +86,4 @@ An agent reads a memo before it changes the page: [Agent instructions](../agents
 - [`@memo`](directives.md#memo): the directive, in the directive reference.
 - [Memo files](memo-files.md): the format, the states, and the checks.
 - [Memo files in the editor](../editor/actions.md#memo-files): the CodeLens, adding a memo, and the **Memos** section of **This page**.
-- [`ascribe outline`](../command/questions.md#cli-outline) and [`ascribe refs`](../command/questions.md#cli-refs), which list the memos about a page and a target.
+- [`ascribe outline`](../command/questions.md#cli-outline) and [`ascribe refs`](../command/references.md#cli-refs), which list the memos about a page and a target.

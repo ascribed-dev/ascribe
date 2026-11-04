@@ -89,6 +89,28 @@ describe("codeTitles", () => {
     });
   });
 
+  it("captions a block whose tested line is empty, with the line empty", () => {
+    const root = transform('tested=""', highlighted());
+    expect(root.children[0]).toMatchObject({
+      tagName: "figure",
+      children: [
+        {
+          tagName: "figcaption",
+          children: [
+            {
+              tagName: "div",
+              properties: { className: ["ascribe-code-tested"] },
+              children: [],
+            },
+          ],
+        },
+        highlighted().children[0],
+      ],
+    });
+    expect(codeTested('tested=""')).toBe("");
+    expect(codeTitle('title=""')).toBeUndefined();
+  });
+
   it("keeps a hostile tested line as text", () => {
     const root = transform('tested="<script>alert(1)</script> on Linux"', highlighted());
     expect(JSON.stringify(root)).toContain('"value":"<script>alert(1)</script> on Linux"');

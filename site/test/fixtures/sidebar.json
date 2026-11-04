@@ -504,7 +504,11 @@
       },
       {
         "href": "/docs/command/questions/",
-        "label": "ascribe explain, model, outline, link, refs, rename, resolve, and search"
+        "label": "ascribe explain, model, outline, resolve, and search"
+      },
+      {
+        "href": "/docs/command/references/",
+        "label": "ascribe link, refs, and rename"
       },
       {
         "href": "/docs/command/site-output/",

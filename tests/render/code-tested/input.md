@@ -27,3 +27,9 @@ A title with a quote, escaped in the info string:
 ```ts title="say \\"hi\\"" tested="Node 24.9.0 on Linux"
 console.log("hello");
 ```
+
+An empty tested line, which still makes a caption:
+
+```ts title="hello.ts" tested=""
+console.log("hello");
+```
