@@ -18,7 +18,7 @@ What the editor does as you write a page: what it completes, what it shows on ho
 
 - `@term` only at the top of a section on a glossary page, or in a fragment one includes, under the heading and the directives that bind it, and not on a heading that's a term already. Inside its braces, `aliases`, `match`, and `case-sensitive`, and `match`'s values `first`, `every`, and `marked`.
 
-- In a [memo file](actions.md#memo-files), after `about:`: the project's pages, their headings with ids as `page.md#id`, and its phrases, features, glossary terms, and the rest by `prefix:name`, as [`ascribe refs`](../command/questions.md#cli-refs) takes them. `about` is a link to what it names, and the file shows the problems `ascribe check` would report in it as you type, a personal memo's too.
+- In a [memo file](actions.md#memo-files), after `about:`: the project's pages, their headings with ids as `page.md#id`, and its phrases, features, glossary terms, and the rest by `prefix:name`, as [`ascribe refs`](../command/references.md#cli-refs) takes them. `about` is a link to what it names, and the file shows the problems `ascribe check` would report in it as you type, a personal memo's too.
 
 - In a source's [`ascribe.examples.toml`](../examples/tested.md): its keys, and an environment entry's `label` and `command`. The file's problems appear as you type, where each is. A config no source in `ascribe.toml` names is just a TOML file.
 
@@ -77,7 +77,7 @@ A problem with a code file's tags, a `-start` tag never closed, an `-end` with n
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, its `[releases.<target>]` table, and the builds' `variants`, `filter`, and `versions`. A target of the implicit `release` dimension is renamed from its `[releases.<target>]` header.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
-- From the command line, [`ascribe rename`](../command/questions.md#cli-rename) makes the same edits, for a phrase, a dimension value, a heading's id, or a page that moves.
+- From the command line, [`ascribe rename`](../command/references.md#cli-rename) makes the same edits, for a phrase, a dimension value, a heading's id, or a page that moves.
 
 ## Formatting
 

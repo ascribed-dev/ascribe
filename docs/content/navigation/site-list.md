@@ -8,7 +8,7 @@ A site that [`npx @ascribed/astro init`](../astro/index.md#set-up-a-site) starte
 
 ## Before you start
 
-- Each group of the list is a folder, with its pages in it. A group that isn't a folder, or a page in a group other than its folder's, has no place in `ascribe.nav`: move the files into the folders you want as sections first, with [`ascribe rename`](../command/questions.md#cli-rename).
+- Each group of the list is a folder, with its pages in it. A group that isn't a folder, or a page in a group other than its folder's, has no place in `ascribe.nav`: move the files into the folders you want as sections first, with [`ascribe rename`](../command/references.md#cli-rename).
 
 ## Move the list over
 @id: own-list

@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/templates/index.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/command/references.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/templates/index.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -936,7 +936,8 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/vale.md` | Prose, through Vale | how-to |
 | `command/index.md` | Command reference | reference |
 | `command/project-files.md` | Files Ascribe writes | reference |
-| `command/questions.md` | `ascribe explain`, `model`, `outline`, `link`, `refs`, `rename`, `resolve`, and `search` | reference |
+| `command/questions.md` | `ascribe explain`, `model`, `outline`, `resolve`, and `search` | reference |
+| `command/references.md` | `ascribe link`, `refs`, and `rename` | reference |
 | `command/site-output.md` | A page in the site output | reference |
 | `content-model/checks.md` | `ascribe.toml`: checks and the editor | reference |
 | `content-model/content.md` | `ascribe.toml`: what pages hold | reference |
