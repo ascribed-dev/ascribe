@@ -1,0 +1,5 @@
+---
+section: The language
+---
+
+**`ascribe.examples.toml`'s `show-os = false` leaves the operating systems out of the tested line, for the whole config.** It's `true` when left out, so every config written before it reads as it did. The observations still note `os`, and the JSON output keeps it; only the line leaves it out. With no `[environment]` entries as well, the line is empty, `tested=""`, and every output shows "Tested": the site's stylesheet, from `.ascribe-code-tested:empty::before`, the plain output as "Tested.", and the editor's hover. That changes SPEC §3.3.1's "a `tested` whose value is empty means none", and the tested examples contract's §5, which had the operating systems always listed. _Why:_ the OS is noise on an example whose output doesn't vary by platform, and `include` is a flat list of globs, so nothing needs a per-pattern option yet. With nothing to name, the example is still checked and current, and refusing to hide the OS would push a project to add an entry that means nothing. _From:_ Kyle, on [issue #1147](https://github.com/ascribed-dev/ascribe/issues/1147), 3 November 2026.

@@ -1,0 +1,1 @@
+- **`show-os = false` in `ascribe.examples.toml` leaves the operating system out of the tested line.** For examples whose output is the same on every platform; with no `[environment]` entries either, the page says "Tested". See [Show what an example was tested with](docs/content/examples/tested.md).
