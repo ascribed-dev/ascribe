@@ -183,7 +183,15 @@ Specification: [§2.3]({repo}/blob/main/SPEC.md#23-escapes).
 
 ## Canonical form
 
-Ascribe accepts any spacing the syntax allows, and has one canonical spelling for each construct: one space between a name and `{`, no spaces inside braces or around `=` and `|`, attributes in the order their schema declares, values quoted only when needed, and no blank line between a directive and its block. `ascribe fmt` rewrites source into canonical form, changing only Ascribe constructs and never how a page renders; `ascribe fmt --check` reports files that would change.
+Ascribe accepts any spacing the syntax allows, and has one canonical spelling for each construct:
+
+- One space between a name and `{`.
+- No spaces inside braces or around `=` and `|`.
+- Attributes in the order their schema declares.
+- Values quoted only when needed.
+- No blank line between a directive and its block.
+
+`ascribe fmt` rewrites source into canonical form, changing only Ascribe constructs and never how a page renders; `ascribe fmt --check` reports files that would change.
 
 A general Markdown formatter that reflows paragraphs, such as Prettier with `proseWrap: always`, doesn't know that title and directive lines start new blocks, and joins them with the text below. Format Ascribe sources with `ascribe fmt`, and exclude them from other formatters.
 

@@ -147,7 +147,13 @@ audience = { type = "enum(admin, developer)", default = "developer" }
 
 ## Adding a field to pages you have
 
-A new required field is an error on every page of its types until each has it, so a project with many pages can add one in two steps: declare it optional, as `"enum(docs, platform, support)?"`, fill it in page by page, and make it required once `ascribe check` finds no page without it. A default is the other way: the pages that leave the field out take its value, and need no change.
+A new required field is an error on every page of its types until each has it, so a project with many pages can add one in steps:
+
+1. Declare it optional, as `"enum(docs, platform, support)?"`.
+2. Fill it in page by page.
+3. Make it required once `ascribe check` finds no page without it.
+
+A default is the other way: the pages that leave the field out take its value, and need no change.
 
 A type can also make a field `[frontmatter]` declares different for its own pages, by declaring a field of the same name: an index page's type can make a shared `description` optional. The type's field replaces the shared one whole, for that type.
 

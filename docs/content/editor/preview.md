@@ -18,13 +18,20 @@ A block from a fragment follows the line of its `@include`. Turn off `ascribe.pr
 
 A fragment isn't a page, so the preview names the pages that include it instead. A page a build doesn't publish says which build drops it, and why.
 
-A file with no `ascribe.toml` above it has nothing to preview: "This file isn't part of an Ascribe project (no ascribe.toml above it)." A file in a project's folder but outside its content root isn't a page either, and the preview names both: "handbook/README.md is in the project handbook, but outside its content root (handbook/pages), so there is no page to preview."
+Two kinds of file have nothing to preview:
+
+- A file with no `ascribe.toml` above it: "This file isn't part of an Ascribe project (no ascribe.toml above it)."
+- A file in a project's folder but outside its content root, which the preview names with both: "handbook/README.md is in the project handbook, but outside its content root (handbook/pages), so there is no page to preview."
 
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts, loads nothing remote, and submits no forms, so raw HTML that needs any of these looks different in the preview than on the site. What the preview's page asks the extension to do is checked first: it opens only files in the project, or ones the preview itself linked to, and only the **Pull**, **Push**, and **Fetch** git commands it has buttons for.
 
 A [`@snippet`](../writing/directives.md#snippet) follows its code file on disk: when the file is saved, created, or deleted, by you or by a branch switch, every page that shows it, directly or through a fragment, is checked again, and the preview of one redraws. An unsaved edit to the code file isn't read until it's saved: a snippet shows the file as a build reads it. A file no snippet shows starts nothing.
 
-A [tested example](../examples/tested.md)'s problems, `example-stale` and `example-unobserved`, follow their own file, their source's observations, and `ascribe.examples.toml` the same way: when you save the example, when `ascribe observe` writes an observation, or when the config changes on disk, the pages that show the source's examples are checked again, and the preview's tested line follows.
+A [tested example](../examples/tested.md)'s problems, `example-stale` and `example-unobserved`, follow their own files the same way. The pages that show the source's examples are checked again, and the preview's tested line follows, when:
+
+- You save the example.
+- `ascribe observe` writes an observation.
+- `ascribe.examples.toml` changes on disk.
 
 ## Site preview
 
@@ -32,7 +39,9 @@ The page preview is the page alone. The **site preview** is the same page in the
 
 **Ascribe: Open Site Preview** opens the active page on the dev server in your browser, at the heading the editor shows. It's also the globe button in a Markdown editor's title bar while a dev server is running. With no dev server, or one that stopped without removing `dev.json`, it says to start one. It only opens an address on your machine (`localhost`, any `127.x.x.x` address, or `[::1]`), so a `dev.json` committed to a repository can't send it elsewhere, and it doesn't contact that address until you ask for the site preview. In a remote workspace, VS Code forwards the dev server's port first.
 
-The page preview's **Page | Site** switch, at the end of its toolbar, shows the site preview in the panel instead: the dev server's page for the same file, following the active file as **Page** does. Links you follow inside it stay until you open another file. The panel takes no messages from the dev server's page: only the extension changes what it shows. With no dev server, it says to start one, with **Try again**. In VS Code for the Web, where the panel can't show the dev server, **Site** opens the browser instead. [Review in the site preview](../review/site-preview.md) has the toolbar app that marks changes and shows comments there; each block's and thread's **Open source** brings you back to the file, at the line.
+The page preview's **Page | Site** switch, at the end of its toolbar, shows the site preview in the panel instead: the dev server's page for the same file, following the active file as **Page** does. Links you follow inside it stay until you open another file. The panel takes no messages from the dev server's page: only the extension changes what it shows. With no dev server, it says to start one, with **Try again**. In VS Code for the Web, where the panel can't show the dev server, **Site** opens the browser instead.
+
+[Review in the site preview](../review/site-preview.md) has the toolbar app that marks changes and shows comments there; each block's and thread's **Open source** brings you back to the file, at the line.
 
 ## The build you're looking at
 @id: the-build-youre-looking-at
@@ -43,7 +52,7 @@ A [versioned](../versions/index.md) build's lines are listed under it, the curre
 
 ## The build lens
 
-**Ascribe: Dim What the Build Leaves Out** (also in the [status bar](sidebar.md#the-status-bar) item's menu) turns the build lens on for the active file's project. The editor then dims what the build you're looking at leaves out of each page: the variant arms the build doesn't select, and the sections, blocks, and table rows its availability filter removes, from the directive line through `@end`, each with a hover that says why. When the build doesn't publish the page at all, a line at its top says so, and the whole page is dimmed.
+**Ascribe: Dim What the Build Leaves Out** (also in the [status bar](sidebar.md#the-status-bar) item's menu) turns the build lens on for the active file's project. The editor then dims what the build you're looking at leaves out of each page, each with a hover that says why: the variant arms the build doesn't select, and the sections, blocks, and table rows its availability filter removes. Each is dimmed from its directive line through `@end`. When the build doesn't publish the page at all, a line at its top says so, and the whole page is dimmed.
 
 ![The Lantern install page in VS Code with the build lens on for the windows build: the Linux and macOS install commands and the section "Start it at login" are dimmed, a hover over the macOS command says "Left out of windows. Shows only platform=windows.", the preview beside it shows the page as the windows build has it, with only the Windows command, and the status bar shows an eye and "platforms · windows · problems: site only".](../images/build-lens-light.png){scheme=light}
 ![The Lantern install page in VS Code with the build lens on for the windows build: the Linux and macOS install commands and the section "Start it at login" are dimmed, a hover over the macOS command says "Left out of windows. Shows only platform=windows.", the preview beside it shows the page as the windows build has it, with only the Windows command, and the status bar shows an eye and "platforms · windows · problems: site only".](../images/build-lens-dark.png){scheme=dark}

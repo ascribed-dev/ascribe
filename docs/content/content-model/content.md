@@ -30,7 +30,7 @@ To set one up, see [Set up a glossary](glossary.md).
 
 **Rules.** A path in `pages` names a page that's there, with its name's case as it is on disk (`model-glossary-page`). The rest are checked with the project, since terms are read from pages:
 
-- Two terms or aliases with the same text, compared ignoring case unless both terms are case-sensitive, are reported at the second, which isn't a term (`glossary-term-duplicate`); so are two terms with the same id, which two headings with the same text on different pages give them.
+- Two terms or aliases with the same text are reported at the second, which isn't a term (`glossary-term-duplicate`). The text is compared ignoring case, unless both terms are case-sensitive. Two terms with the same id, which two headings with the same text on different pages give them, are reported the same way.
 - A term's definition is the paragraph that opens its section, so a term whose section opens with anything else has none (`glossary-definition-missing`). One over 300 characters in a build, the limit a page's `description` has, is advice (`glossary-definition-long`).
 - `@term` on a page `pages` doesn't list, or in a fragment no such page includes, isn't a term (`term-off-glossary-page`). Its fix lists the page in `pages`; the editor applies it, and `ascribe check --fix` doesn't, since it links the page's terms on every page.
 

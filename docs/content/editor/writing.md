@@ -26,7 +26,9 @@ What the editor does as you write a page: what it completes, what it shows on ho
 
 ## Search
 
-**Ascribe: Search Pages as Readers See Them**, in the Command Palette, finds words where the pages say them as their readers read them, and opens the line to edit. It's [`ascribe search`](../command/questions.md#cli-search) in the editor: the same query, the same places, in the same order. Type words, which must all be in one block in any order, apart from common words such as `how` and `the`, or a phrase in double quotes, matched as written; case is ignored. The places arrive as you type, each the reader's text cut around the match, and under it the file and line, the heading it's under, and the phrase it reads through: `install-agent.md:62 · Connect to Quill · through phrase cloud`. A place many pages show, from a fragment, says how many. Choose one to open its line. A match wholly inside a phrase's value opens the phrase in `ascribe.toml`.
+**Ascribe: Search Pages as Readers See Them**, in the Command Palette, finds words where the pages say them as their readers read them, and opens the line to edit. It's [`ascribe search`](../command/questions.md#cli-search) in the editor: the same query, the same places, in the same order. Type words, which must all be in one block in any order, apart from common words such as `how` and `the`, or a phrase in double quotes, matched as written; case is ignored.
+
+The places arrive as you type, each the reader's text cut around the match, and under it the file and line, the heading it's under, and the phrase it reads through: `install-agent.md:62 · Connect to Quill · through phrase cloud`. A place many pages show, from a fragment, says how many. Choose one to open its line. A match wholly inside a phrase's value opens the phrase in `ascribe.toml`.
 
 It searches the build the status bar names, the one the preview renders, so the three agree; the quick pick's **Search Every Build** button searches every build. It searches the pages as you have them, unsaved text included, which `ascribe search` and the MCP server's `ascribe_search`, which read the disk, don't. When nothing matches, it says whether the words are written at all: in no page, in the source though no build searched publishes them there, or in builds it didn't search.
 
@@ -53,8 +55,20 @@ VS Code's own search, **Search: Find in Files**, reads the source as written: it
 
 ## Navigation
 
-- **Go to definition** on a link or include opens the target file at its heading. On an `@id`, it goes to the heading; on a glossary term in prose, to its heading on the glossary page; on a phrase or feature key, to its entry in `ascribe.toml`; on a `@snippet`'s address, to the code file at its region's start tag, or at the file's first line for a snippet of a whole file. An address whose file or region is missing goes nowhere, as a broken link does.
-- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension; on a page's frontmatter `type`, the pages of that type. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there, and where a link names its heading. A term with `match = "marked"` is only a word until you link it, so those links are its only uses. On a term's heading, or its `@term`, the list is the term's uses and the links to the heading together, each once. In `ascribe.toml`, on a content model entry's key or table header, it lists the entry's uses, as the Content model view's **Find All References** does.
+- **Go to definition** on a link or include opens the target file at its heading. Elsewhere, it goes:
+  - On an `@id`, to the heading.
+  - On a glossary term in prose, to its heading on the glossary page.
+  - On a phrase or feature key, to its entry in `ascribe.toml`.
+  - On a `@snippet`'s address, to the code file at its region's start tag, or at the file's first line for a snippet of a whole file. An address whose file or region is missing goes nowhere, as a broken link does.
+- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor:
+  - On a heading or its `@id`: the links to it, including links through a page that includes it, and the includes of its section.
+  - At the start of a page, or on its frontmatter or title: the links and includes from other files.
+  - On a link or include: the links and includes of what it names.
+  - On a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute: every use of that phrase, feature, term, note type, widget, or dimension.
+  - On a page's frontmatter `type`: the pages of that type.
+  - In `ascribe.toml`, on a content model entry's key or table header: the entry's uses, as the Content model view's **Find All References** does.
+
+  A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there, and where a link names its heading. A term with `match = "marked"` is only a word until you link it, so those links are its only uses. On a term's heading, or its `@term`, the list is the term's uses and the links to the heading together, each once.
 - **Document links**: links, images, and includes are clickable. A link outside the docs is clickable when it's a web address (`http`, `https`) or an email address (`mailto`); one with any other scheme, such as `tel:` or `vscode:`, stays as it's written for the site's readers, and isn't a link in the editor.
 - **CodeLens** above each `@include` names the included file and section, and opens it.
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
@@ -66,15 +80,28 @@ A code file a page shows with [`@snippet`](../writing/directives.md#snippet) say
 ![A code file, greet.ts, with the lens "Shown in 3 pages" over the region a snippet takes, and the references peek open under it: it lists the three pages, index.md, quickstart.md, and reference.md, and shows index.md at its line `@snippet: code:examples/greet.ts#greet`.](../images/shown-in-pages-light.png){scheme=light}
 ![A code file, greet.ts, with the lens "Shown in 3 pages" over the region a snippet takes, and the references peek open under it: it lists the three pages, index.md, quickstart.md, and reference.md, and shows index.md at its line `@snippet: code:examples/greet.ts#greet`.](../images/shown-in-pages-dark.png){scheme=dark}
 
-The lens is placed from the saved file, as a build reads it: the editor doesn't send code files to the language server. Lines you add above a region leave its lens where the region was until you save the file, wherever the source's folder is: in the project's folder, beside it, or in another project's. It's there for the files of the content model's [sources](../content-model/sources.md#20-sourcesname), Markdown files among them, while the project's language server is running, and nowhere else. A file more than one project shows gets a lens from each project, each counting its own pages and naming the project, such as "docs: shown in 3 pages", since those pages are built and published apart; a file only one project shows has one lens, unnamed, whichever other projects' sources it's in.
+The lens is placed from the saved file, as a build reads it: the editor doesn't send code files to the language server. Lines you add above a region leave its lens where the region was until you save the file, wherever the source's folder is: in the project's folder, beside it, or in another project's. It's there for the files of the content model's [sources](../content-model/sources.md#20-sourcesname), Markdown files among them, while the project's language server is running, and nowhere else.
+
+A file more than one project shows gets a lens from each project, each counting its own pages and naming the project, such as "docs: shown in 3 pages", since those pages are built and published apart. A file only one project shows has one lens, unnamed, whichever other projects' sources it's in.
 
 A problem with a code file's tags, a `-start` tag never closed, an `-end` with nothing to close, a region named twice, or a tag Ascribe reserves ([`snippet-tags`](../checks/diagnostics/sources.md#ASC132)), is shown in the code file too, at the tag, while a page shows the file. It's the page's problem, with its message and severity, shown where you fix it; the page keeps its own, and the problem in the code file names each `@snippet` that shows the file, once however many there are. Save the fixed file, and both clear; a file no page shows any longer has none. `ascribe check` reports it on the page alone.
 
 ## Refactoring
 
-- **Rename or move a file or a folder** in the Explorer, and the links and includes that point to what it holds are updated, and so are the glossary's `pages` in `ascribe.toml` and the `[moved]` values in `ascribe.addresses` that name it, the `about` of each [memo file](actions.md#memo-files) about it or a heading in it, and [`ascribe.nav`](../navigation/index.md#the-file): a page's entry in its section's `pages`, taken out when it leaves the folder, and a folder's `folder`.
+- **Rename or move a file or a folder** in the Explorer, and what names it is updated:
+  - The links and includes that point to what it holds.
+  - The glossary's `pages` in `ascribe.toml`, and the `[moved]` values in `ascribe.addresses` that name it.
+  - The `about` of each [memo file](actions.md#memo-files) about it or a heading in it.
+  - [`ascribe.nav`](../navigation/index.md#the-file): a page's entry in its section's `pages`, taken out when it leaves the folder, and a folder's `folder`.
 - **Rename** (`F2`) a heading's `@id`, or its text, to update the links to it, and the `[moved]` values in `ascribe.addresses` that name it, and the memo files about it, or a phrase key to update its uses, its declaration, and the memo files about it. A glossary term's id is its heading's, so renaming the `@id` renames the term, the memo files about `term:<id>` with it, and the site output's `data-ascribe-term` carries the new id. Rewording a term's heading changes the term's text; when the heading has no `@id`, its id changes too, and the editor says so.
-- **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, its `[releases.<target>]` table, and the builds' `variants`, `filter`, and `versions`. A target of the implicit `release` dimension is renamed from its `[releases.<target>]` header.
+- **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere:
+  - The dimension's `labels` and `versionless`.
+  - Every `@variant` attribute and `variant:` field.
+  - Every availability spec in pages, table rows, frontmatter, and `[features]`.
+  - Its `[releases.<target>]` table, for a release target.
+  - The builds' `variants`, `filter`, and `versions`.
+
+  A target of the implicit `release` dimension is renamed from its `[releases.<target>]` header.
 - A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
 - `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
 - From the command line, [`ascribe rename`](../command/references.md#cli-rename) makes the same edits, for a phrase, a dimension value, a heading's id, or a page that moves.

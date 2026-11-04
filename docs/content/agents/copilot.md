@@ -39,6 +39,6 @@ The steps install Node.js and `@ascribed/cli`, and run `ascribe --version`. When
 
 Otherwise they install the version of `ascribe` that wrote them, globally. Yarn's Plug'n'Play, the default from Yarn 2 on, writes no `node_modules/.bin`, so with it they install the pinned version globally, and `sync` stops if that version isn't one npm can install, such as `workspace:*`.
 
-Projects in one repository that install the same way share one block of steps. When they install Ascribe in different ways, so the steps have a block for each, the JSON and the custom agent carry a server for each block, under names told apart as the blocks are: `ascribe` for a global install, and `ascribe-docs` for one from `docs/package.json` (`ascribe-pinned` from the root's). Syncing one project prints them all, as one document to paste in place of any `ascribe` server pasted before.
+Projects in one repository that install the same way share one block of steps. When they install Ascribe in different ways, the steps have a block for each, and the JSON and the custom agent carry a server for each block. The servers' names tell them apart as the blocks are: `ascribe` for a global install, and `ascribe-docs` for one from `docs/package.json` (`ascribe-pinned` from the root's). Syncing one project prints them all, as one document to paste in place of any `ascribe` server pasted before.
 
 Ascribe writes no prompt files for Copilot (`.github/prompts/`): the cloud agent doesn't load them, and in VS Code the MCP server's prompts do the same.

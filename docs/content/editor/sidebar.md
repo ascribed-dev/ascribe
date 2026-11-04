@@ -70,7 +70,12 @@ Health                                   1 to do
 
 The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says where they run.
 
-**About**, closed at first, says what the project is made of: its content root, its builds, with the editor build marked, the release lines of each versioned build, its [sources](../examples/sources.md), with those that have tested examples marked, and its content types, each with how many pages have it.
+**About**, closed at first, says what the project is made of:
+
+- Its content root.
+- Its builds, with the editor build marked, and the release lines of each versioned build.
+- Its [sources](../examples/sources.md), with those that have tested examples marked.
+- Its content types, each with how many pages have it.
 
 ### Edits to the whole project
 
@@ -166,7 +171,15 @@ Clicking an entry or a value opens its declaration in `ascribe.toml`, or a gloss
 
 ## The status bar
 
-While a page or an `ascribe.toml` is the active editor, the status bar names its project and the [build you're looking at](preview.md#the-build-youre-looking-at), with an icon for its language server's state: a slashed circle before a page of the project has opened ("docs: not checked yet"), a spinning arrow while the server starts, a book while it runs, an eye while the build lens dims by a build, and a warning when the server failed. While it runs, it also says which builds the Problems panel covers, such as "problems: this build only". Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state.
+While a page or an `ascribe.toml` is the active editor, the status bar names its project and the [build you're looking at](preview.md#the-build-youre-looking-at). Its icon shows the language server's state:
+
+- A slashed circle before a page of the project has opened ("docs: not checked yet").
+- A spinning arrow while the server starts.
+- A book while it runs.
+- An eye while the build lens dims by a build.
+- A warning when the server failed.
+
+While it runs, it also says which builds the Problems panel covers, such as "problems: this build only". Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state.
 
 ![The status bar item in five states, one above another, each with its own icon.](../images/status-bar-light.png){scheme=light}
 ![The status bar item in five states, one above another, each with its own icon.](../images/status-bar-dark.png){scheme=dark}
@@ -197,22 +210,35 @@ This page shows the last editor of a page that was active. Clicking in the view,
 
 A group's head says when its counts are from: "checked at 3:30 PM", "checked yesterday at 3:30 PM", "not checked yet", "checking…", "out of date" with why, or why its check couldn't finish. While its counts aren't current, the action that brings them current is at its head, once for the group: **Check Every Build**, or **Check Agent Files**.
 
-A group's counts of none are behind one line under its other counts, **Nothing else to do**, which shows them. A group with nothing to do and nothing out of date is its head alone, with **Nothing to do** at its end. Each stays shown or hidden as you leave it. Shown, a count of none is `0`, dimmed, and opens nothing. A count that isn't current shows a dash, and its group's head says why. A dash is never dimmed, and an out-of-date group has a warning icon, so none and not known never look alike. **To do** counts only the current counts above zero: a group that isn't current isn't a thing to do, and its head says so, with its action.
+A group's counts of none are behind one line under its other counts, **Nothing else to do**, which shows them. A group with nothing to do and nothing out of date is its head alone, with **Nothing to do** at its end. Each stays shown or hidden as you leave it.
+
+Shown, a count of none is `0`, dimmed, and opens nothing. A count that isn't current shows a dash, and its group's head says why. A dash is never dimmed, and an out-of-date group has a warning icon, so none and not known never look alike. **To do** counts only the current counts above zero: a group that isn't current isn't a thing to do, and its head says so, with its action.
 
 The view never checks every build by itself, since that can take a few seconds on a large project. Each group goes out of date by its own rule:
 
 - **Every build** goes out of date on any change to a file of the project, saved or not: a page, `ascribe.toml`, `ascribe.nav`, `ascribe.permalinks`, a memo, a template, or a file in one of its [sources](../examples/sources.md)' folders. A check that read files with unsaved changes says so: it reads files as they're saved.
-- **Every build** is remembered between sessions, for each project in the workspace. When VS Code opens, the view reads the last check back as it first shows the project, which takes a moment ("reading the last check…"). If no file of the project was modified after the check started, added, or removed, its counts are current, as if it had just run, with its problems back in the Problems panel. If one was, as a `git checkout` or a branch switch does, or a file of the project is open with unsaved changes, they're out of date, "the project changed after the check yesterday at 3:30 PM", with nothing put back. Only names and modification times are compared, so a file put back with its old time isn't seen as a change, and in a source's folder only the files the source reads count. A check made by another version of the extension isn't remembered, nor one with more than 5,000 problems: the project is not checked yet.
+- **Every build** is remembered between sessions, for each project in the workspace. When VS Code opens, the view reads the last check back as it first shows the project, which takes a moment ("reading the last check…").
 - **Problems** counts as the status bar does: an icon per severity with its count, leaving out a severity there's none of.
 - **Rechecks overdue** counts for the day the check ran, so it depends on the day as well as the files. When the check is current but from another day, that count alone is a dash, with its own note, such as "checked on 20 October; rechecks fall due by the day", and **Check Every Build** beside it.
 - **As you type** comes from the language server, which reads your unsaved text, so its counts are current as you type. **Pages nothing links to** is its list of orphans, as Pages' **Orphans Only** has it, and **Unused model entries** its count of each content model entry's uses, as Content model's **Unused Only** has it. While the server is starting, or isn't running, they show a dash.
 - **At the last save**: agent files are made from the content model and the pages, so most saves can change them. The view checks them when it first shows the project, and again after each save of a file of the project while it's showing, at most once every few seconds and never as you type. A change on disk that isn't a save, such as a `git checkout`, makes the count out of date, with **Check Agent Files** at the group's head.
 
+A remembered check of **Every build** is current if no file of the project was modified after the check started, added, or removed: its counts are as if it had just run, with its problems back in the Problems panel. If one was, as a `git checkout` or a branch switch does, or a file of the project is open with unsaved changes, they're out of date, "the project changed after the check yesterday at 3:30 PM", with nothing put back.
+
+Only names and modification times are compared, so a file put back with its old time isn't seen as a change, and in a source's folder only the files the source reads count. A check made by another version of the extension isn't remembered, nor one with more than 5,000 problems: the project is not checked yet.
+
 About's builds and content types are the language server's, so they're known once it runs. Its sources are what `ascribe model` says.
 
 ### When Addresses lost updates
 
-The language server compares the addresses with the base's on its own, between checks: when the project loads, after a save, after a change on disk such as a page deleted in the Explorer or a `git checkout`, and as you edit `ascribe.addresses`, so a move's entry counts before you save it. It doesn't compare as you type in a page. While the server is starting, or when the base can't be read, the count is a dash and the head says why, with the reason in the Problems panel.
+The language server compares the addresses with the base's on its own, between checks:
+
+- When the project loads.
+- After a save.
+- After a change on disk, such as a page deleted in the Explorer or a `git checkout`.
+- As you edit `ascribe.addresses`, so a move's entry counts before you save it.
+
+It doesn't compare as you type in a page. While the server is starting, or when the base can't be read, the count is a dash and the head says why, with the reason in the Problems panel.
 
 The group's problems are in the Problems panel at `ascribe.addresses`, as **Check Every Build** puts them. **Check Every Build** replaces them with its own when it runs, so the same problem is never listed twice, and the server's next comparison replaces the check's.
 

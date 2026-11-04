@@ -61,7 +61,7 @@ Fix each one by stating the fact it stands in for. If you don't know the fact, t
 | A summary closer: "In summary", "Overall", a recap paragraph | Delete it, or replace it with the next step. |
 | Vague attribution: "teams report", "studies show", "developers love" | Cite the source, as a link, or state the claim without attribution, or cut it. `project-docs/reports/` holds the research the site cites. |
 | A paragraph that adds no fact | Ask what the reader learned. If nothing, cut it. |
-| A sentence over about 40 words, chained with commas and "which" | Make it a list, or two sentences. |
+| A sentence over about 40 words, chained with commas and "which"; one that lists more than three things, or has more than one "which"; a paragraph over 120 words | Make it a list, or two sentences. Outside `contracts/`, the docs have no sentence over 45 words and no paragraph over 120. |
 
 **Page type decides some of these.** The content model declares each page's type:
 
