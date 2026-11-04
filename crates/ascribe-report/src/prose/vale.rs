@@ -165,7 +165,16 @@ impl Linter for Program {
         if request.files.is_empty() {
             return Ok(BTreeMap::new());
         }
-        let program = tool::program(&request.command, &request.root);
+        // Vale runs in a scratch folder, so every path it's given is made
+        // absolute first: from there, one relative to where Ascribe was
+        // started, as a relative `--config` makes them, leads nowhere.
+        let absolute = |path: &Path| std::path::absolute(path).map_err(|e| failed(request, &e));
+        let program = tool::program(&request.command, &absolute(&request.root)?);
+        let configs = request
+            .configs
+            .iter()
+            .map(|config| absolute(config))
+            .collect::<Result<Vec<_>, _>>()?;
         check_version(request, &program)?;
         let folder = Scratch::new().map_err(|e| failed(request, &e))?;
         let text = folder.path.join("text");
@@ -179,9 +188,19 @@ impl Linter for Program {
             std::fs::write(&file, contents).map_err(|e| failed(request, &e))?;
         }
         let mut args = vec!["--no-global".to_owned(), "--output=JSON".to_owned()];
-        match request.configs.as_slice() {
+        match configs.as_slice() {
             [one] => args.push(format!("--config={}", one.display())),
             configs => {
+                // Vale says nothing of a file `--sources` lists that isn't
+                // there, and finds no rules: a clean result that isn't one.
+                // Outside FileSystem: Vale's configuration, which Vale reads;
+                // this only asks whether it's there.
+                if let Some(missing) = configs.iter().find(|c| !c.is_file()) {
+                    return Err(ValeError::Failed {
+                        command: request.command.clone(),
+                        reason: format!("its configuration {} isn't there", missing.display()),
+                    });
+                }
                 // Vale reads every file `--sources` lists, in order, but
                 // won't start unless it also finds a `.vale.ini` above the
                 // folder it's run in; that one is never read.
@@ -438,6 +457,34 @@ mod tests {
         );
         assert!(matches!(error, ValeError::Failed { .. }), "{error:?}");
         assert!(error.to_string().contains("64 MiB"), "{error}");
+    }
+
+    /// Vale says nothing of a file `--sources` lists that isn't there, so
+    /// Ascribe says it instead of reporting a clean result.
+    #[cfg(unix)]
+    #[test]
+    fn a_missing_configuration_is_a_failure() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("vale");
+        std::fs::write(&script, "#!/bin/sh\necho vale version 3.24.0\n").unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let there = dir.path().join("there.ini");
+        std::fs::write(&there, "").unwrap();
+        let mut request = request(&script.display().to_string());
+        request.configs = vec![there, dir.path().join("gone.ini")];
+        let mut error = Program.lint(&request).unwrap_err();
+        for _ in 0..50 {
+            if !error.to_string().contains("Text file busy") {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+            error = Program.lint(&request).unwrap_err();
+        }
+        assert!(
+            error.to_string().contains("gone.ini isn't there"),
+            "{error}"
+        );
     }
 
     #[test]

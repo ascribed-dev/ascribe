@@ -1,6 +1,7 @@
-//! `ascribe vale eject`, by running the binary in a temporary project.
+//! `ascribe vale eject`, and `ascribe check --vale`, by running the binary in a
+//! temporary project.
 
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 use std::fs;
 use std::path::Path;
@@ -71,4 +72,57 @@ fn eject_says_what_it_wrote_in_text_and_json() {
             .unwrap()
             .contains("config = \".vale.ini\"")
     );
+}
+
+/// The Vale to run, or `None` to skip: the one named by
+/// `ASCRIBE_TEST_VALE`, which CI installs on Linux, as for
+/// `crates/ascribe-report/tests/all/vale.rs`.
+fn real_vale() -> Option<String> {
+    match std::env::var("ASCRIBE_TEST_VALE") {
+        Ok(path) => Some(path),
+        Err(_) if std::env::var_os("CI").is_some() && cfg!(target_os = "linux") => {
+            panic!("CI on Linux sets ASCRIBE_TEST_VALE to a Vale for these tests")
+        }
+        Err(_) => None,
+    }
+}
+
+/// `check --vale` with a relative `--config`, run from outside the project,
+/// finds what it finds with the folder's absolute path: Vale runs in a
+/// folder of its own, where a relative path to its configuration leads
+/// nowhere. For a preset, then for the project's own `.vale.ini`.
+#[test]
+fn check_vale_with_a_relative_config_finds_what_an_absolute_one_does() {
+    let Some(vale) = real_vale() else { return };
+    let outside = tempfile::tempdir().unwrap();
+    let root = outside.path().join("project");
+    fs::create_dir_all(root.join("docs")).unwrap();
+    fs::write(
+        root.join("ascribe.toml"),
+        format!("{MODEL}command = '{vale}'\n"),
+    )
+    .unwrap();
+    fs::write(
+        root.join("docs/index.md"),
+        "---\ntitle: Start\n---\n\n# Start\n\nIt is is ready.\n",
+    )
+    .unwrap();
+    let absolute = root.display().to_string();
+    let check = |config: &str| {
+        let out = ascribe(outside.path(), &["check", "--vale", "--config", config]);
+        String::from_utf8_lossy(&out.stdout).into_owned()
+    };
+
+    for source in ["a preset", "its own .vale.ini"] {
+        if source == "its own .vale.ini" {
+            let out = ascribe(&root, &["vale", "eject"]);
+            assert_eq!(code_of(&out), 0, "{}", String::from_utf8_lossy(&out.stderr));
+        }
+        let relative = check("project");
+        assert!(
+            relative.contains("'is' is repeated"),
+            "{source}: {relative}"
+        );
+        assert_eq!(relative, check(&absolute), "{source}");
+    }
 }

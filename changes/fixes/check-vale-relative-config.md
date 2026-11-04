@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe check --vale` with a relative `--config` checks the prose. It reported nothing, since Vale couldn't find its configuration.
