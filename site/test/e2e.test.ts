@@ -682,7 +682,7 @@ test("a link between pages lands on the page, and a glossary link on its heading
   const page = await open("/docs/getting-started/");
   await page.locator('article a[href="/docs/astro/"]').first().click();
   await page.waitForURL(`${server.url}/docs/astro/`);
-  expect(await page.locator("h1").textContent()).toBe("Astro");
+  expect(await page.locator("h1").textContent()).toBe("Publish a site with Astro");
 
   await page.goto(`${server.url}/docs/review/`);
   // A glossary link to a heading.
