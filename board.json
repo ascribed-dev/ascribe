@@ -10117,7 +10117,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1362"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Paragraph test: an indented paragraph that runs into the next list item is read as one paragraph"
     },
     {
