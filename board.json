@@ -10003,7 +10003,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1367"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Replace serde_yaml_ng with serde-saphyr"
     },
     {
