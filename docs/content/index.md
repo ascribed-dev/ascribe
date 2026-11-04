@@ -5,7 +5,23 @@ description: Guides and references for writing documentation with Ascribe, and t
 permalink: docs
 ---
 
-Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do.
+Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do. [Why Ascribe](https://ascribed-dev.com/why/) says what problems it answers, and which it doesn't.
+
+## What you need and what it doesn't do
+
+Ascribe needs:
+
+- **Node.js {node} or later, or none.** `@ascribed/cli` installs `ascribe` with npm or pnpm; Homebrew, the install script, and a release's archive put it on your path without Node ([Install](install.md)).
+- **A platform it runs on:** macOS on Apple silicon, Linux, or Windows, and not an Intel Mac ([Platforms](install.md#platforms)).
+- **VS Code, to write and review in the editor.** The extension is for VS Code; another editor gets the checks from [the language server](editor/language-server.md), without the preview.
+- **GitHub, for review comments.** Comments are the pull request's own, on GitHub or GitHub Enterprise Server, so review on another host shows what changed and no comments ([Signing in to GitHub](review/how-it-works.md#signing-in-to-github)).
+- **Astro, for the site.** `@ascribed/astro` publishes it ([Ways to publish](astro/index.md#ways-to-publish)).
+
+It doesn't:
+
+- **Translate.** A project is written in one language. A translation is a second project, under its own base path, and [one site can hold both](astro/more-than-docs.md#several-projects-in-one-site); nothing says which of its pages are behind the source.
+- **Host.** It builds files, and whatever serves your site now serves them ([Deploy the site](astro/deploy.md)).
+- **Work with another site generator out of the box.** Another generator can read the site output, as [the contracts](#for-implementers) fix it, but renders its markers, and does what the Astro integration does beyond rendering, itself.
 
 ## Who does what
 
