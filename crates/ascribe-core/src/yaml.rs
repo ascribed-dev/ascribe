@@ -35,6 +35,15 @@ pub fn from_str<T: de::DeserializeOwned>(text: &str) -> Result<T, Error> {
         merge_keys: serde_saphyr::MergeKeyPolicy::AsOrdinary,
         // The message, not a rendered snippet: callers place it themselves.
         with_snippet: false,
+        // As much as serde_yaml_ng read: no cap on a document's size, so a
+        // large API spec reads, and nesting to 128. The alias and anchor
+        // limits stay, against an alias bomb.
+        budget: serde_saphyr::budget! {
+            max_depth: 128,
+            max_nodes: usize::MAX,
+            max_events: usize::MAX,
+            max_total_scalar_bytes: usize::MAX,
+        },
     };
     serde_saphyr::from_str_with_options(text, options).map_err(|error| {
         let at = error.location().and_then(|at| {
@@ -913,6 +922,40 @@ mod tests {
         assert_eq!((at.line(), at.column(), at.index()), (2, 6, 11));
         assert!(error.to_string().contains("line 2"), "{error}");
         assert!(from_str::<Value>("a: 1\na: 2\n").is_err());
+    }
+
+    #[test]
+    fn size_alone_never_fails() {
+        // Over 250,000 nodes, serde-saphyr's default cap.
+        let big: String = (0..100_000)
+            .map(|i| format!("p{i}: {{a: 1, b: 2}}\n"))
+            .collect();
+        assert_eq!(read(&big).as_mapping().map(Mapping::len), Some(100_000));
+    }
+
+    #[test]
+    fn nesting_goes_to_128() {
+        let flow = |depth: usize| format!("{}x{}", "[".repeat(depth), "]".repeat(depth));
+        let block = |depth: usize| {
+            let keys: String = (0..depth)
+                .map(|i| format!("{}k:\n", " ".repeat(i)))
+                .collect();
+            format!("{keys}{}x\n", " ".repeat(depth))
+        };
+        // A main thread's stack: an unoptimized build's frames don't fit
+        // 128 levels in a test thread's 2 MiB, though a release build's do.
+        let run = std::thread::Builder::new()
+            .stack_size(8 << 20)
+            .spawn(move || {
+                for depth in [65, 127] {
+                    assert!(from_str::<Value>(&flow(depth)).is_ok(), "{depth}");
+                    assert!(from_str::<Value>(&block(depth)).is_ok(), "{depth}");
+                }
+                assert!(from_str::<Value>(&flow(129)).is_err());
+                assert!(from_str::<Value>(&block(129)).is_err());
+            })
+            .unwrap();
+        run.join().unwrap();
     }
 
     #[test]
