@@ -8488,8 +8488,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1147"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhDvh1I",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1329"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Tested line: leave out the OS when it doesn't matter to the example"
     },
     {
@@ -8776,7 +8779,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1307"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Addresses: an older line's Markdown versions vanish silently when agents is turned off in the same rename"
     },
     {
@@ -8823,8 +8826,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1223"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhEe4ZI",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1318"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Crawler sources to reread"
     },
     {
@@ -8978,7 +8984,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1301"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "HTML review report runs removed and added words together"
     },
     {
@@ -8994,8 +9000,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1320"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "ascribe diff prints a list marker after the diff sign for added and removed items"
     },
     {
@@ -9053,7 +9062,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1303"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Checks in CI: the workflow fails the first pull request of a project `ascribe init` made"
     },
     {
@@ -9095,7 +9104,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1306"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Bring existing docs: the output shown doesn't match, and the walkthrough doesn't end clean"
     },
     {
@@ -9151,7 +9160,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1315"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "`ascribe agents sync --check` reports stale or fresh depending on whether `node_modules` exists"
     },
     {
@@ -9168,8 +9177,11 @@
         "bug",
         "agents"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1331"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "`ascribe agents index` says its links are Markdown versions when `agents = false`"
     },
     {
@@ -9205,8 +9217,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1332"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "`ascribe versions retire` records redirects for builds that never published the retired line"
     },
     {
@@ -9226,7 +9241,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1304"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Small inaccuracies in help text, schemas, and repository docs"
     },
     {
@@ -9242,8 +9257,11 @@
       "labels": [
         "question"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1330"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "`ascribe_version` has two formats across the commands' JSON"
     },
     {
@@ -9263,7 +9281,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1291"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Stale § numbers into the content-model contract, left by its renumbering"
     },
     {
@@ -9313,8 +9331,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1325"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Docs inaccuracies: agents, OpenAPI, templates, versions, install, and review"
     },
     {
@@ -9351,7 +9372,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1309"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Document the surface no page covers"
     },
     {
@@ -9372,7 +9393,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1312"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The `json/` build output has no contract, and its keys don't follow the stated rule"
     },
     {
@@ -9429,7 +9450,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1295"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Deploy the site: a how-to, the supported ways to publish, and a Publishing section that's about publishing"
     },
     {
@@ -9446,8 +9467,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1328"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "One complete CI pipeline, in one place"
     },
     {
@@ -9464,8 +9488,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1327"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Moving from Docusaurus, Starlight/MDX, MkDocs, or Hugo"
     },
     {
@@ -9597,7 +9624,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1298"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The command reference: environment variables, and the exit-code convention"
     },
     {
@@ -9618,7 +9645,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1299"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "The language server: complete setups for Neovim, Helix, and Zed"
     },
     {
@@ -9639,7 +9666,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1311"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Review: a route for reviewers who don't use VS Code, and who does what on a docs team"
     },
     {
@@ -9660,7 +9687,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1316"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Claude Code plugin: install without cloning Ascribe's repository"
     },
     {
@@ -9699,7 +9726,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1302"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "The docs sidebar: order sections along the adoption path"
     },
     {
@@ -9719,7 +9746,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1308"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Show a project's navigation without reading JSON"
     },
     {
@@ -9924,7 +9951,7 @@
         "bug"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Images 404 in `astro dev` when `trailing-slash` is `always`"
     },
     {
@@ -9940,9 +9967,32 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1324"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Prose: the spec vocabulary left in settings.toml, the diagnostics pages, and the home page"
+    },
+    {
+      "content": {
+        "body": "Follow-up to #1254, from [PR #1291's review](https://github.com/ascribed-dev/ascribe/pull/1291). [Decision 1254](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/decisions/1254-contract-section-links.md) says that a contract page citing another contract's numbered section links to its heading, so that a renumbering can't leave the citation stale without `ascribe check` failing. #1254 fixed the citations it listed. These plain-text citations of the content-model contract's §15 (`[consumer]`) and §16 (`[builds.<name>]`) have the right numbers, but they aren't links yet:\n\n- `docs/content/contracts/assets.md:70`: \"(content-model.md §15)\"\n- `docs/content/contracts/output-layout.md:24`: \"(content-model.md §16)\"\n- `output-layout.md:40` and `:52`: \"(content-model.md §15)\"\n- `output-layout.md:82` and `:157`: \"content-model contract §15\"\n- `output-layout.md:276`: \"(content-model.md §16)\"\n- `output-layout.md:328`: \"(content-model.md §15)\"\n\nBoth headings are in `docs/content/contracts/content-model/output.md`: `## 15. [consumer]` and `## 16. [builds.<name>]`.\n\n**Done when:** each citation is a link to its heading, written the way #1254's links are; a search of `docs/content/contracts/` finds no other unlinked `§` citation of another contract; and `cargo run -q -p ascribe-cli -- check --config docs` passes. The decision already records these corrections, so this pull request needs no decision of its own.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+        "number": 1319,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Link the remaining § citations of the content-model contract in assets.md and output-layout.md",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1319"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF08lE",
+      "labels": [
+        "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1323"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In review",
+      "title": "Link the remaining § citations of the content-model contract in assets.md and output-layout.md"
     }
   ]
 }
