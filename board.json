@@ -8830,7 +8830,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1318"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Crawler sources to reread"
     },
     {
@@ -9428,8 +9428,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1334"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Say what Ascribe needs and what it doesn't do"
     },
     {
@@ -9471,7 +9474,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1328"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "One complete CI pipeline, in one place"
     },
     {
@@ -9509,8 +9512,11 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1333"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Writing pages: a \"Write a page\" how-to first, and the everyday directives before the spec order"
     },
     {
@@ -9991,7 +9997,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1323"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Link the remaining § citations of the content-model contract in assets.md and output-layout.md"
     }
   ]
