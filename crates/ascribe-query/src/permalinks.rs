@@ -26,7 +26,7 @@ pub struct PermalinksAnswer {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// Whether the project has `ascribe.permalinks`. Without it, every
     /// permalink is `not_listed`, and nothing is `removed`.
@@ -284,7 +284,7 @@ pub struct SyncAnswer {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// Whether the list's file changes: it's new, or its text differs.
     pub changed: bool,
@@ -377,7 +377,7 @@ pub struct VerifyAnswer {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// The list checked against, as given.
     pub list: String,
@@ -608,7 +608,7 @@ pub struct RetireAnswer {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// The names retired, each written in `ascribe.addresses` as
     /// `go:<name>`: in `[retired]`, or, with `to`, in `[moved]`, in order.

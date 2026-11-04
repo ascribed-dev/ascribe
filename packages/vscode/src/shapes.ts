@@ -98,7 +98,7 @@ export interface AgentsSyncReport {
    * or changes meaning.
    */
   schema_version: number;
-  /** The version of Ascribe that wrote it. */
+  /** The release of Ascribe that wrote it, as `0.4.5`. */
   ascribe_version: string;
   /** Whether it ran with `--check`, which writes nothing. */
   check: boolean;
@@ -405,7 +405,7 @@ export interface CheckReport {
    * or changes meaning.
    */
   schema_version: number;
-  /** The version of Ascribe that wrote it. */
+  /** The release of Ascribe that wrote it, as `0.4.5`. */
   ascribe_version: string;
   /**
    * Why the project couldn't be checked (exit code 2), or `null`. When it
@@ -1518,7 +1518,7 @@ export interface ModelReport {
    * or changes meaning.
    */
   schema_version: number;
-  /** The version of Ascribe that wrote it. */
+  /** The release of Ascribe that wrote it, as `0.4.5`. */
   ascribe_version: string;
   /** APIs, in declaration order. */
   apis?: ModelApi[];

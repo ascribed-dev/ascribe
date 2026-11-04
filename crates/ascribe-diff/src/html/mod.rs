@@ -117,7 +117,7 @@ pub struct Version<'a> {
 #[derive(Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 struct Data<'a> {
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// What was compared with.
     base: &'a BaseInfo,

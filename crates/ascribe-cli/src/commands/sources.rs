@@ -310,7 +310,7 @@ pub(crate) struct FetchJson<'a> {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// Whether the copies and the lock were written: false with
     /// `--dry-run`, which says what it would copy, remove, and write.
@@ -327,7 +327,7 @@ pub(crate) struct StatusJson<'a> {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     #[serde(flatten)]
     report: &'a StatusReport,
@@ -470,7 +470,7 @@ pub(crate) struct UpdateJson<'a> {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// Whether any file changed: a copy, or the lock. With `--dry-run`,
     /// whether any would.

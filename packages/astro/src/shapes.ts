@@ -94,7 +94,7 @@ export interface DiffReport {
    * or changes meaning.
    */
   schema_version: number;
-  /** The version of Ascribe that wrote it. */
+  /** The release of Ascribe that wrote it, as `0.4.5`. */
   ascribe_version: string;
   /** What was compared with. */
   base: BaseInfo;

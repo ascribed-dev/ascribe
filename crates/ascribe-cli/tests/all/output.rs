@@ -55,13 +55,13 @@ fn expect(name: &str, text: &str) {
 fn json(output: &Output) -> String {
     let text = stdout(output);
     let value: serde_json::Value = serde_json::from_str(&text).expect("the report is JSON");
-    // `observe` records the build it ran with, which a build from a checkout
-    // follows with `+dev` and its commit.
+    // Every command writes the release alone, without the `+dev` and commit
+    // a build from a checkout adds to `--version` (decision #1253).
     let written = value
         .pointer("/ascribe_version")
         .and_then(serde_json::Value::as_str)
         .unwrap_or_default();
-    assert!(written.starts_with(env!("CARGO_PKG_VERSION")), "{text}");
+    assert_eq!(written, env!("CARGO_PKG_VERSION"), "{text}");
     let version = format!("\"ascribe_version\": \"{written}\"");
     assert!(text.contains(&version), "{text}");
     let mut text = text.replace(&version, "\"ascribe_version\": \"{version}\"");

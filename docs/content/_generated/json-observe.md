@@ -127,7 +127,7 @@
   "description": "What `ascribe observe --format json` writes: the commands it ran, how the\ntest ended, the observation it wrote, and what changed since the one it\nreplaced. With `--check`, nothing ran: the observation it compared, and\nwhether it's current.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "changes": {

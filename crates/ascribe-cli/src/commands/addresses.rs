@@ -251,7 +251,7 @@ pub(crate) struct InitJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The file, from the project's folder: `ascribe.addresses`.
     file: &'static str,
@@ -274,7 +274,7 @@ pub(crate) struct RecordJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The file, from the project's folder: `ascribe.addresses`.
     file: &'static str,
@@ -303,7 +303,7 @@ pub(crate) struct FromGitJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// The file, from the project's folder: `ascribe.addresses`.
     file: &'static str,
@@ -340,7 +340,7 @@ pub(crate) struct ListJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// Whether the project has `ascribe.addresses`. Without it, every
     /// build's lists are empty.

@@ -109,7 +109,7 @@ export interface DiffReport {
    * or changes meaning.
    */
   schema_version: number;
-  /** The version of Ascribe that wrote it. */
+  /** The release of Ascribe that wrote it, as `0.4.5`. */
   ascribe_version: string;
   /** What was compared with. */
   base: BaseInfo;
@@ -338,7 +338,7 @@ export interface RenderedPage {
  * report's, are snake_case.
  */
 export interface ReportData {
-  /** The version of Ascribe that wrote it. */
+  /** The release of Ascribe that wrote it, as `0.4.5`. */
   ascribe_version: string;
   /** What was compared with. */
   base: BaseInfo;

@@ -31,7 +31,7 @@ pub(crate) struct ReportJson {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     ascribe_version: &'static str,
     /// Why the report couldn't be made (exit code 2), or `null`. When it
     /// isn't `null`, no section is there.

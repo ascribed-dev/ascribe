@@ -290,7 +290,7 @@
   "description": "What `ascribe templates status` found: for each template the project\ntook, whether the set and the project have changed it since the copy, and\neach template of the set it doesn't have.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "not_taken": {

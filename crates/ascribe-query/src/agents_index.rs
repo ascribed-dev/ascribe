@@ -19,7 +19,7 @@ pub struct AgentsIndex {
     /// The version of this schema. It changes only when a field is removed
     /// or changes meaning.
     pub schema_version: u32,
-    /// The version of Ascribe that wrote it.
+    /// The release of Ascribe that wrote it, as `0.4.5`.
     pub ascribe_version: &'static str,
     /// The build.
     pub build: String,

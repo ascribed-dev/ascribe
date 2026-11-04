@@ -109,7 +109,7 @@
   "description": "What `ascribe sources status --format json` writes: each source's pin and\nthe state of its copies, read from the files alone.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "schema_version": {

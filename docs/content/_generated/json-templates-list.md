@@ -27,7 +27,7 @@
   "description": "What `ascribe templates list --format json` writes: the templates\nAscribe carries, and where they're from.",
   "properties": {
     "ascribe_version": {
-      "description": "The version of Ascribe that wrote it.",
+      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
       "type": "string"
     },
     "commit": {
