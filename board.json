@@ -9123,6 +9123,9 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1351"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Getting started's handoff to the Astro guide: a conflicting `ascribe.toml`, a base-path warning, and two `@ascribed/cli` pins"
@@ -9145,7 +9148,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1349"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "agents/loop.md: the first command exits 2, and no page says which commands read paths from the content root"
     },
     {
@@ -9307,7 +9310,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1349"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Release-dated prose breaks decision #973, and two notes are already false"
     },
     {
@@ -9839,7 +9842,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1349"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Prose: open each page with what it covers, not a pointer"
     },
     {
@@ -9896,7 +9899,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1349"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Say once, early, how the docs write commands: `ascribe` or `npx ascribe`"
     },
     {
