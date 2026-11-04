@@ -9141,8 +9141,11 @@
         "documentation",
         "agents"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1349"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "agents/loop.md: the first command exits 2, and no page says which commands read paths from the content root"
     },
     {
@@ -9300,8 +9303,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1349"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Release-dated prose breaks decision #973, and two notes are already false"
     },
     {
@@ -9627,7 +9633,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1345"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Troubleshooting for install, CI, Astro, and agents"
     },
     {
@@ -9826,8 +9832,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1349"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Prose: open each page with what it covers, not a pointer"
     },
     {
@@ -9880,8 +9889,11 @@
       "labels": [
         "documentation"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1349"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Say once, early, how the docs write commands: `ascribe` or `npx ascribe`"
     },
     {
@@ -10050,7 +10062,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1338"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Copilot's setup steps put the package's `node_modules/.bin` on the path when npm or Yarn hoists `ascribe` to the workspace root"
     }
   ]
