@@ -63,7 +63,7 @@ It's the editor's **Find All References**, on the command line: it finds a phras
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs.txt
 
-A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current folder, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
+A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current folder, or from `--config`. A target whose prefix isn't one of these, such as `foo:bar`, is read as a path: one that names no file, so it doesn't exist, and exits with `1`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
 
 An `availability` place shows its spec as written, after the use: ``docs/keys.md:25:13: availability `self-managed 3.5` ``.
 
@@ -79,7 +79,7 @@ A [memo file](../writing/memo-files.md) about the target is a place too, with th
 |---|---|
 | `0` | The target exists, used or not |
 | `1` | It doesn't exist |
-| `2` | It couldn't run: no `ascribe.toml`, one with errors, a target that's neither a path nor an entry, or a file that's neither a page, a fragment, nor an image |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, an entry it can't read, such as `phrase:` with no name, a heading named on an image, or a file that's neither a page, a fragment, nor an image |
 
 With `--format json`, the document is:
 
