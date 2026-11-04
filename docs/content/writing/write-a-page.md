@@ -198,5 +198,6 @@ It reports anything the page names that isn't there: here, `images/settings.png`
 ## Next
 
 - The [directive reference](directives.md) opens with the directives most pages use, and has every rule of each.
+- [Write it once](write-it-once.md) shares a fragment among pages, or one section of it, and says when a phrase, a fragment, or a variant fits.
 - [Content that varies](variants.md) adds content that differs by platform or product, as `install.md`'s tabs do.
 - [Leave a memo for whoever edits next](memos.md) keeps the reasons for a page beside it, unpublished.
