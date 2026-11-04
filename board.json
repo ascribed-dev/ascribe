@@ -9931,7 +9931,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1344"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Split `command/questions.md`, which is over the size limit for agents"
     },
     {
