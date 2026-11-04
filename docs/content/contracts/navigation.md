@@ -4,7 +4,7 @@ title: The navigation contract
 description: "What `_ascribe/nav.json` in a build's site output holds, the project's sections and pages in order with their labels, and how a site draws a sidebar from it."
 ---
 
-Each build's site output has its share of the project's [navigation](../navigation/index.md) (SPEC §7.8) as `_ascribe/nav.json`, beside the page records (output-layout contract §1.6). `@ascribed/astro`'s `sidebar()` and `neighbors()` read it; a site built another way can too. The JSON output has the same file at the same path, with each formatted label in that output's form. This contract says what the file holds and what a reader can rely on.
+Each build's site output has its share of the project's [navigation](../navigation/index.md) (SPEC §7.8) as `_ascribe/nav.json`, beside the page records ([output-layout contract §1.6](output-layout.md#16-the-navigation)). `@ascribed/astro`'s `sidebar()` and `neighbors()` read it; a site built another way can too. The JSON output has the same file at the same path, with each formatted label in that output's form. This contract says what the file holds and what a reader can rely on.
 
 | Who | Uses this contract to |
 |---|---|
@@ -60,7 +60,7 @@ Each build's site output has its share of the project's [navigation](../navigati
 | `page` | A section's own page, when the build publishes and offers it: its `index.md`, or the page beside the folder with its name. Absent otherwise. |
 | `pages` | A section's pages in order, its own page never among them. |
 | `sections` | A section's nested sections that keep a page in the build, in order. |
-| `source` | A page's path from the content root, with `/`: the key its record has in `_ascribe/pages.json` (§1.3), and its path in the site output, so a collection entry's file joins to it. Routes aren't repeated here: a page's route is its record's. |
+| `source` | A page's path from the content root, with `/`: the key its record has in `_ascribe/pages.json` ([output-layout contract §1.3](output-layout.md#13-the-page-records)), and its path in the site output, so a collection entry's file joins to it. Routes aren't repeated here: a page's route is its record's. |
 | `type` | A page's content type. Absent for a page whose type isn't declared, which `ascribe check` reports. |
 
 ## 2. Placing a nested section
