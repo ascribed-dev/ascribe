@@ -9330,7 +9330,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1350"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Docs inaccuracies: writing, the content model, checks, and commands"
     },
     {
@@ -9800,6 +9800,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzhF0As4",
       "labels": [
         "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1352"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
