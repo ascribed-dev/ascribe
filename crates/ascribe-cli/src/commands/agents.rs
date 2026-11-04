@@ -101,7 +101,7 @@ fn project_command(given: &str) -> Result<String, String> {
 pub struct RulesArgs {
     /// A file or folder in the project, to find its `ascribe.toml` from.
     ///
-    /// By default, the current directory.
+    /// By default, the current folder.
     #[arg(value_name = "PATH")]
     pub path: Option<PathBuf>,
 }
@@ -127,7 +127,7 @@ pub struct IndexArgs {
     /// the index's addresses into it: for a package that ships its docs.
     ///
     /// The addresses are from the folder of the file the index is written
-    /// into, or from the current directory when it's printed.
+    /// into, or from the current folder when it's printed.
     #[arg(long, value_name = "DIR")]
     pub pages: Option<PathBuf>,
 
@@ -271,7 +271,7 @@ pub(crate) struct SyncJson<'a> {
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 pub(crate) struct SyncFile<'a> {
-    /// Its path, from the current directory, `/`-separated.
+    /// Its path, from the current folder, `/`-separated.
     path: String,
     /// Whether it changed: with `check`, whether it's out of date.
     changed: bool,

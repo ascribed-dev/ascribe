@@ -42,7 +42,7 @@ pub struct HelpEntry {
     /// The section's summary; absent when it has none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
-    /// The section as the plain output writes it, in Markdown, with each
+    /// The section as the plain Markdown output writes it, in Markdown, with each
     /// image as its alt text.
     pub text: String,
     /// For a section with a switcher, its text with each arm chosen: keyed

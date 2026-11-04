@@ -9,7 +9,7 @@ The fields of [`schemas/fmt.schema.json`]({repo}/blob/v{version}/schemas/fmt.sch
 | `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
 | `written` | `boolean` | yes | no | Whether the files were rewritten: `false` with `--check` or `--dry-run`, which write nothing. |
 | `files` | `object[]` | yes | no | Each file that changed, or with `--check` or `--dry-run` would change, in path order, with the edits that format it. |
-| `files[].file` | `string` | yes | no | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators; a file outside it as it was found. |
+| `files[].file` | `string` | yes | no | The file, relative to the project root (the folder of `ascribe.toml`), with `/` separators; a file outside it as it was found. |
 | `files[].edits` | `object[]` | yes | no | The edits, each replacing the text of its range in the file as it was before formatting. They don't overlap, and are in file order. |
 | `files[].edits[].range` | `object` | yes | no | The text it replaces. |
 | `files[].edits[].range.start` | `Pos` | yes | no | Its first character. |

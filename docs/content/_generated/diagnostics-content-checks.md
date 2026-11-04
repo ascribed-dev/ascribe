@@ -17,15 +17,15 @@
 
 ### ASC150 `page-description-missing`
 @id {permalink=true}: ASC150
-@summary: A page's content type marks a field `role = "description"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at.
+@summary: A page's type marks a field `role = "description"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at.
 
 [Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** A page's content type marks a field `role = "description"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at.
+**When:** A page's type marks a field `role = "description"`, and the page leaves the field out or empty. A required field, whose absence is `frontmatter-missing-field`, and a field with a default aren't looked at.
 
 **Message:** this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title
 
-**Fix:** Add the field the content type marks with `role = "description"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for.
+**Fix:** Add the field the page type marks with `role = "description"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for.
 
 **Read more:** [Field roles](../content-model/index.md#54-field-roles) in the `ascribe.toml` reference.
 
@@ -59,11 +59,11 @@
 
 ### ASC153 `recheck-overdue`
 @id {permalink=true}: ASC153
-@summary: A page's content type marks a field `role = "recheck-date"` (or `"review-date"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
+@summary: A page's type marks a field `role = "recheck-date"` (or `"review-date"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
 
 [Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [review](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [acknowledged](../glossary.md#acknowledgement) in the page's `intended` frontmatter · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** A page's content type marks a field `role = "recheck-date"` (or `"review-date"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
+**When:** A page's type marks a field `role = "recheck-date"` (or `"review-date"`, its old name), and the date the page gives it is before the day the check runs as: today in UTC, or `ASCRIBE_TODAY`.
 
 **Message:** this page was due for a recheck on \{date}; check it still holds, then move `{field}` to the next recheck
 
@@ -87,11 +87,11 @@
 
 ### ASC195 `template-placeholder-left`
 @id {permalink=true}: ASC195
-@summary: A draft of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
+@summary: A draft of a type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value.
 
 [Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A draft (a page with `draft: true`) of a content type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. In a page that publishes it's `template-placeholder-published`, an error. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
+**When:** A draft (a page with `draft: true`) of a type that names a template still has one of the template's placeholders, exactly as the template has it but for how its lines are wrapped, or a frontmatter field with the template's value. In a page that publishes it's `template-placeholder-published`, an error. A memo the page keeps from the template, its instructions to the writer, isn't reported. A placeholder's opening brace is escaped on the page as in the template, so a phrase of the same name, or a placeholder quoted in inline code or a code block, isn't one. A page of a type with no template isn't looked at, and a placeholder changed by a word isn't found.
 
 **Message:** this page still has its template's placeholder `{placeholder}`; write what it asks for in its place
 
@@ -171,11 +171,11 @@
 
 ### ASC229 `template-section-empty`
 @id {permalink=true}: ASC229
-@summary: A page of a content type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings.
+@summary: A page of a type that names a template has a section the template gives only memos, and the page's section still has nothing but memos and headings.
 
 [Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A page of a content type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at.
+**When:** A page of a type that names a template has a section the template gives nothing under its heading but memos, with the same heading at the same level, and nothing in the page's section, its subsections included, but memos, directives bound to its heading such as `@id`, and the subsections' headings. A section the template gives any other content is `template-placeholder-left`'s, and a page of a type with no template isn't looked at.
 
 **Message:** the template's section `{heading}` is still empty; write it, or remove the heading if this page doesn't need it
 
@@ -241,11 +241,11 @@
 
 ### ASC286 `template-placeholder-published`
 @id {permalink=true}: ASC286
-@summary: A page that publishes, of a content type that names a template, still has one of the template's placeholders, or a frontmatter field with the template's value.
+@summary: A page that publishes, of a type that names a template, still has one of the template's placeholders, or a frontmatter field with the template's value.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A page that publishes, one without `draft: true`, of a content type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value, found as `template-placeholder-left` finds them. In a draft, it's that advice instead, so a page being written isn't covered in errors.
+**When:** A page that publishes, one without `draft: true`, of a type that names a template still has one of the template's placeholders, or a frontmatter field with the template's value, found as `template-placeholder-left` finds them. In a draft, it's that advice instead, so a page being written isn't covered in errors.
 
 **Message:** this page publishes with its template's placeholder `{placeholder}`; write what it asks for in its place, or mark the page `draft: true` until it's ready
 
@@ -283,11 +283,11 @@
 
 ### ASC291 `how-to-steps-missing`
 @id {permalink=true}: ASC291
-@summary: A page of the content type named `how-to` has no `@steps` and no heading numbered as a step.
+@summary: A page of the type named `how-to` has no `@steps` and no heading numbered as a step.
 
 [Advice](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
 
-**When:** A page of the content type named `how-to` has no `@steps` and no heading that starts with a step's number, such as `1. Install` or `Step 1: Install`, once includes are expanded. A page of any other type isn't looked at.
+**When:** A page of the type named `how-to` has no `@steps` and no heading that starts with a step's number, such as `1. Install` or `Step 1: Install`, once includes are expanded. A page of any other type isn't looked at.
 
 **Message:** this how-to has no steps; write the task as a numbered list under `@steps`, so readers and agents can follow it a step at a time
 

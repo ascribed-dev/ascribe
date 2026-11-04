@@ -3,11 +3,11 @@
 
 ### ASC163 `description-too-long`
 @id {permalink=true}: ASC163
-@summary: The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a content type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
+@summary: The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a page type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
 
 [Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
-**When:** The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a content type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
+**When:** The project publishes `llms.txt` (`[consumer] agents = true`), and a page's description, or a page type's default for its description field, is longer than 300 characters as `llms.txt` writes it.
 
 **Message:** this description is \{length} characters, and its line in llms.txt reads best under \{limit}; shorten it to one sentence
 
@@ -143,7 +143,7 @@
 
 **Message:** the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: \{result}. Report it at \{issues}
 
-**Fix:** First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing. When the message says an address couldn't be fetched, the checker got no answer, which may be the network's doing: run the report again, and look into the address only when it keeps failing.
+**Fix:** First check that the site publishes what the build wrote, as it wrote it: `llms.txt` and the Markdown pages from the plain Markdown output, and each page's pointer from the site output. When it does, this is a bug in Ascribe: report it at the issue tracker the message names, with the report's output. No page needs editing. When the message says an address couldn't be fetched, the checker got no answer, which may be the network's doing: run the report again, and look into the address only when it keeps failing.
 
 **Read more:** [`[consumer]`](../content-model/output.md#consumer) in the `ascribe.toml` reference.
 

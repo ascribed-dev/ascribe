@@ -211,7 +211,7 @@ pub struct BaseInfo {
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct RepositoryInfo {
-    /// The repository's top-level directory, as git prints it.
+    /// The repository's top-level folder, as git prints it.
     pub root: String,
     /// The project's folder inside it, with a trailing `/`, or empty when
     /// the project is at the repository's root.

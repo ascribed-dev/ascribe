@@ -98,8 +98,8 @@ pub struct Args {
     #[arg(long)]
     pub no_history: bool,
 
-    /// Report the advice `ascribe.baseline` holds back too, without reading
-    /// the file.
+    /// Report the advice `ascribe.baseline` lists too, without reading the
+    /// file.
     ///
     /// By default, `problems` and `inventory` leave out what the baseline
     /// lists while it's advice, as `ascribe check` does, and `problems`

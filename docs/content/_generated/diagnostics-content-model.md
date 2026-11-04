@@ -25,7 +25,7 @@
 
 **Message:** unknown key `{key}` in `[{table}]`; this is ascribe \{version}, and the project may need a newer one
 
-**Fix:** Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A content type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = "netlify"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it. `ascribe.toml` has no `[permalinks]`: `ascribe addresses init` moves its retired permalinks and aliases into `ascribe.addresses`, as `go:<name>` keys of `[retired]` and `[moved]`.
+**Fix:** Fix the key's spelling, or remove it. A key added in a later version of Ascribe is unknown to an older one: when the project was written for a newer Ascribe, install it. A page type has no `files` or `default`: each page names its type in its frontmatter, as `type: how-to`, so remove them and add `type:` to the type's pages. The glossary has no `terms`: write each term as a heading marked `@term` on a glossary page, with its definition as the paragraph under it, and list the page in `[glossary] pages`. `[[intended]]` has no `term`: acknowledge a term's problem with `@intended` under its heading. `[consumer]` has no `headers`: write `host = "netlify"`, which writes Netlify's `_headers` as `headers` did, and `_redirects` beside it. `ascribe.toml` has no `[permalinks]`: `ascribe addresses init` moves its retired permalinks and aliases into `ascribe.addresses`, as `go:<name>` keys of `[retired]` and `[moved]`.
 
 **Read more:** [The file](../content-model/index.md#11-the-file) in the `ascribe.toml` reference.
 
@@ -87,11 +87,11 @@
 
 ### ASC066 `model-invalid-name`
 @id {permalink=true}: ASC066
-@summary: A name the content model declares, such as a dimension, a value, or a content type, breaks the rules for that kind of name.
+@summary: A name the content model declares, such as a dimension, a value, or a page type, breaks the rules for that kind of name.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** A name the content model declares, such as a dimension, a value, or a content type, breaks the rules for that kind of name.
+**When:** A name the content model declares, such as a dimension, a value, or a page type, breaks the rules for that kind of name.
 
 **Message:** `{name}` isn't a valid \{role} name: \{rule}
 
@@ -167,35 +167,35 @@
 
 **Message:** `{key}` must be a path relative to ascribe.toml, not an absolute path
 
-**Fix:** Write the path relative to the directory of `ascribe.toml`.
+**Fix:** Write the path relative to the folder of `ascribe.toml`.
 
 **Read more:** [Paths and patterns](../content-model/index.md#13-paths-and-patterns) in the `ascribe.toml` reference.
 
 ### ASC069 `model-content-root-missing`
 @id {permalink=true}: ASC069
-@summary: The content root doesn't exist, or isn't a directory.
+@summary: The content root doesn't exist, or isn't a folder.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
-**When:** The content root doesn't exist, or isn't a directory.
+**When:** The content root doesn't exist, or isn't a folder.
 
 **Message:** content root `{path}` doesn't exist
 
-**Fix:** Create the directory, or correct `[project] content-root`.
+**Fix:** Create the folder, or correct `[project] content-root`.
 
 **Read more:** [`[project]`](../content-model/index.md#3-project) in the `ascribe.toml` reference.
 
 ### ASC070 `model-output-overlaps-content`
 @id {permalink=true}: ASC070
-@summary: The output directory and the content root are the same, or one is inside the other.
+@summary: The output folder and the content root are the same, or one is inside the other.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
-**When:** The output directory and the content root are the same, or one is inside the other.
+**When:** The output folder and the content root are the same, or one is inside the other.
 
 **Message:** output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source
 
-**Fix:** Keep the output directory and the content root apart: neither inside the other, and not the same. The default output directory, `.ascribe/build`, is outside the default content root, `docs`.
+**Fix:** Keep the output folder and the content root apart: neither inside the other, and not the same. The default output folder, `.ascribe/build`, is outside the default content root, `docs`.
 
 **Read more:** [`[project]`](../content-model/index.md#3-project) in the `ascribe.toml` reference.
 
@@ -247,11 +247,11 @@
 
 ### ASC074 `model-field-reserved`
 @id {permalink=true}: ASC074
-@summary: A content type, or the fragments' frontmatter, declares a field the specification or an output reserves.
+@summary: A page type, or the fragments' frontmatter, declares a field the specification or an output reserves.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
-**When:** A content type, or the fragments' frontmatter, declares a field the specification or an output reserves.
+**When:** A page type, or the fragments' frontmatter, declares a field the specification or an output reserves.
 
 **Message:** `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[{table}]`
 
@@ -381,7 +381,7 @@
 
 **Message:** inline = "code" only works on string fields, and `{field}` is "\{type}"
 
-**Fix:** Remove `inline`, or set it to "code" on a string field of a content type's `frontmatter`.
+**Fix:** Remove `inline`, or set it to "code" on a string field of a page type's `frontmatter`.
 
 **Read more:** [Code in a field](../content-model/index.md#53-code-in-a-field) in the `ascribe.toml` reference.
 
@@ -395,31 +395,31 @@
 
 **Message:** role = "\{role}" only works on a \{expected} field, and `{field}` is "\{type}"
 
-**Fix:** Give `role = "description"` to one string field of a content type's `frontmatter`, `role = "recheck-date"` to one date field, and `role = "owner"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles.
+**Fix:** Give `role = "description"` to one string field of a page type's `frontmatter`, `role = "recheck-date"` to one date field, and `role = "owner"` to one string or enum field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles.
 
 **Read more:** [Field roles](../content-model/index.md#54-field-roles) in the `ascribe.toml` reference.
 
 ### ASC193 `model-type-file`
 @id {permalink=true}: ASC193
-@summary: A content type's `template` or `guide` doesn't exist, or is inside the content root or the output directory, or outside the project's folder.
+@summary: A page type's `template` or `guide` doesn't exist, or is inside the content root or the output folder, or outside the project's folder.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** A content type's `template` or `guide` doesn't exist, or is inside the content root or the output directory, or outside the project's folder.
+**When:** A page type's `template` or `guide` doesn't exist, or is inside the content root or the output folder, or outside the project's folder.
 
 **Message:** `{path}`, the \{key} of content type `{type}`, doesn't exist
 
-**Fix:** Name a file by its path from the folder ascribe.toml is in, with its name's case as it is on disk, outside the content root and the output directory: `template = "templates/how-to.md"`. A type's template and guide are read by people and tools starting a page, and aren't pages themselves.
+**Fix:** Name a file by its path from the folder ascribe.toml is in, with its name's case as it is on disk, outside the content root and the output folder: `template = "templates/how-to.md"`. A type's template and guide are read by people and tools starting a page, and aren't pages themselves.
 
 **Read more:** [Page types](../content-model/index.md#41-page-types) in the `ascribe.toml` reference.
 
 ### ASC194 `model-type-template`
 @id {permalink=true}: ASC194
-@summary: A content type's template can't be read, or isn't a page Ascribe can read.
+@summary: A page type's template can't be read, or isn't a page Ascribe can read.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · Ascribe's own, not in SPEC
 
-**When:** A content type's template can't be read, or isn't a page Ascribe can read.
+**When:** A page type's template can't be read, or isn't a page Ascribe can read.
 
 **Message:** can't read `{path}`, the template of content type `{type}`: \{reason}
 

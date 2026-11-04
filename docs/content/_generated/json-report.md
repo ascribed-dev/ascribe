@@ -53,7 +53,7 @@ The fields of [`schemas/report.schema.json`]({repo}/blob/v{version}/schemas/repo
 | `delivery.new_checks` | `string[]` | yes | no | The ids of the checks `new` counts, in the checker's order; empty when `previous_run` is `null`. |
 | `inventory` | `object` | no | no | `inventory`, when asked for. |
 | `inventory.pages` | `integer` | yes | no | How many pages. |
-| `inventory.by_type` | `object[]` | yes | no | How many pages of each content type, most first. |
+| `inventory.by_type` | `object[]` | yes | no | How many pages of each type, most first. |
 | `inventory.by_type[].type` | `string` | yes | yes | The type's name; `null` for the pages no one type applies to. |
 | `inventory.by_type[].pages` | `integer` | yes | no | How many pages. |
 | `inventory.by_owner` | `object[]` | yes | no | How many pages each owner has, most first: the value of the frontmatter field the page's type marks `role = "owner"`. |
@@ -150,7 +150,7 @@ The fields of [`schemas/report.schema.json`]({repo}/blob/v{version}/schemas/repo
 | `problems.new` | `integer` | yes | yes | How many problems the last report didn't list, or `null` when `previous_run` is. A problem is told from another by its check, its file, the text it's about, and its order among those alike. |
 | `problems.resolved` | `integer` | yes | yes | How many problems the last report listed that this one doesn't, fixed or with the text they're about edited, or `null` when `previous_run` is. |
 | `problems.new_items` | `Capped_Entry` | yes | no | The problems the last report didn't list, in the order `ascribe check` reports them; none when `previous_run` is `null`. |
-| `problems.baselined` | `integer` | no | no | How many advice `ascribe.baseline` holds back, which the counts leave out: the backlog the project has put off. Left out when there are none, and with `--no-baseline`. |
+| `problems.baselined` | `integer` | no | no | How many advice are baselined, listed in `ascribe.baseline`, which the counts leave out: the project's backlog. Left out when there are none, and with `--no-baseline`. |
 
 **`Summary`**: How many problems of each severity, and of each kind of next step.
 
@@ -185,9 +185,9 @@ The fields of [`schemas/report.schema.json`]({repo}/blob/v{version}/schemas/repo
 | `items[].code` | `string` | yes | no | The code, such as `ASC036`. |
 | `items[].slug` | `string` | yes | no | The diagnostic's name, such as `link-target-missing`. |
 | `items[].severity` | `string` | yes | no | `error`, `warning`, or `advice`. Advice never fails the command. More severities may be added; a reader treats one it doesn't know as it treats advice. |
-| `items[].next` | `string` | yes | no | The kind of next step: `fix` when Ascribe can make the edit, `choose` when the author picks among things Ascribe can list, `write` when it needs writing or judgment, `outside` when nothing in the source can fix it, and `review` when it may be fine as it is. |
+| `items[].next` | `string` | yes | no | The kind of next step: `fix` when Ascribe can make the edit, `choose` when the writer picks among things Ascribe can list, `write` when it needs writing or judgment, `outside` when nothing in the source can fix it, and `review` when it may be fine as it is. |
 | `items[].message` | `string` | yes | no | What's wrong, and what to do about it. |
-| `items[].file` | `string` | yes | no | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
+| `items[].file` | `string` | yes | no | The file, relative to the project root (the folder of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
 | `items[].range` | `Range` | yes | no | Where in the file. |
 | `items[].related` | `object[]` | yes | no | Other places that explain it. |
 | `items[].related[].file` | `string` | yes | no | The file, as a diagnostic's `file` is. |

@@ -69,12 +69,12 @@ pub struct Args {
     #[command(flatten)]
     pub guard: guard::Options,
 
-    /// Files and directories to format: the `.md` files among them.
+    /// Files and folders to format: the `.md` files among them.
     ///
     /// By default, every `.md` file under the content root.
     ///
-    /// Directories whose names start with `.`, `node_modules`, and
-    /// directories inside the searched ones that hold an `ascribe.toml` other
+    /// Folders whose names start with `.`, `node_modules`, and
+    /// folders inside the searched ones that hold an `ascribe.toml` other
     /// than the project's own (another project, formatted under its own
     /// model) are skipped. So is a file in the content root reached through a
     /// symbolic link that leads to a file that isn't a source file of the
@@ -209,7 +209,7 @@ pub(crate) struct FmtReport {
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct FmtFile {
-    /// The file, relative to the project root (the directory of
+    /// The file, relative to the project root (the folder of
     /// `ascribe.toml`), with `/` separators; a file outside it as it was
     /// found.
     file: String,

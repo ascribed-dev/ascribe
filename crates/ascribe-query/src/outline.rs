@@ -32,7 +32,7 @@ pub struct Outline {
     pub fragment: bool,
     /// Its title (frontmatter `title`).
     pub title: Option<String>,
-    /// Its content type; `null` for a fragment, or when no one type applies.
+    /// Its page type; `null` for a fragment, or when no one type applies.
     #[serde(rename = "type")]
     pub content_type: Option<String>,
     /// The build the headings are limited to, with `--build`.

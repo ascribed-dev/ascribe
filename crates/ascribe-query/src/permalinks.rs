@@ -396,7 +396,7 @@ pub struct VerifyAnswer {
 pub struct RetiredName {
     /// The name.
     pub name: String,
-    /// Why it was retired, as the docs' authors wrote it.
+    /// Why it was retired, as the docs' writers wrote it.
     pub reason: String,
 }
 

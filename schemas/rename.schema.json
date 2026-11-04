@@ -9,7 +9,7 @@
           "type": "integer"
         },
         "file": {
-          "description": "The file, from the current directory.",
+          "description": "The file, from the current folder.",
           "type": "string"
         },
         "text": {
@@ -46,11 +46,11 @@
       "description": "The file a rename moves.",
       "properties": {
         "from": {
-          "description": "Where it is, from the current directory.",
+          "description": "Where it is, from the current folder.",
           "type": "string"
         },
         "to": {
-          "description": "Where it goes, from the current directory. Its folder is made when\nit isn't there.",
+          "description": "Where it goes, from the current folder. Its folder is made when\nit isn't there.",
           "type": "string"
         }
       },

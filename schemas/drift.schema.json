@@ -152,7 +152,7 @@
           "type": "string"
         },
         "root": {
-          "description": "The repository's top-level directory, as git prints it.",
+          "description": "The repository's top-level folder, as git prints it.",
           "type": "string"
         }
       },

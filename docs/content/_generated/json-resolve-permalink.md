@@ -11,7 +11,7 @@ The fields of [`schemas/resolve-permalink.schema.json`]({repo}/blob/v{version}/s
 | `build` | `string` | yes | no | The build, without its line. |
 | `name` | `string` | yes | no | The permalink's name, as asked for. |
 | `title` | `string` | yes | no | The heading's text, or the page's title for a page's permalink, as plain text. |
-| `text` | `string` | yes | no | The section as the plain output writes it, in Markdown, with each image as its alt text. |
+| `text` | `string` | yes | no | The section as the plain Markdown output writes it, in Markdown, with each image as its alt text. |
 | `source` | `string` | yes | no | The page the permalink is recorded on, as a path from the content root. |
 | `address` | `string` | no | no | The permalink's address; absent without `[consumer] site`. |
 | `choices` | `{ [name]: { [name]: string } }` | no | no | For a section with a switcher, its text with each arm chosen: keyed by dimension, then by value, both in the content model's order. Absent when the section has no switcher on a dimension. |

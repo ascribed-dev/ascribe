@@ -61,10 +61,10 @@ pub struct Args {
     #[arg(long)]
     pub anchors: bool,
 
-    /// Report the advice `ascribe.baseline` holds back too, without reading
-    /// the file.
+    /// Report the advice `ascribe.baseline` lists too, without reading the
+    /// file.
     ///
-    /// By default, the checks hold back what the baseline lists while it's
+    /// By default, the checks leave out what the baseline lists while it's
     /// advice, and count it, as `ascribe check` does. A baseline that can't
     /// be read stops the build, unless this is given.
     #[arg(long)]

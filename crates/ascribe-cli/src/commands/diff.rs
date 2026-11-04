@@ -31,7 +31,7 @@ use crate::exit;
 #[derive(Debug, ClapArgs)]
 pub struct Args {
     /// Show only this page's changes, block by block, or, for a fragment,
-    /// the pages that changed through it: a path from the current directory,
+    /// the pages that changed through it: a path from the current folder,
     /// or from the content root.
     ///
     /// With `--format prompt`, the prompt is about this page alone, in the

@@ -12,7 +12,7 @@ The fields of [`schemas/diff.schema.json`]({repo}/blob/v{version}/schemas/diff.s
 | `base.commit` | `string` | yes | no | The commit it names. |
 | `base.merge_base` | `string` | yes | yes | The merge base of that commit and `HEAD`, which the comparison reads; `null` with `--base-exact`, which reads `commit`. |
 | `repository` | `object` | yes | no | Where the project is. |
-| `repository.root` | `string` | yes | no | The repository's top-level directory, as git prints it. |
+| `repository.root` | `string` | yes | no | The repository's top-level folder, as git prints it. |
 | `repository.project_prefix` | `string` | yes | no | The project's folder inside it, with a trailing `/`, or empty when the project is at the repository's root. |
 | `working_tree_errors` | `integer` | yes | no | How many errors `ascribe check` finds in the working tree, for the builds compared. The comparison runs regardless, but a page with an error may not render as it will once it's fixed, so a reviewer should know. `diff_project` sets it; `Report::new` leaves it zero. |
 | `builds` | `object[]` | yes | no | What changed, per build, in the order asked for. |

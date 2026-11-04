@@ -20,7 +20,7 @@ pub struct Args {
     #[arg(value_name = "TARGET")]
     pub target: String,
 
-    /// The page the link is on: a path from the current directory, or from
+    /// The page the link is on: a path from the current folder, or from
     /// the content root.
     #[arg(long, value_name = "PAGE")]
     pub from: PathBuf,

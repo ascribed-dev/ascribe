@@ -170,7 +170,7 @@
       ]
     },
     "type": {
-      "description": "Its content type; `null` for a fragment, or when no one type applies.",
+      "description": "Its page type; `null` for a fragment, or when no one type applies.",
       "type": [
         "string",
         "null"

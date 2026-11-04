@@ -5,7 +5,7 @@
       "oneOf": [
         {
           "const": "plain",
-          "description": "The plain output: fully resolved CommonMark with no HTML.",
+          "description": "The plain Markdown output: fully resolved CommonMark with no HTML.",
           "type": "string"
         },
         {
@@ -30,7 +30,7 @@
     },
     "emit": {
       "$ref": "#/$defs/Emit",
-      "description": "Which output `text` is written as: `plain`, the build's plain\noutput, or `site`, its site output."
+      "description": "Which output `text` is written as: `plain`, the build's plain\nMarkdown output, or `site`, its site output."
     },
     "not_published": {
       "description": "Why the build doesn't publish the page, when it doesn't; `text` is\nempty then.",

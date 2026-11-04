@@ -23,7 +23,7 @@ use crate::{ASCRIBE_VERSION, QueryError, SCHEMA_VERSION};
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum Emit {
-    /// The plain output: fully resolved CommonMark with no HTML.
+    /// The plain Markdown output: fully resolved CommonMark with no HTML.
     #[default]
     Plain,
     /// The site output: Markdown with Ascribe's elements, as a site's
@@ -45,7 +45,7 @@ pub struct Resolved {
     /// The build.
     pub build: String,
     /// Which output `text` is written as: `plain`, the build's plain
-    /// output, or `site`, its site output.
+    /// Markdown output, or `site`, its site output.
     pub emit: Emit,
     /// Why the build doesn't publish the page, when it doesn't; `text` is
     /// empty then.
