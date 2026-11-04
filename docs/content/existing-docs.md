@@ -128,7 +128,7 @@ The check reports none of these either: an MDX component or a shortcode is text 
 | `<Badge>`, or a label saying where a section applies | | | [`@available`](writing/directives.md#available) under the heading, such as `@available: self-managed 3.4`, naming a target `ascribe.toml` declares |
 | Any other component the project wrote, such as `<Video>` | A Markdown extension or a macro | A shortcode of the project's own | A [project widget](writing/directives.md#project-widgets): a directive declared in `[widgets.<name>]`, such as `@quill-video {id=intro}`. The site writes it as a custom element with its name, for the site to define, and plain Markdown writes its fallback text |
 
-Markdown that isn't a directive stays as it's written: an ordered list stays an ordered list, and a heading's id stays `@id` on the line below it.
+Markdown that isn't a directive stays as it's written: an ordered list stays an ordered list. A heading's id is `@id` on the line below it, as the table above rewrites it.
 
 ### A copy of the docs for each version
 
@@ -137,7 +137,7 @@ Docusaurus keeps a copy of every page for each version in `versioned_docs/`, and
 @steps
 1. Start from the newest copy, the one in `docs/`, and leave the others out of the content root.
 2. Where an older version's page differs, mark what's in some versions and not others with [`@available`](writing/directives.md#available): `@available: self-managed 3.5` under a heading that's new in 3.5, or `available:` in a page's frontmatter for a page that's new.
-3. List the versions a reader can be on in [`[releases]`](content-model/variation.md#121-releasestarget), as `live = ["3.4", "3.5"]`, and name it on the site's build, as `versions = "self-managed"`. Each live line gets its own output, under its number.
+3. List the versions a reader can be on in [`[releases]`](content-model/variation.md#121-releasestarget), as `live = ["3.4", "3.5"]`, and name it on the site's build, as `versions = "self-managed"`. Each live line gets its own output: the current line keeps the site's addresses, so turning versions on moves none, and each older one is under its number, as `/docs/3.4/`.
 4. For a version too old to rebuild, keep the site the old tool published, and list it under `archived` in `[releases]` with its address, so the live site lists it among the versions.
 
 [Publish a site for each version](versions/index.md) has each step, from listing the lines to moving them on when a version ships.
