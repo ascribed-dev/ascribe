@@ -11,7 +11,7 @@ Every action is in four places:
 - The **actions bar** (`Ctrl+K A` / `Cmd+K A`), which lists only what applies where the cursor is. See [The actions bar](actions.md#the-actions-bar).
 - The **Command Palette**, as `Ascribe: <action>`, in a Markdown file of a project. Run where it doesn't apply, it says where it does: "Put the cursor in a note to change its kind."
 - The editor's context menu, under **Ascribe**, which lists the actions that apply where the cursor is.
-- The lightbulb (`Ctrl+.` / `Cmd+.`), for the actions that rewrite what's at the cursor, beside the quick fixes.
+- The light bulb (`Ctrl+.` / `Cmd+.`), for the actions that rewrite what's at the cursor, beside the quick fixes.
 
 **Insert a phrase** and **Insert a widget** also run from a phrase's or a widget's menu in the [Content model view](sidebar.md#content-model).
 

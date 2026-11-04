@@ -164,7 +164,7 @@ After an edit, it checks the Markdown files the tool wrote that are pages or fra
 - The advice in them that has a safe fix, at most 10, each line followed by its fix's title, which says what to change and where.
 - The build it checked.
 
-It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported. Neither is the advice [`ascribe.baseline`](../checks/baseline.md#for-agents) holds back: the answer says how many it held back, here and before the agent finishes. When `ascribe.baseline` can't be read, the edit's check holds nothing back, and the answer says which line to fix.
+It reports the advice the editor shows in the files, so a page's `nav-page-unplaced` too, which `ascribe check <file> --editor-build` leaves to a full check. Warnings and the other advice aren't reported. Neither is the advice [`ascribe.baseline`](../checks/baseline.md#for-agents) baselines: the answer says how many it left out, here and before the agent finishes. When `ascribe.baseline` can't be read, the edit's check leaves nothing out, and the answer says which line to fix.
 
 It also tells the agent what a draft's template left to fill in, at most 10 lines, before the build it checked: [`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195) and [`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229), which have no fix, so the agent writes them while the page is its own. In a page that publishes, a placeholder left is an error, among the errors.
 
@@ -196,7 +196,7 @@ Each tool's result is what its command writes, as its text and as `structuredCon
 
 | Tool | The command it runs |
 |---|---|
-| `ascribe_check` | `ascribe check`, on `paths`, or on unsaved `text` as the file `path` names, narrowed to the diagnostics in `code` (`--code`) when it's given. It holds back what [`ascribe.baseline`](../checks/baseline.md#for-agents) lists, and counts it, as the command does. `response_format` is `concise` (the default, `--format concise`) or `detailed` (`--format json`). |
+| `ascribe_check` | `ascribe check`, on `paths`, or on unsaved `text` as the file `path` names, narrowed to the diagnostics in `code` (`--code`) when it's given. It leaves out what [`ascribe.baseline`](../checks/baseline.md#for-agents) baselines, and counts it, as the command does. `response_format` is `concise` (the default, `--format concise`) or `detailed` (`--format json`). |
 | `ascribe_explain` | `ascribe explain` |
 | `ascribe_model` | `ascribe model` |
 | `ascribe_outline` | `ascribe outline` |

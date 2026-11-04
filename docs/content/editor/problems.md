@@ -6,7 +6,8 @@ description: "The problems the VS Code extension shows as you type, the Problems
 
 The editor reports problems as you type and offers fixes for many of them. This page says which problems it shows and when, how to see every build's, and how to apply the fixes.
 
-## Diagnostics
+## Problems as you type
+@id: diagnostics
 
 Every problem a [check](../checks/diagnostics.md) reports appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level problems are for the [build](../glossary.md#build) named by `[editor] build` in `ascribe.toml`.
 

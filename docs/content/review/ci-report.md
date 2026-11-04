@@ -4,7 +4,7 @@ title: Attach the HTML preview to every pull request
 description: Write the HTML preview in CI on each pull request, and link it from the run, so anyone can read the change without a checkout.
 ---
 
-`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same [marks](how-it-works.md#the-marks) as the previews and **Copy prompt** for an agent that reviews the page. It shows the changes, not the pull request's comments. The file holds everything it shows and makes no network requests, so a reviewer opens it with no checkout, no build, and no account. Nothing in it runs but its own script, so a preview from a pull request you don't trust yet is safe to open. [The HTML preview](diff.md#the-html-report) is its reference.
+`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same [change marks](how-it-works.md#the-marks) as the previews and **Copy prompt** for an agent that reviews the page. It shows the changes, not the pull request's comments. The file holds everything it shows and makes no network requests, so a reviewer opens it with no checkout, no build, and no account. Nothing in it runs but its own script, so a preview from a pull request you don't trust yet is safe to open. [The HTML preview](diff.md#the-html-report) is its reference.
 
 ```sh
 ascribe diff --format html > review.html
@@ -32,5 +32,5 @@ This repository runs the same job on these docs, when a pull request changes the
 ## See also
 
 - [](diff.md#the-html-report): what the preview shows, and its limits on a large change.
-- [](how-it-works.md): what review compares, and what its marks mean.
+- [](how-it-works.md): what review compares, and what its change marks mean.
 - [](index.md): reviewing the same change in the previews, with comments.

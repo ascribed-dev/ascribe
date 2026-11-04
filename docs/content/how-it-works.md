@@ -19,7 +19,7 @@ Ascribe is one program that reads a project's pages and its content model, check
 
 ## What you write
 
-A project is a folder of **pages**: Markdown files with YAML frontmatter, `@` directives for what Markdown has no syntax for, such as notes, tabs, and content that varies, and `{key}` [phrases](glossary.md#phrase) for text written once. [Write a page](writing/write-a-page.md) starts there.
+A project is a folder of **pages**: Markdown files with YAML frontmatter, `@` [directives](glossary.md#directive) for what Markdown has no syntax for, such as notes, tabs, and content that varies, and `{key}` [phrases](glossary.md#phrase) for text written once. [Write a page](writing/write-a-page.md) starts there.
 
 Beside them, **`ascribe.toml`** is the [content model](glossary.md#content-model): the kinds of page the project has and what each must say in its frontmatter, the phrases, the [dimensions](glossary.md#dimension) content varies along, and the [builds](glossary.md#build). It's the project's schema, and the checks hold every page to it ([The content model](content-model/index.md)). `ascribe.nav` sets the order of the sidebar ([Navigation](navigation/index.md)).
 
@@ -27,7 +27,7 @@ A page can also show code from the product's own files with `@snippet`, so the e
 
 ## The checks
 
-[`ascribe check`](checks/check.md#cli-check) resolves every page as each build will publish it, with its includes, phrases, and variants filled in, and checks it against the content model: its frontmatter, its directives, its links and anchors, its examples, and the rest. Each problem it finds is a diagnostic with a name and a fix, and each one is in [the diagnostics reference](checks/diagnostics.md).
+[`ascribe check`](checks/check.md#cli-check) resolves every page as each build will publish it, with its includes, phrases, and variants filled in, and checks it against the content model: its frontmatter, its directives, its links and anchors, its examples, and the rest. Each problem it finds is of a kind, a [diagnostic](glossary.md#diagnostic), with a code, a name, and a fix, and each kind is in [the diagnostics reference](checks/diagnostics.md).
 
 Every other part of Ascribe runs these checks rather than its own, so a problem is reported the same way wherever it's found.
 

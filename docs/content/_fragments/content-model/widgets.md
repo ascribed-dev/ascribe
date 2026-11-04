@@ -1,4 +1,4 @@
-Project widgets (SPEC §6): directives a documentation set defines. Each declaration sets the same parts a built-in directive has: its forms, its primary (the text after the colon), its attributes, what it applies to, its title, and whether it groups (SPEC §3, §4).
+Project widgets (SPEC §6): directives a documentation set defines. Each declaration sets the same parts a built-in directive has: its forms, its [primary](../../glossary.md#primary) (the text after the colon), its attributes, what it applies to (its [binding](../../glossary.md#binding)), its title, and whether it groups (SPEC §3, §4).
 
 @snippet: code:examples/content-models/full.toml#widgets
 

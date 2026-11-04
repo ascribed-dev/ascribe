@@ -40,7 +40,7 @@ This page lists everything `@ascribed/astro` takes and does once a site is set u
 
 - Saving a page, a fragment, an image or other file under the content root, an asset elsewhere in the project that a page uses, or `ascribe.toml` rebuilds. Changes are batched, and builds run one at a time.
 - After a successful rebuild, Astro reloads the collection and the page. A versioned build rebuilds every line.
-- After a failed one, the diagnostics are in Astro's terminal, and pages answer with HTTP 503 until a save builds cleanly again, so you never see a stale page ([Troubleshooting](../troubleshooting.md#astro-dev-503)).
+- After a failed one, the problems are in Astro's terminal, and pages answer with HTTP 503 until a save builds cleanly again, so you never see a stale page ([Troubleshooting](../troubleshooting.md#astro-dev-503)).
 - A change to `[project] output-dir` needs a restart of `astro dev`, and says so.
 - It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](../editor/preview.md#site-preview), and removes the file when it stops. The `url` is the project's base path on the dev server.
 
@@ -146,7 +146,7 @@ Each build writes each permalink's section to `_ascribe/help.json` ([output-layo
 
 Each answers with the file narrowed to that one entry: `version`, `build`, and `line` as the line's file has them, and `help` with the entry under its name, so a product reads a fetched entry and its bundled file the same way. A line that has left the window has no address, and an alias has its own. `astro dev` answers with `Access-Control-Allow-Origin: *`, and with `[consumer] host = "netlify"` the build's `_headers` gives each address the same, since the build's [headers list](../publishing/site.md#response-headers) has a rule for each.
 
-Beside each, with `.md` in place of `.json`, `/docs/go/connect.md`, the integration serves the entry's section as Markdown: its title as a heading, then its `text`, the section as the plain output writes it. An agent reads the section a permalink names in one fetch, and a host that [answers content negotiation](serve-markdown.md#3-answer-content-negotiation) by trying the address with `.md` finds it for the permalink's address too. The JSON names it as its alternate, with a `Link` header in `astro dev` and in the build's headers list.
+Beside each, with `.md` in place of `.json`, `/docs/go/connect.md`, the integration serves the entry's section as Markdown: its title as a heading, then its `text`, the section as the plain Markdown output writes it. An agent reads the section a permalink names in one fetch, and a host that [answers content negotiation](serve-markdown.md#3-answer-content-negotiation) by trying the address with `.md` finds it for the permalink's address too. The JSON names it as its alternate, with a `Link` header in `astro dev` and in the build's headers list.
 
 Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, and the section as Markdown at the same address with `.md`. The address is:
 

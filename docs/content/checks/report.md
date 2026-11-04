@@ -29,7 +29,7 @@ The same problems as `ascribe check`, counted three ways: by check, by file, and
 
 It also lists every problem [acknowledged as intended](../writing/directives.md#intended), with its reason, so an acknowledgement that's no longer true is easy to find. `ascribe check --format concise` lists each problem.
 
-The advice the project's [baseline](baseline.md) puts off isn't in the counts, as it isn't in `ascribe check`'s. The section says how much it holds back instead, `0 errors, 0 warnings, 2 advice, and 3412 in the baseline`, and the JSON's `problems` as `baselined`: the backlog, which goes down as the team fixes it and prunes the file. `--no-baseline` reports everything, without reading the file.
+The advice the project has [baselined](baseline.md) isn't in the counts, as it isn't in `ascribe check`'s. The section says how much is baselined instead, `0 errors, 0 warnings, 2 advice, and 3412 in the baseline`, and the JSON's `problems` as `baselined`: the backlog, which goes down as the team fixes it and prunes the file. `--no-baseline` reports everything, without reading the file.
 
 ### What's new since the last report
 
@@ -81,7 +81,7 @@ For each API in `[apis]`, it counts the spec's operations, how many of them a li
 
 For each build, the pages it doesn't publish and the content it takes out of the pages it does (a variant arm, a section marked available elsewhere), when another build keeps them, with why. It's what to read before a release of one build: whether what its readers won't see is what you meant to leave out. A project with one build has nothing to compare.
 
-Each is listed once, for the mark a writer made, however many blocks it takes out. A page is listed by its `available` or `variant` frontmatter, and content by its `@available` (a section's, a block's, or a table row's) or its variant arm, at the mark's line and under the heading it's in. The line above a build's list counts the marks, by what each takes out.
+Each is listed once, for the availability mark a writer made, however many blocks it takes out. A page is listed by its `available` or `variant` frontmatter, and content by its `@available` (a section's, a block's, or a table row's) or its variant arm, at the mark's line and under the heading it's in. The line above a build's list counts the marks, by what each takes out.
 
 ```text
 Builds
@@ -111,7 +111,7 @@ Pages
 
 ## External links
 
-`ascribe report links` lists each link to another site that's broken or has moved, at its place in the source, and the links it holds back as unconfirmed because they answered on an earlier run. [Check external links](external-links.md) says what to do about each, and what the section remembers from one run to the next.
+`ascribe report links` lists each link to another site that's broken or has moved, at its place in the source, and the links it doesn't report yet, as unconfirmed, because they answered on an earlier run. [Check external links](external-links.md) says what to do about each, and what the section remembers from one run to the next.
 
 ## Delivery to agents
 @id: the-site-and-agents

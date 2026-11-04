@@ -24,7 +24,7 @@ A dimension is an axis your content varies along, with the values it takes. Decl
 
 - `values` are what a page names in its alternatives and availability marks, in the order the site shows them.
 - `labels` and `label` are what readers see: a tab reads **macOS**, not `macos`.
-- `versionless` says the platforms have no versions of their own, so a mark names a platform and nothing more. A product whose releases matter leaves it out, and marks content with the version it arrived in, such as `self-managed 3.3`. See [availability specs](directives.md#availability-specs).
+- `versionless` says the platforms have no versions of their own, so an availability mark names a platform and nothing more. A product whose releases matter leaves it out, and marks content with the version it arrived in, such as `self-managed 3.3`. See [availability specs](directives.md#availability-specs).
 
 See [`[dimensions.<name>]`](../content-model/variation.md#dimensions) for every key.
 
@@ -57,7 +57,7 @@ A build can do one and not the other: select a platform and still badge, or keep
 ascribe build
 ```
 
-Each build writes its outputs to its own folder: `.ascribe/build/site/` and `.ascribe/build/windows/`, each with the site output, plain Markdown, and JSON. To see what one build keeps of a page, without writing anything, run `ascribe resolve` with the build:
+Each build writes its outputs to its own folder: `.ascribe/build/site/` and `.ascribe/build/windows/`, each with the site output, the plain Markdown output, and the JSON output. To see what one build keeps of a page, without writing anything, run `ascribe resolve` with the build:
 
 ```sh
 ascribe resolve docs/install.md --build site

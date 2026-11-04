@@ -1,7 +1,7 @@
 ---
 type: troubleshooting
 title: Troubleshooting review
-description: What to do when review shows no pull request, no comments, or no marks, says the project has errors, or won't start.
+description: What to do when review shows no pull request, no comments, or no change marks, says the project has errors, or won't start.
 ---
 
 This page lists the problems you can meet reviewing a pull request with Ascribe, in the page preview, the site preview, or the HTML preview from CI, each by what you see. [Review a pull request](index.md) says how review works when nothing's wrong.

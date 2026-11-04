@@ -12,15 +12,15 @@ description: "Check a project's sources, build its outputs, preview its pages, a
 @id {permalink=true}: cli-check
 
 @summary
-Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. The editor and `ascribe build` run the same checks, so they report the same diagnostics.
+Checks every source file for problems, without building anything: every file-level problem, then the page-level ones for **every build** in `ascribe.toml`. The editor and `ascribe build` run the same checks, so they report the same problems.
 
 @include: ../_generated/cli-check-options.md
 
-How diagnostics are reported:
+How problems are reported:
 
 - **Each problem is reported once**, however many builds it appears in. One that isn't in every build names the builds it's in, at the end of its message (`only in build cloud`).
 - **A problem in included content is reported at the include**, with its place in the fragment as related information.
-- **Content that no build publishes is checked too**, so a problem in an arm no build selects isn't missed. Its diagnostics say "in content that no build publishes". Not with `--build`, which is about one build.
+- **Content that no build publishes is checked too**, so a problem in an arm no build selects isn't missed. Its problems say "in content that no build publishes". Not with `--build`, which is about one build.
 
 Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md).
 
@@ -126,22 +126,22 @@ Advice, a problem below a warning, is listed after the errors and warnings, in e
 
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
 
-Advice the project's [baseline](baseline.md), `ascribe.baseline`, holds back isn't listed either, and the summary counts it: `0 errors, 0 warnings, 2 advice, 3412 in the baseline`, and the JSON's `summary` as `baselined`. An entry of the baseline that matches nothing is reported, as `baseline-entry-unmatched`, when the check covers the whole project and every build. `--no-baseline` lists everything, without reading the file.
+Advice the project has [baselined](baseline.md), in `ascribe.baseline`, isn't listed either, and the summary counts it: `0 errors, 0 warnings, 2 advice, 3412 in the baseline`, and the JSON's `summary` as `baselined`. An entry of the baseline that matches nothing is reported, as `baseline-entry-unmatched`, when the check covers the whole project and every build. `--no-baseline` lists everything, without reading the file.
 
 ### Quieting a problem
 
-There are four ways to quiet a problem, each with its own rules:
+There are four ways to set a problem aside: acknowledge it, turn its check off, lower its check, or baseline it. Each has its own rules:
 
-| Way | What it quiets | For how long | Reason | Read by |
+| Way | What it covers | For how long | Reason | Read by |
 |---|---|---|---|---|
 | [`@intended`](../writing/directives.md#intended), the `intended` frontmatter key, or [`[[intended]]`](../content-model/checks.md#intended-acknowledgements) | One problem of a review check, at its place | For good | Required | Everything |
 | [`[checks]`](../content-model/checks.md#22-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
 | `[checks]` `<check> = "advice"` or `"warning"` | Lowers a content check, in the whole project | Until it's set again | None | Everything |
 | [`ascribe.baseline`](baseline.md) | Many advice-level problems, each by its problem | Until it's fixed and pruned | None | `ascribe check`, `ascribe build`, `ascribe report`, the editor, the hooks, and the MCP server |
 
-- **An error about whether the project is valid is never quieted,** by any of the four: a broken link, an unclosed container, or an unknown attribute makes a page wrong, and is fixed instead. These are the specification's diagnostics ([SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)), and none is configurable. The four are for the [content checks](diagnostics.md#setting-a-checks-level), Ascribe's own checks of the content's quality.
+- **An error about whether the project is valid is never set aside,** by any of the four: a broken link, an unclosed container, or an unknown attribute makes a page wrong, and is fixed instead. These are the specification's diagnostics ([SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)), and none is configurable. The four are for the [content checks](diagnostics.md#setting-a-checks-level), Ascribe's own checks of the content's quality.
 - **A content check raised to an error isn't the same.** `[checks]` can raise a content check, such as `page-orphan = "error"`: its problems then fail `ascribe check` and stop `ascribe build`, as an error does, but the page is still valid by the specification. A review check raised this way can still be acknowledged with `@intended`, at whatever level the project gives it.
-- **The baseline holds advice only.** A check raised to a warning or an error is reported, whatever the baseline lists. To put a check's warnings off, lower it to `"advice"`, then run `ascribe baseline write` again.
+- **The baseline holds advice only.** A check raised to a warning or an error is reported, whatever the baseline lists. To baseline a check's warnings, lower it to `"advice"`, then run `ascribe baseline write` again.
 
 Which to use: acknowledge a problem the team has looked at and means to keep, with why, beside it. Turn off or lower a check the project doesn't need, which a reviewer sees in `ascribe.toml`. Baseline a backlog of advice, to fix at the team's own pace, so `ascribe check` reports only what's new.
 
@@ -161,7 +161,7 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 
 The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
-The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. The advice the [baseline](baseline.md) holds back isn't counted with the rest, but after it, as `ascribe check` counts it: `no problems, 3412 in the baseline`. `--format json` prints exactly what `ascribe check --format json` does.
+The build prints each error in full, since errors stop it. Warnings and advice are only counted, in the check's summary line, with the command that lists each: `checked 8 files in every build: 0 errors, 1 warning, 3 advice: ascribe check for each`, or `checked 8 files in every build: no problems`. The advice the project has [baselined](baseline.md) isn't counted with the rest, but after it, as `ascribe check` counts it: `no problems, 3412 in the baseline`. `--format json` prints exactly what `ascribe check --format json` does.
 
 Then it prints one line for each build it wrote, with the outputs it wrote, on standard error, with its warnings:
 
@@ -180,7 +180,7 @@ Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/bui
 | `plain` | Fully resolved CommonMark with no HTML: notes as quotes, [variants](../glossary.md#variant) as labeled sections, availability as text, and links as absolute URLs | Search indexes, LLMs, and export |
 | `json` | The resolved tree of each page ([JSON output contract](../contracts/json-output.md)) | Your own tools |
 
-Without `[consumer] site` in `ascribe.toml`, plain-Markdown links are root-relative instead of absolute, and the build says so.
+Without `[consumer] site` in `ascribe.toml`, the plain Markdown output's links are root-relative instead of absolute, and the build says so.
 
 A rebuild replaces its previous output. It removes only files its own manifest listed, and never overwrites a file it didn't write: a file in the way is an error. Two builds can't write to one output directory at once.
 

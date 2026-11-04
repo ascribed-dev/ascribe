@@ -7,7 +7,7 @@ permalink: diagnostics
 
 Every problem Ascribe reports, with its code, its name, and how to fix it. `ascribe check`, `ascribe build`, and the editor report the same diagnostics, with the same codes.
 
-A *problem* is what Ascribe found in your project, at one place. A *diagnostic* is the kind of problem, with a code, that this page and `ascribe explain` describe. In the messages below, `{name}` stands for a value filled in from your source.
+A [problem](../glossary.md#problem) is what Ascribe found in your project, at one place. A [diagnostic](../glossary.md#diagnostic) is the kind of problem, with a code, that this page and `ascribe explain` describe. In the messages below, `{name}` stands for a value filled in from your source.
 
 The diagnostics are on nine pages, by what they're about:
 
@@ -16,7 +16,7 @@ The diagnostics are on nine pages, by what they're about:
 - [Sources, memo files, and navigation](diagnostics/sources.md): files, snippets, source copies, acknowledgements, permalinks, memo files, navigation, the glossary, and summaries.
 - [The addresses file and API specs](diagnostics/project-files.md): `ascribe.addresses`, the addresses a base published, and the specs `[apis]` declares.
 - [The content model](diagnostics/content-model.md): `ascribe.toml`: the file, `[project]`, `[sources]`, page types, and names.
-- [The content model's builds and site](diagnostics/content-model-builds.md): the rest of `ascribe.toml`: `[releases]`, phrases, widgets, the consumer, builds, the editor, `[crawlers]`, `[listing]`, `[apis]`, and `[checks]`.
+- [The content model's builds and site](diagnostics/content-model-builds.md): the rest of `ascribe.toml`: `[releases]`, phrases, widgets, the [consumer](../glossary.md#consumer), builds, the editor, `[crawlers]`, `[listing]`, `[apis]`, and `[checks]`.
 - [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of: the checks of pages.
 - [Content checks across the project](diagnostics/project-checks.md): the checks of the project as a whole, such as orphan pages and what's unused.
 - [Content checks of outputs and the site](diagnostics/output-checks.md): the rest of the content checks: outputs, prose through Vale, external links, the published site, and tested examples.

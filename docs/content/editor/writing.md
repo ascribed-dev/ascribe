@@ -8,10 +8,10 @@ What the editor does as you write a page: what it completes, what it shows on ho
 
 ## Completion
 
-- After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.
+- After `@` at the start of a line: the built-in directives and the project's [widgets](../glossary.md#widget), with their descriptions.
 - In an attribute block: the directive's attribute keys, then their allowed values, such as note types or a dimension's values with their labels. After an image: the declared image attributes.
 - In `@available:` and frontmatter `available:`: targets, dimension names, feature keys, and lifecycle states.
-- In frontmatter `type:`: the content types `ascribe.toml` declares, each with what it's for.
+- In frontmatter `type:`: the page types `ascribe.toml` declares, each with what it's for.
 - After `{` in text: the declared phrases, each with its value.
 - In `@include:`: source files, then, after `#`, the ids of the file.
 - In a link destination: pages and headings, **searched by title**. It inserts the file path and id, so you never need to type a path.

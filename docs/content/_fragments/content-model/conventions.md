@@ -1,6 +1,6 @@
 ### 1.1 The file
 
-- The content model is a TOML 1.0 file named `ascribe.toml`. The directory that contains it is the **project root**. Every path in the file is relative to the project root unless a key says otherwise.
+- The content model is a TOML 1.0 file named `ascribe.toml`. The folder that contains it is the **project root**. Every path in the file is relative to the project root unless a key says otherwise.
 - The file is UTF-8.
 - TOML's equivalent spellings are all accepted: a table can be written as a `[header]` section, as an inline table (`key = { … }`), or with dotted keys. This reference shows the most readable form for each section. For example, these are the same:
 
@@ -23,7 +23,7 @@ Several kinds of name appear in the file. Each kind has a rule, from the specifi
 | Name | Defined in | Rule | Used for |
 |---|---|---|---|
 | name-word | The specification, `name-word` | A letter, then letters, digits, `_`, or `-` | Dimension values, lifecycle states, feature keys, frontmatter field names |
-| key | The specification, `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, content type names, source names |
+| key | The specification, `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, page type names, source names |
 | widget name | The specification, `widget-name` | Lowercase words of letters and digits joined by single hyphens, with at least one hyphen; starting with a letter | Widget names |
 | build name | This reference | A letter, then letters, digits, `_`, `-`, or `.` | Build names |
 

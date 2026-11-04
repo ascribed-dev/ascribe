@@ -65,7 +65,7 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-baseline.txt
 
-   See [The baseline](checks/baseline.md) for what it holds back, and how it shrinks as you fix each.
+   See [The baseline](checks/baseline.md) for what it baselines, and how it shrinks as you fix each.
 5. Check again:
 
    ```sh
@@ -76,7 +76,7 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
 
    No errors are left. The one advice, [`addresses-base-unreadable`](checks/diagnostics/project-checks.md#ASC257) (ASC257), says the check compared nothing with `ascribe.addresses`: the [base](publishing/redirects.md#addresses-base) it compares with has the pages and no project, so it published no address to keep. The base is where your branch left `main`, or, working on `main`, its last commit. Its help is about CI, where a base can't be read; here nothing is wrong.
 
-   The baseline doesn't hold it back: `baseline write` doesn't compare the addresses, so it never sees this advice, and doesn't record it. The advice goes once the base has the project, as the next step shows.
+   The baseline doesn't cover it: `baseline write` doesn't compare the addresses, so it never sees this advice, and doesn't record it. The advice goes once the base has the project, as the next step shows.
 6. Commit `ascribe.toml`, `ascribe.addresses`, `ascribe.baseline`, and the pages, and add `.ascribe/` to `.gitignore`. Committed on `main`, the base then has the project, and the check is clean:
 
    ```sh

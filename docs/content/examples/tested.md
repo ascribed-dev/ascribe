@@ -56,7 +56,7 @@ Like [every command that writes](../command/index.md#commands-that-write), `ascr
 
 ## 3. Show the example
 
-Nothing changes in the page. A `@snippet` of an example the observation lists, as the file is now, gets a caption on the site, and a line under it in the plain output:
+Nothing changes in the page. A `@snippet` of an example the observation lists, as the file is now, gets a caption on the site, and a line under it in the plain Markdown output:
 
 ```markdown
 @snippet: code:examples/greet.ts#greet

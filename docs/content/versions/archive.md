@@ -54,7 +54,7 @@ If you retire the line next, skip the entry: the retirement writes it.
 ascribe versions retire "self-managed 3.4" --url https://archive.example.com/3.4/
 ```
 
-It moves 3.4 from `live` to `archived`, with its address and the day it ended, so `ascribe build` stops writing its output. Then each mark for the target is rewritten to the simplest spec that means the same in every line still live or planned, and so is a feature's spec in `ascribe.toml`:
+It moves 3.4 from `live` to `archived`, with its address and the day it ended, so `ascribe build` stops writing its output. Then each availability mark for the target is rewritten to the simplest spec that means the same in every line still live or planned, and so is a feature's spec in `ascribe.toml`:
 
 | A mark | With 3.5 and 3.6 live |
 |---|---|

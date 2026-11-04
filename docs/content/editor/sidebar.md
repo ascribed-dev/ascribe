@@ -75,7 +75,7 @@ The tasks are in **Tasks: Run Task** too, and [Tasks](settings.md#tasks) says wh
 - Its content root.
 - Its builds, with the editor build marked, and the release lines of each versioned build.
 - Its [sources](../examples/sources.md), with those that have tested examples marked.
-- Its content types, each with how many pages have it.
+- Its page types, each with how many pages have it.
 
 ### Edits to the whole project
 
@@ -227,7 +227,7 @@ A remembered check of **Every build** is current if no file of the project was m
 
 Only names and modification times are compared, so a file put back with its old time isn't seen as a change, and in a source's folder only the files the source reads count. A check made by another version of the extension isn't remembered, nor one with more than 5,000 problems: the project is not checked yet.
 
-About's builds and content types are the language server's, so they're known once it runs. Its sources are what `ascribe model` says.
+About's builds and page types are the language server's, so they're known once it runs. Its sources are what `ascribe model` says.
 
 ### When Addresses lost updates
 

@@ -45,7 +45,7 @@ No other scheme is defined. The table exists so a later spec version can add one
 
 Each line is a version, quoted, listed once, and every line of one target, in every list, has the same number of parts (`model-releases-line`). A line is in one list, planned lines are newer than every live line, and archived lines older (`model-releases-order`). A line in `ends` is a live line (`model-releases-ends`), and a date is a TOML date (`model-wrong-type`). Any other key is an error (`model-unknown-key`).
 
-**What the list checks.** For a target with a list, each version a mark, a feature, or a build's filter names is placed among the declared lines:
+**What the list checks.** For a target with a list, each version an availability mark, a feature, or a build's filter names is placed among the declared lines:
 
 | The version is | Reported |
 |---|---|

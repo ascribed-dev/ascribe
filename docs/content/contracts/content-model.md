@@ -6,7 +6,7 @@ description: The normative contract for the content model file, with the rules a
 
 This is the normative contract for `ascribe.toml`, the content model file (SPEC §7): its tables and keys, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `ascribe-model` implements it. What each key is for, with examples, is in the [`ascribe.toml` reference](../content-model/index.md), which shares this page's key tables and section numbers.
 
-SPEC.md is normative for the language, and this contract for the file format. The decisions that settle what the spec leaves open are files in [`project-docs/decisions/`]({repo}/tree/main/project-docs/decisions), listed in [decision #689a]({repo}/blob/main/project-docs/decisions/689a-what-a-contract-page-holds.md).
+SPEC.md is normative for the language, and this contract for the file format. The decisions that settle what the Ascribe specification leaves open are files in [`project-docs/decisions/`]({repo}/tree/main/project-docs/decisions), listed in [decision #689a]({repo}/blob/main/project-docs/decisions/689a-what-a-contract-page-holds.md).
 
 Every file in [`examples/content-models/`]({repo}/tree/main/examples/content-models) is valid under this contract: `minimal.toml` is the smallest valid model, `quill.toml` the model SPEC Appendix B assumes, and `full.toml` has every section and key.
 
@@ -158,6 +158,6 @@ A page type's top-level field MAY have a `role`, which says what the field is fo
 | `recheck-date` | `date` or `date?` | `recheck-overdue`, which reports a page whose date is before the day the check runs. `review-date`, its old name, names it too. |
 | `owner` | `string`, `string?`, or an `enum`, optional or not | `ascribe report inventory`, which counts pages by the field's value; a page without one counts as having no owner. |
 
-A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
+A type without a field with the role has none of that check's problems. A role changes no output: not the generated schemas, the JSON, or the pages.
 
 **Rules** (§25.3): the role is one of the three, on a field of its type, in a page type's top-level fields, its own or `[frontmatter]`'s, and at most one field of a table has each role (`model-field-role`). A second field with a role keeps its type, and loses the role. A type's own field given a role with `role` has it, and a `[frontmatter]` field given the same role loses it, for that type. A role no field is given with `role` is the field's of the role's name, when its type is one the role takes; otherwise no field has it.
