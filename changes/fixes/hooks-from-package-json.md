@@ -1,0 +1,1 @@
+- **Fixed:** `ascribe agents sync` writes the same hooks with or without `node_modules`. It decides from `package.json`, so `sync --check` agrees on every machine. See [Hooks](docs/content/agents/hooks.md).
