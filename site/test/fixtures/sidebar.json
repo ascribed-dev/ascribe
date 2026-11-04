@@ -28,6 +28,10 @@
     "label": "Writing pages",
     "pages": [
       {
+        "href": "/docs/writing/write-a-page/",
+        "label": "Write a page"
+      },
+      {
         "href": "/docs/writing/syntax/",
         "label": "Directive syntax"
       },

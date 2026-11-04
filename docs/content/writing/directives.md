@@ -5,13 +5,28 @@ description: "Each built-in directive: what it does, its attributes, and its rul
 permalink: directives
 ---
 
-Each built-in directive, in the order of the [Ascribe specification]({repo}/blob/main/SPEC.md#4-built-in-directives), whose part each section links to. How a directive is written, and what it applies to, is in [directive syntax](syntax.md).
+What each built-in directive does, its attributes, and its rules. How a directive is written, and what it applies to, is in [directive syntax](syntax.md), and [Write a page](write-a-page.md) builds a page with the ones most pages use.
+
+## Most used
+
+Most pages need only these six:
+
+| Directive | Use it to | Example |
+|---|---|---|
+| [`@note`](#note) | Call something out: a tip, a warning, a caution | `@note {type=tip}: Run it in the browser first.` |
+| [`@steps`](#steps) | Mark the numbered list below it as a procedure | `@steps` |
+| [`@details`](#details) | Show content collapsed, under a title readers click to open | `@details:` … `@end` |
+| [`@include`](#include) | Put a shared file, or one section of it, in the page | `@include: _prerequisites.md` |
+| [`@variant`](#variant) | Give alternatives by platform or product, which the site shows as tabs | `@variant {pm=npm}:` … `@end` |
+| [`@id`](#id) | Give a heading an id that stays when its text changes | `@id: config-setup` |
+
+## Every directive
+
+The rest of the page has each built-in directive in the order of the [Ascribe specification]({repo}/blob/main/SPEC.md#4-built-in-directives), and each section ends with a link to its part of it.
 
 @include: ../_generated/directives-builtins.md
 
 ## `@id`
-
-([SPEC §4.1]({repo}/blob/main/SPEC.md#41-id))
 
 Gives a heading an explicit, stable id, used for its anchor and by links and includes.
 
@@ -25,6 +40,8 @@ Gives a heading an explicit, stable id, used for its anchor and by links and inc
 - Ids must be unique on a page, including ids that come from included fragments.
 
 Without `@id`, a heading's id is the slug of its text ([heading ids](inline.md#heading-ids)).
+
+Specification: [§4.1]({repo}/blob/main/SPEC.md#41-id).
 
 ### Permalinks
 
@@ -41,8 +58,6 @@ Without `@id`, a heading's id is the slug of its text ([heading ids](inline.md#h
 - **A page has a permalink** in its frontmatter, from the same set of names: [a page's permalink](frontmatter.md#a-pages-permalink).
 
 ## `@include`
-
-([SPEC §4.2]({repo}/blob/main/SPEC.md#42-include))
 
 Includes another file, or one heading's section of it, in place.
 
@@ -62,9 +77,9 @@ A page's includes can expand it only so far, far beyond any real page: the inclu
 
 A link names the page that includes a fragment, never the fragment, and can name a heading the fragment brings in ([links](inline.md#links)).
 
-## `@variant`
+Specification: [§4.2]({repo}/blob/main/SPEC.md#42-include).
 
-([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant))
+## `@variant`
 
 Marks alternatives: content that differs by a dimension declared in `ascribe.toml`, such as a package manager or a deployment. Each `@variant` line opens one alternative, an **arm**, and the arms in a row make a [group](syntax.md#groups).
 
@@ -104,9 +119,9 @@ pnpm add -g @quill/agent
 
 Each build decides what happens to a group: `switch` keeps every arm, for readers to switch between (the site shows tabs), and a selection such as `{ deployment = "cloud" }` keeps only the matching arms. See [builds](../glossary.md#build). A whole page that differs by dimension is a page for each, with [`variant`](frontmatter.md#whole-page-variants) in its frontmatter.
 
-## `@available`
+Specification: [§4.3]({repo}/blob/main/SPEC.md#43-variant).
 
-([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available))
+## `@available`
 
 Says where content applies and its lifecycle state. Unlike `@variant`, it doesn't select content: every reader sees it, marked with its availability.
 
@@ -117,6 +132,8 @@ Says where content applies and its lifecycle state. Unlike `@variant`, it doesn'
 - At the top of a section, it applies to the section, and anywhere else to the block it touches ([binding](syntax.md#binding-what-a-directive-applies-to)).
 - For a whole page, use the frontmatter key [`available`](frontmatter.md#reserved-keys), with the same spec.
 - Several `@available` lines on one heading or block all apply: the content is available only where all of them allow it.
+
+Specification: [§4.4]({repo}/blob/main/SPEC.md#44-available).
 
 ### Availability specs
 @id {permalink=true}: availability-specs
@@ -182,8 +199,6 @@ There's no form for part of a sentence: a filter would break the sentence, and a
 
 ## `@note`
 
-([SPEC §4.5]({repo}/blob/main/SPEC.md#45-note))
-
 A callout. Its `type` is `note` (the default), `tip`, `important`, `warning`, `caution`, or a type the project declares in `[notes]`.
 
 ```markdown
@@ -214,9 +229,9 @@ A page brought over from GitHub may write a callout as GitHub's alert, a block q
 
 becomes `@note {type=tip}: Quill runs in the browser too.` A quote of several blocks becomes the container, `@note {type=tip}:` through `@end`.
 
-## `@steps`
+Specification: [§4.5]({repo}/blob/main/SPEC.md#45-note).
 
-([SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps))
+## `@steps`
 
 Marks an ordered list as a procedure. It goes directly above the list.
 
@@ -229,9 +244,9 @@ Marks an ordered list as a procedure. It goes directly above the list.
 
 Directives inside the list's items are indented to the item's content ([lists](syntax.md#lists-and-block-quotes)).
 
-## `@details`
+Specification: [§4.6]({repo}/blob/main/SPEC.md#46-steps).
 
-([SPEC §4.7]({repo}/blob/main/SPEC.md#47-details))
+## `@details`
 
 Content readers can expand or collapse. The title is required: it's what readers see while the content is collapsed.
 
@@ -244,9 +259,9 @@ Content readers can expand or collapse. The title is required: it's what readers
 
 Without a colon, `@details` applies to the next block; with one, it's a container.
 
-## `@snippet`
+Specification: [§4.7]({repo}/blob/main/SPEC.md#47-details).
 
-([SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet))
+## `@snippet`
 
 Takes a code example from a file outside the content, and puts it in the page as a fenced code block. There's no copy: Ascribe reads the file whenever it checks, builds, or diffs, so changing the file changes every page that uses it.
 
@@ -272,10 +287,10 @@ Every problem is reported at the `@snippet` line ([source files](../checks/diagn
 
 In VS Code, a code file says which pages show it: see [code files a page shows](../editor/writing.md#code-files-a-page-shows).
 
+Specification: [§4.8]({repo}/blob/main/SPEC.md#48-snippet).
+
 ## `@intended`
 @id {permalink=true}: intended
-
-([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended))
 
 Says that a problem a check reports is intended: you've looked at it and are keeping it. Write the check's name and why.
 
@@ -313,9 +328,9 @@ An acknowledged problem isn't reported, but `ascribe check` and `ascribe build` 
 
 In the editor, a review check's problem has a quick fix, **Mark as intended, and write why**, that writes the acknowledgement in the right place for you to fill in the reason. Its placeholder reason is reported as an error until you replace it, so the fix alone silences nothing.
 
-## `@memo`
+Specification: [§4.9]({repo}/blob/main/SPEC.md#49-intended).
 
-([SPEC §4.10]({repo}/blob/main/SPEC.md#410-memo))
+## `@memo`
 
 Keeps a note for the people and agents who maintain the page, such as why a section comes first, beside what it's about. It's never published. [Leave a memo for whoever edits next](memos.md) says when to write one, when a [memo file](memo-files.md) is better, and when a pull request comment is.
 
@@ -339,9 +354,9 @@ Revoke the old key once every agent uses the new one.
 - **It changes no output.** No build, preview, or report shows a memo, in a page, a fragment, or a memo file, and a change to one alone isn't a change to [`ascribe diff`](../review/diff.md) or to review.
 - **An HTML comment isn't a memo:** [`html-comment`](../checks/diagnostics/content-checks.md#ASC223) says why, and how to rewrite one as a memo.
 
-## `@term`
+Specification: [§4.10]({repo}/blob/main/SPEC.md#410-memo).
 
-([SPEC §4.11]({repo}/blob/main/SPEC.md#411-term))
+## `@term`
 
 Makes a heading of a glossary page a glossary term. The heading's text is the term, and the paragraph under it is its definition, which a built page shows where it links the term, and the editor on hover.
 
@@ -361,9 +376,9 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 
 To set up a glossary from the start, see [Set up a glossary](../content-model/glossary.md).
 
-## `@summary`
+Specification: [§4.11]({repo}/blob/main/SPEC.md#411-term).
 
-([SPEC §4.12]({repo}/blob/main/SPEC.md#412-summary))
+## `@summary`
 
 Gives a section a summary: a sentence or two that says what the section is about, for a reader who sees it apart from the page, as a product's [embedded help](../permalinks/in-your-product.md) does. Any section may have one, with a permalink or without.
 
@@ -395,9 +410,9 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **In the outputs,** the text form writes nothing in the site and plain outputs, and the paragraph of the other form is written as it would be without it. The JSON output gives the section's heading its `summary`. A summary's text isn't searched for [glossary terms](inline.md#glossary-terms).
 - **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
 
-## `@operation`
+Specification: [§4.12]({repo}/blob/main/SPEC.md#412-summary).
 
-([SPEC §4.13]({repo}/blob/main/SPEC.md#413-operation))
+## `@operation`
 
 Puts an operation of an API that `ascribe.toml` declares in `[apis]` in the page: its method, its path, and its summary, as one line linked to the operation in the published reference.
 
@@ -413,9 +428,9 @@ Puts an operation of an API that `ascribe.toml` declares in `[apis]` in the page
 
 [Show an operation in a page](../openapi/operation.md) has the rest.
 
-## Project widgets
+Specification: [§4.13]({repo}/blob/main/SPEC.md#413-operation).
 
-([SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets))
+## Project widgets
 
 A project widget is a directive a project declares in `ascribe.toml`, for needs the built-in directives don't cover. Its name contains a hyphen, so it's easy to tell from a built-in:
 
@@ -425,3 +440,4 @@ A project widget is a directive a project declares in `ascribe.toml`, for needs 
 
 A declared widget works like a built-in directive, with the [forms](syntax.md#forms-line-and-container), [primary](syntax.md#directive-lines), attributes, [binding](syntax.md#binding-what-a-directive-applies-to), title, and grouping its declaration sets. In the site output it becomes a custom element with its name; in plain Markdown, its declared fallback text. See [`[widgets.<name>]`](../content-model/content.md#10-widgetsname).
 
+Specification: [§6]({repo}/blob/main/SPEC.md#6-project-widgets).

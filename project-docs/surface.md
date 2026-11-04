@@ -1025,6 +1025,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `writing/memos.md` | Leave a memo for whoever edits next | how-to |
 | `writing/syntax.md` | Directive syntax | reference |
 | `writing/variants.md` | Content that varies | tutorial |
+| `writing/write-a-page.md` | Write a page | how-to |
 
 READMEs published with a package, a crate, or the repository:
 
