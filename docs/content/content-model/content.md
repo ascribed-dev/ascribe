@@ -52,6 +52,6 @@ To set one up, see [Set up a glossary](glossary.md).
 - A groupable widget is container-only, since each alternative of a group, an arm, is a container ([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)) (`model-widget-groupable-form`).
 - A widget with line form needs a `binding`, and one without it can't have one (`model-widget-binding`).
 
-What the site output writes for a widget, its element's tag name and attributes, is set by the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md).
+What the site output writes for a widget, its element's tag name and attributes, is set by the [element contract]({repo}/blob/v{version}/packages/elements/CONTRACT.md).
 
 What a widget's attributes mean is the site's to check: Ascribe doesn't know that an attribute names a page, so it doesn't check that the page exists. Ascribe's own landing page is laid out with widgets that [`site/home/ascribe.toml`]({repo}/blob/main/site/home/ascribe.toml) declares.

@@ -114,7 +114,7 @@ The site emitter writes the site output so that the rules above are all a consum
 - **Every page's frontmatter ends with `source`**, the page's path from the content root with `/` between its parts, as `_ascribe/permalinks.json` writes a permalink's `source` ([output layout §1.2](output-layout.md#12-the-permalinks-list)). The generated schema types it as a string every page has (SPEC §9.6). A layout's edit link uses it, so it never depends on where the site output is.
 - **The emitter writes markers nowhere else.** Raw HTML a writer writes passes through unchanged, as everywhere in the site output, so a writer who writes an `ascribe-attributes` element gets its effect. Element names starting with `ascribe-` belong to Ascribe ([content-model.md §10](content-model/content.md#10-widgetsname)), so there's no reason to. Since the emitter's own heading marker is always last, a writer's marker inside a heading never applies.
 
-The element contract ([`packages/elements/CONTRACT.md`]({repo}/blob/main/packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
+The element contract ([`packages/elements/CONTRACT.md`]({repo}/blob/v{version}/packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
 
 ## 5. Everything else
 

@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/observe.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/observe.schema.json`]({repo}/blob/main/schemas/observe.schema.json):
+[`schemas/observe.schema.json`]({repo}/blob/v{version}/schemas/observe.schema.json):
 
 ```json
 {
@@ -123,6 +123,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/observe.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe observe --format json` writes: the commands it ran, how the\ntest ended, the observation it wrote, and what changed since the one it\nreplaced. With `--check`, nothing ran: the observation it compared, and\nwhether it's current.",
   "properties": {

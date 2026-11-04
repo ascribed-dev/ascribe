@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/search.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/search.schema.json`]({repo}/blob/main/schemas/search.schema.json):
+[`schemas/search.schema.json`]({repo}/blob/v{version}/schemas/search.schema.json):
 
 ```json
 {
@@ -332,6 +332,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/search.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe search <QUERY>` answers: what `--format json` writes.",
   "properties": {

@@ -352,6 +352,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/sources-update.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe sources update --format json` writes: how each source's pin\nmoved, and the pages whose examples the new copies change.",
   "properties": {

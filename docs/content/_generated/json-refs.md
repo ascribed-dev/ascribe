@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/refs.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/refs.schema.json`]({repo}/blob/main/schemas/refs.schema.json):
+[`schemas/refs.schema.json`]({repo}/blob/v{version}/schemas/refs.schema.json):
 
 ```json
 {
@@ -108,6 +108,7 @@
       ]
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/refs.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe refs <TARGET>` answers.",
   "properties": {

@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/report.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/report.schema.json`]({repo}/blob/main/schemas/report.schema.json):
+[`schemas/report.schema.json`]({repo}/blob/v{version}/schemas/report.schema.json):
 
 ```json
 {
@@ -1441,6 +1441,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/report.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe report --format json` writes: one document, whatever the\noutcome. A reader ignores fields it doesn't know.",
   "properties": {

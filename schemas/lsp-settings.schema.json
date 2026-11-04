@@ -394,6 +394,7 @@
       "description": "A setting's value."
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/lsp-settings.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The answer to `ascribe/settings`. A document that isn't one of the\nproject's files gets no settings.",
   "properties": {

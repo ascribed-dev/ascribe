@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/json-page.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/json-page.schema.json`]({repo}/blob/main/schemas/json-page.schema.json):
+[`schemas/json-page.schema.json`]({repo}/blob/v{version}/schemas/json-page.schema.json):
 
 ```json
 {
@@ -1629,6 +1629,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/json-page.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "A page of the JSON output: the page as the build resolved it, with every\nnode's place in its source (the JSON output contract). Spans are UTF-8\nbyte offsets, `[start, end]`, from the start of the file, frontmatter\nincluded; lines count from 1.",
   "properties": {

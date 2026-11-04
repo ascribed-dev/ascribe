@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/sources-status.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/sources-status.schema.json`]({repo}/blob/main/schemas/sources-status.schema.json):
+[`schemas/sources-status.schema.json`]({repo}/blob/v{version}/schemas/sources-status.schema.json):
 
 ```json
 {
@@ -105,6 +105,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/sources-status.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe sources status --format json` writes: each source's pin and\nthe state of its copies, read from the files alone.",
   "properties": {

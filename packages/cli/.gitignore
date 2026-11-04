@@ -1,2 +1,4 @@
 platforms/*/bin/ascribe
 platforms/*/bin/ascribe.exe
+# The repository's schemas/, copied in by scripts/release/pack.ts while it packs.
+/schemas/

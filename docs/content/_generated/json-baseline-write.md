@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/baseline-write.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/baseline-write.schema.json`]({repo}/blob/main/schemas/baseline-write.schema.json):
+[`schemas/baseline-write.schema.json`]({repo}/blob/v{version}/schemas/baseline-write.schema.json):
 
 ```json
 {
@@ -25,6 +25,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/baseline-write.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe baseline write --format json` writes.",
   "properties": {

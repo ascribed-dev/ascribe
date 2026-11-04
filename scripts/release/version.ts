@@ -38,6 +38,8 @@ import {
   pluginManifests,
   pluginSkill,
   root,
+  SCHEMA_ID,
+  schemaFiles,
   SKILL_VERSION,
   skill,
   writeJson,
@@ -95,7 +97,8 @@ if (first === "--check") {
 
 /**
  * Sets the version in Cargo.toml, every package.json, the skill
- * `@ascribed/cli` ships, and the plugin, and, given the commit
+ * `@ascribed/cli` ships, the plugin, and each JSON Schema's `$id` (which
+ * `cargo test -p ascribe-cli shapes` then agrees with), and, given the commit
  * a canary is built from, each npm package's `gitHead`.
  */
 function setVersion(version: string, commit?: string): void {
@@ -125,5 +128,9 @@ function setVersion(version: string, commit?: string): void {
     const manifest = readJson(file);
     manifest.version = version;
     writeJson(file, manifest);
+  }
+  for (const file of schemaFiles()) {
+    const path = join(root, file);
+    writeFileSync(path, readFileSync(path, "utf8").replace(SCHEMA_ID, `$1${version}$3`));
   }
 }

@@ -671,6 +671,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/lsp-preview.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The answer to `ascribe/preview`. It always says which builds exist and\nwhere the project's files are, so a client can offer the picker and know\nwhich directories the preview may read; `page` is there when there is\nsomething to show, and `problems` says why not, or what is missing.",
   "properties": {

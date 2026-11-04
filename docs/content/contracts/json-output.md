@@ -16,7 +16,7 @@ Each build writes a `json` output beside its site and plain Markdown outputs: ea
 
 The `json` output has one document per page, at the page's source path with `.json` for `.md`: `guides/install.md` is `guides/install.json`. Beside the pages, `_ascribe/nav.json` is the build's navigation, as the site output has it, with each formatted label as pieces (the [navigation contract](navigation.md)).
 
-Each page's document is a JSON object, whose schema is [`schemas/json-page.schema.json`]({repo}/blob/main/schemas/json-page.schema.json): JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. [The schema](json-output/schema.md) has it in full.
+Each page's document is a JSON object, whose schema is [`schemas/json-page.schema.json`]({repo}/blob/v{version}/schemas/json-page.schema.json): JSON Schema (draft 2020-12), generated from the code that writes the documents, so the two can't disagree. [The schema](json-output/schema.md) has it in full.
 
 ## 2. Rules
 

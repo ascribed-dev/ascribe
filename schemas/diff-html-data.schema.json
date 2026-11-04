@@ -539,6 +539,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/diff-html-data.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The data the report's script draws from. Its keys, like the JSON\nreport's, are snake_case.",
   "properties": {

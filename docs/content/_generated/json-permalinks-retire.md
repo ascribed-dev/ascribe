@@ -1,8 +1,9 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/permalinks-retire.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/permalinks-retire.schema.json`]({repo}/blob/main/schemas/permalinks-retire.schema.json):
+[`schemas/permalinks-retire.schema.json`]({repo}/blob/v{version}/schemas/permalinks-retire.schema.json):
 
 ```json
 {
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/permalinks-retire.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe permalinks retire` did.",
   "properties": {

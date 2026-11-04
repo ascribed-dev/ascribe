@@ -1,4 +1,5 @@
 {
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/lsp-agent-prompt.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The answer to `ascribe/agentPrompt`, or `null` when there's nothing to\nprompt about: the file has no problem, the diagnostic is no longer\nreported, review is off, or the page or fragment didn't change.",
   "properties": {

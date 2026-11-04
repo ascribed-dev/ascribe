@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/sources-fetch.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/sources-fetch.schema.json`]({repo}/blob/main/schemas/sources-fetch.schema.json):
+[`schemas/sources-fetch.schema.json`]({repo}/blob/v{version}/schemas/sources-fetch.schema.json):
 
 ```json
 {
@@ -78,6 +78,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/sources-fetch.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe sources fetch --format json` writes: what was copied and\nremoved for each source, and the files that couldn't be copied.",
   "properties": {

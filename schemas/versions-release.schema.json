@@ -167,6 +167,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/versions-release.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe versions release --format json` writes: the line released,\nthe files and marks rewritten, the features moved, and what the release\nchanges in the outputs.",
   "properties": {

@@ -43,4 +43,4 @@ Part of the [`ascribe.toml` format contract](../content-model.md), whose [conten
 
 @include: ../../_fragments/content-model/widgets.md
 
-**Rules** (§25.6): a widget with container form MUST NOT have a required primary, and a container-only widget's primary MUST be `"none"` (`model-widget-container-primary`). A groupable widget MUST be container-only (`model-widget-groupable-form`). `binding` MUST be set with line form, and only then (`model-widget-binding`). The element a widget becomes in the site output, its tag name and attributes, is the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md)'s.
+**Rules** (§25.6): a widget with container form MUST NOT have a required primary, and a container-only widget's primary MUST be `"none"` (`model-widget-container-primary`). A groupable widget MUST be container-only (`model-widget-groupable-form`). `binding` MUST be set with line form, and only then (`model-widget-binding`). The element a widget becomes in the site output, its tag name and attributes, is the [element contract]({repo}/blob/v{version}/packages/elements/CONTRACT.md)'s.

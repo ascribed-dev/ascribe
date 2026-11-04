@@ -35,7 +35,11 @@ import {
   extension,
   npmPackages,
   root,
+  SCHEMA_ID,
+  schemaNames,
+  schemasDir,
   skill,
+  stageSchemas,
   targets,
   vsixEntry,
   withoutEmptyUnreleased,
@@ -102,6 +106,9 @@ try {
   for (const { dir } of [...npmPackages, extension]) {
     copyTemporary(join(root, "LICENSE"), join(root, dir, "LICENSE"));
   }
+  // `@ascribed/cli` ships the JSON Schemas of the version it is.
+  const stagedSchemas = stageSchemas();
+  if (stagedSchemas !== undefined) temporary.push(stagedSchemas);
   writeTemporary(
     join(root, extension.dir, "CHANGELOG.md"),
     withoutEmptyUnreleased(readFileSync(join(root, "CHANGELOG.md"), "utf8")),
@@ -183,7 +190,7 @@ try {
     .join("\n");
   writeFileSync(join(out, "SHA256SUMS"), `${sums}\n`);
 } finally {
-  for (const file of temporary) rmSync(file, { force: true });
+  for (const file of temporary) rmSync(file, { recursive: true, force: true });
   rmSync(vscodeBin, { recursive: true, force: true });
 }
 
@@ -214,11 +221,23 @@ function checkTarball(file: string): void {
   ) {
     fail(`${where} has no THIRD-PARTY-NOTICES`);
   }
+  if (manifest.name === "@ascribed/cli") checkSchemas(file, listing);
   const binary = listing.split("\n").find((l) => l.endsWith("package/bin/ascribe"));
   if (binary !== undefined && !binary.startsWith("-rwx")) {
     fail(`${where} bin/ascribe isn't executable: ${binary}`);
   }
   process.stdout.write(`checked ${basename(file)}\n`);
+}
+
+/** `@ascribed/cli`'s schemas: every one, each with this version's `$id`. */
+function checkSchemas(file: string, listing: string): void {
+  const where = `${basename(file)}:`;
+  for (const name of schemaNames()) {
+    const entry = `package/${schemasDir}/${name}`;
+    if (!listing.includes(entry)) fail(`${where} has no ${schemasDir}/${name}`);
+    const id = SCHEMA_ID.exec(tar(["-xzOf", file, entry]))?.[2];
+    if (id !== version) fail(`${where} ${schemasDir}/${name} has the $id of ${id}, not ${version}`);
+  }
 }
 
 /** A VS Code extension package: its manifest, and the binary for its target. */

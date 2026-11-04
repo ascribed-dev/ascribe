@@ -1,8 +1,9 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/vale-eject.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/vale-eject.schema.json`]({repo}/blob/main/schemas/vale-eject.schema.json):
+[`schemas/vale-eject.schema.json`]({repo}/blob/v{version}/schemas/vale-eject.schema.json):
 
 ```json
 {
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/vale-eject.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe vale eject --format json` writes: the preset written out,\nand the files written.",
   "properties": {

@@ -966,6 +966,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/lsp-context.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The answer to `ascribe/context`. A document that isn't a source file of\nthe project gets an empty answer: no project, nothing at the range.",
   "properties": {

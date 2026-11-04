@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/outline.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/outline.schema.json`]({repo}/blob/main/schemas/outline.schema.json):
+[`schemas/outline.schema.json`]({repo}/blob/v{version}/schemas/outline.schema.json):
 
 ```json
 {
@@ -113,6 +113,7 @@
       ]
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/outline.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe outline <PAGE>` answers.",
   "properties": {

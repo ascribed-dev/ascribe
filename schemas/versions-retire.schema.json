@@ -166,6 +166,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/versions-retire.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe versions retire --format json` writes: the line, its\naddress, the marks rewritten, what no line has any more, and where each\nof the line's addresses should go.",
   "properties": {

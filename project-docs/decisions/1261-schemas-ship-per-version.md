@@ -1,0 +1,5 @@
+---
+section: The npm packages
+---
+
+**Each release's JSON Schemas ship in `@ascribed/cli`, as `@ascribed/cli/schemas/<name>.schema.json`, and each schema's `$id` is its address at the release's tag, `https://raw.githubusercontent.com/ascribed-dev/ascribe/v<version>/schemas/<name>.schema.json`.** `crates/ascribe-cli/src/shapes.rs` writes the `$id` from the crate's version, so `scripts/release/version.ts` rewrites it with every other file that names the version, and `--check` holds them to it. The docs link the schemas, and the element contract, at `{repo}/tree/v{version}/`, not `main`. _Why:_ a team pins `@ascribed/cli`, and `main`'s schemas may differ from the version it runs; in the package, they're the version's, offline. The tag's address resolves for every release, never changes, and keeps nothing online that GitHub doesn't already. A branded address, such as `ascribed-dev.com/schemas/<version>/`, was turned down for now: the site deploys from `main`, so it would have to keep every release's files. _From:_ the maintainer, in [issue #1261](https://github.com/ascribed-dev/ascribe/issues/1261), 3 November 2026.

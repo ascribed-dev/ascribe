@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/agents-index.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/agents-index.schema.json`]({repo}/blob/main/schemas/agents-index.schema.json):
+[`schemas/agents-index.schema.json`]({repo}/blob/v{version}/schemas/agents-index.schema.json):
 
 ```json
 {
@@ -23,6 +23,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/agents-index.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe agents index --format json` answers.",
   "properties": {
