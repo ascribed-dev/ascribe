@@ -209,6 +209,24 @@ export function supplyRouting(
   return { routing: { ...astro, ...supplied }, supplied };
 }
 
+/**
+ * The route of Astro's image endpoint, ending the way a supplied
+ * `trailingSlash` says, for `updateConfig`, or undefined when it already does.
+ * Astro ends the route as its own `trailingSlash` says when it reads
+ * astro.config, before an integration runs, and doesn't again when an
+ * integration supplies the setting. Left as it was, in `astro dev` each
+ * image's `src` is `/_image?…` and the endpoint answers only at `/_image/`.
+ */
+export function supplyImageRoute(
+  trailingSlash: AstroRouting["trailingSlash"] | undefined,
+  route: string,
+): string | undefined {
+  if (trailingSlash === undefined || trailingSlash === "ignore") return undefined;
+  const bare = `/${route.replace(/^\/+/, "").replace(/\/+$/, "")}`;
+  const ended = trailingSlash === "always" ? normalizeBase(bare) : bare;
+  return ended === route ? undefined : ended;
+}
+
 /** Astro's `build.format`: how a page's route becomes the file a static host serves it from. */
 type BuildFormat = "file" | "directory" | "preserve";
 

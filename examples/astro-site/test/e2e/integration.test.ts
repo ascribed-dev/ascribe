@@ -145,6 +145,31 @@ describe("the integration", () => {
     }
   });
 
+  it("serves the pages' images in astro dev when trailing-slash is always", async () => {
+    // Astro ends its image endpoint's route for its own `trailingSlash`; the integration supplies
+    // one, and must end the route to match, or every image's `src` is `/_image?…` and a 404.
+    const root = await copySite("dev-images");
+    await edit(path.join(root, "ascribe.toml"), (text) =>
+      text.replace('trailing-slash = "never"', 'trailing-slash = "always"'),
+    );
+    const server = await serveDev(root);
+    try {
+      const page = await fetch(`${server.origin}${BASE}/reference/options/`);
+      expect(page.status).toBe(200);
+      const sources = [...(await page.text()).matchAll(/<img\b[^>]*\ssrc="([^"]*)"/g)].map(
+        ([, src]) => (src ?? "").replaceAll("&#38;", "&").replaceAll("&amp;", "&"),
+      );
+      expect(sources.some((src) => src.includes("/_image/?"))).toBe(true);
+      for (const src of sources) {
+        const image = await fetch(new URL(src, `${server.origin}${BASE}/reference/options/`));
+        expect(image.status, src).toBe(200);
+        expect(image.headers.get("content-type"), src).toMatch(/^image\//);
+      }
+    } finally {
+      await server.stop();
+    }
+  }, 90_000);
+
   for (const [name, relative, replace, expected] of [
     [
       "source",

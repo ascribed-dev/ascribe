@@ -79,6 +79,7 @@ import {
   normalizeBase,
   readProject,
   supplyBuildFormat,
+  supplyImageRoute,
   supplyRouting,
   type AstroRouting,
 } from "./project.js";
@@ -330,6 +331,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         }
         // Each page's file must be served at the route Ascribe publishes for it, not behind a redirect.
         const format = supplyBuildFormat(astro.trailingSlash, config.build.format);
+        const imageRoute = supplyImageRoute(supplied.trailingSlash, config.image.endpoint.route);
         fail(format.problems, "ascribe.toml and astro.config disagree");
         fail(basePathClashes(entries), "two projects share a base path");
 
@@ -513,6 +515,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         updateConfig({
           ...supplied,
           ...(format.supplied === undefined ? {} : { build: { format: format.supplied } }),
+          ...(imageRoute === undefined ? {} : { image: { endpoint: { route: imageRoute } } }),
           markdown: {
             shikiConfig: {
               transformers:

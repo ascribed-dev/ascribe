@@ -1,0 +1,1 @@
+- **Fixed:** images load in `astro dev` when `[consumer] trailing-slash` is `"always"`. The integration gave Astro the setting without ending the image endpoint's route to match, so each image was a 404. See [`@ascribed/astro`](docs/content/astro/reference.md).
