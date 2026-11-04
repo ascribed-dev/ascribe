@@ -1,0 +1,1 @@
+- **What to measure links the source of each finding.** Each figure about search and agents names the study, vendor write-up, or search engine documentation it comes from, and the figures match them. See [What to measure](docs/content/agents/measuring.md#what-has-evidence-and-what-doesnt).

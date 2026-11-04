@@ -54,22 +54,22 @@ No report tells you whether an assistant answers questions about your product co
 
 ## What has evidence, and what doesn't
 
-Most of what's written about being found by AI has no evidence behind it, and some of it is contradicted. This is what the research behind Ascribe's choices found; it's the part of this page most likely to be read as a promise, so it says how strong each finding is.
+Most of what's written about being found by AI has no evidence behind it, and some of it is contradicted. This is what the research behind Ascribe's choices found, with the source of each finding; it's the part of this page most likely to be read as a promise, so it says how strong each finding is.
 
-**Documented by the search engines themselves:** an accurate title and description for each page, different from every other page's; a canonical link; a sitemap. Ascribe writes each of these from the page records, and checks the first two.
+**Documented by the search engines themselves:** an accurate title and description for each page, different from every other page's ([title links](https://developers.google.com/search/docs/appearance/title-link), [snippets](https://developers.google.com/search/docs/appearance/snippet)); a [canonical link](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls); a [sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview). Ascribe writes each of these from the page records, and checks the first two.
 
 **Measured, once each:**
 
-- **A pointer to `llms.txt` on each Markdown page** cut an agent's fetches of addresses that don't exist from 2.23 to 0.11 a task, in one controlled benchmark. Every Markdown page Ascribe publishes has one.
-- **A compact index of the docs in a product's `AGENTS.md`,** about 8 KB, took one vendor's evaluation from 53% to 100%. [`ascribe agents index`](product-index.md) writes one.
-- **Size.** Agents' fetch tools cut a page off at around 100,000 characters and don't ask for the rest. `ascribe check` reports a page over the delivery spec's limit, 50,000 characters.
+- **A pointer to `llms.txt` on each Markdown page** cut an agent's fetches of addresses that don't exist from 2.23 a task, reading the HTML pages, to 0.11, in [Mintlify's benchmark](https://mintlify.com/blog/llms-txt-agent-benchmark) of 2,400 runs on sites it hosts. Markdown pages without the pointer got 1.42, and the answers were as accurate in every case. Every Markdown page Ascribe publishes has one.
+- **A compact index of the docs in a product's `AGENTS.md`,** about 8 KB, took [Vercel's evaluation](https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals) of agents using new Next.js APIs from 53% to 100%. The same docs as a skill reached 79% at best. [`ascribe agents index`](product-index.md) writes one.
+- **Size.** An agent's fetch tool cuts a page off at its limit and doesn't say so: about 100,000 characters for Claude Code, and 5,000 by default for the MCP fetch server, in [the delivery spec's comparison of agents](https://agentdocsspec.com/platforms/). `ascribe check` reports a page over the spec's limit, 50,000 characters.
 
 **Not supported, or contradicted:**
 
-- **`llms.txt` gets a site found by AI search.** Google says its search doesn't use the file, and in one study of 137,000 domains, 97% of the files got no requests in a month. It's worth publishing for the agents that are already reading your docs, not for being found.
-- **Structured data raises how often AI cites a page.** A matched test found no significant gain. Ascribe writes breadcrumbs and the site's name, which search engines document, and nothing more.
-- **Titles and descriptions have length limits, and a page needs exactly one top heading.** Google documents no limits, and lists the number and order of headings among the things not to focus on.
-- **"No AI" markers control how AI uses a page.** No major operator has committed to honoring any of them. `robots.txt` is a request, and some crawlers document that they may ignore it.
+- **`llms.txt` gets a site found by AI search.** Google says its search doesn't use the file, in [its guide to generative AI features](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide), and in [Ahrefs' study](https://ahrefs.com/blog/llmstxt-study/) of about 137,000 domains, 97% of the files got no requests in May 2026. It's worth publishing for the agents that are already reading your docs, not for being found.
+- **Structured data raises how often AI cites a page.** [A matched test by Ahrefs](https://ahrefs.com/blog/schema-ai-citations/), of 1,885 pages that added JSON-LD, found no significant gain in citations on any of the AI products it measured. Ascribe writes breadcrumbs and the site's name, which search engines document, and nothing more.
+- **Titles and descriptions have length limits, and a page needs exactly one top heading.** Google documents no limit for [titles](https://developers.google.com/search/docs/appearance/title-link) or [descriptions](https://developers.google.com/search/docs/appearance/snippet), and its [SEO starter guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) lists the number and order of headings among the things not to focus on.
+- **"No AI" markers control how AI uses a page.** None of them is a standard: the [IETF's AI preferences](https://datatracker.ietf.org/wg/aipref/documents/) are still drafts, and no major operator's crawler documentation says it honors one. `robots.txt` is a request, and the fetchers that act for a person, [Google's](https://developers.google.com/search/docs/crawling-indexing/google-user-triggered-fetchers), [OpenAI's](https://developers.openai.com/api/docs/bots), and [Perplexity's](https://docs.perplexity.ai/guides/bots), document that they may ignore it.
 
 **Where the evidence is thin:** no study looks at documentation or developer questions alone; the two strongest results for agents are each one vendor's study; and no project has published a before-and-after number for any change to versioned docs in search. Treat a claim that one change will move your traffic, Ascribe's included, as untested until your own numbers say otherwise.
 
