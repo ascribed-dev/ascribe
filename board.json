@@ -9805,7 +9805,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1352"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Prose: split the longest sentences, mostly into lists"
     },
     {
@@ -9880,6 +9880,9 @@
       "id": "PVTI_lADOFAMH984BmgbCzhF0A3Y",
       "labels": [
         "documentation"
+      ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1353"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
