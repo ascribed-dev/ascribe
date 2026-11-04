@@ -382,7 +382,7 @@
           "type": "integer"
         },
         "baselined": {
-          "description": "How many problems `ascribe.baseline` holds back, which `diagnostics`\nleaves out and which are advice. Left out when there are none, and\nwith `--no-baseline`.",
+          "description": "How many problems are baselined, listed in `ascribe.baseline`, which\n`diagnostics` leaves out and which are advice. Left out when there are\nnone, and with `--no-baseline`.",
           "minimum": 0,
           "type": "integer"
         },

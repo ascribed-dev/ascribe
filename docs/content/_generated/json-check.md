@@ -45,7 +45,7 @@ The fields of [`schemas/check.schema.json`]({repo}/blob/v{version}/schemas/check
 | `summary.warnings` | `integer` | yes | no | How many warnings. |
 | `summary.advice` | `integer` | yes | no | How many advice. |
 | `summary.acknowledged` | `integer` | no | no | How many problems are acknowledged as intended. Left out when there are none. |
-| `summary.baselined` | `integer` | no | no | How many problems `ascribe.baseline` holds back, which `diagnostics` leaves out and which are advice. Left out when there are none, and with `--no-baseline`. |
+| `summary.baselined` | `integer` | no | no | How many problems are baselined, listed in `ascribe.baseline`, which `diagnostics` leaves out and which are advice. Left out when there are none, and with `--no-baseline`. |
 | `summary.by_code` | `object[]` | no | no | With `--summary`: how many diagnostics have each code, most first. |
 | `summary.by_code[].code` | `string` | yes | no | The code, such as `ASC036`. |
 | `summary.by_code[].slug` | `string` | yes | no | The diagnostic's name, such as `link-target-missing`. |

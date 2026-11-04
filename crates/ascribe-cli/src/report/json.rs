@@ -113,9 +113,9 @@ struct Summary {
     /// are none.
     #[serde(skip_serializing_if = "is_zero")]
     acknowledged: usize,
-    /// How many problems `ascribe.baseline` holds back, which `diagnostics`
-    /// leaves out and which are advice. Left out when there are none, and
-    /// with `--no-baseline`.
+    /// How many problems are baselined, listed in `ascribe.baseline`, which
+    /// `diagnostics` leaves out and which are advice. Left out when there are
+    /// none, and with `--no-baseline`.
     #[serde(skip_serializing_if = "is_zero")]
     baselined: usize,
     /// With `--summary`: how many diagnostics have each code, most first.

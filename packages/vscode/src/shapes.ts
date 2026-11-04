@@ -2705,9 +2705,9 @@ export interface Summary {
    */
   acknowledged?: number;
   /**
-   * How many problems `ascribe.baseline` holds back, which `diagnostics`
-   * leaves out and which are advice. Left out when there are none, and
-   * with `--no-baseline`.
+   * How many problems are baselined, listed in `ascribe.baseline`, which
+   * `diagnostics` leaves out and which are advice. Left out when there are
+   * none, and with `--no-baseline`.
    */
   baselined?: number;
   /** With `--summary`: how many diagnostics have each code, most first. */
