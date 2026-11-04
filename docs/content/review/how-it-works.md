@@ -25,6 +25,12 @@ Each changed block has a bar in its margin and a label:
 
 A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes ("2 changes"). Every mark has a label as well as a color, and the colors work in light and dark.
 
+### Changed, or removed and added
+
+A block is **changed** when its old and new text are alike: at least half their words are the same, counting the words of both, or one keeps all the other's words, in order, and adds some at its start or its end. Words are runs of letters and digits, so case, punctuation, and markup don't count. "Git 2.39 or later." and "Git 2.40 or later, with LFS." are alike: four of the first one's five words are in the second.
+
+When more than one new block is alike an old one, as when a list item is edited and another is inserted beside it, review pairs the blocks that are most alike, in order. A block that's alike none on the other side is **added** or **removed**, so an edit that replaces most of a short block's words shows as the old block removed and the new one added.
+
 A page's count of changes says where you are, "3 of 10 on this page", with arrows to step through them; past the last one, they offer the next changed page. **Changes / As it will be / As it was** switches between the marks, the page as it will be with none, and the page as it was at the base. In the previews, a mark's label opens its source lines.
 
 ## When the project has errors

@@ -1071,3 +1071,86 @@ fn an_operation_change_beside_the_pages_own_is_named_too() {
         "2 changed (also through api/openapi.yaml#createWidget)"
     );
 }
+
+/// A list of prerequisites, with `items` before its last item.
+fn prerequisites(items: &str) -> String {
+    format!("# Install\n\nYou need:\n\n{items}- A docs repository that {{product}} can read.\n")
+}
+
+#[test]
+fn an_edited_item_pairs_with_its_new_text_not_an_item_inserted_beside_it() {
+    let a = version(
+        MODEL,
+        &[("install.md", &prerequisites("- Node.js 20 or later.\n"))],
+    );
+    let b = version(
+        MODEL,
+        &[(
+            "install.md",
+            &prerequisites("- Node.js 22 or later, with npm.\n- Git 2.40 or later.\n"),
+        )],
+    );
+    let page = page(&a, &b);
+    assert_eq!(
+        kinds(&page),
+        vec![
+            (
+                ChangeKind::Changed,
+                Some("install.md:5-5".into()),
+                Some("install.md:5-5".into())
+            ),
+            (ChangeKind::Added, None, Some("install.md:6-6".into())),
+        ]
+    );
+    assert!(page.changes[0].words.is_some());
+}
+
+#[test]
+fn punctuation_beside_a_word_does_not_make_it_another_word() {
+    // "later." and "later," are one word, so these share four of their
+    // seven and five words, enough to be one item changed.
+    let a = version(
+        MODEL,
+        &[("install.md", &prerequisites("- Node.js 20 or later.\n"))],
+    );
+    let b = version(
+        MODEL,
+        &[(
+            "install.md",
+            &prerequisites("- Node.js 22 or later, with npm.\n"),
+        )],
+    );
+    let page = page(&a, &b);
+    let change = only_change(&page);
+    assert_eq!(change.kind, ChangeKind::Changed);
+    assert!(change.words.is_some());
+}
+
+#[test]
+fn a_changed_block_pairs_with_the_most_alike_of_the_new_blocks() {
+    // The first new paragraph is alike enough to be the old one changed, but
+    // the second is more alike.
+    let text = |body: &str| format!("# Install\n\n{body}\nDone.\n");
+    let a = version(
+        MODEL,
+        &[("install.md", &text("Install the agent on each host.\n"))],
+    );
+    let b = version(
+        MODEL,
+        &[(
+            "install.md",
+            &text("Install the agent on a laptop.\n\nInstall the agent on every host.\n"),
+        )],
+    );
+    assert_eq!(
+        kinds(&page(&a, &b)),
+        vec![
+            (ChangeKind::Added, None, Some("install.md:3-3".into())),
+            (
+                ChangeKind::Changed,
+                Some("install.md:3-3".into()),
+                Some("install.md:5-5".into())
+            ),
+        ]
+    );
+}
