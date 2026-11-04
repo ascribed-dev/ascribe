@@ -5,7 +5,14 @@
 //
 //   node scripts/crawlers/sources.ts   list each source read over a year ago,
 //                                      or that doesn't answer, as Markdown,
-//                                      and exit 1 when there's one
+//                                      and exit 1 when there's one; and list
+//                                      each source that refused to be asked,
+//                                      which exits 0
+//
+// A source that answers 429 when asked again is unchecked, not gone: Apple's
+// support pages answer 429 to every request from an Actions runner (#1223),
+// so the answer says nothing of the page. The run's summary names it, and
+// `stale` still names it once it's a year since it was read.
 //
 // The daily Report workflow runs it and opens an issue with what it prints.
 // RELEASING.md's step to reread the sources runs it too.
@@ -65,33 +72,45 @@ function passing(status: number | string): boolean {
   return typeof status !== "number" || status === 429 || status >= 500;
 }
 
+/** What asking the sources found, each as a sentence. */
+export interface Answers {
+  /** The sources that don't answer with a success. */
+  gone: string[];
+  /** The sources that answered 429 when asked again: refused to be asked, so not checked. */
+  unchecked: string[];
+}
+
 /**
- * Each source that doesn't answer with a success, after redirects, as a sentence; each address
- * asked once, and again after `pause` when the first answer may be a passing failure, so one
- * dropped connection doesn't open an issue.
+ * Each source that doesn't answer with a success, after redirects; each address asked once, and
+ * again after `pause` when the first answer may be a passing failure, so one dropped connection
+ * doesn't open an issue. A source that answers 429 when asked again is unchecked instead.
  */
 export async function gone(
   entries: readonly Crawler[],
   fetchStatus: (url: string) => Promise<number | string>,
   pause: () => Promise<void> = () => new Promise((done) => setTimeout(done, RETRY_MS)),
-): Promise<string[]> {
+): Promise<Answers> {
   const ask = async (url: string): Promise<number | string> => {
     const first = await fetchStatus(url);
     if (!passing(first)) return first;
     await pause();
     return fetchStatus(url);
   };
-  const problems: string[] = [];
+  const answers: Answers = { gone: [], unchecked: [] };
   const asked = new Map<string, Promise<number | string>>();
   for (const entry of entries) {
     if (!asked.has(entry.source)) asked.set(entry.source, ask(entry.source));
     const status = await asked.get(entry.source);
-    if (typeof status !== "number" || status >= 400)
-      problems.push(
+    if (status === 429)
+      answers.unchecked.push(
+        `\`${entry.token}\`: ${entry.source} answered 429 twice, so it wasn't checked. Open it by hand before a release.`,
+      );
+    else if (typeof status !== "number" || status >= 400)
+      answers.gone.push(
         `\`${entry.token}\`: ${entry.source} answered ${String(status)}. Find where its operator documents it now, or remove the token.`,
       );
   }
-  return problems;
+  return answers;
 }
 
 /** The status a GET of `url` ends at, or why it failed. */
@@ -120,10 +139,14 @@ function reason(error: unknown): string {
 
 if (import.meta.main) {
   const entries = crawlers(readFileSync(dataFile, "utf8"));
-  const problems = [...stale(entries, new Date()), ...(await gone(entries, status))];
+  const answers = await gone(entries, status);
+  const problems = [...stale(entries, new Date()), ...answers.gone];
   if (problems.length === 0) {
+    const checked = entries.length - answers.unchecked.length;
     console.log(
-      `Every source of the ${entries.length} crawlers answers, and was read within a year.`,
+      answers.unchecked.length === 0
+        ? `Every source of the ${entries.length} crawlers answers, and was read within a year.`
+        : `Every source of the ${entries.length} crawlers was read within a year, and the ${checked} checked answer.`,
     );
   } else {
     console.log("## Crawler sources\n");
@@ -132,5 +155,10 @@ if (import.meta.main) {
     );
     for (const problem of problems) console.log(`- ${problem}`);
     process.exitCode = 1;
+  }
+  if (answers.unchecked.length > 0) {
+    console.log("\n## Crawler sources not checked\n");
+    console.log("These refused to be asked, so this run can't say whether they still answer:\n");
+    for (const sentence of answers.unchecked) console.log(`- ${sentence}`);
   }
 }
