@@ -51,7 +51,7 @@ Every asset has one **mirrored path**, computed from its source path alone:
 
 Pages are written at their own source paths too (the output-layout contract), so an asset beside a page in the source is beside it in the output, and relative references between them keep their shape.
 
-**File names are never changed**, so there's no naming scheme and no hashing. Two different files can't collide, because two different files have different source paths, and so different mirrored paths. The `_ascribe/` directory holds only files Ascribe places, so an asset outside the content root can't land on one inside it, unless the content root itself has a `_ascribe/` directory. The one remaining collision, two outputs at the same path or at paths that differ only in case, fails the build (output-layout contract, §4).
+**File names are never changed**, so there's no naming scheme and no hashing. Two different files can't collide, because two different files have different source paths, and so different mirrored paths. The `_ascribe/` directory holds only files Ascribe places, so an asset outside the content root can't land on one inside it, unless the content root itself has a `_ascribe/` directory. The one remaining collision, two outputs at the same path or at paths that differ only in case, fails the build ([output-layout contract, §4](output-layout.md#4-replacing-a-previous-builds-output)).
 
 ### 3.2 Placement in each output
 
@@ -67,7 +67,7 @@ The consumer profile decides placement in the site output (SPEC §9.5), through 
 - **Images: mirrored, so Astro processes them.** Astro optimizes an image in a content-collection entry when the entry's markdown refers to it by a relative path; it resolves the path from the entry's file. The site output is the collection, so the mirrored copy is found relative to the page, and Astro's image processing applies as it would to the author's own files. The image must stay a markdown image, not raw HTML (the site-render contract keeps it one).
 - **Link targets: published, because Astro doesn't copy them.** Astro leaves a markdown link to a local file alone, and a relative `href` resolves against the page's URL, not its file, so it would break. These copies go under `_ascribe/files/`, which the Astro integration serves at `<base-path>_ascribe/files/`, and links use that URL.
 
-With `[consumer] agents = true` (content-model.md §15), the plain output is published beside the site for agents to read, page by page from wherever they fetch it, so every asset goes under `_ascribe/files/` and is referred to by its absolute URL: `site`, then the URL as above.
+With `[consumer] agents = true` ([content-model.md §15](content-model/output.md#15-consumer)), the plain output is published beside the site for agents to read, page by page from wherever they fetch it, so every asset goes under `_ascribe/files/` and is referred to by its absolute URL: `site`, then the URL as above.
 
 The Astro integration's tests verify both behaviors against the Astro version it targets.
 
@@ -84,7 +84,7 @@ Every asset reference in a page is rewritten to point at the copy, including ref
 
 - Each asset is copied once per emitter output, however many pages or references use it, byte for byte. A symbolic link is copied as the file it points to.
 - Only assets referenced by content that survives the build are copied (the resolved tree carries the surviving references). An asset used only in an arm or page a build removes isn't in that build's output. The conformance format's `builds.<name>.assets` lists exactly these, by source path.
-- Every copy is listed in the output's manifest, with its source path (output-layout contract, §3).
+- Every copy is listed in the output's manifest, with its source path ([output-layout contract, §3](output-layout.md#3-the-manifest)).
 
 ## 6. The guarantee
 

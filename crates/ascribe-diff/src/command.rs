@@ -16,7 +16,7 @@ use crate::html::{
     AssetFiles, DiskAssets, GitAssets, MAX_PAGES, ReportOptions, Version, write_report,
 };
 use crate::prompt::{self, Review};
-use crate::{Anchor, BuildDiff, PageDiff};
+use crate::{Anchor, BuildDiff, Change, PageDiff};
 use crate::{Base, DiffError, DriftReport, Report, Repository, Side, compare_builds};
 use ascribe_check::prompt::{Builds, Context, MemoPlace};
 
@@ -175,6 +175,20 @@ impl ProjectDiff {
             .take((last + 1).checked_sub(first)?)
             .collect();
         (!lines.is_empty()).then_some(lines)
+    }
+
+    /// A change's block as `ascribe diff`'s text shows it: its lines as
+    /// they're written, in the base when `base` is true, and a list item's
+    /// without its marker, as its changed words are shown, so the marker
+    /// isn't read as a second diff sign. `None` as for [`Self::written`].
+    pub fn shown(&self, change: &Change, base: bool) -> Option<Vec<String>> {
+        let anchor = if base { &change.was } else { &change.now };
+        let lines = self.written(anchor.as_ref()?, base)?;
+        Some(if change.item {
+            without_marker(&lines)
+        } else {
+            lines.into_iter().map(str::to_owned).collect()
+        })
     }
 
     /// The agent prompt about every changed page; `builds` are the builds
@@ -415,4 +429,84 @@ fn in_sources<'a>(
         .filter_map(|source| project_dir.join(&source.path).ok())
         .collect();
     files.any(|file| folders.iter().any(|folder| file.starts_with(folder)))
+}
+
+/// A list item's lines without its marker: the first line from its content,
+/// and each line after with the item's indent taken off, as far as it has
+/// it. Lines that don't start with a marker are kept as they are.
+fn without_marker(lines: &[&str]) -> Vec<String> {
+    let Some((first, rest)) = lines.split_first() else {
+        return Vec::new();
+    };
+    let Some(content) = content_column(first) else {
+        return lines.iter().map(|&l| l.to_owned()).collect();
+    };
+    std::iter::once(first[content..].to_owned())
+        .chain(rest.iter().map(|line| {
+            let spaces = line.len() - line.trim_start_matches(' ').len();
+            line[spaces.min(content)..].to_owned()
+        }))
+        .collect()
+}
+
+/// Where the content of the list item whose first line is `line` starts, in
+/// bytes: after its indent, its marker (`-`, `+`, `*`, or one to nine
+/// digits and `.` or `)`), and the spaces after it, or one of them when
+/// there are more than four, as CommonMark counts them. `None` when the
+/// line doesn't start with a marker.
+fn content_column(line: &str) -> Option<usize> {
+    let indent = line.len() - line.trim_start_matches(' ').len();
+    let after = &line[indent..];
+    let digits = after.len() - after.trim_start_matches(|c: char| c.is_ascii_digit()).len();
+    let marker = match after[digits..].chars().next()? {
+        '.' | ')' if (1..=9).contains(&digits) => digits + 1,
+        '-' | '+' | '*' if digits == 0 => 1,
+        _ => return None,
+    };
+    let text = &after[marker..];
+    let spaces = text.len() - text.trim_start_matches(' ').len();
+    let spaces = match spaces {
+        _ if spaces == text.len() => spaces,
+        0 => return None,
+        1..=4 => spaces,
+        _ => 1,
+    };
+    Some(indent + marker + spaces)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::without_marker;
+
+    fn shown(lines: &[&str]) -> Vec<String> {
+        without_marker(lines)
+    }
+
+    #[test]
+    fn a_list_items_marker_is_left_out() {
+        assert_eq!(shown(&["- Node.js 22 or later."]), ["Node.js 22 or later."]);
+        assert_eq!(shown(&["* one", "  two"]), ["one", "two"]);
+        assert_eq!(shown(&["  + nested"]), ["nested"]);
+        assert_eq!(shown(&["3. third"]), ["third"]);
+        assert_eq!(shown(&["10) tenth", "", "    more"]), ["tenth", "", "more"]);
+        assert_eq!(shown(&["- > quoted"]), ["> quoted"]);
+        assert_eq!(shown(&["-"]), [""]);
+    }
+
+    #[test]
+    fn indent_past_the_items_content_is_kept() {
+        assert_eq!(
+            shown(&["- one", "  - two", "    three"]),
+            ["one", "- two", "  three"]
+        );
+        assert_eq!(shown(&["-     code"]), ["    code"]);
+        assert_eq!(shown(&["1. one", "lazy"]), ["one", "lazy"]);
+    }
+
+    #[test]
+    fn a_line_with_no_marker_is_kept() {
+        assert_eq!(shown(&["-not a marker"]), ["-not a marker"]);
+        assert_eq!(shown(&["> - quoted item"]), ["> - quoted item"]);
+        assert_eq!(shown(&["1234567890. no"]), ["1234567890. no"]);
+    }
 }

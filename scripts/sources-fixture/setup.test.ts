@@ -3,7 +3,8 @@
 // guide shows it, and the sources fixture runs it. The check's recipe is
 // examples/getting-started/.github/workflows/check.yml, which the CI how-to
 // shows: it runs the `ascribe` the project pins, where the docs repository's
-// check.yml beside update-sources.yml follows `main`. These tests check that
+// check.yml beside update-sources.yml follows `main`. The whole pipeline is
+// examples/astro-site/.github/workflows/docs.yml, which the how-to shows too. These tests check that
 // each page uses its file, and, when asked, run the fixture's pass on this machine:
 // with ASCRIBE_BIN naming the binary, or ASCRIBE_SOURCES_FIXTURE=1 for this
 // repository's debug build. A plain `pnpm test` skips the pass, whether or not
@@ -25,6 +26,7 @@ const workflow = path.join(
   "update-sources.yml",
 );
 const check = path.join("examples", "getting-started", ".github", "workflows", "check.yml");
+const pipeline = path.join("examples", "astro-site", ".github", "workflows", "docs.yml");
 const built = path.join(
   root,
   "target",
@@ -80,8 +82,43 @@ test("the CI how-to shows a check workflow that runs the pinned ascribe", () => 
   ).toContain("version = 1\n");
   expect(text).toContain("- run: npx ascribe fmt --check");
   expect(text).not.toMatch(/npm install --global|:remove:/);
-  // Without Node, a named release.
+  // Without Node, a named release, in a folder the next steps find (#1264).
   expect(page).toContain("install.sh | sh -s -- --version <version>\n");
+  expect(page).toContain('- run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"\n');
+});
+
+// The whole pipeline in one file, which the CI how-to shows and the HTML
+// preview's how-to takes its job from (#1264): every check, the build, and
+// the preview, each with the project's own `ascribe`.
+test("the CI how-to shows one workflow with every check, the build, and the preview", () => {
+  const page = readFileSync(path.join(root, "docs", "content", "checks", "ci.md"), "utf8");
+  expect(page).toContain(
+    "@snippet {lang=yaml, title=.github/workflows/docs.yml}: code:examples/astro-site/.github/workflows/docs.yml#workflow\n",
+  );
+  const preview = readFileSync(
+    path.join(root, "docs", "content", "review", "ci-report.md"),
+    "utf8",
+  );
+  expect(preview).toContain(
+    "@snippet {lang=yaml}: code:examples/astro-site/.github/workflows/docs.yml#preview\n",
+  );
+  const text = readFileSync(path.join(root, pipeline), "utf8");
+  for (const line of [
+    "fetch-depth: 0\n",
+    "- run: npm ci\n",
+    "run: npx ascribe check --deny-warnings --format github --base origin/$GITHUB_BASE_REF\n",
+    "- run: npx ascribe fmt --check --format github\n",
+    "- run: npx ascribe agents sync --check\n",
+    "- run: npx ascribe observe --check\n",
+    "- run: npx astro build\n",
+    'run: npx ascribe diff --base "origin/$GITHUB_BASE_REF" --format html > review.html\n',
+    "uses: actions/upload-artifact@",
+  ]) {
+    expect(text).toContain(line);
+  }
+  // Never an `ascribe` the project didn't pin.
+  expect(text).not.toMatch(/npm install --global|install\.sh|:remove:/);
+  expect(text).not.toMatch(/(^|[^x] )ascribe (check|diff|fmt)/m);
 });
 
 test.skipIf(ascribe === undefined || process.platform === "win32")(

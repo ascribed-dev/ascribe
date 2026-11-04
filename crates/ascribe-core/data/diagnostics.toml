@@ -2205,7 +2205,7 @@ evidence = ["allowed-values"]
 spec = "9.5"
 reference = "content-model/output.md#consumer"
 group = "consumer"
-when = "A `[consumer]` key has a value the consumer profile doesn't support"
+when = "A `[consumer]` key has a value its `profile` doesn't support"
 message = "the {profile} profile doesn't support {key} = {value}; use {values}"
 fix = "Use one of the values the message lists."
 

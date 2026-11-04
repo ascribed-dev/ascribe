@@ -2,7 +2,9 @@
 //! Copilot's CLI read through `.claude-plugin/`, and VS Code and Cursor
 //! through the Agent Plugins manifest, `plugin.json`. Every file in it but
 //! its README is written here, from what the binary prints, and a test
-//! fails when the committed copy differs.
+//! fails when the committed copy differs. So is the marketplace that lists
+//! it, `.claude-plugin/marketplace.json` at the repository's root, where
+//! Claude Code finds it when it adds the repository from GitHub.
 //!
 //! It bundles the language server (Claude Code pushes its diagnostics into
 //! the conversation after each edit), the stop hook, the MCP server, the
@@ -68,13 +70,40 @@ fn command_name(prompt: &str) -> &str {
     }
 }
 
+/// The plugin's author and its marketplace's owner: the maker in
+/// `design/words.toml`, which `scripts/design/words.test.ts` compares with
+/// the manifests.
+fn author() -> Value {
+    json!({ "name": "Bryo Studio", "url": "https://bryostudio.com" })
+}
+
+/// The marketplace, relative to the repository's root, where Claude Code
+/// looks for one when it's added from GitHub: `/plugin marketplace add
+/// ascribed-dev/ascribe`. Its one plugin is `plugins/ascribe/`. It names no
+/// version, so the plugin's manifest is the one place that does.
+const MARKETPLACE: &str = ".claude-plugin/marketplace.json";
+
+/// The plugin's folder, relative to the repository's root, as the
+/// marketplace names it.
+const SOURCE: &str = "./plugins/ascribe";
+
+/// The marketplace's text.
+fn marketplace() -> String {
+    pretty(&json!({
+        "name": NAME,
+        "owner": author(),
+        "plugins": [{
+            "name": NAME,
+            "source": SOURCE,
+            "description": DESCRIPTION,
+        }],
+    }))
+}
+
 /// The plugin's files, relative to its folder, with their text.
 fn files() -> Vec<(String, String)> {
     let version = env!("CARGO_PKG_VERSION");
-    // The maker in `design/words.toml`, which `scripts/design/words.test.ts`
-    // compares with the manifests: the plugin's author and its marketplace's
-    // owner.
-    let author = json!({ "name": "Bryo Studio", "url": "https://bryostudio.com" });
+    let author = author();
     let repository = "https://github.com/ascribed-dev/ascribe";
     let mut files = vec![
         (
@@ -89,18 +118,6 @@ fn files() -> Vec<(String, String)> {
                 "repository": repository,
                 "license": "MPL-2.0",
                 "keywords": ["ascribe", "documentation", "markdown", "docs-as-code"],
-            })),
-        ),
-        (
-            ".claude-plugin/marketplace.json".to_owned(),
-            pretty(&json!({
-                "name": NAME,
-                "owner": author,
-                "plugins": [{
-                    "name": NAME,
-                    "source": "./",
-                    "description": DESCRIPTION,
-                }],
             })),
         ),
         (
@@ -270,8 +287,12 @@ mod tests {
 
     const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-cli plugin";
 
+    fn root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    }
+
     fn folder() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../plugins/ascribe")
+        root().join(SOURCE)
     }
 
     /// Every file but the README, relative to the plugin's folder.
@@ -313,6 +334,19 @@ mod tests {
                 "plugins/ascribe/{name} isn't what the binary writes; run `{BLESS}`"
             );
         }
+        let path = root().join(MARKETPLACE);
+        if bless {
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(&path, marketplace()).unwrap();
+        } else {
+            let on_disk = fs::read_to_string(&path)
+                .unwrap_or_else(|_| panic!("{MARKETPLACE} is missing; run `{BLESS}`"))
+                .replace("\r\n", "\n");
+            assert!(
+                on_disk == marketplace(),
+                "{MARKETPLACE} isn't what the binary writes; run `{BLESS}`"
+            );
+        }
         let mut expected: Vec<String> = files.into_iter().map(|(name, _)| name).collect();
         expected.sort();
         if bless {
@@ -341,10 +375,16 @@ mod tests {
             assert_eq!(manifest["name"], NAME);
             assert_eq!(manifest["version"], env!("CARGO_PKG_VERSION"));
         }
-        let marketplace = read(".claude-plugin/marketplace.json");
+        let marketplace: Value =
+            serde_json::from_str(&fs::read_to_string(root().join(MARKETPLACE)).unwrap()).unwrap();
+        assert_eq!(marketplace["name"], NAME);
         let entry = &marketplace["plugins"][0];
         assert_eq!(entry["name"], NAME);
-        let source = folder().join(entry["source"].as_str().unwrap());
+        assert!(
+            entry.get("version").is_none(),
+            "the plugin's manifest names the version"
+        );
+        let source = root().join(entry["source"].as_str().unwrap());
         assert!(source.join(".claude-plugin/plugin.json").is_file());
         assert_eq!(read(".lsp.json")[NAME]["args"][0], LAUNCHER_PATH);
         assert_eq!(read(".lsp.json")[NAME]["args"][1], "lsp");

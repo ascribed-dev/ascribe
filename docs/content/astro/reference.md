@@ -175,7 +175,7 @@ On an address under the permalinks' path, it says the link came from a product t
 
 ## Search engines and crawlers
 
-From every project's page records, `_ascribe/pages.json`, the integration writes what a search engine reads: each page's head, through `Head.astro`; the site's `sitemap.xml` and `robots.txt`; and each Markdown version's response headers, which `astro dev` sends and `host = "netlify"` writes into `_headers`. [The head, sitemap, `robots.txt`, and headers](../publishing/site.md) says what each holds, and [Publishing](../publishing/index.md) what a project tells search engines and agents.
+From every project's page records, `_ascribe/pages.json`, the integration writes what a search engine reads: each page's head, through `Head.astro`; the site's `sitemap.xml` and `robots.txt`; and each Markdown version's response headers, which `astro dev` sends and `host = "netlify"` writes into `_headers`. [The head, sitemap, `robots.txt`, and headers](../publishing/site.md) says what each holds, and [Search engines and crawlers](../publishing/index.md) what a project tells search engines and agents.
 
 ## The sidebar
 @id: sidebar

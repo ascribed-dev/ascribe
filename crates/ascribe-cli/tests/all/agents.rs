@@ -873,7 +873,8 @@ fn with_hook_keeps_what_the_user_changed() {
 fn with_hook_runs_the_pinned_ascribe() {
     let repo = repository("quill");
     let root = repo.path();
-    fs::create_dir_all(root.join("node_modules/@ascribed/cli")).unwrap();
+    write(&root.join("package.json"), DEPENDS_ON_CLI);
+    write(&root.join("package-lock.json"), "");
     sync(root, ".", &["--target", "claude", "--with-hook"]);
     let settings = read(&root.join(".claude/settings.json"));
     assert!(
@@ -886,6 +887,87 @@ fn with_hook_runs_the_pinned_ascribe() {
     // system, so it runs `ascribe` from the path.
     let mcp = read(&root.join(".mcp.json"));
     assert!(mcp.contains(r#""command": "ascribe""#), "{mcp}");
+}
+
+#[test]
+fn the_hooks_dont_depend_on_whether_node_modules_is_installed() {
+    let repo = repository("quill");
+    let root = repo.path();
+    write(&root.join("package.json"), DEPENDS_ON_CLI);
+    write(&root.join("package-lock.json"), "");
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    let without = read(&root.join(".claude/settings.json"));
+    fs::create_dir_all(root.join("node_modules/@ascribed/cli")).unwrap();
+    run(root, &["agents", "sync", "--check"], 0);
+    sync(root, ".", &[]);
+    assert_eq!(read(&root.join(".claude/settings.json")), without);
+    fs::remove_dir_all(root.join("node_modules")).unwrap();
+    run(root, &["agents", "sync", "--check"], 0);
+
+    // An installed `@ascribed/cli` the project doesn't pin isn't run.
+    let repo = repository("quill");
+    let root = repo.path();
+    fs::create_dir_all(root.join("node_modules/@ascribed/cli")).unwrap();
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.contains(r#""command": "ascribe agents hook claude-code --event edit""#),
+        "{settings}"
+    );
+}
+
+#[test]
+fn in_a_workspace_the_hooks_run_the_binary_where_it_installs() {
+    // Each workspace has its root's `package.json` and lockfile, and the
+    // pin in `docs/package.json`, and quill's files moved into `docs`.
+    let case = |lockfile: &str, lock: &str, yarnrc: Option<&str>| {
+        let repo = tempfile::tempdir().unwrap();
+        let root = repo.path();
+        copy_dir(&examples().join("quill"), &root.join("docs"));
+        git_init(root);
+        write(
+            &root.join("package.json"),
+            "{\"private\": true, \"workspaces\": [\"docs\"]}\n",
+        );
+        write(&root.join(lockfile), lock);
+        if let Some(yarnrc) = yarnrc {
+            write(&root.join(".yarnrc.yml"), yarnrc);
+        }
+        write(&root.join("docs/package.json"), DEPENDS_ON_CLI);
+        sync(root, "docs", &["--target", "claude", "--with-hook"]);
+        read(&root.join(".claude/settings.json"))
+    };
+    let edit = |bin: &str| {
+        format!(
+            r#""command": "\"$CLAUDE_PROJECT_DIR\"/{bin}/ascribe agents hook claude-code --event edit"#
+        )
+    };
+    // npm and Yarn hoist the binary to the workspace's root.
+    let settings = case("package-lock.json", "", None);
+    assert!(settings.contains(&edit("node_modules/.bin")), "{settings}");
+    let settings = case("yarn.lock", "# yarn lockfile v1\n", None);
+    assert!(settings.contains(&edit("node_modules/.bin")), "{settings}");
+    // pnpm links it beside the package that pins it.
+    let settings = case("pnpm-lock.yaml", "", None);
+    assert!(
+        settings.contains(&edit("docs/node_modules/.bin")),
+        "{settings}"
+    );
+}
+
+#[test]
+fn with_plug_n_play_the_hooks_run_ascribe_from_the_path() {
+    let repo = repository("quill");
+    let root = repo.path();
+    write(&root.join("package.json"), DEPENDS_ON_CLI);
+    write(&root.join("yarn.lock"), "__metadata:\n  version: 8\n");
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.contains(r#""command": "ascribe agents hook claude-code --event edit"#),
+        "{settings}"
+    );
+    assert!(!settings.contains("node_modules"), "{settings}");
 }
 
 /// A copy of quill synced for Claude Code with its hooks, with

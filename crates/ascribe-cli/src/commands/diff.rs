@@ -545,12 +545,7 @@ fn write_page_text(
 /// marks them.
 fn write_change(out: &mut dyn Write, diff: &ProjectDiff, change: &Change) -> io::Result<()> {
     let place = |anchor: &Option<Anchor>| anchor.as_ref().map(place).unwrap_or_default();
-    let lines = |anchor: &Option<Anchor>, base: bool| {
-        anchor
-            .as_ref()
-            .and_then(|a| diff.written(a, base))
-            .unwrap_or_default()
-    };
+    let lines = |base: bool| diff.shown(change, base).unwrap_or_default();
     match change.kind {
         ChangeKind::Changed => {
             writeln!(out, "  changed {}", place(&change.now))?;
@@ -558,24 +553,24 @@ fn write_change(out: &mut dyn Write, diff: &ProjectDiff, change: &Change) -> io:
                 Some(words) => {
                     let was = marked(&words.was_text, &words.was, "[-", "-]");
                     let now = marked(&words.now_text, &words.now, "{+", "+}");
-                    write_lines(out, '-', &[was.as_str()])?;
-                    write_lines(out, '+', &[now.as_str()])
+                    write_lines(out, '-', &[was])?;
+                    write_lines(out, '+', &[now])
                 }
                 None => {
-                    write_lines(out, '-', &lines(&change.was, true))?;
-                    write_lines(out, '+', &lines(&change.now, false))
+                    write_lines(out, '-', &lines(true))?;
+                    write_lines(out, '+', &lines(false))
                 }
             }
         }
         ChangeKind::Added => {
             writeln!(out, "  added {}", place(&change.now))?;
-            write_lines(out, '+', &lines(&change.now, false))
+            write_lines(out, '+', &lines(false))
         }
         ChangeKind::Removed => {
             writeln!(out, "  removed {} in the base", place(&change.was))?;
-            match (lines(&change.was, true), &change.text) {
+            match (lines(true), &change.text) {
                 (written, Some(text)) if written.is_empty() => {
-                    write_lines(out, '-', &[text.as_str()])
+                    write_lines(out, '-', std::slice::from_ref(text))
                 }
                 (written, _) => write_lines(out, '-', &written),
             }
@@ -587,13 +582,13 @@ fn write_change(out: &mut dyn Write, diff: &ProjectDiff, change: &Change) -> io:
                 place(&change.now),
                 place(&change.was)
             )?;
-            write_lines(out, ' ', &lines(&change.now, false))
+            write_lines(out, ' ', &lines(false))
         }
     }
 }
 
 /// Lines under a change, each after `sign`.
-fn write_lines(out: &mut dyn Write, sign: char, lines: &[&str]) -> io::Result<()> {
+fn write_lines(out: &mut dyn Write, sign: char, lines: &[String]) -> io::Result<()> {
     for line in lines {
         writeln!(out, "    {}", format!("{sign} {line}").trim_end())?;
     }

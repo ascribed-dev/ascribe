@@ -9,7 +9,7 @@ arch = "x64"
 ascribe = "ascribe 0.4.5+dev"
 
 [files]
-"crates/ascribe-cli/tests/output/agents-index.json" = "sha256-lf:0dc03f1beb3ea3241a3fe86394f55addc20f944705f0e08a1e5a04026bc6442c"
+"crates/ascribe-cli/tests/output/agents-index.json" = "sha256-lf:b7646343b1638d45e3dd63ec4e1d347ad59effac2ba71eba6d8590ddc787b7eb"
 "crates/ascribe-cli/tests/output/agents-sync-check.json" = "sha256-lf:2f60db314bfe6a232d8a672027e954c217dcd4c111dd2fefefc12f1f0b3d60d0"
 "crates/ascribe-cli/tests/output/agents-sync.txt" = "sha256-lf:1a9e0afb40c57c8d9bd145056968443930b531e52c86688641a70cff1f4fa0ad"
 "crates/ascribe-cli/tests/output/agents/monorepo/.claude/rules/ascribe-docs.md.snap" = "sha256-lf:0523a45c33fc6cc96b05af25cd27ba36f4df2649d02e1677162228b2afdec5a8"

@@ -708,7 +708,7 @@ fn plan_hooks(
     let mcp = root.join(".mcp.json");
     let codex_hooks = under(root, ".codex/hooks.json");
     let copilot_hooks = under(root, ".github/hooks/ascribe.json");
-    let ascribe = ascribe_command(here, root).with_command(command);
+    let ascribe = ascribe_command(here, root)?.with_command(command);
     let has_hook = |path: &Path| -> Result<bool, SyncError> {
         Ok(read(path)?.is_some_and(|text| text.contains("agents hook")))
     };
@@ -771,30 +771,73 @@ fn plan_hooks(
 }
 
 /// How the hooks run `ascribe`: the binary of `@ascribed/cli` when the
-/// project pins it, in a `node_modules` from the project's folder up to the
-/// repository's root, else `ascribe` on the path.
-fn ascribe_command(here: &Path, root: &Path) -> settings::Ascribe {
-    // Outside FileSystem: the folders around the project, for an installed
-    // `@ascribed/cli`.
+/// nearest `package.json` from the project's folder up to the
+/// repository's root pins it, else `ascribe` on the path. It's decided
+/// from the committed files alone, not from whether `node_modules` is
+/// installed yet, so every machine writes the same hooks.
+fn ascribe_command(here: &Path, root: &Path) -> Result<settings::Ascribe, SyncError> {
     for dir in here.ancestors() {
-        if dir
-            .join("node_modules")
-            .join("@ascribed")
-            .join("cli")
-            .is_dir()
-            && let Some(rel) = relative_path(root, dir)
+        if read(&dir.join("package.json"))?
+            .as_deref()
+            .and_then(copilot::pinned_spec)
+            .is_some()
         {
+            let Some(bin_dir) = bin_folder(dir, root)? else {
+                break;
+            };
+            let Some(rel) = relative_path(root, &bin_dir) else {
+                break;
+            };
             let bin = rel
                 .join("node_modules/.bin/ascribe")
                 .map(|p| p.as_str().to_owned())
                 .unwrap_or_else(|_| "node_modules/.bin/ascribe".to_owned());
-            return settings::Ascribe::pinned(&bin);
+            return Ok(settings::Ascribe::pinned(&bin));
         }
         if dir == root {
             break;
         }
     }
-    settings::Ascribe::on_path()
+    Ok(settings::Ascribe::on_path())
+}
+
+/// The folder whose `node_modules/.bin` holds the `ascribe` of the package
+/// at `package`, by the nearest lockfile from there up to `root`: pnpm,
+/// and Yarn's `pnpm` linker, link each package's own bins beside it; npm
+/// and Yarn's `node-modules` linker hoist them to the lockfile's folder, a
+/// workspace's root. Without a lockfile, the package's folder. `None` for
+/// Yarn's Plug'n'Play, which writes no `node_modules/.bin`.
+fn bin_folder(package: &Path, root: &Path) -> Result<Option<PathBuf>, SyncError> {
+    for lock_dir in package.ancestors() {
+        // Outside FileSystem: the repository's lockfiles, which aren't the
+        // project's.
+        if lock_dir.join("pnpm-lock.yaml").is_file() {
+            return Ok(Some(package.to_owned()));
+        }
+        if lock_dir.join("package-lock.json").is_file() {
+            return Ok(Some(lock_dir.to_owned()));
+        }
+        if let Some(lock) = read(&lock_dir.join(copilot::YARN_LOCK))? {
+            let yarnrc = read(&lock_dir.join(copilot::YARNRC))?;
+            if copilot::yarn_command(&lock, yarnrc.as_deref()).is_none() {
+                return Ok(None);
+            }
+            let pnpm_linker = yarnrc.as_deref().unwrap_or_default().lines().any(|line| {
+                line.trim()
+                    .strip_prefix("nodeLinker:")
+                    .is_some_and(|value| value.trim().trim_matches(['"', '\'']) == "pnpm")
+            });
+            return Ok(Some(if pnpm_linker {
+                package.to_owned()
+            } else {
+                lock_dir.to_owned()
+            }));
+        }
+        if lock_dir == root {
+            break;
+        }
+    }
+    Ok(Some(package.to_owned()))
 }
 
 /// The command the project in `here` runs Ascribe with, `given` or worked

@@ -28,8 +28,8 @@ archive/3.4/
 ```
 
 - **A page** is written at its source path from the content root with `.html` for its extension: `guide/index.md` is `guide/index.html`.
-- **An asset** a page uses, an image or a linked file, is copied to its mirrored path, as the plain output places it ([assets contract](assets.md) §3.1), and referred to relatively.
-- **The manifest,** `archive.manifest.json`, is a build's manifest ([output layout contract](output-layout.md) §3) with `build` the line's build, such as `site@3.4`, and `emitter` `archive`, listing every file above but itself and `.lock`.
+- **An asset** a page uses, an image or a linked file, is copied to its mirrored path, as the plain output places it ([assets contract §3.1](assets.md#31-the-mirrored-path)), and referred to relatively.
+- **The manifest,** `archive.manifest.json`, is a build's manifest ([output layout contract §3](output-layout.md#3-the-manifest)) with `build` the line's build, such as `site@3.4`, and `emitter` `archive`, listing every file above but itself and `.lock`.
 
 The folder is replaced by the output layout contract's rules: a file is written only where nothing that isn't Ascribe's is in the way, a file the previous manifest lists and this archive doesn't have is removed, and a file no manifest lists is never touched. A folder with anything in it besides `.lock` and no manifest isn't an archive Ascribe wrote, and is refused before anything is written there. The archive of a line is the same bytes when made twice from one commit.
 
@@ -44,7 +44,7 @@ Each page is one complete HTML document that Ascribe gives one script, the searc
 - A skip link first, `<a class="archive-skip" href="#archive-main">Skip to content</a>`, out of sight until it has focus, so a keyboard reaches the page without going through the statement and the sidebar, which come before it at a phone's width.
 - The statement, `<header class="archive-statement">`: "Documentation for self-managed 3.4. This version is no longer maintained.", with the target's label ([content model contract §11](content-model/variation.md#11-dimensionsname)) and the line, and with `--current` a `<span class="archive-current">` holding a link to that address.
 - The sidebar, `<nav class="archive-sidebar">`: the search script's `<script>` (§6), a link to the contents page, then the line's [navigation](../navigation/index.md) as its site's sidebar has it: the content root's pages first with no name, then each top section under its label, its own page first, then its pages, each nested section a list of its own in its place, headed by a link to its own page with the section's label. Each page is named by its label, its `nav-label` or else its title. A page that's `unlisted` isn't in it. The page shown has `aria-current="page"`.
-- The page, `<main id="archive-main" class="archive-page">`: the title as an `<h1>`, the page's availability as `<ascribe-availability scope="page">`, the page's level 2 and 3 headings as `<nav class="archive-on-this-page">`, the content as `render_site_html` renders the site output, and `<nav class="archive-pager">` with `rel="prev"` and `rel="next"` links in the navigation's reading order (the [navigation contract](navigation.md), §3), each named by the page's label. An `unlisted` page has none.
+- The page, `<main id="archive-main" class="archive-page">`: the title as an `<h1>`, the page's availability as `<ascribe-availability scope="page">`, the page's level 2 and 3 headings as `<nav class="archive-on-this-page">`, the content as `render_site_html` renders the site output, and `<nav class="archive-pager">` with `rel="prev"` and `rel="next"` links in the navigation's reading order (the [navigation contract, §3](navigation.md#3-reading-order)), each named by the page's label. An `unlisted` page has none.
 
 ## 3. Links
 

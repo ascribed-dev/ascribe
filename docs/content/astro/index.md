@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Astro
-description: "Set up an Astro site that publishes an Ascribe project, with `@ascribed/astro`."
+description: "The ways to publish an Ascribe project, and setting up an Astro site that publishes it, with `@ascribed/astro`."
 permalink: astro-guide
 ---
 
@@ -10,6 +10,23 @@ permalink: astro-guide
 It supports Astro 7.3.5 and later 7.x releases.
 
 This guide sets a site up. [The `@ascribed/astro` reference](reference.md) has its options, its components, and everything it does in `astro build` and `astro dev`.
+
+## Ways to publish
+@id: ways-to-publish
+
+Ascribe checks and builds a project's pages; a site generator publishes them. There are three ways to put them on the web, and one of them isn't for a published site:
+
+| Way | What it is | For a published site |
+|---|---|---|
+| **Astro** | `@ascribed/astro`, which this guide sets up | Yes: everything Ascribe builds, published and tested together |
+| **Your own generator** | Another generator that reads the site output, as the contracts say | Yes: what the contracts give, and the rest is yours to write |
+| **`ascribe preview`** | Ascribe's own HTML, on your computer | No |
+
+**Astro** is the way Ascribe builds for and tests. The integration renders the pages, and publishes, from the same build, each page's head, the sitemap and `robots.txt`, the outputs for agents, permalinks, every line of a versioned build, and a host's files. [Set up a site](#set-up-a-site) below, then [deploy it](deploy.md).
+
+**Your own generator** reads what `ascribe build --emit site` writes, which the contracts fix: each changes only by a decision recorded with the change, so a generator can rely on it as `@ascribed/astro` does. The pages are CommonMark with Ascribe's elements, which the [site-render contract](../contracts/site-render.md) says how to render, with [`@ascribed/elements`](elements.md) for their script and styles; the [output-layout contract](../contracts/output-layout.md) says where each file is, the page records among them; and the [navigation contract](../contracts/navigation.md) gives the sidebar. A page's address is the one the `astro` profile gives it, the only [consumer profile](../content-model/output.md#consumer) there is, so the generator's routes follow it. What the integration does beyond rendering is the generator's to do, from the same files: [the head, sitemap, and `robots.txt`](../publishing/site.md), [the permalinks' pages](reference.md#permalinks), and the outputs for agents, copied from the plain output ([`[consumer]`](../content-model/output.md#consumer)).
+
+**`ascribe preview`** renders the pages as HTML with a sidebar and search, to read them as a site without Astro, and isn't for a published site: it serves only the computer it runs on, renders a page with errors as far as it goes, and writes none of what a site tells search engines and agents ([`ascribe preview`](../checks/check.md#cli-preview)). [`ascribe versions export`](../versions/archive.md) renders the same HTML into a folder that needs nothing else, as an archive of a release line that's leaving the live versions, and every page in it asks not to be listed.
 
 ## Set up a site
 
@@ -105,10 +122,11 @@ npx astro dev     # rebuilds as you edit
 npx astro build
 ```
 
-`astro dev` prints the address it serves, such as `http://localhost:4321/`. Open it with your `base-path` after it, `http://localhost:4321/docs/` for the `ascribe.toml` above, and the site is there. `astro build` writes it to `dist/`, for your host.
+`astro dev` prints the address it serves, such as `http://localhost:4321/`. Open it with your `base-path` after it, `http://localhost:4321/docs/` for the `ascribe.toml` above, and the site is there. `astro build` writes it to `dist/`, for your host: [Deploy the site](deploy.md) publishes it from CI.
 
 ## See also
 
+- [Deploy the site](deploy.md): building the site in CI and publishing it on GitHub Pages or Netlify, and what each host needs.
 - [Put the docs in a site with more than the docs](more-than-docs.md): a home page of your own at `/`, with the docs at `/docs/`.
 - [Publish for AI agents](agents.md): `llms.txt` and each page's Markdown, with the site.
 - [Serve the Markdown versions](serve-markdown.md): what your host does for agents.

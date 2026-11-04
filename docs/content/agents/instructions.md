@@ -77,6 +77,8 @@ The skill at the repository's root is shared by its projects, so when they run A
 ascribe agents sync --check
 ```
 
+[Everything in one workflow](../checks/ci.md#everything-in-one-workflow) runs it beside the other checks.
+
 `--dry-run` lists the files `sync` would write, and writes none. Like [every command that writes](../command/index.md#commands-that-write), `sync` won't change a file git couldn't put back, such as an `AGENTS.md` with changes not committed: commit them, or pass `--force`.
 
 ## The skill
