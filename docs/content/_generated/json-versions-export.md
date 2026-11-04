@@ -1,127 +1,25 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/versions-export.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/versions-export.schema.json`]({repo}/blob/v{version}/schemas/versions-export.schema.json):
+The fields of [`schemas/versions-export.schema.json`]({repo}/blob/v{version}/schemas/versions-export.schema.json):
 
-```json
-{
-  "$defs": {
-    "UnlinkedJson": {
-      "description": "A link an archive writes as its text.",
-      "properties": {
-        "file": {
-          "description": "The page it's on, from the project root.",
-          "type": "string"
-        },
-        "href": {
-          "description": "Where it led.",
-          "type": "string"
-        },
-        "line": {
-          "description": "For a link out of the line, the line it led to.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "text": {
-          "description": "Its text.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file",
-        "text",
-        "href",
-        "line"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/versions-export.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe versions export --format json` writes: the line, the\nfolder, and what's in it.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "assets": {
-      "description": "How many copies of images and files they use it has.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "build": {
-      "description": "The build the line is a line of, as it's declared.",
-      "type": "string"
-    },
-    "contents": {
-      "description": "The contents page, from the folder: `index.html`, or\n`contents.html` when the line's root page is `index.html`.",
-      "type": "string"
-    },
-    "folder": {
-      "description": "The folder written, from the current folder, with `/`.",
-      "type": "string"
-    },
-    "line": {
-      "description": "The line exported, as `[releases.<target>]` writes it.",
-      "type": "string"
-    },
-    "pages": {
-      "description": "How many pages the archive has.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "removed": {
-      "description": "How many files of an archive written there before it no longer\nhas, removed.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "search_index_bytes": {
-      "description": "The size of the search index, `search-index.js`, in bytes.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "search_index_large": {
-      "description": "Whether the search index is large enough that a reader's first\nsearch waits for it to load.",
-      "type": "boolean"
-    },
-    "status": {
-      "description": "The line's status: `current`, `live`, or `planned`.",
-      "type": "string"
-    },
-    "target": {
-      "description": "The target.",
-      "type": "string"
-    },
-    "unlinked": {
-      "description": "Each link written as its text: a link out of the line, or to an\naddress no page of the line has.",
-      "items": {
-        "$ref": "#/$defs/UnlinkedJson"
-      },
-      "type": "array"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "target",
-    "line",
-    "status",
-    "build",
-    "folder",
-    "contents",
-    "pages",
-    "assets",
-    "removed",
-    "search_index_bytes",
-    "search_index_large",
-    "unlinked"
-  ],
-  "title": "VersionsExportReport",
-  "type": "object"
-}
-```
+**`VersionsExportReport`**: What `ascribe versions export --format json` writes: the line, the folder, and what's in it.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `target` | `string` | yes | no | The target. |
+| `line` | `string` | yes | no | The line exported, as `[releases.<target>]` writes it. |
+| `status` | `string` | yes | no | The line's status: `current`, `live`, or `planned`. |
+| `build` | `string` | yes | no | The build the line is a line of, as it's declared. |
+| `folder` | `string` | yes | no | The folder written, from the current folder, with `/`. |
+| `contents` | `string` | yes | no | The contents page, from the folder: `index.html`, or `contents.html` when the line's root page is `index.html`. |
+| `pages` | `integer` | yes | no | How many pages the archive has. |
+| `assets` | `integer` | yes | no | How many copies of images and files they use it has. |
+| `removed` | `integer` | yes | no | How many files of an archive written there before it no longer has, removed. |
+| `search_index_bytes` | `integer` | yes | no | The size of the search index, `search-index.js`, in bytes. |
+| `search_index_large` | `boolean` | yes | no | Whether the search index is large enough that a reader's first search waits for it to load. |
+| `unlinked` | `object[]` | yes | no | Each link written as its text: a link out of the line, or to an address no page of the line has. |
+| `unlinked[].file` | `string` | yes | no | The page it's on, from the project root. |
+| `unlinked[].text` | `string` | yes | no | Its text. |
+| `unlinked[].href` | `string` | yes | no | Where it led. |
+| `unlinked[].line` | `string` | yes | yes | For a link out of the line, the line it led to. |

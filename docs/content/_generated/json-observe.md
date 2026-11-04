@@ -1,234 +1,33 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/observe.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/observe.schema.json`]({repo}/blob/v{version}/schemas/observe.schema.json):
+The fields of [`schemas/observe.schema.json`]({repo}/blob/v{version}/schemas/observe.schema.json):
 
-```json
-{
-  "$defs": {
-    "Changes": {
-      "description": "What differs between an observation and the one after it, or the folder.",
-      "properties": {
-        "added": {
-          "description": "Examples it lists that the earlier one didn't, by path.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "changed": {
-          "description": "Examples both list, with different hashes.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "environment": {
-          "description": "Environment values that differ, in the newer one's order, then those\nonly the earlier one had.",
-          "items": {
-            "$ref": "#/$defs/EnvironmentChange"
-          },
-          "type": "array"
-        },
-        "removed": {
-          "description": "Examples the earlier one listed that it doesn't.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "added",
-        "removed",
-        "changed",
-        "environment"
-      ],
-      "type": "object"
-    },
-    "EnvironmentChange": {
-      "description": "An environment value that differs.",
-      "properties": {
-        "key": {
-          "description": "The entry's key: `os`, `arch`, or the config's.",
-          "type": "string"
-        },
-        "now": {
-          "description": "What the newer one has; absent when it has none.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "was": {
-          "description": "What the earlier observation had; absent when it had none.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "key",
-        "was",
-        "now"
-      ],
-      "type": "object"
-    },
-    "EnvironmentRun": {
-      "description": "An `[environment]` command that ran.",
-      "properties": {
-        "command": {
-          "description": "The line of shell.",
-          "type": "string"
-        },
-        "kept": {
-          "description": "The first line it printed, as the observation records it.",
-          "type": "string"
-        },
-        "key": {
-          "description": "The entry's key.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "key",
-        "command",
-        "kept"
-      ],
-      "type": "object"
-    },
-    "TestRun": {
-      "description": "The test command, and how it ended.",
-      "properties": {
-        "command": {
-          "description": "The line of shell.",
-          "type": "string"
-        },
-        "exit_code": {
-          "description": "Its exit code; absent when a signal stopped it.",
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "passed": {
-          "description": "Whether it exited with 0.",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "command",
-        "passed",
-        "exit_code"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/observe.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe observe --format json` writes: the commands it ran, how the\ntest ended, the observation it wrote, and what changed since the one it\nreplaced. With `--check`, nothing ran: the observation it compared, and\nwhether it's current.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "changes": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/Changes"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "What changed since the observation it replaced: absent when there was\nnone, or the test failed. With `--check`, what differs between the\nobservation and the folder."
-    },
-    "check": {
-      "description": "Whether it was run with `--check`, which runs nothing.",
-      "type": "boolean"
-    },
-    "config": {
-      "description": "The config it ran, `ascribe.examples.toml`, in the current folder.",
-      "type": "string"
-    },
-    "current": {
-      "description": "With `--check`, whether the observation is current: it lists every\nexample in the folder, with the hash it has now, and nothing else.\nAbsent without `--check`.",
-      "type": [
-        "boolean",
-        "null"
-      ]
-    },
-    "environment": {
-      "description": "The `[environment]` commands, in the order the config has them, each\nwith the line it kept. Empty with `--check`.",
-      "items": {
-        "$ref": "#/$defs/EnvironmentRun"
-      },
-      "type": "array"
-    },
-    "files": {
-      "additionalProperties": {
-        "type": "string"
-      },
-      "description": "The hash of each example, by path from the current folder. Empty when\nthe test failed.",
-      "type": "object"
-    },
-    "observation": {
-      "description": "The observation it wrote, from the current folder: none when the test\nfailed. With `--check`, the one it compared; with `--dry-run`, the\none it would write.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "recorded": {
-      "additionalProperties": {
-        "type": "string"
-      },
-      "description": "The environment the observation records, by name: `os`, `arch`, and\neach entry's kept line. Empty when the test failed.",
-      "type": "object"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "test": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/TestRun"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "The test command, and how it ended. Absent with `--check`."
-    },
-    "tested": {
-      "description": "What a page says it was tested with: `Node 24.9.0 on Linux`. Absent\nwhen the test failed.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "written": {
-      "description": "Whether it wrote the observation: false with `--check` or\n`--dry-run`, or when the test failed.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "config",
-    "check",
-    "environment",
-    "test",
-    "observation",
-    "written",
-    "current",
-    "changes",
-    "recorded",
-    "files",
-    "tested"
-  ],
-  "title": "ObserveReport",
-  "type": "object"
-}
-```
+**`ObserveReport`**: What `ascribe observe --format json` writes: the commands it ran, how the test ended, the observation it wrote, and what changed since the one it replaced. With `--check`, nothing ran: the observation it compared, and whether it's current.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `config` | `string` | yes | no | The config it ran, `ascribe.examples.toml`, in the current folder. |
+| `check` | `boolean` | yes | no | Whether it was run with `--check`, which runs nothing. |
+| `environment` | `object[]` | yes | no | The `[environment]` commands, in the order the config has them, each with the line it kept. Empty with `--check`. |
+| `environment[].key` | `string` | yes | no | The entry's key. |
+| `environment[].command` | `string` | yes | no | The line of shell. |
+| `environment[].kept` | `string` | yes | no | The first line it printed, as the observation records it. |
+| `test` | `object` | yes | yes | The test command, and how it ended. Absent with `--check`. |
+| `test.command` | `string` | yes | no | The line of shell. |
+| `test.passed` | `boolean` | yes | no | Whether it exited with 0. |
+| `test.exit_code` | `integer` | yes | yes | Its exit code; absent when a signal stopped it. |
+| `observation` | `string` | yes | yes | The observation it wrote, from the current folder: none when the test failed. With `--check`, the one it compared; with `--dry-run`, the one it would write. |
+| `written` | `boolean` | yes | no | Whether it wrote the observation: false with `--check` or `--dry-run`, or when the test failed. |
+| `current` | `boolean` | yes | yes | With `--check`, whether the observation is current: it lists every example in the folder, with the hash it has now, and nothing else. Absent without `--check`. |
+| `changes` | `object` | yes | yes | What changed since the observation it replaced: absent when there was none, or the test failed. With `--check`, what differs between the observation and the folder. |
+| `changes.added` | `string[]` | yes | no | Examples it lists that the earlier one didn't, by path. |
+| `changes.removed` | `string[]` | yes | no | Examples the earlier one listed that it doesn't. |
+| `changes.changed` | `string[]` | yes | no | Examples both list, with different hashes. |
+| `changes.environment` | `object[]` | yes | no | Environment values that differ, in the newer one's order, then those only the earlier one had. |
+| `changes.environment[].key` | `string` | yes | no | The entry's key: `os`, `arch`, or the config's. |
+| `changes.environment[].was` | `string` | yes | yes | What the earlier observation had; absent when it had none. |
+| `changes.environment[].now` | `string` | yes | yes | What the newer one has; absent when it has none. |
+| `recorded` | `{ [name]: string }` | yes | no | The environment the observation records, by name: `os`, `arch`, and each entry's kept line. Empty when the test failed. |
+| `files` | `{ [name]: string }` | yes | no | The hash of each example, by path from the current folder. Empty when the test failed. |
+| `tested` | `string` | yes | yes | What a page says it was tested with: `Node 24.9.0 on Linux`. Absent when the test failed. |

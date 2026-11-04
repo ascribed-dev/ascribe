@@ -1,296 +1,49 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/versions-retire.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/versions-retire.schema.json`]({repo}/blob/v{version}/schemas/versions-retire.schema.json):
+The fields of [`schemas/versions-retire.schema.json`]({repo}/blob/v{version}/schemas/versions-retire.schema.json):
 
-```json
-{
-  "$defs": {
-    "FeatureJson": {
-      "description": "A feature moved by the release.",
-      "properties": {
-        "from": {
-          "description": "Its spec before.",
-          "type": "string"
-        },
-        "kept": {
-          "description": "The other targets its spec names, left as they were.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "key": {
-          "description": "Its key.",
-          "type": "string"
-        },
-        "to": {
-          "description": "Its spec after.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "key",
-        "from",
-        "to",
-        "kept"
-      ],
-      "type": "object"
-    },
-    "FileJson": {
-      "description": "A source file the release rewrites.",
-      "properties": {
-        "file": {
-          "description": "The file, from the project root.",
-          "type": "string"
-        },
-        "marks": {
-          "description": "Each mark rewritten.",
-          "items": {
-            "$ref": "#/$defs/MarkJson"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "file",
-        "marks"
-      ],
-      "type": "object"
-    },
-    "MarkJson": {
-      "description": "A mark the release rewrites.",
-      "properties": {
-        "from": {
-          "description": "The spec as written.",
-          "type": "string"
-        },
-        "line": {
-          "description": "Its line, from 1.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "to": {
-          "description": "The spec as rewritten.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "line",
-        "from",
-        "to"
-      ],
-      "type": "object"
-    },
-    "OutputJson": {
-      "description": "One output the release changes.",
-      "properties": {
-        "added": {
-          "description": "The files it gains, by their path in the output.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "build": {
-          "description": "The build: `site`, or an older line's, `site@3.4`. Empty for the\nfile the lines share.",
-          "type": "string"
-        },
-        "changed": {
-          "description": "The files that change.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "output": {
-          "description": "The output: `site`, `plain`, or `json`, or `_ascribe` for the file\nthe lines share.",
-          "type": "string"
-        },
-        "removed": {
-          "description": "The files it loses.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "build",
-        "output",
-        "added",
-        "removed",
-        "changed"
-      ],
-      "type": "object"
-    },
-    "RedirectJson": {
-      "description": "An address and where it should go, as the headers list writes a path.",
-      "properties": {
-        "from": {
-          "description": "The address, from the site's root.",
-          "type": "string"
-        },
-        "to": {
-          "description": "Where it should go: a path from the site's root, or the archive's\nfull address.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "from",
-        "to"
-      ],
-      "type": "object"
-    },
-    "UnusedJson": {
-      "description": "Content no line has, or a mark that says nothing.",
-      "properties": {
-        "file": {
-          "description": "The file, from the project root.",
-          "type": "string"
-        },
-        "kind": {
-          "description": "`page`, `section`, `block`, `row`, or `mark`, for a mark that says\nnothing and can go while its content stays.",
-          "type": "string"
-        },
-        "line": {
-          "description": "The mark's line, from 1.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "text": {
-          "description": "Its first line: a page's title, a section's heading, a block's or a\nrow's first line, or the mark.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file",
-        "line",
-        "kind",
-        "text"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/versions-retire.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe versions retire --format json` writes: the line, its\naddress, the marks rewritten, what no line has any more, and where each\nof the line's addresses should go.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "ended": {
-      "description": "The day the line's support ended: its `ends`, or the day it was\nretired.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "expected": {
-      "description": "The outputs of builds that aren't lines of the target whose pages\nchange only in the target's part of their availability lines, by\nbuild and output: expected, so they need no `--force`.",
-      "items": {
-        "$ref": "#/$defs/OutputJson"
-      },
-      "type": "array"
-    },
-    "features": {
-      "description": "Each feature whose spec is rewritten.",
-      "items": {
-        "$ref": "#/$defs/FeatureJson"
-      },
-      "type": "array"
-    },
-    "files": {
-      "description": "Each source file whose marks are rewritten, from the project root.",
-      "items": {
-        "$ref": "#/$defs/FileJson"
-      },
-      "type": "array"
-    },
-    "from": {
-      "description": "The `ascribe.toml` the target's lines are written in, from the\ncurrent folder, when the project's `[from]` takes them from another\nproject's: the retirement is made in that project, and `files` are\nfrom its root. `null` when they're written in the project's own.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "line": {
-      "description": "The line, as `[releases.<target>]` writes it.",
-      "type": "string"
-    },
-    "outputs": {
-      "description": "The outputs of builds that aren't lines of the target that the\nrewrite changes, by build and output: they need `--force`, and a dry\nrun lists them.",
-      "items": {
-        "$ref": "#/$defs/OutputJson"
-      },
-      "type": "array"
-    },
-    "recorded": {
-      "description": "Whether `ascribe.addresses` records the redirects that go to a page\nin the current line, in `[moved]` keyed by the address, so the build\nwrites them: true when the project has the file and the line has\none. With `--dry-run`, whether it would. Those to the archive are\nnever recorded.",
-      "type": "boolean"
-    },
-    "redirects": {
-      "description": "Where each address the line published should go, by address: the\nsame page in the current line, the page that replaces it there, or\nits page in the archive.",
-      "items": {
-        "$ref": "#/$defs/RedirectJson"
-      },
-      "type": "array"
-    },
-    "removed": {
-      "description": "Whether what `unused` lists was deleted, with `--remove-unused`.",
-      "type": "boolean"
-    },
-    "retired": {
-      "description": "Whether this run retired the line: false when it was archived\nalready, and the run only listed or removed what it left.",
-      "type": "boolean"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "target": {
-      "description": "The target.",
-      "type": "string"
-    },
-    "unused": {
-      "description": "What no live or planned line has, and the marks that say nothing\nonce rewritten, by file and line.",
-      "items": {
-        "$ref": "#/$defs/UnusedJson"
-      },
-      "type": "array"
-    },
-    "url": {
-      "description": "Where the line's archive is read.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "written": {
-      "description": "Whether the files were written: false with `--dry-run`.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "written",
-    "retired",
-    "target",
-    "line",
-    "url",
-    "ended",
-    "features",
-    "files",
-    "unused",
-    "removed",
-    "redirects",
-    "recorded",
-    "outputs",
-    "expected",
-    "from"
-  ],
-  "title": "VersionsRetireReport",
-  "type": "object"
-}
-```
+**`VersionsRetireReport`**: What `ascribe versions retire --format json` writes: the line, its address, the marks rewritten, what no line has any more, and where each of the line's addresses should go.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `written` | `boolean` | yes | no | Whether the files were written: false with `--dry-run`. |
+| `retired` | `boolean` | yes | no | Whether this run retired the line: false when it was archived already, and the run only listed or removed what it left. |
+| `target` | `string` | yes | no | The target. |
+| `line` | `string` | yes | no | The line, as `[releases.<target>]` writes it. |
+| `url` | `string` | yes | yes | Where the line's archive is read. |
+| `ended` | `string` | yes | yes | The day the line's support ended: its `ends`, or the day it was retired. |
+| `features` | `object[]` | yes | no | Each feature whose spec is rewritten. |
+| `features[].key` | `string` | yes | no | Its key. |
+| `features[].from` | `string` | yes | no | Its spec before. |
+| `features[].to` | `string` | yes | no | Its spec after. |
+| `features[].kept` | `string[]` | yes | no | The other targets its spec names, left as they were. |
+| `files` | `object[]` | yes | no | Each source file whose marks are rewritten, from the project root. |
+| `files[].file` | `string` | yes | no | The file, from the project root. |
+| `files[].marks` | `object[]` | yes | no | Each mark rewritten. |
+| `files[].marks[].line` | `integer` | yes | no | Its line, from 1. |
+| `files[].marks[].from` | `string` | yes | no | The spec as written. |
+| `files[].marks[].to` | `string` | yes | no | The spec as rewritten. |
+| `unused` | `object[]` | yes | no | What no live or planned line has, and the marks that say nothing once rewritten, by file and line. |
+| `unused[].file` | `string` | yes | no | The file, from the project root. |
+| `unused[].line` | `integer` | yes | no | The mark's line, from 1. |
+| `unused[].kind` | `string` | yes | no | `page`, `section`, `block`, `row`, or `mark`, for a mark that says nothing and can go while its content stays. |
+| `unused[].text` | `string` | yes | no | Its first line: a page's title, a section's heading, a block's or a row's first line, or the mark. |
+| `removed` | `boolean` | yes | no | Whether what `unused` lists was deleted, with `--remove-unused`. |
+| `redirects` | `object[]` | yes | no | Where each address the line published should go, by address: the same page in the current line, the page that replaces it there, or its page in the archive. |
+| `redirects[].from` | `string` | yes | no | The address, from the site's root. |
+| `redirects[].to` | `string` | yes | no | Where it should go: a path from the site's root, or the archive's full address. |
+| `recorded` | `boolean` | yes | no | Whether `ascribe.addresses` records the redirects that go to a page in the current line, in `[moved]` keyed by the address, so the build writes them: true when the project has the file and the line has one. With `--dry-run`, whether it would. Those to the archive are never recorded. |
+| `outputs` | `OutputJson[]` | yes | no | The outputs of builds that aren't lines of the target that the rewrite changes, by build and output: they need `--force`, and a dry run lists them. |
+| `expected` | `OutputJson[]` | yes | no | The outputs of builds that aren't lines of the target whose pages change only in the target's part of their availability lines, by build and output: expected, so they need no `--force`. |
+| `from` | `string` | yes | yes | The `ascribe.toml` the target's lines are written in, from the current folder, when the project's `[from]` takes them from another project's: the retirement is made in that project, and `files` are from its root. `null` when they're written in the project's own. |
+
+**`OutputJson`**: One output the release changes.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `build` | `string` | yes | no | The build: `site`, or an older line's, `site@3.4`. Empty for the file the lines share. |
+| `output` | `string` | yes | no | The output: `site`, `plain`, or `json`, or `_ascribe` for the file the lines share. |
+| `added` | `string[]` | yes | no | The files it gains, by their path in the output. |
+| `removed` | `string[]` | yes | no | The files it loses. |
+| `changed` | `string[]` | yes | no | The files that change. |

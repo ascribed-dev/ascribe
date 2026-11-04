@@ -1,276 +1,40 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/versions-release.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/versions-release.schema.json`]({repo}/blob/v{version}/schemas/versions-release.schema.json):
+The fields of [`schemas/versions-release.schema.json`]({repo}/blob/v{version}/schemas/versions-release.schema.json):
 
-```json
-{
-  "$defs": {
-    "ClearedFileJson": {
-      "description": "A source file with marks that say nothing once the line that was\ncurrent is archived.",
-      "properties": {
-        "file": {
-          "description": "The file, from the project root.",
-          "type": "string"
-        },
-        "marks": {
-          "description": "Each mark removed or rewritten.",
-          "items": {
-            "$ref": "#/$defs/ClearedMarkJson"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "file",
-        "marks"
-      ],
-      "type": "object"
-    },
-    "ClearedMarkJson": {
-      "description": "A mark that says nothing, removed or rewritten.",
-      "properties": {
-        "from": {
-          "description": "Its entry for the target, as written.",
-          "type": "string"
-        },
-        "line": {
-          "description": "Its line, from 1, before the release.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "to": {
-          "description": "The entry as rewritten; null when the mark is removed.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "line",
-        "from",
-        "to"
-      ],
-      "type": "object"
-    },
-    "FeatureJson": {
-      "description": "A feature moved by the release.",
-      "properties": {
-        "from": {
-          "description": "Its spec before.",
-          "type": "string"
-        },
-        "kept": {
-          "description": "The other targets its spec names, left as they were.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "key": {
-          "description": "Its key.",
-          "type": "string"
-        },
-        "to": {
-          "description": "Its spec after.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "key",
-        "from",
-        "to",
-        "kept"
-      ],
-      "type": "object"
-    },
-    "FileJson": {
-      "description": "A source file the release rewrites.",
-      "properties": {
-        "file": {
-          "description": "The file, from the project root.",
-          "type": "string"
-        },
-        "marks": {
-          "description": "Each mark rewritten.",
-          "items": {
-            "$ref": "#/$defs/MarkJson"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "file",
-        "marks"
-      ],
-      "type": "object"
-    },
-    "MarkJson": {
-      "description": "A mark the release rewrites.",
-      "properties": {
-        "from": {
-          "description": "The spec as written.",
-          "type": "string"
-        },
-        "line": {
-          "description": "Its line, from 1.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "to": {
-          "description": "The spec as rewritten.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "line",
-        "from",
-        "to"
-      ],
-      "type": "object"
-    },
-    "OutputJson": {
-      "description": "One output the release changes.",
-      "properties": {
-        "added": {
-          "description": "The files it gains, by their path in the output.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "build": {
-          "description": "The build: `site`, or an older line's, `site@3.4`. Empty for the\nfile the lines share.",
-          "type": "string"
-        },
-        "changed": {
-          "description": "The files that change.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "output": {
-          "description": "The output: `site`, `plain`, or `json`, or `_ascribe` for the file\nthe lines share.",
-          "type": "string"
-        },
-        "removed": {
-          "description": "The files it loses.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "build",
-        "output",
-        "added",
-        "removed",
-        "changed"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/versions-release.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe versions release --format json` writes: the line released,\nthe files and marks rewritten, the features moved, and what the release\nchanges in the outputs.",
-  "properties": {
-    "archived": {
-      "description": "The line that was current, moved to `archived` with no address,\nbecause no build is versioned by the target.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "cleared": {
-      "description": "Each source file with marks for the target that say nothing once\n`archived` is, removed or rewritten, from the project root.",
-      "items": {
-        "$ref": "#/$defs/ClearedFileJson"
-      },
-      "type": "array"
-    },
-    "cleared_features": {
-      "description": "Each feature whose spec says nothing for the target once `archived`\nis, rewritten.",
-      "items": {
-        "$ref": "#/$defs/FeatureJson"
-      },
-      "type": "array"
-    },
-    "files": {
-      "description": "Each source file whose marks are rewritten, from the project root.",
-      "items": {
-        "$ref": "#/$defs/FileJson"
-      },
-      "type": "array"
-    },
-    "from": {
-      "description": "The `ascribe.toml` the target's lines are written in, from the\ncurrent folder, when the project's `[from]` takes them from another\nproject's: the release is made in that project, and `files` are from\nits root. `null` when they're written in the project's own.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "line": {
-      "description": "The line released, as given.",
-      "type": "string"
-    },
-    "next": {
-      "description": "The line planned after the released one, from `--next`.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "next_added": {
-      "description": "Whether `next` was added to `planned`, from `--next`.",
-      "type": "boolean"
-    },
-    "outputs": {
-      "description": "What the release changes in the builds' outputs, by build and\noutput.",
-      "items": {
-        "$ref": "#/$defs/OutputJson"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "target": {
-      "description": "The target.",
-      "type": "string"
-    },
-    "was_planned": {
-      "description": "Whether the line was in `planned`; a line that wasn't is a release\nnobody planned, such as a patch.",
-      "type": "boolean"
-    },
-    "written": {
-      "description": "Whether the files were written: false with `--dry-run`.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "written",
-    "target",
-    "line",
-    "was_planned",
-    "next",
-    "next_added",
-    "archived",
-    "files",
-    "cleared",
-    "cleared_features",
-    "outputs",
-    "from"
-  ],
-  "title": "VersionsReleaseReport",
-  "type": "object"
-}
-```
+**`VersionsReleaseReport`**: What `ascribe versions release --format json` writes: the line released, the files and marks rewritten, the features moved, and what the release changes in the outputs.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `written` | `boolean` | yes | no | Whether the files were written: false with `--dry-run`. |
+| `target` | `string` | yes | no | The target. |
+| `line` | `string` | yes | no | The line released, as given. |
+| `was_planned` | `boolean` | yes | no | Whether the line was in `planned`; a line that wasn't is a release nobody planned, such as a patch. |
+| `next` | `string` | yes | yes | The line planned after the released one, from `--next`. |
+| `next_added` | `boolean` | yes | no | Whether `next` was added to `planned`, from `--next`. |
+| `archived` | `string` | yes | yes | The line that was current, moved to `archived` with no address, because no build is versioned by the target. |
+| `files` | `object[]` | yes | no | Each source file whose marks are rewritten, from the project root. |
+| `files[].file` | `string` | yes | no | The file, from the project root. |
+| `files[].marks` | `object[]` | yes | no | Each mark rewritten. |
+| `files[].marks[].line` | `integer` | yes | no | Its line, from 1. |
+| `files[].marks[].from` | `string` | yes | no | The spec as written. |
+| `files[].marks[].to` | `string` | yes | no | The spec as rewritten. |
+| `cleared` | `object[]` | yes | no | Each source file with marks for the target that say nothing once `archived` is, removed or rewritten, from the project root. |
+| `cleared[].file` | `string` | yes | no | The file, from the project root. |
+| `cleared[].marks` | `object[]` | yes | no | Each mark removed or rewritten. |
+| `cleared[].marks[].line` | `integer` | yes | no | Its line, from 1, before the release. |
+| `cleared[].marks[].from` | `string` | yes | no | Its entry for the target, as written. |
+| `cleared[].marks[].to` | `string` | yes | yes | The entry as rewritten; null when the mark is removed. |
+| `cleared_features` | `object[]` | yes | no | Each feature whose spec says nothing for the target once `archived` is, rewritten. |
+| `cleared_features[].key` | `string` | yes | no | Its key. |
+| `cleared_features[].from` | `string` | yes | no | Its spec before. |
+| `cleared_features[].to` | `string` | yes | no | Its spec after. |
+| `cleared_features[].kept` | `string[]` | yes | no | The other targets its spec names, left as they were. |
+| `outputs` | `object[]` | yes | no | What the release changes in the builds' outputs, by build and output. |
+| `outputs[].build` | `string` | yes | no | The build: `site`, or an older line's, `site@3.4`. Empty for the file the lines share. |
+| `outputs[].output` | `string` | yes | no | The output: `site`, `plain`, or `json`, or `_ascribe` for the file the lines share. |
+| `outputs[].added` | `string[]` | yes | no | The files it gains, by their path in the output. |
+| `outputs[].removed` | `string[]` | yes | no | The files it loses. |
+| `outputs[].changed` | `string[]` | yes | no | The files that change. |
+| `from` | `string` | yes | yes | The `ascribe.toml` the target's lines are written in, from the current folder, when the project's `[from]` takes them from another project's: the release is made in that project, and `files` are from its root. `null` when they're written in the project's own. |

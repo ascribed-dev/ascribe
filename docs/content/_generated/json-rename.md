@@ -1,121 +1,20 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/rename.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/rename.schema.json`]({repo}/blob/v{version}/schemas/rename.schema.json):
+The fields of [`schemas/rename.schema.json`]({repo}/blob/v{version}/schemas/rename.schema.json):
 
-```json
-{
-  "$defs": {
-    "FileJson": {
-      "description": "A file a rename changes.",
-      "properties": {
-        "edits": {
-          "description": "How many places in it change.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "file": {
-          "description": "The file, from the current directory.",
-          "type": "string"
-        },
-        "text": {
-          "description": "Its whole text after the rename.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file",
-        "text",
-        "edits"
-      ],
-      "type": "object"
-    },
-    "MoveJson": {
-      "description": "A move `--from-git` records.",
-      "properties": {
-        "key": {
-          "description": "The entry's key: where the page was.",
-          "type": "string"
-        },
-        "value": {
-          "description": "The entry's value: where it is now.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "key",
-        "value"
-      ],
-      "type": "object"
-    },
-    "MovedJson": {
-      "description": "The file a rename moves.",
-      "properties": {
-        "from": {
-          "description": "Where it is, from the current directory.",
-          "type": "string"
-        },
-        "to": {
-          "description": "Where it goes, from the current directory. Its folder is made when\nit isn't there.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "from",
-        "to"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/rename.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe rename --format json` writes, and the MCP server's\n`ascribe_rename` gives.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "files": {
-      "description": "Each file the rename changes, in path order, with its whole text\nafter. The file that moves is under where it was, and\n`ascribe.addresses` is one of them when the rename records a move.",
-      "items": {
-        "$ref": "#/$defs/FileJson"
-      },
-      "type": "array"
-    },
-    "moved": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/MovedJson"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "The page or fragment that moves, when one does."
-    },
-    "recorded": {
-      "description": "The entries of `ascribe.addresses`'s `[moved]` the rename records, in\nkey order, so the build forwards the old addresses; none when it\nrecords nothing, as for a phrase, a fragment, or a project with no\n`ascribe.addresses`.",
-      "items": {
-        "$ref": "#/$defs/MoveJson"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "written": {
-      "description": "Whether the files were written and the file moved: `--dry-run`, and\nthe MCP server's `ascribe_rename`, write nothing, and give the\nchanges to make.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "files",
-    "recorded",
-    "written"
-  ],
-  "title": "RenameReport",
-  "type": "object"
-}
-```
+**`RenameReport`**: What `ascribe rename --format json` writes, and the MCP server's `ascribe_rename` gives.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `files` | `object[]` | yes | no | Each file the rename changes, in path order, with its whole text after. The file that moves is under where it was, and `ascribe.addresses` is one of them when the rename records a move. |
+| `files[].file` | `string` | yes | no | The file, from the current directory. |
+| `files[].text` | `string` | yes | no | Its whole text after the rename. |
+| `files[].edits` | `integer` | yes | no | How many places in it change. |
+| `recorded` | `object[]` | yes | no | The entries of `ascribe.addresses`'s `[moved]` the rename records, in key order, so the build forwards the old addresses; none when it records nothing, as for a phrase, a fragment, or a project with no `ascribe.addresses`. |
+| `recorded[].key` | `string` | yes | no | The entry's key: where the page was. |
+| `recorded[].value` | `string` | yes | no | The entry's value: where it is now. |
+| `written` | `boolean` | yes | no | Whether the files were written and the file moved: `--dry-run`, and the MCP server's `ascribe_rename`, write nothing, and give the changes to make. |
+| `moved` | `object` | no | no | The page or fragment that moves, when one does. |
+| `moved.from` | `string` | yes | no | Where it is, from the current directory. |
+| `moved.to` | `string` | yes | no | Where it goes, from the current directory. Its folder is made when it isn't there. |

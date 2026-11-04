@@ -1,133 +1,24 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/agents-index.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/agents-index.schema.json`]({repo}/blob/v{version}/schemas/agents-index.schema.json):
+The fields of [`schemas/agents-index.schema.json`]({repo}/blob/v{version}/schemas/agents-index.schema.json):
 
-```json
-{
-  "$defs": {
-    "IndexPage": {
-      "description": "A page copied into the folder an index points into.",
-      "properties": {
-        "path": {
-          "description": "Its Markdown version's path in the folder.",
-          "type": "string"
-        },
-        "source": {
-          "description": "The page, as a path from the content root.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "source",
-        "path"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/agents-index.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe agents index --format json` answers.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "build": {
-      "description": "The build.",
-      "type": "string"
-    },
-    "bytes": {
-      "description": "How many bytes it holds.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "changed": {
-      "description": "Whether that file changed: with `--dry-run`, whether it would.",
-      "type": "boolean"
-    },
-    "file": {
-      "description": "The file the index was written into, between its markers, from the\nfolder the command ran in; `null` when it was printed.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "folder": {
-      "description": "The folder the pages were copied into, from the folder the command\nran in; `null` without `--pages`.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "left_out": {
-      "description": "The offered pages the index leaves out to stay under `limit`, as paths\nfrom the content root.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "limit": {
-      "description": "The most bytes the index holds.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "listed": {
-      "description": "The pages the index lists, as paths from the content root, in its\norder.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "offered": {
-      "description": "How many pages the build offers: those it publishes, apart from the\n`unlisted`.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "pages": {
-      "description": "The pages copied into the folder: every offered page, with\n`--pages`.",
-      "items": {
-        "$ref": "#/$defs/IndexPage"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "text": {
-      "description": "The index's Markdown.",
-      "type": "string"
-    },
-    "without_description": {
-      "description": "The pages the index lists without their description, to stay under\n`limit`, as paths from the content root.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "written": {
-      "description": "Whether the file and the pages were written: false when the index\nwas printed, or with `--dry-run`.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "build",
-    "limit",
-    "bytes",
-    "offered",
-    "listed",
-    "left_out",
-    "without_description",
-    "file",
-    "changed",
-    "written",
-    "folder",
-    "pages",
-    "text"
-  ],
-  "title": "AgentsIndexReport",
-  "type": "object"
-}
-```
+**`AgentsIndexReport`**: What `ascribe agents index --format json` answers.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `build` | `string` | yes | no | The build. |
+| `limit` | `integer` | yes | no | The most bytes the index holds. |
+| `bytes` | `integer` | yes | no | How many bytes it holds. |
+| `offered` | `integer` | yes | no | How many pages the build offers: those it publishes, apart from the `unlisted`. |
+| `listed` | `string[]` | yes | no | The pages the index lists, as paths from the content root, in its order. |
+| `left_out` | `string[]` | yes | no | The offered pages the index leaves out to stay under `limit`, as paths from the content root. |
+| `without_description` | `string[]` | yes | no | The pages the index lists without their description, to stay under `limit`, as paths from the content root. |
+| `file` | `string` | yes | yes | The file the index was written into, between its markers, from the folder the command ran in; `null` when it was printed. |
+| `changed` | `boolean` | yes | no | Whether that file changed: with `--dry-run`, whether it would. |
+| `written` | `boolean` | yes | no | Whether the file and the pages were written: false when the index was printed, or with `--dry-run`. |
+| `folder` | `string` | yes | yes | The folder the pages were copied into, from the folder the command ran in; `null` without `--pages`. |
+| `pages` | `object[]` | yes | no | The pages copied into the folder: every offered page, with `--pages`. |
+| `pages[].source` | `string` | yes | no | The page, as a path from the content root. |
+| `pages[].path` | `string` | yes | no | Its Markdown version's path in the folder. |
+| `text` | `string` | yes | no | The index's Markdown. |

@@ -1,209 +1,33 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/drift.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/drift.schema.json`]({repo}/blob/v{version}/schemas/drift.schema.json):
+The fields of [`schemas/drift.schema.json`]({repo}/blob/v{version}/schemas/drift.schema.json):
 
-```json
-{
-  "$defs": {
-    "BaseInfo": {
-      "description": "The base of a comparison, in the report.",
-      "properties": {
-        "commit": {
-          "description": "The commit it names.",
-          "type": "string"
-        },
-        "merge_base": {
-          "description": "The merge base of that commit and `HEAD`, which the comparison reads;\n`null` with `--base-exact`, which reads `commit`.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "requested": {
-          "description": "The revision asked for, or the default branch used.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "requested",
-        "commit",
-        "merge_base"
-      ],
-      "type": "object"
-    },
-    "BrokenExample": {
-      "description": "A snippet that resolved at the base and doesn't in the working tree: its\nregion, file, or source is gone.",
-      "properties": {
-        "address": {
-          "description": "Its address, as the page writes it.",
-          "type": "string"
-        },
-        "problem": {
-          "description": "The slug of the diagnostic `ascribe check` reports for it\n(`snippet-region-missing`).",
-          "type": "string"
-        },
-        "reason": {
-          "description": "Why it doesn't resolve, in a few words.",
-          "type": "string"
-        },
-        "source": {
-          "description": "The source the address names.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "address",
-        "source",
-        "problem",
-        "reason"
-      ],
-      "type": "object"
-    },
-    "ChangedExample": {
-      "description": "A snippet whose code changed.",
-      "properties": {
-        "added": {
-          "description": "Lines only in the code now.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "address": {
-          "description": "Its address, as the page writes it.",
-          "type": "string"
-        },
-        "file": {
-          "description": "The code file now, from the repository's root.",
-          "type": "string"
-        },
-        "removed": {
-          "description": "Lines only in the code at the base.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "source": {
-          "description": "The source the address names.",
-          "type": "string"
-        },
-        "was_file": {
-          "description": "The code file at the base, when it was renamed since.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "address",
-        "source",
-        "file",
-        "was_file",
-        "added",
-        "removed"
-      ],
-      "type": "object"
-    },
-    "DriftPage": {
-      "description": "A page with an example that changed or broke.",
-      "properties": {
-        "broken": {
-          "description": "The examples that resolved at the base and don't now, by address.",
-          "items": {
-            "$ref": "#/$defs/BrokenExample"
-          },
-          "type": "array"
-        },
-        "builds": {
-          "description": "The builds that show it with a changed example, in the order asked\nfor.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "examples": {
-          "description": "The examples that changed, by address. Empty when only `broken`\nisn't.",
-          "items": {
-            "$ref": "#/$defs/ChangedExample"
-          },
-          "type": "array"
-        },
-        "page_changed": {
-          "description": "Whether the page changed apart from its examples: its own file, or\nits resolved content through anything else it uses (a fragment, the\ncontent model), in any of those builds. When it didn't, the example\nchanged and the words around it didn't.",
-          "type": "boolean"
-        },
-        "path": {
-          "description": "The page's content path.",
-          "type": "string"
-        },
-        "route": {
-          "description": "Its route, in the first of the builds it's in.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "path",
-        "route",
-        "builds",
-        "page_changed",
-        "examples",
-        "broken"
-      ],
-      "type": "object"
-    },
-    "RepositoryInfo": {
-      "description": "The repository, in the report.",
-      "properties": {
-        "project_prefix": {
-          "description": "The project's folder inside it, with a trailing `/`, or empty when\nthe project is at the repository's root.",
-          "type": "string"
-        },
-        "root": {
-          "description": "The repository's top-level directory, as git prints it.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "root",
-        "project_prefix"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/drift.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "The report, as `ascribe drift --format json` writes it.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "base": {
-      "$ref": "#/$defs/BaseInfo",
-      "description": "What was compared with."
-    },
-    "pages": {
-      "description": "Every page with an example that changed or broke, in path order.",
-      "items": {
-        "$ref": "#/$defs/DriftPage"
-      },
-      "type": "array"
-    },
-    "repository": {
-      "$ref": "#/$defs/RepositoryInfo",
-      "description": "Where the project is."
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "base",
-    "repository",
-    "pages"
-  ],
-  "title": "DriftReport",
-  "type": "object"
-}
-```
+**`DriftReport`**: The report, as `ascribe drift --format json` writes it.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `base` | `object` | yes | no | What was compared with. |
+| `base.requested` | `string` | yes | no | The revision asked for, or the default branch used. |
+| `base.commit` | `string` | yes | no | The commit it names. |
+| `base.merge_base` | `string` | yes | yes | The merge base of that commit and `HEAD`, which the comparison reads; `null` with `--base-exact`, which reads `commit`. |
+| `repository` | `object` | yes | no | Where the project is. |
+| `repository.root` | `string` | yes | no | The repository's top-level directory, as git prints it. |
+| `repository.project_prefix` | `string` | yes | no | The project's folder inside it, with a trailing `/`, or empty when the project is at the repository's root. |
+| `pages` | `object[]` | yes | no | Every page with an example that changed or broke, in path order. |
+| `pages[].path` | `string` | yes | no | The page's content path. |
+| `pages[].route` | `string` | yes | no | Its route, in the first of the builds it's in. |
+| `pages[].builds` | `string[]` | yes | no | The builds that show it with a changed example, in the order asked for. |
+| `pages[].page_changed` | `boolean` | yes | no | Whether the page changed apart from its examples: its own file, or its resolved content through anything else it uses (a fragment, the content model), in any of those builds. When it didn't, the example changed and the words around it didn't. |
+| `pages[].examples` | `object[]` | yes | no | The examples that changed, by address. Empty when only `broken` isn't. |
+| `pages[].examples[].address` | `string` | yes | no | Its address, as the page writes it. |
+| `pages[].examples[].source` | `string` | yes | no | The source the address names. |
+| `pages[].examples[].file` | `string` | yes | no | The code file now, from the repository's root. |
+| `pages[].examples[].was_file` | `string` | yes | yes | The code file at the base, when it was renamed since. |
+| `pages[].examples[].added` | `integer` | yes | no | Lines only in the code now. |
+| `pages[].examples[].removed` | `integer` | yes | no | Lines only in the code at the base. |
+| `pages[].broken` | `object[]` | yes | no | The examples that resolved at the base and don't now, by address. |
+| `pages[].broken[].address` | `string` | yes | no | Its address, as the page writes it. |
+| `pages[].broken[].source` | `string` | yes | no | The source the address names. |
+| `pages[].broken[].problem` | `string` | yes | no | The slug of the diagnostic `ascribe check` reports for it (`snippet-region-missing`). |
+| `pages[].broken[].reason` | `string` | yes | no | Why it doesn't resolve, in a few words. |

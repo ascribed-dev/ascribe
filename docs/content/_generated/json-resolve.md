@@ -1,80 +1,22 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/resolve.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/resolve.schema.json`]({repo}/blob/v{version}/schemas/resolve.schema.json):
+The fields of [`schemas/resolve.schema.json`]({repo}/blob/v{version}/schemas/resolve.schema.json):
 
-```json
-{
-  "$defs": {
-    "Emit": {
-      "description": "Which output a page is written as, by the name `ascribe build --emit`\ngives it.",
-      "oneOf": [
-        {
-          "const": "plain",
-          "description": "The plain output: fully resolved CommonMark with no HTML.",
-          "type": "string"
-        },
-        {
-          "const": "site",
-          "description": "The site output: Markdown with Ascribe's elements, as a site's\nintegration receives it.",
-          "type": "string"
-        }
-      ]
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/resolve.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe resolve <PAGE> --format json` answers.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "build": {
-      "description": "The build.",
-      "type": "string"
-    },
-    "emit": {
-      "$ref": "#/$defs/Emit",
-      "description": "Which output `text` is written as: `plain`, the build's plain\noutput, or `site`, its site output."
-    },
-    "not_published": {
-      "description": "Why the build doesn't publish the page, when it doesn't; `text` is\nempty then.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "page": {
-      "description": "The page, as a path from the content root.",
-      "type": "string"
-    },
-    "route": {
-      "description": "The page's route in the build's site.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "text": {
-      "description": "The page as the output `emit` names writes it: with its frontmatter\nfirst when asked for.",
-      "type": "string"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "page",
-    "build",
-    "emit",
-    "not_published",
-    "route",
-    "text"
-  ],
-  "title": "ResolveReport",
-  "type": "object"
-}
-```
+**`ResolveReport`**: What `ascribe resolve <PAGE> --format json` answers.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `page` | `string` | yes | no | The page, as a path from the content root. |
+| `build` | `string` | yes | no | The build. |
+| `emit` | `Emit` | yes | no | Which output `text` is written as: `plain`, the build's plain output, or `site`, its site output. |
+| `not_published` | `string` | yes | yes | Why the build doesn't publish the page, when it doesn't; `text` is empty then. |
+| `route` | `string` | yes | yes | The page's route in the build's site. |
+| `text` | `string` | yes | no | The page as the output `emit` names writes it: with its frontmatter first when asked for. |
+
+**`Emit`**: Which output a page is written as, by the name `ascribe build --emit` gives it. One of:
+
+| Value | Description |
+| --- | --- |
+| `"plain"` | The plain output: fully resolved CommonMark with no HTML. |
+| `"site"` | The site output: Markdown with Ascribe's elements, as a site's integration receives it. |

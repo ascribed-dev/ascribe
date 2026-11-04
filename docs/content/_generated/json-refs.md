@@ -1,180 +1,39 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/refs.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/refs.schema.json`]({repo}/blob/v{version}/schemas/refs.schema.json):
+The fields of [`schemas/refs.schema.json`]({repo}/blob/v{version}/schemas/refs.schema.json):
 
-```json
-{
-  "$defs": {
-    "Place": {
-      "description": "A place a target is used.",
-      "properties": {
-        "column": {
-          "description": "The column, from 1, in Unicode characters.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "file": {
-          "description": "The file, from the project root, as `ascribe check` reports it.",
-          "type": "string"
-        },
-        "line": {
-          "description": "The line, from 1.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "personal": {
-          "description": "Whether it's a memo file kept on this machine only, in\n`.ascribe/memos/`, rather than the project's `memos/`; `false` for\nevery place that isn't a memo.",
-          "type": "boolean"
-        },
-        "spec": {
-          "description": "The availability spec, as written, for an `availability` place; null\nfor every other place.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "use": {
-          "description": "How it uses the target: `link`, `include`, `phrase`, `availability`,\n`term`, `variant`, `note`, `widget`, `image`, an image that shows it,\n`html` or `frontmatter`, raw HTML or a frontmatter field that names\nit, or `memo`, a memo file about it.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file",
-        "line",
-        "column",
-        "use",
-        "personal",
-        "spec"
-      ],
-      "type": "object"
-    },
-    "TargetKind": {
-      "description": "What a target is.",
-      "oneOf": [
-        {
-          "const": "page",
-          "description": "A page.",
-          "type": "string"
-        },
-        {
-          "const": "fragment",
-          "description": "A fragment.",
-          "type": "string"
-        },
-        {
-          "const": "heading",
-          "description": "A heading, by its page and id.",
-          "type": "string"
-        },
-        {
-          "const": "image",
-          "description": "An image under the content root.",
-          "type": "string"
-        },
-        {
-          "const": "phrase",
-          "description": "A phrase, `phrase:<key>`.",
-          "type": "string"
-        },
-        {
-          "const": "feature",
-          "description": "A feature, `feature:<key>`.",
-          "type": "string"
-        },
-        {
-          "const": "term",
-          "description": "A glossary term, `term:<id>`.",
-          "type": "string"
-        },
-        {
-          "const": "dimension",
-          "description": "A dimension, `dimension:<name>`.",
-          "type": "string"
-        },
-        {
-          "const": "note",
-          "description": "A note type, `note:<type>`.",
-          "type": "string"
-        },
-        {
-          "const": "widget",
-          "description": "A project widget, `widget:<name>`.",
-          "type": "string"
-        },
-        {
-          "const": "release",
-          "description": "A line of a release target, `release:<target>@<version>`.",
-          "type": "string"
-        }
-      ]
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/refs.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe refs <TARGET>` answers.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "exists": {
-      "description": "Whether the target exists. When it doesn't, the only places are the\nmemo files that name it.",
-      "type": "boolean"
-    },
-    "kind": {
-      "$ref": "#/$defs/TargetKind",
-      "description": "What the target is."
-    },
-    "next_command": {
-      "description": "The command that lists them all, when the list was cut.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "places": {
-      "description": "The places that use it, file by file in path order and in document\norder within a file, then the memo files about it, in path order; at\nmost `shown` of them.",
-      "items": {
-        "$ref": "#/$defs/Place"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "shown": {
-      "description": "How many are listed.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "target": {
-      "description": "The target, as given.",
-      "type": "string"
-    },
-    "total": {
-      "description": "How many places use it.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "truncated": {
-      "description": "Whether the list was cut: `shown` is less than `total`.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "target",
-    "kind",
-    "exists",
-    "places",
-    "total",
-    "shown",
-    "truncated",
-    "next_command"
-  ],
-  "title": "RefsReport",
-  "type": "object"
-}
-```
+**`RefsReport`**: What `ascribe refs <TARGET>` answers.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `target` | `string` | yes | no | The target, as given. |
+| `kind` | `TargetKind` | yes | no | What the target is. |
+| `exists` | `boolean` | yes | no | Whether the target exists. When it doesn't, the only places are the memo files that name it. |
+| `places` | `object[]` | yes | no | The places that use it, file by file in path order and in document order within a file, then the memo files about it, in path order; at most `shown` of them. |
+| `places[].file` | `string` | yes | no | The file, from the project root, as `ascribe check` reports it. |
+| `places[].line` | `integer` | yes | no | The line, from 1. |
+| `places[].column` | `integer` | yes | no | The column, from 1, in Unicode characters. |
+| `places[].use` | `string` | yes | no | How it uses the target: `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, `widget`, `image`, an image that shows it, `html` or `frontmatter`, raw HTML or a frontmatter field that names it, or `memo`, a memo file about it. |
+| `places[].personal` | `boolean` | yes | no | Whether it's a memo file kept on this machine only, in `.ascribe/memos/`, rather than the project's `memos/`; `false` for every place that isn't a memo. |
+| `places[].spec` | `string` | yes | yes | The availability spec, as written, for an `availability` place; null for every other place. |
+| `total` | `integer` | yes | no | How many places use it. |
+| `shown` | `integer` | yes | no | How many are listed. |
+| `truncated` | `boolean` | yes | no | Whether the list was cut: `shown` is less than `total`. |
+| `next_command` | `string` | yes | yes | The command that lists them all, when the list was cut. |
+
+**`TargetKind`**: What a target is. One of:
+
+| Value | Description |
+| --- | --- |
+| `"page"` | A page. |
+| `"fragment"` | A fragment. |
+| `"heading"` | A heading, by its page and id. |
+| `"image"` | An image under the content root. |
+| `"phrase"` | A phrase, `phrase:<key>`. |
+| `"feature"` | A feature, `feature:<key>`. |
+| `"term"` | A glossary term, `term:<id>`. |
+| `"dimension"` | A dimension, `dimension:<name>`. |
+| `"note"` | A note type, `note:<type>`. |
+| `"widget"` | A project widget, `widget:<name>`. |
+| `"release"` | A line of a release target, `release:<target>@<version>`. |

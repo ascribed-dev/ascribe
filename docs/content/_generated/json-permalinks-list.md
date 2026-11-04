@@ -1,253 +1,50 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/permalinks-list.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/permalinks-list.schema.json`]({repo}/blob/v{version}/schemas/permalinks-list.schema.json):
+The fields of [`schemas/permalinks-list.schema.json`]({repo}/blob/v{version}/schemas/permalinks-list.schema.json):
 
-```json
-{
-  "$defs": {
-    "AliasEntry": {
-      "description": "A name `ascribe.addresses` moves to another permalink: an alias.",
-      "properties": {
-        "name": {
-          "description": "Its name.",
-          "type": "string"
-        },
-        "state": {
-          "$ref": "#/$defs/ListState",
-          "description": "Whether the list has it, leading there: `listed`, or `not_listed`."
-        },
-        "target": {
-          "description": "The name it was moved to.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "target",
-        "state"
-      ],
-      "type": "object"
-    },
-    "DeclaredEntry": {
-      "description": "A permalink the content declares.",
-      "properties": {
-        "file": {
-          "description": "The file it's declared in, from the project root, as `ascribe check`\nreports it.",
-          "type": "string"
-        },
-        "line": {
-          "description": "The line of its `@id` or its frontmatter `permalink`, from 1.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "listed_at": {
-          "description": "The place the list has for it, when that's somewhere else.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "name": {
-          "description": "Its name.",
-          "type": "string"
-        },
-        "place": {
-          "description": "Where it's declared, as the list writes it: the file's path from the\ncontent root, and `#` and the id for a heading.",
-          "type": "string"
-        },
-        "state": {
-          "$ref": "#/$defs/ListState",
-          "description": "Whether the list has it: `listed` at one of the places its name is\ndeclared, `moved` when the list has it somewhere else, or\n`not_listed`."
-        }
-      },
-      "required": [
-        "name",
-        "place",
-        "file",
-        "line",
-        "state",
-        "listed_at"
-      ],
-      "type": "object"
-    },
-    "ListState": {
-      "description": "Whether the list has a permalink where it's declared.",
-      "oneOf": [
-        {
-          "const": "listed",
-          "description": "At one of the places its name is declared.",
-          "type": "string"
-        },
-        {
-          "const": "moved",
-          "description": "At a place that doesn't declare it any more.",
-          "type": "string"
-        },
-        {
-          "const": "not_listed",
-          "description": "Not at all.",
-          "type": "string"
-        }
-      ]
-    },
-    "ListedAs": {
-      "description": "Which of the list's tables has a name.",
-      "oneOf": [
-        {
-          "const": "permalink",
-          "description": "`[permalinks]`: a permalink the content declared.",
-          "type": "string"
-        },
-        {
-          "const": "alias",
-          "description": "`[aliases]`: a name moved to another permalink.",
-          "type": "string"
-        },
-        {
-          "const": "moved",
-          "description": "`[moved]`: a name moved to a page.",
-          "type": "string"
-        },
-        {
-          "const": "retired",
-          "description": "`[retired]`: a retired permalink.",
-          "type": "string"
-        }
-      ]
-    },
-    "MovedName": {
-      "description": "A name `ascribe.addresses` moves to a page.",
-      "properties": {
-        "name": {
-          "description": "Its name.",
-          "type": "string"
-        },
-        "state": {
-          "$ref": "#/$defs/ListState",
-          "description": "Whether the list has it, leading there: `listed`, or `not_listed`."
-        },
-        "to": {
-          "description": "Where its address leads now, as written: a page, and `#` and a\nheading's id.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "to",
-        "state"
-      ],
-      "type": "object"
-    },
-    "RemovedEntry": {
-      "description": "A name the list has that the project doesn't.",
-      "properties": {
-        "name": {
-          "description": "Its name.",
-          "type": "string"
-        },
-        "place": {
-          "description": "Where the list says a permalink was declared; for an alias, the name\nit led to; for a moved one, where; for a retired one, its reason.",
-          "type": "string"
-        },
-        "was": {
-          "$ref": "#/$defs/ListedAs",
-          "description": "What the list has it as."
-        }
-      },
-      "required": [
-        "name",
-        "was",
-        "place"
-      ],
-      "type": "object"
-    },
-    "RetiredEntry": {
-      "description": "A name `ascribe.addresses` retires.",
-      "properties": {
-        "name": {
-          "description": "Its name.",
-          "type": "string"
-        },
-        "reason": {
-          "description": "Why it was retired.",
-          "type": "string"
-        },
-        "state": {
-          "$ref": "#/$defs/ListState",
-          "description": "Whether the list has it as retired, with this reason: `listed`, or\n`not_listed`."
-        }
-      },
-      "required": [
-        "name",
-        "reason",
-        "state"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/permalinks-list.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe permalinks list` answers.",
-  "properties": {
-    "aliases": {
-      "description": "The names `ascribe.addresses` moves to another permalink, by name.",
-      "items": {
-        "$ref": "#/$defs/AliasEntry"
-      },
-      "type": "array"
-    },
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "has_list": {
-      "description": "Whether the project has `ascribe.permalinks`. Without it, every\npermalink is `not_listed`, and nothing is `removed`.",
-      "type": "boolean"
-    },
-    "moved": {
-      "description": "The names `ascribe.addresses` moves to a page, by name.",
-      "items": {
-        "$ref": "#/$defs/MovedName"
-      },
-      "type": "array"
-    },
-    "permalinks": {
-      "description": "Every permalink the content declares, in path order and then in\ndocument order, a page's own first. A name declared in several\nplaces is here once for each.",
-      "items": {
-        "$ref": "#/$defs/DeclaredEntry"
-      },
-      "type": "array"
-    },
-    "removed": {
-      "description": "The names the list has that the project no longer has, by name.",
-      "items": {
-        "$ref": "#/$defs/RemovedEntry"
-      },
-      "type": "array"
-    },
-    "retired": {
-      "description": "The names `ascribe.addresses` retires, or moves to one that's\nretired, by name.",
-      "items": {
-        "$ref": "#/$defs/RetiredEntry"
-      },
-      "type": "array"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "has_list",
-    "permalinks",
-    "aliases",
-    "moved",
-    "retired",
-    "removed"
-  ],
-  "title": "PermalinksListReport",
-  "type": "object"
-}
-```
+**`PermalinksListReport`**: What `ascribe permalinks list` answers.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `has_list` | `boolean` | yes | no | Whether the project has `ascribe.permalinks`. Without it, every permalink is `not_listed`, and nothing is `removed`. |
+| `permalinks` | `object[]` | yes | no | Every permalink the content declares, in path order and then in document order, a page's own first. A name declared in several places is here once for each. |
+| `permalinks[].name` | `string` | yes | no | Its name. |
+| `permalinks[].place` | `string` | yes | no | Where it's declared, as the list writes it: the file's path from the content root, and `#` and the id for a heading. |
+| `permalinks[].file` | `string` | yes | no | The file it's declared in, from the project root, as `ascribe check` reports it. |
+| `permalinks[].line` | `integer` | yes | no | The line of its `@id` or its frontmatter `permalink`, from 1. |
+| `permalinks[].state` | `ListState` | yes | no | Whether the list has it: `listed` at one of the places its name is declared, `moved` when the list has it somewhere else, or `not_listed`. |
+| `permalinks[].listed_at` | `string` | yes | yes | The place the list has for it, when that's somewhere else. |
+| `aliases` | `object[]` | yes | no | The names `ascribe.addresses` moves to another permalink, by name. |
+| `aliases[].name` | `string` | yes | no | Its name. |
+| `aliases[].target` | `string` | yes | no | The name it was moved to. |
+| `aliases[].state` | `ListState` | yes | no | Whether the list has it, leading there: `listed`, or `not_listed`. |
+| `moved` | `object[]` | yes | no | The names `ascribe.addresses` moves to a page, by name. |
+| `moved[].name` | `string` | yes | no | Its name. |
+| `moved[].to` | `string` | yes | no | Where its address leads now, as written: a page, and `#` and a heading's id. |
+| `moved[].state` | `ListState` | yes | no | Whether the list has it, leading there: `listed`, or `not_listed`. |
+| `retired` | `object[]` | yes | no | The names `ascribe.addresses` retires, or moves to one that's retired, by name. |
+| `retired[].name` | `string` | yes | no | Its name. |
+| `retired[].reason` | `string` | yes | no | Why it was retired. |
+| `retired[].state` | `ListState` | yes | no | Whether the list has it as retired, with this reason: `listed`, or `not_listed`. |
+| `removed` | `object[]` | yes | no | The names the list has that the project no longer has, by name. |
+| `removed[].name` | `string` | yes | no | Its name. |
+| `removed[].was` | `ListedAs` | yes | no | What the list has it as. |
+| `removed[].place` | `string` | yes | no | Where the list says a permalink was declared; for an alias, the name it led to; for a moved one, where; for a retired one, its reason. |
+
+**`ListState`**: Whether the list has a permalink where it's declared. One of:
+
+| Value | Description |
+| --- | --- |
+| `"listed"` | At one of the places its name is declared. |
+| `"moved"` | At a place that doesn't declare it any more. |
+| `"not_listed"` | Not at all. |
+
+**`ListedAs`**: Which of the list's tables has a name. One of:
+
+| Value | Description |
+| --- | --- |
+| `"permalink"` | `[permalinks]`: a permalink the content declared. |
+| `"alias"` | `[aliases]`: a name moved to another permalink. |
+| `"moved"` | `[moved]`: a name moved to a page. |
+| `"retired"` | `[retired]`: a retired permalink. |

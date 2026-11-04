@@ -1,533 +1,89 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/check.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/check.schema.json`]({repo}/blob/v{version}/schemas/check.schema.json):
+The fields of [`schemas/check.schema.json`]({repo}/blob/v{version}/schemas/check.schema.json):
 
-```json
-{
-  "$defs": {
-    "AcknowledgedEntry": {
-      "description": "A problem acknowledged as intended.",
-      "properties": {
-        "at": {
-          "$ref": "#/$defs/Place",
-          "description": "Where the acknowledgement is written."
-        },
-        "builds": {
-          "description": "The builds it appears in, as a diagnostic's `builds` are.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "code": {
-          "description": "The code of the check that found it, such as `ASC036`.",
-          "type": "string"
-        },
-        "file": {
-          "description": "The file, as a diagnostic's `file` is.",
-          "type": "string"
-        },
-        "message": {
-          "description": "What the check found.",
-          "type": "string"
-        },
-        "range": {
-          "$ref": "#/$defs/Range",
-          "description": "Where in the file."
-        },
-        "reason": {
-          "description": "Why it's intended: the acknowledgement's reason.",
-          "type": "string"
-        },
-        "slug": {
-          "description": "The check's name.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "code",
-        "slug",
-        "message",
-        "file",
-        "range",
-        "builds",
-        "reason",
-        "at"
-      ],
-      "type": "object"
-    },
-    "CodeCount": {
-      "description": "How many diagnostics have one code.",
-      "properties": {
-        "code": {
-          "description": "The code, such as `ASC036`.",
-          "type": "string"
-        },
-        "count": {
-          "description": "How many.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "severity": {
-          "description": "`error`, `warning`, or `advice`.",
-          "type": "string"
-        },
-        "slug": {
-          "description": "The diagnostic's name, such as `link-target-missing`.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "code",
-        "slug",
-        "severity",
-        "count"
-      ],
-      "type": "object"
-    },
-    "Edit": {
-      "description": "One edit of a fix.",
-      "properties": {
-        "new_text": {
-          "description": "The text that replaces it.",
-          "type": "string"
-        },
-        "range": {
-          "$ref": "#/$defs/Range",
-          "description": "The text it replaces."
-        }
-      },
-      "required": [
-        "range",
-        "new_text"
-      ],
-      "type": "object"
-    },
-    "Entry": {
-      "description": "A diagnostic.",
-      "properties": {
-        "builds": {
-          "description": "The builds a page-level diagnostic appears in, in `ascribe.toml`'s\norder. Empty for a file-level diagnostic, and for one in content no\nbuild publishes. With `--build`, only that build.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "code": {
-          "description": "The code, such as `ASC036`.",
-          "type": "string"
-        },
-        "docs": {
-          "description": "The address of its entry in the diagnostics reference: the docs'\npermalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,\nwhich forwards to the entry wherever it is.",
-          "type": "string"
-        },
-        "file": {
-          "description": "The file, relative to the project root (the directory of\n`ascribe.toml`), with `/` separators. `ascribe.toml` for a\ncontent-model problem.",
-          "type": "string"
-        },
-        "fixes": {
-          "description": "Edits that would fix it.",
-          "items": {
-            "$ref": "#/$defs/Fix"
-          },
-          "type": "array"
-        },
-        "help": {
-          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode, in Markdown, whose links are the docs' permalinks, such as\n`https://ascribed-dev.com/go/22-checks/`.",
-          "type": "string"
-        },
-        "message": {
-          "description": "What's wrong, and what to do about it.",
-          "type": "string"
-        },
-        "next": {
-          "description": "The kind of next step: `fix` when Ascribe can make the edit,\n`choose` when the author picks among things Ascribe can list,\n`write` when it needs writing or judgment, `outside` when nothing in\nthe source can fix it, and `review` when it may be fine as it is.",
-          "type": "string"
-        },
-        "range": {
-          "$ref": "#/$defs/Range",
-          "description": "Where in the file."
-        },
-        "related": {
-          "description": "Other places that explain it.",
-          "items": {
-            "$ref": "#/$defs/Related"
-          },
-          "type": "array"
-        },
-        "repeats": {
-          "description": "For a problem in included content reported because one of its related\nplaces is in a path named: at how many other includes it's reported\ntoo, collapsed into this one. `0` otherwise.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "rule": {
-          "description": "The rule of the program that found it, such as `Ascribe.Repeated`\nfrom Vale, for a `prose` diagnostic. Absent for Ascribe's own.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "severity": {
-          "description": "`error`, `warning`, or `advice`. Advice never fails the command.\nMore severities may be added; a reader treats one it doesn't know as\nit treats advice.",
-          "type": "string"
-        },
-        "slug": {
-          "description": "The diagnostic's name, such as `link-target-missing`.",
-          "type": "string"
-        },
-        "unpublished": {
-          "description": "Whether it's in content that no build publishes.",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "code",
-        "slug",
-        "severity",
-        "next",
-        "message",
-        "file",
-        "range",
-        "related",
-        "fixes",
-        "builds",
-        "unpublished",
-        "help",
-        "docs",
-        "repeats"
-      ],
-      "type": "object"
-    },
-    "FileCount": {
-      "description": "How many diagnostics are in one file.",
-      "properties": {
-        "advice": {
-          "description": "How many advice.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "errors": {
-          "description": "How many errors.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "file": {
-          "description": "The file, as a diagnostic's `file` is.",
-          "type": "string"
-        },
-        "warnings": {
-          "description": "How many warnings.",
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "file",
-        "errors",
-        "warnings",
-        "advice"
-      ],
-      "type": "object"
-    },
-    "Fix": {
-      "description": "Edits that would fix a diagnostic.",
-      "properties": {
-        "applicability": {
-          "description": "`safe` when applying the edits as they are can't change what the page\nsays and leaves nothing to decide; `unsafe` otherwise.",
-          "type": "string"
-        },
-        "edits": {
-          "description": "The edits, each replacing the text of its range.",
-          "items": {
-            "$ref": "#/$defs/Edit"
-          },
-          "type": "array"
-        },
-        "file": {
-          "description": "The file the edits are in, as a diagnostic's `file` is.",
-          "type": "string"
-        },
-        "title": {
-          "description": "What the fix does.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "title",
-        "file",
-        "edits",
-        "applicability"
-      ],
-      "type": "object"
-    },
-    "FixedEntry": {
-      "description": "A safe fix `--fix` applied.",
-      "properties": {
-        "code": {
-          "description": "The code of the diagnostic it fixed, such as `ASC036`.",
-          "type": "string"
-        },
-        "file": {
-          "description": "The file it changed, as a diagnostic's `file` is.",
-          "type": "string"
-        },
-        "slug": {
-          "description": "The diagnostic's name.",
-          "type": "string"
-        },
-        "title": {
-          "description": "What the fix did.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "code",
-        "slug",
-        "title",
-        "file"
-      ],
-      "type": "object"
-    },
-    "Place": {
-      "description": "A place in a file.",
-      "properties": {
-        "file": {
-          "description": "The file, as a diagnostic's `file` is.",
-          "type": "string"
-        },
-        "range": {
-          "$ref": "#/$defs/Range",
-          "description": "Where in the file."
-        }
-      },
-      "required": [
-        "file",
-        "range"
-      ],
-      "type": "object"
-    },
-    "Pos": {
-      "description": "A position in a file.",
-      "properties": {
-        "column": {
-          "description": "The column, from 1, in Unicode characters (not bytes or UTF-16\nunits).",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "line": {
-          "description": "The line, from 1.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "offset": {
-          "description": "The byte offset from the start of the file.",
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "line",
-        "column",
-        "offset"
-      ],
-      "type": "object"
-    },
-    "Range": {
-      "description": "A span of a file. `end` is just past its last character; an empty range\n(an insertion) has equal positions.",
-      "properties": {
-        "end": {
-          "$ref": "#/$defs/Pos",
-          "description": "Just past its last character."
-        },
-        "start": {
-          "$ref": "#/$defs/Pos",
-          "description": "Its first character."
-        }
-      },
-      "required": [
-        "start",
-        "end"
-      ],
-      "type": "object"
-    },
-    "Related": {
-      "description": "Another place that explains a diagnostic.",
-      "properties": {
-        "file": {
-          "description": "The file, as a diagnostic's `file` is.",
-          "type": "string"
-        },
-        "message": {
-          "description": "What it has to do with the diagnostic.",
-          "type": "string"
-        },
-        "range": {
-          "$ref": "#/$defs/Range",
-          "description": "Where in the file."
-        }
-      },
-      "required": [
-        "file",
-        "range",
-        "message"
-      ],
-      "type": "object"
-    },
-    "Summary": {
-      "description": "How many diagnostics of each severity.",
-      "properties": {
-        "acknowledged": {
-          "description": "How many problems are acknowledged as intended. Left out when there\nare none.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "advice": {
-          "description": "How many advice.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "baselined": {
-          "description": "How many problems `ascribe.baseline` holds back, which `diagnostics`\nleaves out and which are advice. Left out when there are none, and\nwith `--no-baseline`.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "by_code": {
-          "description": "With `--summary`: how many diagnostics have each code, most first.",
-          "items": {
-            "$ref": "#/$defs/CodeCount"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "by_file": {
-          "description": "With `--summary`: how many diagnostics are in each file, most first.",
-          "items": {
-            "$ref": "#/$defs/FileCount"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "errors": {
-          "description": "How many errors.",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "warnings": {
-          "description": "How many warnings.",
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "errors",
-        "warnings",
-        "advice"
-      ],
-      "type": "object"
-    }
-  },
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/check.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe check --format json` and `ascribe build --format json`\nwrite: one document, whatever the outcome. Fields can be added without a\nnew `schema_version`, so a reader ignores fields it doesn't know.",
-  "properties": {
-    "acknowledged": {
-      "description": "The problems acknowledged as intended, which `diagnostics` leaves\nout and which don't fail the command, in file order. Left out when\nthere are none, and with `--summary`.",
-      "items": {
-        "$ref": "#/$defs/AcknowledgedEntry"
-      },
-      "type": "array"
-    },
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "builds_checked": {
-      "description": "The builds whose page-level checks ran, in `ascribe.toml`'s order:\nevery build, the ones named with `--build`, or the editor's with\n`--editor-build`. Empty when the project couldn't be checked.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "diagnostics": {
-      "description": "Every diagnostic, in file order, and in source order within a file;\nadvice after the errors and warnings, in the same order.\nWith paths, only those that count for them. With `--summary`, none:\nsee `truncated`.",
-      "items": {
-        "$ref": "#/$defs/Entry"
-      },
-      "type": "array"
-    },
-    "error": {
-      "description": "Why the project couldn't be checked (exit code 2), or `null`. When it\nisn't `null`, `diagnostics` holds what was found first: the content\nmodel's problems.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "files_checked": {
-      "description": "How many source files were checked: the project's.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "files_reported": {
-      "description": "How many of them the report covers: the source files in the paths\nnamed, or every one when no path was.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "fixed": {
-      "description": "With `--fix`, the safe fixes it applied, in file order and, within a\nfile, in the order of their diagnostics; the rest of the report is\nthe check after them. With `--dry-run`, the fixes it would apply,\nnone of which was, and the check is of the files as they are. Left\nout when there's none.",
-      "items": {
-        "$ref": "#/$defs/FixedEntry"
-      },
-      "type": "array"
-    },
-    "next_command": {
-      "description": "The command that lists the ones left out, when `truncated`; `null`\notherwise.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "shown": {
-      "description": "How many diagnostics `diagnostics` lists.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "summary": {
-      "$ref": "#/$defs/Summary",
-      "description": "How many errors, warnings, and advice."
-    },
-    "total": {
-      "description": "How many diagnostics there are.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "truncated": {
-      "description": "Whether `diagnostics` leaves some out. It does with `--summary`,\nwhich lists none.",
-      "type": "boolean"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "error",
-    "files_checked",
-    "files_reported",
-    "builds_checked",
-    "diagnostics",
-    "truncated",
-    "shown",
-    "total",
-    "next_command",
-    "summary"
-  ],
-  "title": "CheckReport",
-  "type": "object"
-}
-```
+**`CheckReport`**: What `ascribe check --format json` and `ascribe build --format json` write: one document, whatever the outcome. Fields can be added without a new `schema_version`, so a reader ignores fields it doesn't know.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `error` | `string` | yes | yes | Why the project couldn't be checked (exit code 2), or `null`. When it isn't `null`, `diagnostics` holds what was found first: the content model's problems. |
+| `files_checked` | `integer` | yes | no | How many source files were checked: the project's. |
+| `files_reported` | `integer` | yes | no | How many of them the report covers: the source files in the paths named, or every one when no path was. |
+| `builds_checked` | `string[]` | yes | no | The builds whose page-level checks ran, in `ascribe.toml`'s order: every build, the ones named with `--build`, or the editor's with `--editor-build`. Empty when the project couldn't be checked. |
+| `diagnostics` | `object[]` | yes | no | Every diagnostic, in file order, and in source order within a file; advice after the errors and warnings, in the same order. With paths, only those that count for them. With `--summary`, none: see `truncated`. |
+| `diagnostics[].code` | `string` | yes | no | The code, such as `ASC036`. |
+| `diagnostics[].slug` | `string` | yes | no | The diagnostic's name, such as `link-target-missing`. |
+| `diagnostics[].severity` | `string` | yes | no | `error`, `warning`, or `advice`. Advice never fails the command. More severities may be added; a reader treats one it doesn't know as it treats advice. |
+| `diagnostics[].next` | `string` | yes | no | The kind of next step: `fix` when Ascribe can make the edit, `choose` when the author picks among things Ascribe can list, `write` when it needs writing or judgment, `outside` when nothing in the source can fix it, and `review` when it may be fine as it is. |
+| `diagnostics[].message` | `string` | yes | no | What's wrong, and what to do about it. |
+| `diagnostics[].file` | `string` | yes | no | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
+| `diagnostics[].range` | `Range` | yes | no | Where in the file. |
+| `diagnostics[].related` | `object[]` | yes | no | Other places that explain it. |
+| `diagnostics[].related[].file` | `string` | yes | no | The file, as a diagnostic's `file` is. |
+| `diagnostics[].related[].range` | `Range` | yes | no | Where in the file. |
+| `diagnostics[].related[].message` | `string` | yes | no | What it has to do with the diagnostic. |
+| `diagnostics[].fixes` | `object[]` | yes | no | Edits that would fix it. |
+| `diagnostics[].fixes[].title` | `string` | yes | no | What the fix does. |
+| `diagnostics[].fixes[].file` | `string` | yes | no | The file the edits are in, as a diagnostic's `file` is. |
+| `diagnostics[].fixes[].edits` | `object[]` | yes | no | The edits, each replacing the text of its range. |
+| `diagnostics[].fixes[].edits[].range` | `Range` | yes | no | The text it replaces. |
+| `diagnostics[].fixes[].edits[].new_text` | `string` | yes | no | The text that replaces it. |
+| `diagnostics[].fixes[].applicability` | `string` | yes | no | `safe` when applying the edits as they are can't change what the page says and leaves nothing to decide; `unsafe` otherwise. |
+| `diagnostics[].builds` | `string[]` | yes | no | The builds a page-level diagnostic appears in, in `ascribe.toml`'s order. Empty for a file-level diagnostic, and for one in content no build publishes. With `--build`, only that build. |
+| `diagnostics[].unpublished` | `boolean` | yes | no | Whether it's in content that no build publishes. |
+| `diagnostics[].help` | `string` | yes | no | How to fix it, in general: the diagnostics reference's advice for its code, in Markdown, whose links are the docs' permalinks, such as `https://ascribed-dev.com/go/22-checks/`. |
+| `diagnostics[].docs` | `string` | yes | no | The address of its entry in the diagnostics reference: the docs' permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`, which forwards to the entry wherever it is. |
+| `diagnostics[].repeats` | `integer` | yes | no | For a problem in included content reported because one of its related places is in a path named: at how many other includes it's reported too, collapsed into this one. `0` otherwise. |
+| `diagnostics[].rule` | `string` | no | no | The rule of the program that found it, such as `Ascribe.Repeated` from Vale, for a `prose` diagnostic. Absent for Ascribe's own. |
+| `truncated` | `boolean` | yes | no | Whether `diagnostics` leaves some out. It does with `--summary`, which lists none. |
+| `shown` | `integer` | yes | no | How many diagnostics `diagnostics` lists. |
+| `total` | `integer` | yes | no | How many diagnostics there are. |
+| `next_command` | `string` | yes | yes | The command that lists the ones left out, when `truncated`; `null` otherwise. |
+| `summary` | `object` | yes | no | How many errors, warnings, and advice. |
+| `summary.errors` | `integer` | yes | no | How many errors. |
+| `summary.warnings` | `integer` | yes | no | How many warnings. |
+| `summary.advice` | `integer` | yes | no | How many advice. |
+| `summary.acknowledged` | `integer` | no | no | How many problems are acknowledged as intended. Left out when there are none. |
+| `summary.baselined` | `integer` | no | no | How many problems `ascribe.baseline` holds back, which `diagnostics` leaves out and which are advice. Left out when there are none, and with `--no-baseline`. |
+| `summary.by_code` | `object[]` | no | no | With `--summary`: how many diagnostics have each code, most first. |
+| `summary.by_code[].code` | `string` | yes | no | The code, such as `ASC036`. |
+| `summary.by_code[].slug` | `string` | yes | no | The diagnostic's name, such as `link-target-missing`. |
+| `summary.by_code[].severity` | `string` | yes | no | `error`, `warning`, or `advice`. |
+| `summary.by_code[].count` | `integer` | yes | no | How many. |
+| `summary.by_file` | `object[]` | no | no | With `--summary`: how many diagnostics are in each file, most first. |
+| `summary.by_file[].file` | `string` | yes | no | The file, as a diagnostic's `file` is. |
+| `summary.by_file[].errors` | `integer` | yes | no | How many errors. |
+| `summary.by_file[].warnings` | `integer` | yes | no | How many warnings. |
+| `summary.by_file[].advice` | `integer` | yes | no | How many advice. |
+| `acknowledged` | `object[]` | no | no | The problems acknowledged as intended, which `diagnostics` leaves out and which don't fail the command, in file order. Left out when there are none, and with `--summary`. |
+| `acknowledged[].code` | `string` | yes | no | The code of the check that found it, such as `ASC036`. |
+| `acknowledged[].slug` | `string` | yes | no | The check's name. |
+| `acknowledged[].message` | `string` | yes | no | What the check found. |
+| `acknowledged[].file` | `string` | yes | no | The file, as a diagnostic's `file` is. |
+| `acknowledged[].range` | `Range` | yes | no | Where in the file. |
+| `acknowledged[].builds` | `string[]` | yes | no | The builds it appears in, as a diagnostic's `builds` are. |
+| `acknowledged[].reason` | `string` | yes | no | Why it's intended: the acknowledgement's reason. |
+| `acknowledged[].at` | `object` | yes | no | Where the acknowledgement is written. |
+| `acknowledged[].at.file` | `string` | yes | no | The file, as a diagnostic's `file` is. |
+| `acknowledged[].at.range` | `Range` | yes | no | Where in the file. |
+| `fixed` | `object[]` | no | no | With `--fix`, the safe fixes it applied, in file order and, within a file, in the order of their diagnostics; the rest of the report is the check after them. With `--dry-run`, the fixes it would apply, none of which was, and the check is of the files as they are. Left out when there's none. |
+| `fixed[].code` | `string` | yes | no | The code of the diagnostic it fixed, such as `ASC036`. |
+| `fixed[].slug` | `string` | yes | no | The diagnostic's name. |
+| `fixed[].title` | `string` | yes | no | What the fix did. |
+| `fixed[].file` | `string` | yes | no | The file it changed, as a diagnostic's `file` is. |
+
+**`Range`**: A span of a file. `end` is just past its last character; an empty range (an insertion) has equal positions.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `start` | `Pos` | yes | no | Its first character. |
+| `end` | `Pos` | yes | no | Just past its last character. |
+
+**`Pos`**: A position in a file.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `line` | `integer` | yes | no | The line, from 1. |
+| `column` | `integer` | yes | no | The column, from 1, in Unicode characters (not bytes or UTF-16 units). |
+| `offset` | `integer` | yes | no | The byte offset from the start of the file. |

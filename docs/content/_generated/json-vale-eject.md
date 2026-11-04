@@ -1,45 +1,12 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/vale-eject.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/vale-eject.schema.json`]({repo}/blob/v{version}/schemas/vale-eject.schema.json):
+The fields of [`schemas/vale-eject.schema.json`]({repo}/blob/v{version}/schemas/vale-eject.schema.json):
 
-```json
-{
-  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/vale-eject.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "What `ascribe vale eject --format json` writes: the preset written out,\nand the files written.",
-  "properties": {
-    "ascribe_version": {
-      "description": "The release of Ascribe that wrote it, as `0.4.5`.",
-      "type": "string"
-    },
-    "dry_run": {
-      "description": "Whether it ran with `--dry-run`, and wrote nothing.",
-      "type": "boolean"
-    },
-    "preset": {
-      "description": "The preset written out.",
-      "type": "string"
-    },
-    "schema_version": {
-      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
-      "minimum": 0,
-      "type": "integer"
-    },
-    "written": {
-      "description": "The files written, from the project's folder, `/`-separated, in the\norder they were written: `ascribe.toml` last. With `--dry-run`, the\nfiles it would write.",
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    }
-  },
-  "required": [
-    "schema_version",
-    "ascribe_version",
-    "preset",
-    "written",
-    "dry_run"
-  ],
-  "title": "ValeEjectReport",
-  "type": "object"
-}
-```
+**`ValeEjectReport`**: What `ascribe vale eject --format json` writes: the preset written out, and the files written.
+
+| Field | Type | Required | Nullable | Description |
+| --- | --- | --- | --- | --- |
+| `schema_version` | `integer` | yes | no | The version of this schema. It changes only when a field is removed or changes meaning. |
+| `ascribe_version` | `string` | yes | no | The release of Ascribe that wrote it, as `0.4.5`. |
+| `preset` | `string` | yes | no | The preset written out. |
+| `written` | `string[]` | yes | no | The files written, from the project's folder, `/`-separated, in the order they were written: `ascribe.toml` last. With `--dry-run`, the files it would write. |
+| `dry_run` | `boolean` | yes | no | Whether it ran with `--dry-run`, and wrote nothing. |
