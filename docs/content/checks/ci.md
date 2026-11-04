@@ -9,13 +9,13 @@ The editor checks a page as you write it. CI checks every pull request the same 
 ## Add the workflow
 
 @steps
-1. Add `.github/workflows/check.yml`, which installs the project's dependencies and runs `npx ascribe check --deny-warnings` and `npx ascribe fmt --check` on every pull request and on each push to `main`, and shows each problem on the pull request's lines, as a linter's are. It checks out the whole history and names the base, which the project's `ascribe.addresses` needs ([below](#keep-the-addresses-youve-published)):
+1. Add `.github/workflows/check.yml`, which installs the project's dependencies and runs `ascribe check --deny-warnings` and `ascribe fmt --check` on every pull request and on each push to `main`, and shows each problem on the pull request's lines, as a linter's are. It checks out the whole history and names the base, which the project's `ascribe.addresses` needs ([below](#keep-the-addresses-youve-published)):
 
    @snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/getting-started/.github/workflows/check.yml#workflow
 
 2. Commit it, and open a pull request. The check runs on it, and shows each problem on its line of the pull request.
 
-`npm ci` installs the `@ascribed/cli` your `package.json` pins, so CI runs the `ascribe` the editor and `npx ascribe` run, and a new release changes the check only when you move the pin. With pnpm, run `pnpm install --frozen-lockfile` and `pnpm exec ascribe`.
+The workflow runs the command as `npx ascribe`: `npm ci` installs the `@ascribed/cli` your `package.json` pins, so CI runs the `ascribe` the editor runs, and a new release changes the check only when you move the pin. With pnpm, run `pnpm install --frozen-lockfile` and `pnpm exec ascribe`.
 
 Where there's no Node, [install `ascribe`](../install.md#without-node) with the install script, naming the release, add the folder it installs into, `~/.local/bin`, to the job's path, and run `ascribe` as it is:
 
@@ -31,19 +31,19 @@ Where there's no Node, [install `ascribe`](../install.md#without-node) with the 
       - run: ascribe fmt --check --format github
 ```
 
-Name the release your team runs, as its number, such as `{version}` (a leading `v` is accepted too), and change it as you would a dependency: without `--version`, the script installs the latest release, and a release with a new check fails pull requests nobody changed.
+Name the release your team runs, as its number, such as `{version}` (a leading `v` is accepted too), and change it as you would a dependency. Without `--version`, the script installs the latest release, and a release with a new check fails pull requests nobody changed.
 
 [`ascribe check`, `build`, `preview`, and `fmt`](check.md) has each command's options and exit codes.
 
 ### The problems on the pull request's lines
 
-`--format github` writes each problem as a GitHub Actions [annotation](check.md#output-for-github-actions), which the pull request shows on its line, with the diagnostic's name and message. It needs no permissions and no upload step, and works with a project in a folder of the repository. Without it, the problems are in the job's log alone. With a release that doesn't have it yet, leave it out: an unknown format fails the step.
+`--format github` writes each problem as a GitHub Actions [annotation](check.md#output-for-github-actions), which the pull request shows on its line, with the diagnostic's name and message. It needs no permissions and no upload step, and works with a project in a folder of the repository. Without it, the problems are in the job's log alone.
 
 ## Keep the addresses you've published
 
 Every project `ascribe init` started has [`ascribe.addresses`](../publishing/redirects.md), and `ascribe check` compares the addresses the docs publish with the base's, so a page that moved without a record fails the pull request. That's why the workflow gives `actions/checkout` `fetch-depth: 0`, for the history, and names the base: on a pull request, the branch it targets; on a push, the commit before the push, compared as it is. The push that creates `main`, a new repository's first, has no commit before it: there, the check names no base, and compares the pushed commit with itself.
 
-Without the history, as `actions/checkout`'s default gives, or with a base that isn't there, as after a force-push or with `--base` on the push that creates the branch, the rest of the check runs and [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) says the addresses weren't compared, a warning `--deny-warnings` fails on. A workflow that leaves out `fetch-depth: 0` or `--base` fails the project's first pull request this way ([Troubleshooting](../troubleshooting.md#addresses-base-unreadable)).
+Without the history, as `actions/checkout`'s default gives, or with a base that isn't there, as after a force-push or with `--base` on the push that creates the branch, the rest of the check runs. [`addresses-base-unreadable`](../publishing/redirects.md#addresses-base) then says the addresses weren't compared, a warning `--deny-warnings` fails on. A workflow that leaves out `fetch-depth: 0` or `--base` fails the project's first pull request this way ([Troubleshooting](../troubleshooting.md#addresses-base-unreadable)).
 
 ## Keep tested examples tested
 
@@ -80,7 +80,7 @@ With the project in a folder of the repository, give each `ascribe` command `--c
 `--format github` is for GitHub Actions alone. Elsewhere, such as GitLab CI or Jenkins, run the same commands, and turn [`--format json`](check.md#json-output) into what your CI shows. Each problem is one entry of `diagnostics`, with its `file`, its `range`, its `severity`, its `slug`, and its `message`. This prints each as a line, then fails as the check did:
 
 ```sh
-npx ascribe check --deny-warnings --format json > check.json || status=$?
+ascribe check --deny-warnings --format json > check.json || status=$?
 jq -r '.diagnostics[] | "\(.file):\(.range.start.line):\(.range.start.column): \(.severity): \(.message) [\(.slug)]"' check.json
 exit "${status:-0}"
 ```

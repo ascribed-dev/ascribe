@@ -9,7 +9,7 @@ description: "What `ascribe resolve --emit site` writes: a page as the site outp
 ## Its frontmatter
 @id: frontmatter
 
-The site form has no `#` title: the title is in its frontmatter, which `--frontmatter` adds. That's the site output's frontmatter, which an Astro content collection reads, not the page's as the plain form writes it: with the [keys](../astro/reference.md#components) the site output adds, such as `formatted`, a title's formatted form as HTML, `available`, as a list of targets with their states, versions, and text, and `source`, the page's path from the content root. From `examples/astro-site`, whose titles can show code:
+The site form has no `#` title: the title is in its frontmatter, which `--frontmatter` adds. That's the site output's frontmatter, which an Astro content collection reads, not the page's as the plain form writes it. It has the [keys](../astro/reference.md#components) the site output adds, such as `formatted`, a title's formatted form as HTML; `available`, a list of targets with their states, versions, and text; and `source`, the page's path from the content root. From `examples/astro-site`, whose titles can show code:
 
 @snippet {lang=markdown}: code:crates/ascribe-cli/tests/output/resolve-site-frontmatter.txt
 

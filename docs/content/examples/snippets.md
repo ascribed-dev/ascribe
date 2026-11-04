@@ -8,7 +8,7 @@ With `@snippet`, a page takes a code example from the file itself, and Ascribe r
 
 ## 1. Declare a source
 
-A page can't read files outside its project's folder unless `ascribe.toml` names them. A **source** is a folder of code a page may read, with the files in it that are allowed:
+A page can't show a file outside its project's folder as code unless `ascribe.toml` names it. A **source** is a folder of code a page may read, with the files in it that are allowed:
 
 ```toml
 [sources.code]

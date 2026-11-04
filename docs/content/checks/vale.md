@@ -56,7 +56,7 @@ A rule added to the preset in a later release makes new advice appear when you u
 
 ## Bring your own Vale configuration
 
-A project that already uses Vale points `config` at its `.vale.ini`, from the project root, instead of naming a preset:
+A project that already uses Vale points `config` at its `.vale.ini`, from the project's folder, instead of naming a preset:
 
 ```toml
 [checks.vale]
@@ -83,7 +83,7 @@ Your project already lists words Vale shouldn't take for misspellings: phrase va
 
 When Vale isn't installed, fails, or takes too long where the project asked for its prose checked everywhere, with `--vale` or `in-check = true`, you get one advice on `[checks.vale]` in `ascribe.toml` (`prose-not-checked`) saying why, and everything else is checked as usual. Without `in-check`, the editor checks the prose wherever Vale runs and says nothing where it doesn't, so a machine without Vale isn't told so. If you set `in-check` and check prose only in CI, turn that advice off on other machines with `prose-not-checked = "off"` in `[checks]`.
 
-To run a Vale that isn't on your `PATH`, set `command` to its path from the project root:
+To run a Vale that isn't on your `PATH`, set `command` to its path from the project's folder:
 
 ```toml
 [checks.vale]

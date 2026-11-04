@@ -5,7 +5,7 @@ description: "The order a project's sections and pages come in, from `ascribe.na
 permalink: navigation
 ---
 
-A project's **navigation** is its sections and pages in order, each with its label. Every sidebar and table of contents is drawn from it: an Astro site's `sidebar()` and `neighbors()` read it from the build (see [the Astro reference](../astro/reference.md#sidebar)), and so do [`llms.txt`](../content-model/output.md#consumer), `ascribe agents index`, an [archive](../versions/archive.md) of a release line, the JSON output, and `ascribe model`. With no file, a project has the default order; with `ascribe.nav` beside `ascribe.toml`, the file's order is laid over it, for the sections and pages it names. The rules are SPEC §7.8, and what the site output carries is the [navigation contract](../contracts/navigation.md).
+A project's **navigation** is its sections and pages in order, each with its label. With no file, a project has the default order; with `ascribe.nav` beside `ascribe.toml`, the file's order is laid over it, for the sections and pages it names. Every sidebar and table of contents is drawn from it, in the site, `llms.txt`, an archive, and the JSON output ([Who reads it](#who-reads-it)). The rules are SPEC §7.8, and what the site output carries is the [navigation contract](../contracts/navigation.md).
 
 To choose the order and the labels, see [Put your pages in order](order.md).
 
@@ -23,15 +23,15 @@ To choose the order and the labels, see [Put your pages in order](order.md).
 With no file, and for whatever the file leaves out:
 
 - Sections come in path order, the content root first.
-- In a section, its own page is first, then its pages by their content type, in the order `ascribe.toml` declares the types, then by title as a reader sees it, without a code span's backticks and with its phrases' values: a title written `` `zeta.yaml` options `` sorts under z, and `{product} overview` under the product's name.
+- In a section, its own page is first, then its pages by their page type, in the order `ascribe.toml` declares the types, then by title. A title sorts as a reader sees it, without a code span's backticks and with its phrases' values: `` `zeta.yaml` options `` sorts under z, and `{product} overview` under the product's name.
 - A nested section takes [its place](#a-nested-section-s-place), among its parent's pages or after them.
 
 ## A nested section's place
 @id: a-nested-section-s-place
 
-Below the content root, a nested section whose own page is beside its folder, such as `checks/diagnostics/` with `checks/diagnostics.md`, sits where that page sits among its parent's pages, in the default order and in the file's: its own `[[sections]]` table doesn't move it, so to move it, move the page in the parent's `pages`. Any other nested section comes after its parent's pages.
+Below the content root, a nested section whose own page is beside its folder, such as `checks/diagnostics/` with `checks/diagnostics.md`, sits where that page sits among its parent's pages, in the default order and in the file's. Its own `[[sections]]` table doesn't move it: to move it, move the page in the parent's `pages`. Any other nested section comes after its parent's pages.
 
-A top section comes after Start's pages, and is ordered among the top sections, by its `[[sections]]` table or in path order, even when its own page is beside its folder, such as `guides.md` beside `guides/`: never by where its page would sit among Start's.
+A top section comes after Start's pages, and is ordered among the top sections, by its `[[sections]]` table or in path order. That holds even when its own page is beside its folder, such as `guides.md` beside `guides/`: it's never placed by where its page would sit among Start's.
 
 ## A page's label
 @id: a-page-s-label
@@ -46,7 +46,7 @@ nav-label: Keys
 ---
 ```
 
-`nav-label` is a string on one line, read as the page's `title` is: with code spans in it where `title` sets `inline = "code"`, and phrases where `title` takes them. It's reserved, so a content type can't declare it and a fragment can't use it. Everywhere else the page keeps its title: its heading, search, and `llms.txt`, which names each page as an agent should look for it. One longer than the title it shortens is advice, `nav-label-long`. In the editor, **Rename Label…** in a page's menu in the **Pages** view sets it ([Or drag them in the editor](order.md#or-drag-them-in-the-editor)).
+`nav-label` is a string on one line, read as the page's `title` is: with code spans in it where `title` sets `inline = "code"`, and phrases where `title` takes them. It's reserved, so a page type can't declare it and a fragment can't use it. Everywhere else the page keeps its title: its heading, search, and `llms.txt`, which names each page as an agent should look for it. One longer than the title it shortens is advice, `nav-label-long`. In the editor, **Rename Label…** in a page's menu in the **Pages** view sets it ([Or drag them in the editor](order.md#or-drag-them-in-the-editor)).
 
 ## The file
 @id: the-file
@@ -95,7 +95,7 @@ Once the file reads, `ascribe check` and the editor hold it to the project. Each
 | `nav-section-unplaced`, advice | On the first page of a section the file doesn't list when it lists one of the section's siblings. A folder none of whose sections are listed reports nothing, nor does a section [its own page places](#a-nested-section-s-place), which a table wouldn't move. | The fix adds a `[[sections]]` table for each, in the order they come in now. A file that writes `sections = [...]` inline gets no fix: add the sections to its list. |
 | `nav-label-long`, advice | At a page's `nav-label` that's longer than its title, each counted as a reader sees it | Shorten it, or remove it so the title is the label. |
 
-The fixes keep the file's comments and layout. The two pieces of advice are what tells a writer that a page or a folder they've just added isn't where the file says the others go, and an agent too, since the [agents' hook](../agents/hooks.md) passes on advice that has a safe fix, with what its fix changes: `ascribe check --fix` places every one of them at once, where the default already shows it, and the editor offers the same fix on the page. A project that wants every page placed can raise them to errors in [`[checks]`](../content-model/checks.md).
+The fixes keep the file's comments and layout. The two pieces of advice tell you, and an agent, that a page or a folder just added isn't where the file says the others go: the [agents' hook](../agents/hooks.md) passes on advice that has a safe fix, with what its fix changes. `ascribe check --fix` places every one of them at once, where the default already shows it, and the editor offers the same fix on the page. A project that wants every page placed can raise them to errors in [`[checks]`](../content-model/checks.md).
 
 ## What a build shows
 

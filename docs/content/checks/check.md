@@ -4,7 +4,9 @@ title: "`ascribe check`, `build`, `preview`, and `fmt`"
 description: "Check a project's sources, build its outputs, preview its pages, and format its Markdown: options, output, and exit codes."
 ---
 
-The commands that check, build, preview, and format a project. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+`ascribe check`, `build`, `preview`, and `fmt` check a project, build its outputs, preview its pages, and format its Markdown.
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe check`
 @id {permalink=true}: cli-check
@@ -35,7 +37,7 @@ Two checks depend on the day they run: `recheck-overdue` reports a page whose re
 `--stdin` checks text that isn't on disk yet, such as an editor's unsaved buffer or an agent's draft. The file `--path` names has to be where a source file could be: a `.md` file in the content root. A link from another page that the new text breaks isn't shown, since it doesn't count for that file.
 
 ```sh
-npx ascribe check --stdin --path docs/guides/new.md < draft.md
+ascribe check --stdin --path docs/guides/new.md < draft.md
 ```
 
 ### Checking the prose
@@ -71,7 +73,7 @@ A problem that spans lines has its first and last line, and no columns, which Gi
 `--code` lets an agent, or a person, fix one rule across the project instead of working file by file. The summary line names the codes (``3 with problems for code `ASC037` ``), and the commands a report names keep them: the concise list's `and N more:`, and the JSON's `next_command`.
 
 ```sh
-npx ascribe check --code link-id-missing --format concise
+ascribe check --code link-id-missing --format concise
 ```
 
 ### Applying the safe fixes
@@ -79,10 +81,10 @@ npx ascribe check --code link-id-missing --format concise
 An `unsafe` fix, such as the nearest spelling of a misspelled name, is never applied by `--fix`: it stays in the report for you to decide. `ascribe fmt` is the other command that rewrites what it can.
 
 ```sh
-npx ascribe check --fix
+ascribe check --fix
 ```
 
-The output starts with a line for each file changed (`fixed 2 problems in docs/guides/install.md`). It changes only files git could put back, as every [command that writes](../command/index.md#commands-that-write) does: a page with changes not committed is refused, and named, unless you pass `--force`. With `--dry-run`, it says what it would fix (`would fix 2 problems in docs/guides/install.md`), changes nothing, and reports the check of the files as they are. Two fixes that would edit the same text are one too many: the first is applied, and the other's problem is reported again, for the next run. `--fix` can't be combined with `--stdin`, whose text isn't on disk.
+The output starts with a line for each file changed (`fixed 2 problems in docs/guides/install.md`). It changes only files git could put back, as every [command that writes](../command/index.md#commands-that-write) does: a page with changes not committed is refused, and named, unless you pass `--force`. With `--dry-run`, it says what it would fix (`would fix 2 problems in docs/guides/install.md`), changes nothing, and reports the check of the files as they are. When two fixes would edit the same text, it applies the first and leaves the other's problem for the next run. `--fix` can't be combined with `--stdin`, whose text isn't on disk.
 
 In VS Code, **Source Action… → Apply the safe fixes in this page** applies a page's safe fixes the same way, to the text in the editor, saved or not, for the problems the editor shows, and can run each time you save. See [Apply the safe fixes](../editor/problems.md#apply-the-safe-fixes).
 
@@ -104,15 +106,23 @@ $ ascribe check --exit-code=warning
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every diagnostic with a code is printed in full once; later diagnostics with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary in one form: the files checked, the builds (`for every build`, or with `--build`, `` for build `cloud` ``), with paths, how many files they name (`reported on 2 files in the paths`), how many files have a problem reported, and the counts of errors, warnings, and advice (`checked 12 files for every build, 1 with problems: 1 error, 0 warnings, 0 advice`). The JSON's `files_reported` counts the files reported on, all of them when no paths are given:
+Each problem shows its code, message, and source, and its next step as `Help:`: the title of its first fix, or, with none, the fix advice the JSON gives as `help`. Help that's the same for every problem with a code is printed in full once; later problems with that code point back to it, as `Help: as for ASC252 above (ascribe explain ASC252)`. The output ends with a summary line (`checked 12 files for every build, 1 with problems: 1 error, 0 warnings, 0 advice`), in one form:
+
+- The files checked.
+- The builds: `for every build`, or with `--build`, `` for build `cloud` ``.
+- With paths, how many files they name: `reported on 2 files in the paths`.
+- How many files have a problem reported.
+- The counts of errors, warnings, and advice.
+
+The JSON's `files_reported` counts the files reported on, all of them when no paths are given:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 
 A project with no pages yet, and nothing to report, says so in place of the summary, with the content root: `No pages in docs/ yet.` It exits with 0. The JSON is the same as for any check, with `files_checked` 0.
 
-Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
+Problems go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
-Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#22-checks).
+Advice, a problem below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart: `0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](../content-model/checks.md#22-checks).
 
 A problem [acknowledged as intended](../writing/directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `0 errors, 2 warnings, 0 advice, 1 acknowledged`. `ascribe build` counts it the same way.
 
@@ -127,13 +137,13 @@ There are four ways to quiet a problem, each with its own rules:
 | [`@intended`](../writing/directives.md#intended), the `intended` frontmatter key, or [`[[intended]]`](../content-model/checks.md#intended-acknowledgements) | One problem of a review check, at its place | For good | Required | Everything |
 | [`[checks]`](../content-model/checks.md#22-checks) `<check> = "off"` | A content check, in the whole project | Until it's turned back on | None | Everything |
 | `[checks]` `<check> = "advice"` or `"warning"` | Lowers a content check, in the whole project | Until it's set again | None | Everything |
-| [`ascribe.baseline`](baseline.md) | Many advice, each by its problem | Until it's fixed and pruned | None | `ascribe check`, the editor, the hooks, and the MCP server; not `ascribe build` or `ascribe report`, for now |
+| [`ascribe.baseline`](baseline.md) | Many advice-level problems, each by its problem | Until it's fixed and pruned | None | `ascribe check`, `ascribe build`, `ascribe report`, the editor, the hooks, and the MCP server |
 
 - **An error about whether the project is valid is never quieted,** by any of the four: a broken link, an unclosed container, or an unknown attribute makes a page wrong, and is fixed instead. These are the specification's diagnostics ([SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)), and none is configurable. The four are for the [content checks](diagnostics.md#setting-a-checks-level), Ascribe's own checks of the content's quality.
 - **A content check raised to an error isn't the same.** `[checks]` can raise a content check, such as `page-orphan = "error"`: its problems then fail `ascribe check` and stop `ascribe build`, as an error does, but the page is still valid by the specification. A review check raised this way can still be acknowledged with `@intended`, at whatever level the project gives it.
 - **The baseline holds advice only.** A check raised to a warning or an error is reported, whatever the baseline lists. To put a check's warnings off, lower it to `"advice"`, then run `ascribe baseline write` again.
 
-Which to use: acknowledge a problem the team has looked at and means to keep, with why, beside it. Turn off or lower a check the project doesn't need, which a reviewer sees in `ascribe.toml`. Put a backlog of advice in the baseline, to fix at the team's own pace, so `ascribe check` reports only what's new.
+Which to use: acknowledge a problem the team has looked at and means to keep, with why, beside it. Turn off or lower a check the project doesn't need, which a reviewer sees in `ascribe.toml`. Baseline a backlog of advice, to fix at the team's own pace, so `ascribe check` reports only what's new.
 
 ### JSON output
 
@@ -228,7 +238,7 @@ docs/install.md:5
 + @note {type=tip}: Run it from the project root.
 ```
 
-`--check` changes nothing too, writes the changes as a unified diff, which `git apply` applies, and exits with `1` when a file would change: for CI. `--diff` is its old spelling, kept for a release.
+`--check` changes nothing too, writes the changes as a unified diff, which `git apply` applies, and exits with `1` when a file would change: for CI. `--diff` is its old spelling, which still works.
 
 @include: ../_generated/cli-fmt-options.md
 

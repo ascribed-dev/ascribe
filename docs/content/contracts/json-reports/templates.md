@@ -5,7 +5,7 @@ nav-label: "`ascribe templates`"
 description: "The JSON Schemas of what `ascribe templates` writes with `--format json`."
 ---
 
-Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
+The JSON Schemas of what `ascribe templates` and `ascribe new` write with `--format json`. Each document follows the rules of the [JSON report contract](../json-reports.md).
 
 ## `ascribe templates list`
 

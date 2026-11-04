@@ -89,7 +89,7 @@ On this page, what pages are:
 
 @include: ../_generated/content-model-project.md
 
-**Rules** (§25.2): `content-root` and `output-dir` MUST be relative (`model-path-absolute`). The content root MUST exist and be a directory (`model-content-root-missing`); the output directory need not exist. The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and the two MUST differ (`model-output-overlaps-content`), each compared after its `.` and `..` segments are normalized and, when both exist, its symbolic links resolved.
+**Rules** (§25.2): `content-root` and `output-dir` MUST be relative (`model-path-absolute`). The content root MUST exist and be a folder (`model-content-root-missing`); the output directory need not exist. The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and the two MUST differ (`model-output-overlaps-content`), each compared after its `.` and `..` segments are normalized and, when both exist, its symbolic links resolved.
 
 @include: ../_fragments/content-model/project-defaults.md
 
@@ -138,7 +138,7 @@ Each output carries two forms of the value. The **plain text** is the value with
 |---|---|---|
 | Site output (its frontmatter) | The field's frontmatter value, for a layout's `<title>`, search, and sorting | `formatted.<field>`, as HTML (`<code>ascribe.toml</code> reference`), for a layout's heading and navigation |
 | Empty link text (SPEC §5.2) | Not used | The link text, with the title's code spans |
-| Plain-markdown output | Not used | The page's level-1 heading |
+| Plain Markdown output | Not used | The page's level-1 heading |
 | JSON output | `title` and `frontmatter.<field>` | `formatted.<field>`, a list of `{ "type": "text" \| "code", "value": … }` |
 | Generated Zod schema | The field, as `z.string()` | `formatted`, with a `z.string()` for each field |
 
@@ -155,7 +155,7 @@ A page type's top-level field MAY have a `role`, which says what the field is fo
 | Role | The field's type | Read by |
 |---|---|---|
 | `description` | `string` or `string?` | `page-description-missing`, which reports a page of the type whose field is absent, null, or blank. A field that's required or has a default is never absent, so the check skips it. |
-| `recheck-date` | `date` or `date?` | `recheck-overdue`, which reports a page whose date is before the day the check runs. `review-date`, its old name, names it too, for a release. |
+| `recheck-date` | `date` or `date?` | `recheck-overdue`, which reports a page whose date is before the day the check runs. `review-date`, its old name, names it too. |
 | `owner` | `string`, `string?`, or an `enum`, optional or not | `ascribe report inventory`, which counts pages by the field's value; a page without one counts as having no owner. |
 
 A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.

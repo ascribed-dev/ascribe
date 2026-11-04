@@ -4,7 +4,9 @@ title: "`ascribe link`, `refs`, and `rename`"
 description: "Check a link before writing it, list where a page, a heading, or a phrase is used, and rename one with everything that uses it."
 ---
 
-The commands for what a page links to: `ascribe link` and `ascribe refs` answer questions without changing anything, and `ascribe rename` changes a name and every reference to it. The other commands that answer questions, such as `ascribe outline` and `ascribe search`, are in [Questions about a project](questions.md). The options every command accepts are in the [command reference](index.md#options-every-command-accepts).
+`ascribe link` and `ascribe refs` answer questions about what a page links to, without changing anything, and `ascribe rename` changes a name and every reference to it. The other commands that answer questions, such as `ascribe outline` and `ascribe search`, are in [Questions about a project](questions.md).
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe link`
 @id {permalink=true}: cli-link
@@ -16,7 +18,14 @@ Says whether a link works, written on a given page: whether its target exists, t
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link.txt
 
-When the target doesn't work, it says why and lists the closest targets that do: the page's headings for a heading that isn't there, first those whose ids start with the words of the one written, as `ask-instead` does `ask-instead-of-guessing`, then those whose words start the written one's, then the rest, closest first; for a page that isn't, the pages with the heading the link names, wherever they are, then pages with a similar path; the pages that include a fragment; or the file that a published route belongs to. `ascribe check` offers the same targets as the broken link's fixes, marked `unsafe`, and when one clearly wins, such as the only heading whose id starts with the written id's words, its message ends with "did you mean `loop.md#ask-instead-of-guessing`?", so the concise output and the edit hook carry it too.
+When the target doesn't work, it says why and lists the closest targets that do:
+
+- For a heading that isn't there, the page's headings: first those whose ids start with the words of the one written, as `ask-instead` does `ask-instead-of-guessing`, then those whose words start the written one's, then the rest, closest first.
+- For a page that isn't, the pages with the heading the link names, wherever they are, then pages with a similar path.
+- For a fragment, the pages that include it.
+- For a published route, the file it belongs to.
+
+`ascribe check` offers the same targets as the broken link's fixes, marked `unsafe`. When one clearly wins, such as the only heading whose id starts with the written id's words, its message ends with "did you mean `loop.md#ask-instead-of-guessing`?", so the concise output and the edit hook carry it too.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link-missing.txt
 
@@ -34,11 +43,17 @@ With `--format json`, the document is:
 
 @snippet {lang=json, phrases=true}: code:crates/ascribe-cli/tests/output/link.json
 
-`from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root, and `target` is the target as given. `exists` says whether the link works. `path` is the file the target names, from the content root, `id` the heading's id, and `title` the page's title or the heading's text. `kind` is `page`, `heading`, `fragment`, `file`, `operation`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`. With a versioned build, `lines` says where a link to a page goes in each line. For an operation, `operation` has its `api`, `operation_id`, `method`, `path`, `summary`, `tag`, `deprecated`, and `address`. Every field is in [the schema](../contracts/json-reports/questions.md#ascribe-link).
+- `from` is the page as `--from` gave it, from the folder the command was run in, the way `ascribe check` names a file, whether it was given that way or from the content root. `target` is the target as given.
+- `exists` says whether the link works. `path` is the file the target names, from the content root, `id` the heading's id, and `title` the page's title or the heading's text.
+- `kind` is `page`, `heading`, `fragment`, `file`, `operation`, `external`, or `missing`.
+- `href` is null when the target doesn't work, and `problem` says why. `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`.
+- With a versioned build, `lines` says where a link to a page goes in each line.
+- For an operation, `operation` has its `api`, `operation_id`, `method`, `path`, `summary`, `tag`, `deprecated`, and `address`.
+
+Every field is in [the schema](../contracts/json-reports/questions.md#ascribe-link).
 
 ## `ascribe refs`
 @id {permalink=true}: cli-refs
-
 @summary
 Lists the places that use a page, a fragment, a heading, an image, or an entry of the content model, each as `file:line:column`, with what kind of use it is.
 
@@ -48,7 +63,7 @@ It's the editor's **Find All References**, on the command line: it finds a phras
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/refs.txt
 
-A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current directory, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
+A target that's a path, with or without `#id`, finds its project from the path. An entry of the model, or a glossary term, is written with a prefix: `phrase:product` (or `phrase:{product}`), `feature:sso`, `term:api-key`, `dimension:deployment`, `note:warning`, or `widget:release-note`, and the project is found from the current folder, or from `--config`. The places are in path order, and in order within a file. A use is `link`, `include`, `phrase`, `availability`, `term`, `variant`, `note`, or `widget`.
 
 An `availability` place shows its spec as written, after the use: ``docs/keys.md:25:13: availability `self-managed 3.5` ``.
 
@@ -74,11 +89,9 @@ With `--format json`, the document is:
 
 ## `ascribe rename`
 @id {permalink=true}: cli-rename
+@summary: Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, including what a text search and replace misses.
 
-@summary
-Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits.
-
-A text search and replace finds a phrase in the pages, but misses what a rename knows about: frontmatter fields with `phrases = true`, code blocks with `phrases=true`, the code a `@snippet {phrases=true}` shows, and a link whose path changes when the page it's on moves.
+Renames a phrase, a dimension's value, a heading's id, or a page, and changes everything that uses it, as the editor's rename does: it makes the same edits. A text search and replace finds a phrase in the pages, but misses what a rename knows about: frontmatter fields with `phrases = true`, code blocks with `phrases=true`, the code a `@snippet {phrases=true}` shows, and a link whose path changes when the page it's on moves.
 
 @include: ../_generated/cli-rename-options.md
 
@@ -107,4 +120,11 @@ Some things aren't renamed or moved:
 | `1` | What it names doesn't exist: a phrase, a value, a page, or a heading |
 | `2` | It couldn't rename: no `ascribe.toml`, one with errors, a new name that can't be its name or is taken, a target it doesn't rename, a file it can't write, or, without `--force`, a file git couldn't put back |
 
-With `--format json`, it writes what it changed as one document, instead of a line for each file: `files`, each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was; `moved`, the page's `from` and `to`, when one moved; and `recorded`, each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/addresses.md#cli-addresses-move) writes one. `written` is `true`, and `false` with `--dry-run`: the MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing. Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.
+With `--format json`, it writes what it changed as one document, instead of a line for each file:
+
+- `files`: each file it changed, from the current folder, with its whole `text` after and how many places changed (`edits`), in path order, the page that moved under where it was.
+- `moved`: the page's `from` and `to`, when one moved.
+- `recorded`: each entry of `ascribe.addresses`'s `[moved]` it recorded, as a `key` and a `value`, as [`ascribe addresses move`](../publishing/addresses.md#cli-addresses-move) writes one.
+- `written`: `true`, and `false` with `--dry-run`. The MCP server's [`ascribe_rename`](../agents/commands.md#cli-mcp) gives the same document with `written` false, and writes nothing.
+
+Its [schema](../contracts/json-reports/questions.md#ascribe-rename) has every field.

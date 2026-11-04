@@ -15,24 +15,22 @@ The diagnostics are on nine pages, by what they're about:
 - [Links and pages](diagnostics/pages.md): links, images, phrases, headings, frontmatter, and lists.
 - [Sources, memo files, and navigation](diagnostics/sources.md): files, snippets, source copies, acknowledgements, permalinks, memo files, navigation, the glossary, and summaries.
 - [The addresses file and API specs](diagnostics/project-files.md): `ascribe.addresses`, the addresses a base published, and the specs `[apis]` declares.
-- [The content model](diagnostics/content-model.md): `ascribe.toml`: the file, `[project]`, `[sources]`, content types, and names.
-- [The content model's builds and site](diagnostics/content-model-builds.md): the rest of `ascribe.toml`: `[releases]`, phrases, widgets, the consumer, builds, the editor, `[permalinks]`, `[crawlers]`, `[listing]`, and `[checks]`.
+- [The content model](diagnostics/content-model.md): `ascribe.toml`: the file, `[project]`, `[sources]`, page types, and names.
+- [The content model's builds and site](diagnostics/content-model-builds.md): the rest of `ascribe.toml`: `[releases]`, phrases, widgets, the consumer, builds, the editor, `[crawlers]`, `[listing]`, `[apis]`, and `[checks]`.
 - [Content checks](diagnostics/content-checks.md): the content's quality, which a project can set the level of: the checks of pages.
 - [Content checks across the project](diagnostics/project-checks.md): the checks of the project as a whole, such as orphan pages and what's unused.
 - [Content checks of outputs and the site](diagnostics/output-checks.md): the rest of the content checks: outputs, prose through Vale, external links, the published site, and tested examples.
 
-Each entry ends with the section of the [directive reference](../writing/directives.md), [directive syntax](../writing/syntax.md), [frontmatter](../writing/frontmatter.md), [phrases, links, and images](../writing/inline.md), or the [`ascribe.toml` reference](../content-model/index.md) about what it checks, which has examples, and links to its part of the specification.
+Each entry opens with a line such as "Advice · page level · next step: write · configurable in `[checks]`": the diagnostic's [severity](#severity), its [level](#file-level-and-page-level), its [next step](#what-to-do-next), whether a project can [set its level](#setting-a-checks-level), and, for a check whose problems can be [acknowledged](../glossary.md#acknowledgement), where. That line ends with the diagnostic's section of the specification. The entry's last line, **Read more**, links to the section about what it checks in the [directive reference](../writing/directives.md), [directive syntax](../writing/syntax.md), [frontmatter](../writing/frontmatter.md), [phrases, links, and images](../writing/inline.md), or the [`ascribe.toml` reference](../content-model/index.md), which has examples.
 
 In the editor, many diagnostics offer a quick fix. See [Quick fixes](../editor/problems.md#quick-fixes).
-
-Each entry opens with a line such as "Advice · page level · next step: write · configurable in `[checks]`": the diagnostic's [severity](#severity), its [level](#file-level-and-page-level), its [next step](#what-to-do-next), whether a project can [set its level](#setting-a-checks-level), and, for a check whose problems can be [acknowledged](../glossary.md#acknowledgement), where. It ends with the diagnostic's section of the specification.
 
 ## Severity
 
 An error, a warning, and advice are how severe a problem is.
 
 - An **error** makes `ascribe check` fail, and stops `ascribe build` from writing anything. A diagnostic about `ascribe.toml` (a name that starts with `model-`) stops everything else when it's an error: every other check depends on the content model.
-- A **warning** doesn't, unless you pass `--deny-warnings`.
+- A **warning** doesn't make `ascribe check` fail unless you pass `--deny-warnings`.
 - **Advice** never does, even with `--deny-warnings`: `ascribe check` lists it after the errors and warnings and counts it apart, and the editor shows it as information.
 
 A check that's **off by default** reports nothing until a project names it in `[checks]`: see [Setting a check's level](#setting-a-checks-level).

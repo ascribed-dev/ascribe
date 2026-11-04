@@ -356,6 +356,77 @@ fn the_docs_name_no_released_version_before_1_0() {
     );
 }
 
+/// The same decision in prose: a page doesn't say "until this release", "for a
+/// release", or "since ascribe 0.4.0" either, since every reader is on the live
+/// line and the sentence goes false at the next release. Code spans, fenced
+/// blocks, and the generated pages are left out: a page about versions shows
+/// `ascribe 0.1.1` as an example of a mark.
+#[test]
+fn the_docs_name_no_release_in_prose_before_1_0() {
+    const PHRASES: &[&str] = &[
+        "until this release",
+        "until the next release",
+        "kept for a release",
+        "for one more release",
+        "since ascribe 0.",
+        "in ascribe 0.",
+        "started in 0.",
+    ];
+    let mut files = Vec::new();
+    markdown_files(&repo().join("docs/content"), &mut files);
+    let mut wrong = Vec::new();
+    for path in files {
+        let shown = path.strip_prefix(repo()).unwrap().display().to_string();
+        if shown.starts_with("docs/content/_generated/") {
+            // Generated from help text and the settings registry, which quote
+            // a mark ("ascribe 0.4.0") as an example of one.
+            continue;
+        }
+        let text = std::fs::read_to_string(&path).unwrap();
+        let mut fenced = false;
+        for (i, line) in text.lines().enumerate() {
+            if line.trim_start().starts_with("```") {
+                fenced = !fenced;
+                continue;
+            }
+            if fenced {
+                continue;
+            }
+            let prose = without_code_spans(line).to_ascii_lowercase();
+            for phrase in PHRASES {
+                if prose.contains(phrase) {
+                    wrong.push(format!(
+                        "{shown}:{}: \"{phrase}\" in: {}",
+                        i + 1,
+                        line.trim()
+                    ));
+                }
+            }
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "before 1.0, a docs page names no release in prose (decision #973): say what holds now \
+         (\"the old name still works\"), not since when or for how long:\n{}",
+        wrong.join("\n")
+    );
+}
+
+/// `line` with each `code span` removed, so a mark shown as an example isn't
+/// read as prose.
+fn without_code_spans(line: &str) -> String {
+    let mut out = String::new();
+    let mut in_code = false;
+    for c in line.chars() {
+        if c == '`' {
+            in_code = !in_code;
+        } else if !in_code {
+            out.push(c);
+        }
+    }
+    out
+}
+
 /// Every Markdown file under `dir`, at any depth.
 fn markdown_files(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(dir).unwrap() {
