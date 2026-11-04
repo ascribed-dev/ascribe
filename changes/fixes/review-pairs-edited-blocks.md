@@ -1,0 +1,1 @@
+- **Fixed:** Review pairs an edited block with its new text, not with a block inserted beside it. Punctuation no longer keeps a short edit from showing as one changed block. See [How review works](docs/content/review/how-it-works.md).

@@ -136,17 +136,9 @@ fn align<'a>(
         if olds.is_empty() || news.is_empty() || olds.len() * news.len() > MAX_PAIRS {
             continue;
         }
-        let new_texts: Vec<String> = news.iter().map(|&j| new[j].all_text()).collect();
-        let mut from = 0;
-        for &i in &olds {
-            let text = old[i].all_text();
-            let hit = (from..news.len())
-                .find(|&k| new[news[k]].kind == old[i].kind && alike(&text, &new_texts[k]));
-            if let Some(k) = hit {
-                matched[i] = Some(news[k]);
-                new_matched[news[k]] = true;
-                from = k + 1;
-            }
+        for (k, l) in pair_run(old, new, &olds, &news) {
+            matched[olds[k]] = Some(news[l]);
+            new_matched[news[l]] = true;
         }
     }
 
@@ -196,57 +188,128 @@ fn align<'a>(
     }
 }
 
+/// Pairs the blocks of one unmatched run as changed: of the pairings that
+/// keep both versions' order and pair only blocks of the same kind that are
+/// alike (their words overlap at least [`SIMILARITY`], or one keeps the
+/// other's words whole at one end), the one whose pairs' similarities add up to the most. So an
+/// edited block pairs with its new text rather than with a block inserted
+/// beside it that happens to share a few of its words. Returns indexes into
+/// `olds` and `news`, in order.
+fn pair_run(old: &[Node], new: &[Node], olds: &[usize], news: &[usize]) -> Vec<(usize, usize)> {
+    let old_words: Vec<Vec<String>> = olds.iter().map(|&i| words(&old[i].all_text())).collect();
+    let new_words: Vec<Vec<String>> = news.iter().map(|&j| words(&new[j].all_text())).collect();
+    let (n, m) = (olds.len(), news.len());
+    // A pair's score, when its blocks may pair. An extension scores above
+    // nothing even when it shares few words, since it's still a pair.
+    let score = |k: usize, l: usize| -> Option<f64> {
+        if old[olds[k]].kind != new[news[l]].kind {
+            return None;
+        }
+        let (a, b) = (&old_words[k], &new_words[l]);
+        let s = dice(a, b);
+        if s >= SIMILARITY {
+            Some(s)
+        } else if extends_words(a, b) {
+            Some(s.max(f64::EPSILON))
+        } else {
+            None
+        }
+    };
+    // best[k][l]: the most the pairs of olds[..k] and news[..l] can score,
+    // and how: pairing the last of each, or leaving the last old or new one.
+    #[derive(Clone, Copy)]
+    enum Last {
+        Pair,
+        SkipOld,
+        SkipNew,
+    }
+    let mut best = vec![vec![0.0_f64; m + 1]; n + 1];
+    let mut how = vec![vec![Last::SkipOld; m + 1]; n + 1];
+    for k in 1..=n {
+        for l in 1..=m {
+            let (mut top, mut last) = if best[k - 1][l] >= best[k][l - 1] {
+                (best[k - 1][l], Last::SkipOld)
+            } else {
+                (best[k][l - 1], Last::SkipNew)
+            };
+            if let Some(s) = score(k - 1, l - 1)
+                && best[k - 1][l - 1] + s > top
+            {
+                (top, last) = (best[k - 1][l - 1] + s, Last::Pair);
+            }
+            best[k][l] = top;
+            how[k][l] = last;
+        }
+    }
+    let mut out = Vec::new();
+    let (mut k, mut l) = (n, m);
+    while k > 0 && l > 0 {
+        match how[k][l] {
+            Last::Pair => {
+                out.push((k - 1, l - 1));
+                k -= 1;
+                l -= 1;
+            }
+            Last::SkipOld => k -= 1,
+            Last::SkipNew => l -= 1,
+        }
+    }
+    out.reverse();
+    out
+}
+
 /// The new version's index of the nearest block before `old[i]` that's in
 /// both versions.
 fn after_of(matched: &[Option<usize>], i: usize) -> Option<usize> {
     matched[..i].iter().rev().find_map(|m| *m)
 }
 
-/// Whether two blocks' texts are one block changed: their words overlap
-/// enough, or one keeps the other's words whole with words added at one
-/// end, which in a short sentence can be most of its words.
-fn alike(a: &str, b: &str) -> bool {
-    similarity(a, b) >= SIMILARITY || extends(a, b)
+/// A text's words: runs of letters and digits, lowercased, so punctuation
+/// and code spans don't count, and "later." and "later," are one word.
+fn words(text: &str) -> Vec<String> {
+    text.split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_lowercase)
+        .collect()
 }
 
-/// Whether one text's words, in order, start or end the other's. Words are
-/// runs of letters and digits, lowercased, so punctuation and code spans
-/// don't count: "Run `x`." starts "Run `x` to remove it.".
-pub(crate) fn extends(a: &str, b: &str) -> bool {
-    let words = |t: &str| -> Vec<String> {
-        t.split(|c: char| !c.is_alphanumeric())
-            .filter(|w| !w.is_empty())
-            .map(str::to_lowercase)
-            .collect()
-    };
-    let (wa, wb) = (words(a), words(b));
-    let (short, long) = if wa.len() <= wb.len() {
-        (wa, wb)
-    } else {
-        (wb, wa)
-    };
-    !short.is_empty() && (long.starts_with(&short) || long.ends_with(&short))
+/// Whether one text's words, in order, start or end the other's: "Run
+/// `x`." starts "Run `x` to remove it.".
+#[cfg(test)]
+fn extends(a: &str, b: &str) -> bool {
+    extends_words(&words(a), &words(b))
+}
+
+fn extends_words(a: &[String], b: &[String]) -> bool {
+    let (short, long) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+    !short.is_empty() && (long.starts_with(short) || long.ends_with(short))
 }
 
 /// How much two texts' words overlap: the Dice coefficient of their
-/// multisets of words, lowercased. Two empty texts are the same.
-pub(crate) fn similarity(a: &str, b: &str) -> f64 {
-    let words = |t: &str| -> HashMap<String, usize> {
-        let mut out = HashMap::new();
-        for w in t.split_whitespace() {
-            *out.entry(w.to_lowercase()).or_insert(0) += 1;
-        }
-        out
-    };
-    let (wa, wb) = (words(a), words(b));
-    let total: usize = wa.values().sum::<usize>() + wb.values().sum::<usize>();
+/// multisets of [`words`]. Two texts without words are the same.
+#[cfg(test)]
+fn similarity(a: &str, b: &str) -> f64 {
+    dice(&words(a), &words(b))
+}
+
+fn dice(a: &[String], b: &[String]) -> f64 {
+    let total = a.len() + b.len();
     if total == 0 {
         return 1.0;
     }
-    let common: usize = wa
-        .iter()
-        .map(|(w, n)| (*n).min(wb.get(w).copied().unwrap_or(0)))
-        .sum();
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    for w in a {
+        *counts.entry(w).or_insert(0) += 1;
+    }
+    let mut common = 0;
+    for w in b {
+        if let Some(n) = counts.get_mut(w.as_str())
+            && *n > 0
+        {
+            *n -= 1;
+            common += 1;
+        }
+    }
     (2 * common) as f64 / total as f64
 }
 
