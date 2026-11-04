@@ -26,8 +26,8 @@ expression: text
       "explicit": true,
       "source": {
         "file": "quickstart.md",
-        "span": [111, 132],
-        "lines": [7, 7]
+        "span": [182, 203],
+        "lines": [9, 9]
       }
     }
   ],
@@ -39,10 +39,32 @@ expression: text
       "kind": "image",
       "fragment": null,
       "written_in": "quickstart.md",
-      "span": [224, 278]
+      "span": [295, 349]
     }
   ],
   "blocks": [
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Try Quill on a page of your own docs before you install anything.",
+          "span": [111, 180]
+        }
+      ],
+      "source": {
+        "file": "quickstart.md",
+        "span": [111, 180],
+        "lines": [7, 7]
+      },
+      "substitutions": [
+        {
+          "span": [115, 124],
+          "key": "product",
+          "value": "Quill"
+        }
+      ]
+    },
     {
       "type": "heading",
       "level": 2,
@@ -54,13 +76,13 @@ expression: text
         {
           "type": "text",
           "value": "Try in the browser",
-          "span": [114, 132]
+          "span": [185, 203]
         }
       ],
       "source": {
         "file": "quickstart.md",
-        "span": [111, 132],
-        "lines": [7, 7]
+        "span": [182, 203],
+        "lines": [9, 9]
       }
     },
     {
@@ -76,8 +98,8 @@ expression: text
       "annotation": null,
       "source": {
         "file": "quickstart.md",
-        "span": [133, 152],
-        "lines": [8, 8]
+        "span": [204, 223],
+        "lines": [10, 10]
       }
     },
     {
@@ -86,13 +108,13 @@ expression: text
         {
           "type": "text",
           "value": "Open the playground at play.quill.dev and paste a page of your docs.",
-          "span": [154, 222]
+          "span": [225, 293]
         }
       ],
       "source": {
         "file": "quickstart.md",
-        "span": [154, 222],
-        "lines": [10, 10]
+        "span": [225, 293],
+        "lines": [12, 12]
       }
     },
     {
@@ -117,17 +139,17 @@ expression: text
               "values": ["600"]
             }
           ],
-          "span": [224, 278]
+          "span": [295, 349]
         }
       ],
       "source": {
         "file": "quickstart.md",
-        "span": [224, 278],
-        "lines": [12, 12]
+        "span": [295, 349],
+        "lines": [14, 14]
       },
       "links": [
         {
-          "span": [224, 278],
+          "span": [295, 349],
           "kind": "image",
           "destination": "playground.png",
           "target": {
@@ -142,7 +164,7 @@ expression: text
       ],
       "substitutions": [
         {
-          "span": [230, 239],
+          "span": [301, 310],
           "key": "product",
           "value": "Quill"
         }
@@ -154,7 +176,7 @@ expression: text
         {
           "type": "text",
           "value": "To keep your changes, ",
-          "span": [280, 302]
+          "span": [351, 373]
         },
         {
           "type": "link",
@@ -171,25 +193,25 @@ expression: text
             {
               "type": "text",
               "value": "install the agent",
-              "span": [303, 320]
+              "span": [374, 391]
             }
           ],
-          "span": [302, 339]
+          "span": [373, 410]
         },
         {
           "type": "text",
           "value": ".",
-          "span": [339, 340]
+          "span": [410, 411]
         }
       ],
       "source": {
         "file": "quickstart.md",
-        "span": [280, 340],
-        "lines": [14, 14]
+        "span": [351, 411],
+        "lines": [16, 16]
       },
       "links": [
         {
-          "span": [302, 339],
+          "span": [373, 410],
           "kind": "link",
           "destination": "install-agent.md",
           "target": {

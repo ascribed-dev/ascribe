@@ -1,0 +1,8 @@
+# "the `key` rule" names a setting by its key alone; say what it does.
+extends: existence
+message: "Say what the rule does, not its key."
+level: warning
+scope: raw
+nonword: true
+tokens:
+  - '`[^`\n]+` rules?\b'

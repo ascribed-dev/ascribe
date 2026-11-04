@@ -112,7 +112,7 @@ The site emitter writes the site output so that the rules above are all a consum
 - **A glossary link has a marker directly after it**, holding `data-ascribe-term` with the term's id ([content-model.md §8](content-model/content.md#8-glossary)). The link is the route of the term's heading on its glossary page, with the term's definition as its title (element contract §7). A link an author writes to a term's heading is a glossary link too, with its own text (SPEC §5.4).
 - **A link out of a line has a marker directly after it**, holding `data-ascribe-release-line` with the line it leads to (SPEC §5.2, element contract §10). No other link has a marker.
 - **Every page's frontmatter ends with `source`**, the page's path from the content root with `/` between its parts, as `_ascribe/permalinks.json` writes a permalink's `source` ([output layout §1.2](output-layout.md#12-the-permalinks-list)). The generated schema types it as a string every page has (SPEC §9.6). A layout's edit link uses it, so it never depends on where the site output is.
-- **The emitter writes markers nowhere else.** Raw HTML an author writes passes through unchanged, as everywhere in the site output, so an author who writes an `ascribe-attributes` element gets its effect. Element names starting with `ascribe-` belong to Ascribe ([content-model.md §10](content-model/content.md#10-widgetsname)), so there's no reason to. Since the emitter's own heading marker is always last, an author's marker inside a heading never applies.
+- **The emitter writes markers nowhere else.** Raw HTML a writer writes passes through unchanged, as everywhere in the site output, so a writer who writes an `ascribe-attributes` element gets its effect. Element names starting with `ascribe-` belong to Ascribe ([content-model.md §10](content-model/content.md#10-widgetsname)), so there's no reason to. Since the emitter's own heading marker is always last, a writer's marker inside a heading never applies.
 
 The element contract ([`packages/elements/CONTRACT.md`]({repo}/blob/v{version}/packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
 
@@ -122,7 +122,7 @@ Apart from markers, both implementations render CommonMark with raw HTML passed 
 
 ### 5.1 A tested code block
 
-A fenced code block whose info string has a `tested="…"` word after its language, as a `@snippet` of a tested example has (SPEC §4.8), is put in a figure with a caption: the block's title, when its info string has `title="…"`, then a `<div class="ascribe-code-tested">` holding the tested line, escaped as text. Both are pairs of the info string, read as [SPEC §3.3.1]({repo}/blob/main/SPEC.md) reads them from the info string CommonMark gives, with its Markdown escapes taken off: a quoted value runs to its closing quote, inside it `\"` and `\\` escape, and the pair is followed by a space or the end. The site output writes a quote in a title as `\\"`, which CommonMark reads as `\"`. A word that isn't a pair, such as `title="say "hi""`, gives no title.
+A fenced code block whose info string has a `tested="…"` word after its language, as a `@snippet` of a tested example has (SPEC §4.8), is put in a figure with a caption: the block's title, when its info string has `title="…"`, then a `<div class="ascribe-code-tested">` holding the tested line, escaped as text. An empty tested line, `tested=""`, still makes the caption, with the `<div>` empty, which the element library's stylesheet reads "Tested". Both are pairs of the info string, read as [SPEC §3.3.1]({repo}/blob/main/SPEC.md) reads them from the info string CommonMark gives, with its Markdown escapes taken off: a quoted value runs to its closing quote, inside it `\"` and `\\` escape, and the pair is followed by a space or the end. The site output writes a quote in a title as `\\"`, which CommonMark reads as `\"`. A word that isn't a pair, such as `title="say "hi""`, gives no title.
 
 ```html
 <figure class="code-title"><figcaption>connect.ts<div class="ascribe-code-tested">Node 24.9.0 on Linux</div></figcaption><pre><code class="language-ts">…</code></pre></figure>
@@ -191,7 +191,7 @@ To parse one, split at the last `:`; the path can't contain an unencoded `:`. Th
 
 ### 7.2 Which blocks have one
 
-Every block a reviewer could point at: headings, paragraphs, code blocks, lists and each list item, tables, block quotes, a paragraph holding only an image, thematic breaks, raw HTML blocks that start with an element, and each element the emitter writes (`ascribe-note`, `ascribe-steps`, `ascribe-tabs` and each `ascribe-tab`, `details`, `ascribe-availability`, project widgets, and `ascribe-group` and each element in it). Blocks inside containers have their own.
+Every block a reviewer could point at: headings, paragraphs, code blocks, lists and each list item, tables, block quotes, a paragraph holding only an image, thematic breaks, raw HTML blocks that start with an element, and each element the emitter writes (`ascribe-note`, `ascribe-steps`, `ascribe-tabs` and each `ascribe-tab`, `details`, `ascribe-availability`, `ascribe-operation`, project widgets, and `ascribe-group` and each element in it). Blocks inside containers have their own.
 
 - An element that wraps the block after it (a line-form `@note`, `@steps`, `@details`, or widget) spans the directive and that block. A line-form directive whose text is its content (`@note: Text.`) gives that text's paragraph its own line too.
 - `@summary` writes no element: the paragraph a `@summary` marks has its own anchor, its own lines, not the directive's, and `@summary: Text.` writes nothing, so it has none.
@@ -242,7 +242,7 @@ A renderer applies each anchor comment, and removes it, along with the whitespac
 2. When the target is a `ul` or `ol` and the comment has `items`, and the list has as many `li` children as `items` has ranges, each `li` gets `data-ascribe-source` with the list's path and its range, and the list's `data-ascribe-via`. Otherwise its items get none.
 3. Anything else, such as text, an element of another name, or no next sibling, is no target: the comment is removed and applies to nothing.
 
-An attribute the target already has is replaced. Implementations apply anchors after the consumer's syntax highlighting (which keeps a code block's `<pre>`) and before anything that reads an element's properties. Highlighting that puts a titled code block in a figure with its title as the caption, as `@ascribed/astro` does (`<figure class="code-title">`), makes that figure the target of a `tag="pre"` anchor, so the block's mark holds its caption.
+An attribute the target already has is replaced. Implementations apply anchors after the consumer's syntax highlighting (which keeps a code block's `<pre>`) and before anything that reads an element's properties. Highlighting that puts a titled code block in a figure with its title as the caption, as `@ascribed/astro` does (`<figure class="code-title">`), makes that figure the target of a `tag="pre"` anchor, so the block's change mark holds its caption.
 
 ### 7.5 The same page
 

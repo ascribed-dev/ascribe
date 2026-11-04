@@ -8,7 +8,7 @@ The extension prompts your agent about the problems it shows, and gives an agent
 
 ## Prompt agent
 
-On a problem, the lightbulb also offers **Prompt agent: fix this problem**, after the problem's quick fixes. It builds a prompt for your AI agent about the problem, and copies it, or opens your agent with it filled in, as `ascribe.agents.promptTarget` says. **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** do the same for every problem in the file or the project. Nothing is sent: you read the prompt and send it. See [Prompt your agent](../agents/prompts.md).
+On a problem, the light bulb also offers **Prompt agent: fix this problem**, after the problem's quick fixes. It builds a prompt for your AI agent about the problem, and copies it, or opens your agent with it filled in, as `ascribe.agents.promptTarget` says. **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** do the same for every problem in the file or the project. Nothing is sent: you read the prompt and send it. See [Prompt your agent](../agents/prompts.md).
 
 ## Agents in VS Code
 @id {permalink=true}: agents-in-vs-code

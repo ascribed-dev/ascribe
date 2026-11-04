@@ -5,11 +5,11 @@ description: "What `@ascribed/astro` writes from the page records for search eng
 permalink: search-engines
 ---
 
-Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/output.md#17-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/output.md#18-crawlers). `@ascribed/astro` writes what a search engine reads from those records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Search engines and crawlers](index.md) says what a project tells search engines and agents, and why.
+`@ascribed/astro` writes what a search engine reads about each page from the page records, so the head, the sitemap, `robots.txt`, and `llms.txt` can't disagree about a page. This page says what it writes in each. Each build writes a record of every page, `_ascribe/pages.json` ([output-layout contract](../contracts/output-layout.md#13-the-page-records)), with its title, description, canonical address, and [`listing`](index.md#how-a-page-is-listed), whether the page set it or a rule of [`[listing]`](../content-model/output.md#17-listing) did, and what the project says to crawlers in [`[crawlers]`](../content-model/output.md#18-crawlers). Another generator reads the same records, and `_ascribe/headers.json`, to write its own. [Search engines and crawlers](index.md) says what a project tells search engines and agents, and why.
 
 ## The head
 
-A layout includes `Head.astro` in `<head>`, given the page's collection entry, and writes none of what it writes:
+In your layout's `<head>`, include `Head.astro` and pass it the page's collection entry. Don't write the tags it writes yourself:
 
 ```astro
 ---
@@ -32,11 +32,11 @@ const { entry } = Astro.props;
 
 From the page's record, it writes:
 
-- `<title>`, and `<meta property="og:title">` with the same text;
-- `<meta name="description">` and `<meta property="og:description">`;
-- `<link rel="canonical">` and `<meta property="og:url">`, when `[consumer] site` is set, and `<meta property="og:type" content="website">`;
-- `<meta name="robots" content="noindex">` for a page that's `unlisted`, and `<meta name="robots" content="nosnippet">` for one that's `unquoted`;
-- `<link rel="alternate" type="text/markdown">` to the page's Markdown version, when the build publishes one ([`[consumer] agents`](../content-model/output.md#consumer)) and the page isn't `unlisted`;
+- `<title>`, and `<meta property="og:title">` with the same text.
+- `<meta name="description">` and `<meta property="og:description">`.
+- `<link rel="canonical">` and `<meta property="og:url">`, when `[consumer] site` is set, and `<meta property="og:type" content="website">`.
+- `<meta name="robots" content="noindex">` for a page that's `unlisted`, and `<meta name="robots" content="nosnippet">` for one that's `unquoted`.
+- `<link rel="alternate" type="text/markdown">` to the page's Markdown version, when the build publishes one ([`[consumer] agents`](../content-model/output.md#consumer)) and the page isn't `unlisted`.
 - the page's breadcrumbs, as [`BreadcrumbList`](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb) structured data, when there are two steps or more.
 
 From the site, by property, since the record doesn't hold them:
@@ -64,7 +64,7 @@ The layout keeps the character set, the viewport, icons, theme colors, styles, t
 
 `astro build` writes one sitemap for the site, `sitemap.xml` at Astro's `base`, and `astro dev` serves it there. It lists by absolute address, with no dates:
 
-- every page of every project that isn't `unlisted`, when the site has a route that shows it: a project whose collection the site only quotes from adds nothing;
+- every page of every project that isn't `unlisted`, when the site has a route that shows it: a project whose collection the site only quotes from adds nothing.
 - every other page Astro built, such as a changelog page of the site's own, except a permalink's forwarding page, the not-found page, and the routes in the `sitemap` option's `exclude`.
 
 `astro dev` knows only the routes of the site's own that have no parameters, so a page of the site's own that a route's `getStaticPaths` lists is in the built sitemap only.
@@ -102,7 +102,7 @@ It writes a group for each purpose a project disallows, such as `training = "dis
 
 A page's Markdown version has no head, so the rule its page's head gives is a [response header](index.md#the-markdown-versions-headers), which the host sends. Each build lists what each Markdown version needs in `_ascribe/headers.json` ([output-layout contract](../contracts/output-layout.md#14-the-headers)):
 
-- `X-Robots-Tag: noindex` for a page that's `unlisted`, and `nosnippet` for one that's `unquoted`, the same rule as its head;
+- `X-Robots-Tag: noindex` for a page that's `unlisted`, and `nosnippet` for one that's `unquoted`, the same rule as its head.
 - `Link: <https://docs.example.com/docs/guides/install/>; rel="canonical"` on every one, naming the page, so a search engine lists the page and not its Markdown copy, while an agent can still fetch either.
 
 The list also gives each [help entry's addresses](../permalinks/in-your-product.md#fetching-the-entry), such as `/docs/go/connect.json` and `/docs/go/connect.md`, `Access-Control-Allow-Origin: *`, so a product on another origin can fetch them, and the JSON a `Link` naming the Markdown as its alternate.

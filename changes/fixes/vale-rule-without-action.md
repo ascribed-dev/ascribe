@@ -1,0 +1,1 @@
+- **Fixed:** a Vale rule of your own that offers no fix no longer stops the prose check. Its alert is reported like any other, where `ascribe check --vale` and the editor said the prose wasn't checked. See [Vale](docs/content/checks/vale.md).

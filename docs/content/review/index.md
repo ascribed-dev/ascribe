@@ -1,7 +1,7 @@
 ---
 type: how-to
-title: Review
-description: Reviewing a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and commenting there.
+title: Review a pull request
+description: Review a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and comment there.
 permalink: review-guide
 ---
 
@@ -11,13 +11,13 @@ Ascribe shows a pull request the way readers will see it: each page it changes, 
 
 You can review in three places, and they show the same changes and the same comments:
 
-- the **page preview** in VS Code, which renders the page by itself and needs nothing but the extension;
-- the **site preview**, the page in your real site, from `astro dev` with [`@ascribed/astro`](../astro/index.md);
-- the **HTML preview**, one HTML file that CI can attach to every pull request, for anyone who wants to read the change without a checkout: [Attach the HTML preview to every pull request](ci-report.md).
+- The **page preview** in VS Code, which renders the page by itself and needs nothing but the extension.
+- The **site preview**, the page in your real site, from `astro dev` with [`@ascribed/astro`](../astro/index.md).
+- The **HTML preview**, one HTML file that CI can attach to every pull request, for anyone who wants to read the change without a checkout: [Attach the HTML preview to every pull request](ci-report.md).
 
 The previews need VS Code or the site's dev server and a checkout. Someone who reviews without either, such as a product manager or a support engineer, reads the HTML preview and comments on GitHub: [Reviewers who don't use VS Code](#reviewers-who-dont-use-vs-code).
 
-[How review works](how-it-works.md) says what review compares, what its marks mean, and how its comments map to the pull request.
+[How review works](how-it-works.md) says what review compares, what its change marks mean, and how its comments map to the pull request.
 
 ## Review a pull request
 
@@ -29,11 +29,11 @@ You need a checkout of the pull request's branch, VS Code with the [Ascribe exte
 gh pr checkout 128
 ```
 
-or `git fetch` and `git switch` to the branch. Review finds the pull request from the branch you're on, so the branch has to track the one on GitHub.
+Or fetch the branch with `git fetch` and switch to it with `git switch`. Review finds the pull request from the branch you're on, so the branch has to track the one on GitHub.
 
 ### 2. Start review
 
-Open the folder in VS Code, open any page of the project, and run **Ascribe: Start Review** from the command palette, or choose **Review: off** in the status bar.
+Open the folder in VS Code, open any page of the project, and run **Ascribe: Start Review** from the Command Palette, or choose **Review: off** in the status bar.
 
 Review looks for the branch's pull request and asks what to compare with. Choose **The base of pull request #128**: it compares with the point where the branch left its base, as GitHub does.
 
@@ -43,7 +43,7 @@ The first time, VS Code asks you to sign in to GitHub. Allow it to see comments.
 
 Run **Ascribe: Changed Pages**, also the list button in the preview's title bar, to list every page the pull request changes. Choose one to open it and its preview.
 
-The **Review** view, first in the Ascribe sidebar while review is on, lists the same pages with their counts and open threads ([The Review view](../editor/review.md#the-review-view)). Choose a page there to open it and its preview at its first change.
+The **Review** view, in the Ascribe sidebar while review is on, lists the same pages with their counts and open threads ([The Review view](../editor/review.md#the-review-view)). Choose a page there to open it and its preview at its first change.
 
 In the preview, step through the changes with the header's arrows, and switch between **Changes**, **As it will be**, and **As it was** to read the page with and without the [marks](how-it-works.md#the-marks). Click a mark's label to open its source lines.
 
@@ -82,7 +82,7 @@ Most people who review docs aren't writers. A product manager, a support enginee
 
 1. **Read the HTML preview from the run.** In the pull request's checks, open the run of the job that writes the preview, and choose the preview's link in the run's summary. It shows each page the pull request changes as readers will see it, with the changes [marked](how-it-works.md#the-marks). Hover over a block to see the file and line it's written in, such as `guides/install.md:12`. The HTML preview doesn't show the pull request's comments; read those on GitHub. When the pull request has no preview in its checks, CI doesn't write one yet: [Attach the HTML preview to every pull request](ci-report.md) sets it up.
 2. **Comment in GitHub's Files view.** On the pull request's **Files changed** tab, find that file and comment on its lines, as on any pull request. The path the preview shows starts at the project's content folder, so on GitHub it may have folders before it, such as `docs/content/guides/install.md`. GitHub takes comments only on the lines a pull request changes and the few around them. Submit them as a review when you're done.
-3. **The writer sees your comments beside the blocks.** When the writer reviews in the page preview or the site preview, each of your comments shows beside the block written on its lines, and their replies and resolved threads are on GitHub, where you see them. A comment in the pull request's conversation, on no lines, shows on GitHub only.
+3. **The writer sees your comments beside the blocks.** When the writer reviews in the page preview or the site preview, each of your comments shows beside the block written on its lines. Their replies and resolved threads are on GitHub, where you see them. A comment in the pull request's conversation, on no lines, shows on GitHub only.
 
 ## See also
 

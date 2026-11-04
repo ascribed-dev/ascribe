@@ -80,8 +80,8 @@ pub struct RetiredLine {
     pub redirects: Vec<Redirect>,
     /// `ascribe.addresses`' text after the retirement, when the project has
     /// a file that reads: each redirect to a page in the current line
-    /// recorded in `[moved]`, keyed by the old address, so the build writes
-    /// it. `None` without the file, or when it changes nothing.
+    /// recorded in `[moved.<build>]`, keyed by the old address, so the
+    /// build whose line published it writes it. `None` without the file, or when it changes nothing.
     pub addresses_text: Option<String>,
     /// How many of `redirects` `ascribe.addresses` records: those to a page
     /// in the current line, when the project has a file that reads; else 0.
@@ -116,6 +116,9 @@ pub struct Unused {
 /// An address the retired line published, and where it should go.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Redirect {
+    /// The name the builds that published it are declared with: `site`
+    /// for `site@3.4`.
+    pub build: String,
     /// The address, from the site's root: `/3.4/install/`.
     pub from: String,
     /// Where it should go: the same page in the current line, the page that
@@ -1202,9 +1205,10 @@ fn removals(project: &Project, unused: &[Unused]) -> Vec<(RelPath, Option<String
 }
 
 /// `ascribe.addresses`' text once each of `redirects` that goes to a page
-/// in the current line is recorded in `[moved]`, keyed by the address the
-/// line published, which is from the host's root (SPEC §7.10): the build
-/// then writes each. An address that goes to the archive isn't recorded,
+/// in the current line is recorded in `[moved.<build>]`, the table of the
+/// build whose line published it, keyed by the address the line published,
+/// which is from the host's root (SPEC §7.10): that build then writes each,
+/// and no other build does. An address that goes to the archive isn't recorded,
 /// since a `[moved]` value is a page of the project. With how many are
 /// recorded; the text is `None` when the project has no file, it doesn't
 /// read, or nothing changes.
@@ -1216,7 +1220,7 @@ fn recorded(project: &Project, redirects: &[Redirect]) -> (usize, Option<String>
     let mut count = 0;
     for r in redirects {
         if let Some(page) = &r.page {
-            after.record_move(&r.from, page.as_str());
+            after.record_move_in(&r.build, &r.from, page.as_str());
             count += 1;
         }
     }
@@ -1282,6 +1286,7 @@ fn redirects(project: &Project, releases: &Releases, line: &Version, url: &str) 
                 )
             };
             out.push(Redirect {
+                build: name.to_owned(),
                 from,
                 to,
                 page,

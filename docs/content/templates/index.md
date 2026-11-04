@@ -1,7 +1,7 @@
 ---
 type: how-to
-title: Page templates
-description: "Starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it, written into your project by `ascribe templates eject`."
+title: Start pages from templates
+description: "Start a page of a known kind, such as a how-to, from a template and a guide to what goes in it, written into your project by `ascribe templates eject`."
 ---
 
 A page of a known kind has a shape: a how-to has what to do before you start, then numbered steps, then what to do next. A template is a page with that shape and things to fill in, and its guide says what belongs in each part. Ascribe carries a set of six, and writes them into your project with one command, where they're your files.
@@ -16,9 +16,10 @@ A template's instructions to the writer, such as `{This section is optional}`, a
 
 The set has six templates, for a how-to, a concept, a tutorial, a reference, a troubleshooting page, and release notes. Each is one of theirs, and has a type of the same name.
 
-## Take the templates
+## 1. Take the templates
+@id: take-the-templates
 
-To start a project with the set, run `ascribe init --templates` in an empty folder: it writes the project's first `ascribe.toml` and takes the six templates as `eject` would ([command reference](../install.md#cli-init)).
+To start a project with the set, run `ascribe init --templates` in an empty folder: it writes the project's first `ascribe.toml` and takes the six templates as `eject` would ([command reference](../command/init.md#cli-init)).
 
 In a project that has its `ascribe.toml` already, take the whole set:
 
@@ -40,6 +41,32 @@ It declares no `title`, which every page has already. The type names no template
 A page says what type it is in its frontmatter, `type: how-to`, as each template does, so a page of any type can go in any folder. Commit the files, the lock with them. The rules [`ascribe agents sync`](../agents/instructions.md) writes say what each type is for; to say it your own way, give the type a [`purpose`](../content-model/index.md#41-page-types).
 
 To take only some, name them: `ascribe templates eject how-to concept`. A type the project declares already is refused, and nothing is written; to keep it and take its template, add `--keep-type`. The [command reference](command.md#cli-templates-eject) has the rest.
+
+## 2. Start a page
+@id: start-a-page
+
+In VS Code, run **Ascribe: New Page**. It asks for the type and the page's title, then makes the page from the type's template, with the first thing to fill in selected; **Ascribe: Go to Next Placeholder** selects the next ([editor guide](../editor/actions.md#start-a-page)).
+
+From the command line, [`ascribe new`](command.md#cli-new) does the same. It says where the page went, the guide to read before you write, and how many placeholders are left:
+
+```sh
+ascribe new how-to docs/guides --title "Rotate keys"
+```
+
+An agent starts from the template too. Ask it for a page with the plugin's `/ascribe:new-page`, or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/prompts.md#from-the-command-line)), which gives it the template and sends it to the guide and the notes before it writes:
+
+```sh
+ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
+```
+
+## 3. Fill in what's left
+@id: whats-left-to-fill-in
+
+`ascribe check` compares a page with its type's template and reports what it still has of it: a placeholder or a frontmatter field the page has word for word, and a section the template gives only memos that the page leaves empty ([`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229), advice).
+
+A placeholder left is advice in a [draft](../writing/frontmatter.md#a-draft), a page with `draft: true` ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), so a page you're still writing isn't covered in errors. In a page that publishes, it's an error ([`template-placeholder-published`](../checks/diagnostics/content-checks.md#ASC286)): readers would read the template's words, so `ascribe check` fails, `ascribe build` writes nothing, and the editor, the agents' hook, and the MCP tools report it the same way. A page started with `ascribe new` or **New Page** is a draft until you take the line out. A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says how many are left, and **Go to Next Placeholder** goes to the next one.
+
+The check finds only what was never touched, so read a page through before publishing it. To turn any of these checks off, or set another level, set its level in [`[checks]`](../content-model/checks.md#22-checks).
 
 ## Change a template
 
@@ -71,59 +98,7 @@ A project with pages written already can take the set too; Ascribe's own docs di
 
 Their guide says what belongs in a page of each kind, for any tool. Ascribe's notes, `<type>.ascribe.md`, are a minute's reading after it: only what's particular to writing that kind of page in Ascribe, such as a how-to's alternatives by platform as a [variant](../glossary.md#variant) group, and a step's command taken from tested code with [`@snippet`](../writing/directives.md#snippet).
 
-## Start a page
-
-In VS Code, run **Ascribe: New Page**. It asks for the type and the page's title, then makes the page from the type's template, with the first thing to fill in selected; **Ascribe: Go to Next Placeholder** selects the next ([editor guide](../editor/actions.md#start-a-page)).
-
-From the command line, `ascribe new` does the same.
-
-### `ascribe new`
-@id {permalink=true}: cli-new
-
-@summary
-Starts a page of a type from the type's template, with its `type` and `title` set, as a draft, as **New Page** does, and writes it where `PATH` says. It never writes over a file.
-
-```sh
-ascribe new how-to docs/guides --title "Rotate keys"
-```
-
-@include: ../_generated/cli-new-options.md
-
-`PATH` is from the current folder, in the content root: a page's path, ending in `.md`, or a folder, where the page is named for its title as a route's segment is, `docs/guides/rotate-keys.md` above. The folders it names are made. Without `--title`, the page keeps the template's title, to fill in with the rest, and `PATH` must name the page itself. A type with no template starts with its frontmatter alone: its type, the title, and each field it requires, empty.
-
-The page starts as a [draft](../writing/frontmatter.md#a-draft), with `draft: true` in its frontmatter, which no build publishes, so what it has left of its template is advice while you write it. Take the line out to publish it: from then on, a placeholder left in it is an error ([What's left to fill in](#whats-left-to-fill-in)).
-
-It says where the page went, the type's guide to read before writing, and how many placeholders are left, which [`ascribe check`](../checks/check.md#cli-check) lists:
-
-```text
-wrote docs/guides/rotate-keys.md, a page of type `how-to`, from templates/how-to.md
-Read its guide before you write: templates/how-to.guide.md, templates/how-to.ascribe.md
-It has 13 placeholders left to fill in, which `ascribe check docs/guides/rotate-keys.md` lists
-It's a draft, with `draft: true`, which no build publishes: take the line out to publish it
-```
-
-With `--dry-run`, it says where the page would go and prints its text, and writes nothing. With `--format json`, it writes [one document](../contracts/json-reports/templates.md#ascribe-new) with the page's path, its text, and the count.
-
-| Exit code | Meaning |
-|---|---|
-| `0` | The page was written, or with `--dry-run` would be |
-| `2` | Nothing was written: a type the content model doesn't have, a path outside the content root, a file where the page would go, no title to name a page in a folder, or a template that can't be read |
-
-An agent starts from the template too. Ask it for a page with the plugin's `/ascribe:new-page`, or the prompt `ascribe agents prompt new-page` prints ([agents guide](../agents/prompts.md#from-the-command-line)), which gives it the template and sends it to the guide and the notes before it writes:
-
-```sh
-ascribe agents prompt new-page --arg type=how-to --arg title="Rotate keys"
-```
-
-## What's left to fill in
-
-`ascribe check` compares a page with its type's template and reports what it still has of it: a placeholder or a frontmatter field the page has word for word, and a section the template gives only memos that the page leaves empty ([`template-section-empty`](../checks/diagnostics/content-checks.md#ASC229), advice).
-
-A placeholder left is advice in a [draft](../writing/frontmatter.md#a-draft), a page with `draft: true` ([`template-placeholder-left`](../checks/diagnostics/content-checks.md#ASC195)), so a page you're still writing isn't covered in errors. In a page that publishes, it's an error ([`template-placeholder-published`](../checks/diagnostics/content-checks.md#ASC286)): readers would read the template's words, so `ascribe check` fails, `ascribe build` writes nothing, and the editor, the agents' hook, and the MCP tools report it the same way. A page started with `ascribe new` or **New Page** is a draft until you take the line out. A memo the page keeps isn't reported. In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) says how many are left, and **Go to Next Placeholder** goes to the next one.
-
-The check finds only what was never touched, so read a page through before publishing it. To turn any of these checks off, or set another level, set its level in [`[checks]`](../content-model/checks.md#22-checks).
-
 ## See also
 
-- [`ascribe templates`](command.md): `list`, `eject`, and `status`, their options, and their output.
+- [`ascribe templates` and `ascribe new`](command.md): `list`, `eject`, `status`, and `new`, their options, and their output.
 - [Page types](../content-model/index.md#41-page-types): a type's `template`, `guide`, and `purpose`, and the template it takes from the lock.

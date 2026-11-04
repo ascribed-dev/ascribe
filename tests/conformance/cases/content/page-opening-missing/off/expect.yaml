@@ -1,0 +1,6 @@
+description: >-
+  `[checks]` turns the check off.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics: []

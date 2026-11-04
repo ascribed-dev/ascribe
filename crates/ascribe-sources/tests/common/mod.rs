@@ -121,7 +121,11 @@ impl Docs {
         write(
             docs.root(),
             "ascribe.toml",
-            format!("spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n{sources}"),
+            // The pages here open with a snippet, which isn't what's tested.
+            format!(
+                "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n{sources}\n\
+                 [checks]\npage-opening-missing = \"off\"\n"
+            ),
         );
         std::fs::create_dir_all(docs.root().join("docs")).unwrap();
         docs

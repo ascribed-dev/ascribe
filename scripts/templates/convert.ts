@@ -47,6 +47,7 @@ export interface Rules {
   about: string[];
   memos: string[];
   directives: { directive: string; before: string }[];
+  opening?: string | undefined;
 }
 
 /** A step that can't be done as the source is. It names the template and the place. */
@@ -77,6 +78,7 @@ export function readRules(
           about: table.about ?? [],
           memos: table.memos ?? [],
           directives: table.directives ?? [],
+          opening: table.opening,
         },
       ];
     }),
@@ -158,6 +160,7 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
     while (to < body.length && blank(body[to] ?? "")) to++;
     body = [...body.slice(0, from), ...body.slice(to)];
   }
+  if (rules.opening !== undefined) body = unhead(name, body, rules.opening);
   const code = codeLines(body);
 
   // The structural rules, each at the one line of theirs it names.
@@ -173,13 +176,15 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
     before.set(at, [...(before.get(at) ?? []), indent + rule.directive]);
   }
 
-  const memos = placeMemos(name, body, code, rules.memos);
+  const memos = placeMemos(name, body, code, rules.memos, rules.opening !== undefined);
   const escaped = escapeBraces(body, code);
   const out = escaped.flatMap((line, i) => [
     ...(before.get(i) ?? []),
     ...(memos.removed.has(i) ? [] : (memos.at.get(i) ?? [line])),
     ...(memos.after.get(i) ?? []),
   ]);
+  // A memo at the top of a page with no heading over it touches the opening.
+  out.unshift(...(memos.after.get(-1) ?? []));
   return [
     "---",
     `type: ${name}`,
@@ -190,6 +195,34 @@ export function convertTemplate(name: string, source: string, rules: Rules): str
     ...out,
     "",
   ].join("\n");
+}
+
+/**
+ * The page's opening without the heading their template puts over it, so a
+ * page opens with a paragraph, as `page-opening-missing` asks. The heading,
+ * which the rule `opening` names, is the body's first line. A heading that's
+ * only a label, such as `## Overview`, is removed, and what's under it opens
+ * the page; one that's a placeholder in braces, such as `## {Reference
+ * description}`, says what goes there, so it's kept as a paragraph.
+ */
+function unhead(name: string, body: string[], opening: string): string[] {
+  const first = body.findIndex((line) => !blank(line));
+  const line = body[first] ?? "";
+  if (first === -1 || line.trim() !== opening || !headingLine.test(line))
+    throw new ConversionError(
+      `${name}: the rule \`opening\` names \`${opening}\`, which isn't the heading the template opens with`,
+    );
+  const text = line.replace(/^ {0,3}#{1,6}[ \t]+/, "").trim();
+  if (text.startsWith("{") && text.endsWith("}"))
+    return [
+      ...body.slice(0, first),
+      text,
+      ...(blank(body[first + 1] ?? "") ? [] : [""]),
+      ...body.slice(first + 1),
+    ];
+  let to = first + 1;
+  while (to < body.length && blank(body[to] ?? "")) to++;
+  return [...body.slice(0, first), ...body.slice(to)];
 }
 
 /** The longest memo written as a line when their paragraph has more than one line. */
@@ -217,9 +250,17 @@ interface Memos {
  * container: a block, which the memo touches in the paragraph's place; the
  * next heading or the end, when the memo goes to the top of the section,
  * under its heading and `@id`; or the end of a container with no heading,
- * such as a list item, where it can't go, and the conversion stops.
+ * such as a list item, where it can't go, and the conversion stops. In
+ * a page's opening, whose heading the rule `opening` took off, the top of
+ * the section is the top of the page, above its first block.
  */
-function placeMemos(name: string, body: string[], code: boolean[], texts: string[]): Memos {
+function placeMemos(
+  name: string,
+  body: string[],
+  code: boolean[],
+  texts: string[],
+  unheaded: boolean,
+): Memos {
   const memos: Memos = { removed: new Set(), at: new Map(), after: new Map() };
   // Each paragraph: its first line, and the line after its last.
   const paragraphs: [number, number][] = [];
@@ -275,6 +316,15 @@ function placeMemos(name: string, body: string[], code: boolean[], texts: string
     // The last block of its section: the memo goes to the top of the section.
     let heading = from - 1;
     while (heading >= 0 && (code[heading] || !headingLine.test(body[heading] ?? ""))) heading--;
+    if (heading < 0 && indent.length === 0 && unheaded && from > 0) {
+      // The page's opening, whose heading the rule `opening` took off: the
+      // memo goes above the page's first block, touching it.
+      memos.after.set(-1, [...(memos.after.get(-1) ?? []), ...memo]);
+      let start = from;
+      if (next === body.length) while (start > 0 && blank(body[start - 1] ?? "")) start--;
+      for (let i = start; i < next; i++) memos.removed.add(i);
+      continue;
+    }
     if (indent.length > 0 || heading < 0)
       throw new ConversionError(
         `${name}: the memo \`${text}\` is the last block of a container with no heading, so it has nothing to be about`,

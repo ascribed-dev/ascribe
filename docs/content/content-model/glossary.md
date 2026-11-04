@@ -32,6 +32,8 @@ A secret that identifies a program calling the API, made in the dashboard.
 [Install the agent](install.md) says where to make one.
 ```
 
+The frontmatter is for the content model `ascribe init` writes in an empty folder, whose one page type, `page`, needs a `title` and a `description`. In a folder that has pages already, `init` declares no page types, so a page leaves out `type`. Write what your project's model asks for.
+
 `aliases` lists other forms that count as the term, such as its plural, separated by `|`. The term's id is its heading's id, `api-key` here: it's the id a link to the term names. To keep the id when you reword the heading, give the heading an [`@id`](../writing/directives.md#id), on the line above `@term`.
 
 Only the first paragraph is the definition, so a section that opens with a list, a note, or a code block has none: write a sentence before it. Keep it to a sentence or two. A link's title and the editor's hover show it whole, and `ascribe check` reports one over 300 characters as advice.

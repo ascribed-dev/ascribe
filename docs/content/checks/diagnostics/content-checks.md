@@ -4,9 +4,7 @@ title: "Diagnostics: content checks"
 description: "The checks of a project's pages, which it can set the level of or turn off."
 ---
 
-Part of the [diagnostics reference](../diagnostics.md), which says what an entry's severity, level, and next step mean, and has an index of every diagnostic.
-
-Checks of the content's quality: advice unless a project sets another level in [`[checks]`](../../content-model/checks.md#22-checks). A check with settings takes a table, and its entry names them. This page has the checks of pages; the checks of the project as a whole are on [Diagnostics: content checks across the project](project-checks.md), and the checks of outputs, prose, external links, the published site, and tested examples are on [Diagnostics: content checks of outputs and the site](output-checks.md).
+The content checks of a project's pages: checks of the content's quality, advice unless a project sets another level in [`[checks]`](../../content-model/checks.md#22-checks). A check with settings takes a table, and its entry names them. The checks of the project as a whole are on [Diagnostics: content checks across the project](project-checks.md), and the checks of outputs, prose, external links, the published site, and tested examples on [Diagnostics: content checks of outputs and the site](output-checks.md). Part of the [diagnostics reference](../diagnostics.md), which says what an entry's severity, level, and next step mean, and has an index of every diagnostic.
 
 ```toml
 [checks]

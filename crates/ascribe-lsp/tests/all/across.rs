@@ -37,7 +37,7 @@ phrase-unused = "error"
 "#;
 
 const INDEX: &str = "---\ntitle: Home\n---\n\nSee [Alpha](a.md) and [the other Alpha](c.md), and [the glossary](glossary.md).\n";
-const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\n## agent\n@term\n\nThe process that ships logs.\n\n## relay\n@term\n\nNothing writes this.\n";
+const GLOSSARY: &str = "---\ntitle: Glossary\n---\n\nThe words these pages use.\n\n## agent\n@term\n\nThe process that ships logs.\n\n## relay\n@term\n\nNothing writes this.\n";
 const A: &str = "---\ntitle: Alpha\n---\n\nUse {product} with the agent.\n\n@include: _used.md\n";
 const B: &str = "---\ntitle: Beta\n---\n\nNothing links here.\n";
 const C: &str = "---\ntitle: Alpha\n---\n\nThe same title.\n";

@@ -4,7 +4,7 @@ title: Link to operations in the editor
 description: "Complete an OpenAPI operation after a link's `#`, see its method, path, and summary on hover, open it in the spec, and fix a link whose operation was renamed, in VS Code or any editor with the language server."
 ---
 
-The editor knows the operations of each spec `[apis]` declares, as it knows a page's headings: it completes them in a link, shows what a link names, opens it in the spec, and fixes a link when the spec renames its operation. This is the language server's, so it works in VS Code and in any editor that runs `ascribe lsp`. All of it applies to the link of an [`@operation`](operation.md#operation-editor) too.
+The editor knows the operations of each OpenAPI spec `[apis]` declares, as it knows a page's headings: it completes them in a link, shows what a link names, opens it in the spec, and fixes a link when the spec renames its operation. This is the language server's, so it works in VS Code and in any editor that runs `ascribe lsp`. All of it applies to the link of an [`@operation`](operation.md#operation-editor) too.
 
 ## Complete an operation
 
@@ -40,7 +40,7 @@ A link to an operation the spec marks `deprecated` is advice, `link-operation-de
 
 ## For agents
 
-`ascribe link` checks a link to an operation as it checks a link to a page, and answers with the operation: its API, its id, or its method and path, its summary, whether it's deprecated, and its address in the reference. An agent with no shell asks the same with the MCP tool `ascribe_link`. See [`ascribe link`](../command/questions.md#cli-link).
+`ascribe link` checks a link to an operation as it checks a link to a page, and answers with the operation: its API, its id, or its method and path, its summary, whether it's deprecated, and its address in the reference. An agent with no shell asks the same with the MCP tool `ascribe_link`. See [`ascribe link`](../command/references.md#cli-link).
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link-operation.txt
 

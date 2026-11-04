@@ -189,10 +189,10 @@ fn check() {
     let text = fs::read_to_string(&keys).unwrap().replace("\r\n", "\n");
     let mut lines: Vec<&str> = text.lines().collect();
     assert_eq!(
-        lines[7], "@id: create-key",
+        lines[9], "@id: create-key",
         "examples/quill/docs/keys.md changed"
     );
-    lines[7] = "See [Install](/install-agent/).";
+    lines[9] = "See [Install](/install-agent/).";
     fs::write(&keys, lines.join("\n") + "\n").unwrap();
 
     expect("check.txt", &stdout(&run(dir.path(), &["check"], 0)));
@@ -223,7 +223,7 @@ fn check() {
         0,
     ));
     assert!(
-        github.starts_with("::warning file=docs/keys.md,line=8,"),
+        github.starts_with("::warning file=docs/keys.md,line=10,"),
         "{github}"
     );
 }
@@ -244,10 +244,10 @@ fn github_annotations() {
     let text = fs::read_to_string(&keys).unwrap().replace("\r\n", "\n");
     let mut lines: Vec<&str> = text.lines().collect();
     assert_eq!(
-        lines[7], "@id: create-key",
+        lines[9], "@id: create-key",
         "examples/quill/docs/keys.md changed"
     );
-    lines[7] = "See [Install](/install-agent/).";
+    lines[9] = "See [Install](/install-agent/).";
     fs::write(&keys, lines.join("\n") + "\n").unwrap();
     commit(repo.path(), "Add the handbook");
 

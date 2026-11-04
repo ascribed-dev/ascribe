@@ -5,7 +5,7 @@ nav-label: "How content varies"
 description: "The normative contract for the content model's dimensions, versions and releases, lifecycle states, and features."
 ---
 
-Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [how content varies](../../content-model/variation.md).
+These sections of the contract are the rules of `[dimensions.<name>]`, `[versions]` with `[releases.<target>]`, `[lifecycle.<state>]`, and `[features.<key>]`. They're part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [how content varies](../../content-model/variation.md).
 
 ## 11. `[dimensions.<name>]`
 

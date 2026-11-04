@@ -1,0 +1,1 @@
+- **A new how-to, Write a page, opens the writing section.** It builds one page with a note, steps, a collapsible block, a link, an image, a phrase, and an include, and the directive reference now opens with the six most used. See [Write a page](docs/content/writing/write-a-page.md).

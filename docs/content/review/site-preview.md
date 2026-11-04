@@ -5,7 +5,7 @@ description: "The Ascribe review app in `astro dev`'s toolbar: its panel, what i
 permalink: review-in-the-site-preview
 ---
 
-In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same [marks](how-it-works.md#the-marks) and threads as the editor's [page preview](../editor/review.md), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. The integration's [`review` option](../astro/reference.md#options) can leave it out. [Review](index.md#review-in-the-site-preview) walks through reviewing a pull request with it; this page is the reference for the site's side.
+In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same [marks](how-it-works.md#the-marks) and threads as the editor's [page preview](../editor/review.md), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. The integration's [`review` option](../astro/reference.md#options) can leave it out. [Review a pull request](index.md#review-in-the-site-preview) walks through reviewing a pull request with it; this page is the reference for the site's side.
 
 ## The panel
 
@@ -18,7 +18,7 @@ Click your place in the changes for the breakdown. **More review actions** (**â‹
 
 Close the panel to get the page back; it stays closed or open as you move between pages. With the panel closed, a dot on the toolbar button says you have comments you haven't submitted.
 
-Review is on for the whole dev server, not one tab: once you start it, every page of the site that loads, in any tab or browser, shows the marks and threads without a click, until **Stop Review** or until `astro dev` stops.
+Review is on for the whole dev server, not one tab: once you start it, every page of the site that loads, in any tab or browser, shows the change marks and threads without a click, until **Stop Review** or until `astro dev` stops.
 
 Each mark's label and each thread's **Open source** opens the file at the line in your editor, through Vite's open-in-editor: set `LAUNCH_EDITOR` (for example, `LAUNCH_EDITOR=code`) to choose which.
 

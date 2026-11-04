@@ -2,6 +2,8 @@
 title: Install Lantern
 ---
 
+Install the Lantern command-line tool on Linux, macOS, or Windows.
+
 ## Install the CLI
 
 @variant {platform=linux}:

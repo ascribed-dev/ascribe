@@ -277,3 +277,6 @@
 | [ASC286](../checks/diagnostics/content-checks.md#ASC286) | `template-placeholder-published` | Error | File | write |
 | [ASC287](../checks/diagnostics/content-checks.md#ASC287) | `github-alert` | Warning | File | fix |
 | [ASC288](../checks/diagnostics/content-checks.md#ASC288) | `phrase-text-written` | Advice | File | review |
+| [ASC289](../checks/diagnostics/project-files.md#ASC289) | `addresses-build-unknown` | Error | File | choose |
+| [ASC291](../checks/diagnostics/content-checks.md#ASC291) | `how-to-steps-missing` | Advice | Page | write |
+| [ASC292](../checks/diagnostics/content-checks.md#ASC292) | `page-opening-missing` | Advice | File | write |

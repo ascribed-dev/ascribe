@@ -5,6 +5,8 @@ description: The terms these docs use.
 since: "2.0"
 ---
 
+The terms these docs use, each with its definition.
+
 ## Feature flag
 @id: feature-flag
 @term {aliases="feature flags"}

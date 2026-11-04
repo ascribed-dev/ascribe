@@ -3165,7 +3165,7 @@ configurable = true
 when = "The project has `[checks.vale]`, and Vale reports an alert about the prose of a page or a fragment, or of a phrase's text. Reported where the alert is in the source, or at the phrase"
 message = "{rule}: {message}"
 messages.phrase = "{rule}: {message} (in the text of phrase `{key}`)"
-fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](https://ascribed-dev.com/go/vale/)."
+fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Check prose with Vale](https://ascribed-dev.com/go/vale/)."
 
 [[diagnostic]]
 code = "ASC166"
@@ -4959,7 +4959,7 @@ next = "choose"
 evidence = []
 spec = "7.10"
 reference = "publishing/redirects.md#the-files-checks"
-row = "Addresses file | A key written twice in a table, or in both `[moved]` and `[retired]`"
+row = "Addresses file | A key written twice in a table, in both `[moved]` and `[retired]`, or in a build's table and either"
 message = "`{key}` is in ascribe.addresses twice: {first}, and {second}"
 fix = "Keep one entry, and remove the other, as a merge of two branches can leave both. When both places are right for part of what the page had, keep the one most readers want, and forward the other's content's new home with `ascribe addresses move`. Until it's fixed, the file isn't used, and the build writes no redirects."
 
@@ -5271,4 +5271,94 @@ title: Install Quill
 ---
 
 {product} keeps your notes in sync.
+'''
+
+[[diagnostic]]
+code = "ASC289"
+slug = "addresses-build-unknown"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "7.10"
+reference = "publishing/redirects.md#the-files-checks"
+row = "Addresses file | A build's table of `[moved]`, `[moved.<build>]`, naming a build `ascribe.toml` doesn't declare"
+message = "`[moved.{build}]` names a build ascribe.toml doesn't declare, so no build writes its redirects; the builds are {builds}"
+fix = "Name the build whose line published the table's addresses, as it's declared in ascribe.toml: `site` for `site@3.4`. When the build was renamed, rename the table too. When the build is gone on purpose, remove the table: its addresses have nowhere to lead."
+
+[[diagnostic]]
+code = "ASC291"
+slug = "how-to-steps-missing"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+spec = "none"
+reference = "writing/directives.md#steps"
+configurable = true
+area = "pages"
+when = "A page of the content type named `how-to` has no `@steps` and no heading that starts with a step's number, such as `1. Install` or `Step 1: Install`, once includes are expanded. A page of any other type isn't looked at"
+summary = "A page of the content type named `how-to` has no `@steps` and no heading numbered as a step"
+message = "this how-to has no steps; write the task as a numbered list under `@steps`, so readers and agents can follow it a step at a time"
+fix = "Write what the reader does as a numbered list, one action to a step, starting each with a verb, and put `@steps` on the line above it: the site numbers it as a procedure and an agent reads it as one. A task long enough for a section to each step can number its headings instead, as `## 1. Install`. A how-to that has no steps may be another type of page: a concept that explains, or a reference to look things up in."
+example.model = '''
+[types.how-to.frontmatter]
+title = "string"
+'''
+example.wrong = '''
+---
+type: how-to
+title: Install Quill
+---
+
+Download the installer, run it, and sign in.
+'''
+example.right = '''
+---
+type: how-to
+title: Install Quill
+---
+
+Install Quill on your computer.
+
+@steps
+1. Download the installer.
+2. Run it.
+3. Sign in.
+'''
+
+[[diagnostic]]
+code = "ASC292"
+slug = "page-opening-missing"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "none"
+reference = "content-model/checks.md#22-checks"
+configurable = true
+area = "pages"
+when = "A page's first block after its title is something other than a paragraph written in the page: an `@include`, a heading, a list, a table, code, a quote, or a directive. A level-1 heading that repeats the title, a memo, an HTML comment, and a directive that binds to the block below it, such as `@summary` or `@available`, are passed over. A fragment, and a page with nothing after its frontmatter, aren't looked at"
+summary = "A page's first block after its title is something other than a paragraph written in the page, such as an `@include`, a heading, or a list"
+message = "this page opens with {first}, not a paragraph; open the page with a sentence that says what it covers"
+fix = "Write a paragraph at the top of the page, before its first heading, list, or include, saying what the page covers and who it's for. A reader who lands on the page from a search sees it first, and so does an agent, which may read no further. When the page's opening is in a fragment, write the sentence in the page and include the rest after it."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Download
+
+Download the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+Install Quill on your computer.
+
+## Download
+
+Download the installer.
 '''

@@ -510,7 +510,9 @@ fn apply_captions(html: &str) -> String {
         let code: Vec<(String, String)> =
             code.into_iter().filter(|(n, _)| n != "data-meta").collect();
         let body = &rest[body_start..end];
-        let tested = meta_value(&meta, "tested");
+        // An empty tested line, `tested=""`, still makes a caption: it's
+        // `show-os = false` with no entries, which reads "Tested".
+        let tested = meta_pair(&meta, "tested");
         match tested {
             None => {
                 out.push_str(&format!("<pre{}>", write_attributes(&pre, &[])));
@@ -569,12 +571,17 @@ fn code_block(html: &str) -> Option<(Vec<(String, String)>, Vec<(String, String)
 /// The value of the `key` pair in a code block's info string past its
 /// language (SPEC §3.3.1), when it isn't empty.
 fn meta_value(meta: &str, key: &str) -> Option<String> {
+    meta_pair(meta, key).filter(|v| !v.is_empty())
+}
+
+/// The value of the `key` pair in a code block's info string past its
+/// language (SPEC §3.3.1), empty or not.
+fn meta_pair(meta: &str, key: &str) -> Option<String> {
     info_string::words(meta)
         .into_iter()
         .filter_map(|w| w.pair)
         .find(|p| p.key == key)
         .map(|p| p.value.into_owned())
-        .filter(|v| !v.is_empty())
 }
 
 /// The attributes comrak wrote on a tag, as `(name, decoded value)`.

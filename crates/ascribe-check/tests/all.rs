@@ -28,6 +28,8 @@ mod inert_marks;
 #[path = "../../../tests/support/links.rs"]
 mod links;
 
+#[path = "all/openings.rs"]
+mod openings;
 #[path = "all/page.rs"]
 mod page;
 #[path = "all/page_index.rs"]

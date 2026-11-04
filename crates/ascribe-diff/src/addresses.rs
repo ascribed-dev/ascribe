@@ -124,5 +124,6 @@ pub fn base_file_entries(root: &Path, requested: Option<&str>, exact: bool) -> O
     let entry = tree.files.get(&path).filter(|e| !e.symlink)?;
     let bytes = repo.read_blobs(&[entry.object.as_str()]).ok()?.pop()?;
     let file = AddressFile::parse(&String::from_utf8(bytes).ok()?, FileId::new(0)).ok()?;
-    Some(file.moved.len() + file.retired.len())
+    let builds: usize = file.builds.values().map(|t| t.entries.len()).sum();
+    Some(file.moved.len() + builds + file.retired.len())
 }

@@ -4,7 +4,7 @@ title: Phrases, links, and images
 description: "What a page writes in its prose: phrases, links between files, images, heading ids, and glossary terms."
 ---
 
-What Ascribe adds to a page's prose, and the rules it checks there. Directives are in the [directive reference](directives.md), and how one is written in [directive syntax](syntax.md). Each section links to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
+A page's prose takes three things from Ascribe: phrases, links to other files, and glossary terms linked to their definitions. This page has those, and the rules Ascribe checks on links, images, and heading ids. Directives are in the [directive reference](directives.md), and how one is written in [directive syntax](syntax.md). Each section links to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
 
 ## Phrases
 
@@ -71,4 +71,4 @@ Every heading has an id: its [`@id`](directives.md#id) if it has one, and otherw
 
 ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms))
 
-A glossary is a page, or several, that `[glossary] pages` in `ascribe.toml` lists, and each of its headings marked [`@term`](directives.md#term) is a term, defined by the paragraph under it. Ascribe links terms to their definitions in each built page, and authors don't mark terms where they're used. A link you write to a term's heading, as `[build](glossary.md#build)`, is a use of the term too: it's how you link a `marked` term, which isn't linked automatically. See [`[glossary]`](../content-model/content.md#8-glossary).
+A glossary is a page, or several, that `[glossary] pages` in `ascribe.toml` lists, and each of its headings marked [`@term`](directives.md#term) is a term, defined by the paragraph under it. Ascribe links terms to their definitions in each built page, and you don't mark terms where they're used. A link you write to a term's heading, as `[build](glossary.md#build)`, is a use of the term too: it's how you link a `marked` term, which isn't linked automatically. See [`[glossary]`](../content-model/content.md#8-glossary).

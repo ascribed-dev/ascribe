@@ -1,8 +1,9 @@
-docs/keys.md:7: Create a key
+docs/keys.md:9: Create a key
     #create-key
-docs/keys.md:21: Generate a new key, put it in quill.yaml, and restart the agent. To install the…
+docs/keys.md:7: …in with an API key. Create one for each machine that runs it, and rotate them on…
+docs/keys.md:23: Generate a new key, put it in quill.yaml, and restart the agent. To install the…
     Rotate keys #rotate-keys
-docs/keys.md:27: A key also signs the events the agent sends to your webhooks.
+docs/keys.md:29: A key also signs the events the agent sends to your webhooks.
     Sign webhook events #sign-webhooks · in build site
 
-3 places match, on 1 page.
+4 places match, on 1 page.

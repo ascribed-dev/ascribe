@@ -1,10 +1,10 @@
 ---
 type: concept
 title: How review works
-description: What review compares, what its marks mean, how its comments map to the pull request, what it needs from GitHub, and what reaches GitHub.
+description: What review compares, what its change marks mean, how its comments map to the pull request, what it needs from GitHub, and what reaches GitHub.
 ---
 
-Review is one comparison shown in three places: the **page preview** in VS Code, the **site preview** under `astro dev`, and the **HTML preview** from CI. All three show the same changes with the same marks, and the two previews show the pull request's comments, with the same rules for where each lands. This page is what holds in all three. [Review](index.md) walks through reviewing a pull request; each place's own controls are on [Review in the preview](../editor/review.md), [Review in the site preview](site-preview.md), and [the HTML preview](diff.md#the-html-report).
+Review is one comparison shown in three places: the **page preview** in VS Code, the **site preview** under `astro dev`, and the **HTML preview** from CI. All three show the same changes with the same marks, and the two previews show the pull request's comments, with the same rules for where each lands. This page describes what's the same in all three. [Review a pull request](index.md) walks through reviewing a pull request; each place's own controls are on [Review in the preview](../editor/review.md), [Review in the site preview](site-preview.md), and [the HTML preview](diff.md#the-html-report).
 
 ## What review compares
 
@@ -14,14 +14,15 @@ It compares **resolved pages**, not files. A change to a fragment shows on every
 
 The previews follow your edits: the page preview as you type, saved or not, and the site preview each time a save rebuilds the site.
 
-## The marks
+## The change marks
+@id: the-marks
 
 Each changed block has a bar in its margin and a label:
 
-- an **added** block has a solid bar and the label **Added**;
-- a **changed** block has a dashed bar and the label **Changed**, with the words added highlighted and the words removed struck through;
-- a **removed** block is shown where it was, from the base, struck through and collapsed to one line, with **Show** to expand it;
-- a **moved** block has a double bar and the label **Moved**, with a link to a stub at its old place, and back.
+- An **added** block has a solid bar and the label **Added**.
+- A **changed** block has a dashed bar and the label **Changed**, with the words added highlighted and the words removed struck through.
+- A **removed** block is shown where it was, from the base, struck through and collapsed to one line, with **Show** to expand it.
+- A **moved** block has a double bar and the label **Moved**, with a link to a stub at its old place, and back.
 
 A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes ("2 changes"). Every mark has a label as well as a color, and the colors work in light and dark.
 
@@ -45,11 +46,12 @@ Every comment is an ordinary GitHub review comment. Ascribe keeps none of its ow
 
 - **A comment on a block is a review comment on its source file and lines,** at the pull request's latest commit. A block from a fragment is commented on in the fragment's file.
 - **A fragment's thread shows on every page that includes it.** A comment made on one of those pages is on the fragment, so it shows on all of them.
-- **GitHub takes review comments only on lines a pull request changes, and the few lines around them.** A comment on any other block, or on a page whose file isn't in the pull request (one that changed through a fragment or a phrase, say), goes in your review's summary instead, quoting the block and linking its lines. The comment box says so before you write. It reaches the pull request's conversation when you submit, and still shows beside its block in both previews, for you and for everyone else who reviews with Ascribe.
+- **GitHub takes review comments only on lines a pull request changes, and the few lines around them.** A comment on any other block goes in your review's summary instead, quoting the block and linking its lines. So does a comment on a page whose file isn't in the pull request, one that changed through a fragment or a phrase, say. The comment box says so before you write. It reaches the pull request's conversation when you submit, and still shows beside its block in both previews, for you and for everyone else who reviews with Ascribe.
 - **New comments are unsent until you submit,** and nobody else sees them. GitHub's API calls this your pending review. Submitting sends them as a comment, an approval, or a request for changes, with an optional summary; discarding deletes them.
 - **A reply can go at once, unless you have unsent comments.** While you do, GitHub adds every reply to your review, so **Reply now** is unavailable, and says why, until you submit or discard.
 - **Resolving and reopening act at once,** on GitHub, and aren't part of your review.
-- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away. A thread whose lines are gone from the page, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block. A thread carries one of these labels, the most specific that fits: **On removed text**, then **Detached**, then **Outdated**. When the text a thread was on is empty or can't be read, the thread says so in words instead of quoting it.
+- **A thread whose text changed since it was written** is labeled **Outdated**, beside the text that replaced it, with the text it was on a click away.
+- **A thread whose lines are gone from the page**, because the text was deleted, the block moved to another page, or the thread is on a whole file, is **detached**: it's listed above the page with the text it was on. A thread on removed text shows on the removed block. A thread carries one of these labels, the most specific that fits: **On removed text**, then **Detached**, then **Outdated**. When the text a thread was on is empty or can't be read, the thread says so in words instead of quoting it.
 
 ### Your checkout and the pull request
 
@@ -76,7 +78,7 @@ Nothing needs a hosted service, and nothing but GitHub stores comments.
 
 - **Review is the only time Ascribe contacts GitHub,** and only once you start it. Nothing runs `git` for a comparison, and nothing talks to GitHub, before you choose **Start Review** in VS Code or open the **Ascribe review** app in the site preview. After that, in the same workspace, VS Code asks GitHub whether a branch has a pull request when you open one of its pages, to [offer review](../editor/review.md#the-offer). Review uses no network of its own: `ascribe diff` runs `git` on your machine, against the repository you have.
 - **Ascribe stores no token.** In VS Code, comments go through VS Code's own GitHub sign-in, or through `gh`. A sign-in is sent only to the host it's for, never to another host a remote names. In the site preview, the dev server runs `gh` on your machine. Neither keeps a token of its own.
-- **No token reaches a page.** The previews draw the comments but never talk to GitHub: in VS Code the extension makes every request, and in the site preview the dev server does, over Vite's own connection, which only pages from the dev server can open.
+- **No token reaches a page.** The previews draw the comments but never talk to GitHub. In VS Code the extension makes every request, and in the site preview the dev server does, over Vite's own connection, which only pages from the dev server can open.
 - **Pages and comments can't run code.** The three previews take scripts, event handlers, and `javascript:` links out of a page's HTML, and the HTML preview's content security policy lets only its own script run. Comment bodies are rendered from a safe subset of Markdown: no raw HTML, and an image shows as a link, so nothing loads until you click.
 - **What's sent to GitHub** is what you write, and the file and lines it's on. A comment held in the summary also quotes the block's text and carries a hidden marker naming its block, `<!-- ascribe:anchor guides/install.md:12-14 build=site -->`, so that the previews can put it back on the block.
 

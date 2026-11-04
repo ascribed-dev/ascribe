@@ -1,6 +1,6 @@
 ---
 type: how-to
-title: Claude Code
+title: Set up Claude Code
 description: "Give Claude Code the skill, the MCP server, the stop hook, the language server, and commands in one install, with the Ascribe plugin."
 ---
 
@@ -12,21 +12,29 @@ The Ascribe plugin, in `plugins/ascribe/` in [Ascribe's repository]({repo}), giv
 
 - **The skill**: how to write, check, and fix pages.
 - **The MCP server**, whose tools are for an agent with no shell; one with a shell does as well with the commands.
-- **The stop hook**, and **the language server**, which Claude Code starts for `.md` files and whose diagnostics it reads after each edit: they check for an agent that doesn't check its own work. The language server reports the editor's build, as the edit hook does, and only for edits Claude Code makes with its own tools, not through its shell.
+- **The stop hook**, and **the language server**, which Claude Code starts for `.md` files and whose problems it reads after each edit: they check for an agent that doesn't check its own work. The language server reports the editor's build, as the edit hook does, and only for edits Claude Code makes with its own tools, not through its shell.
 - **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](commands.md#cli-agents-prompt). `/ascribe:new-page` takes what the page is for: the agent chooses the page type from `ascribe model`, then runs the prompt.
 
 Ascribe's repository is the plugin's marketplace, so Claude Code adds it from GitHub, with no copy of the repository. In Claude Code in a terminal (its VS Code extension doesn't offer `/plugin`):
 
-```shell
-/plugin marketplace add ascribed-dev/ascribe
-/plugin install ascribe@ascribe
-```
+@steps
+1. Add the marketplace:
+
+   ```shell
+   /plugin marketplace add ascribed-dev/ascribe
+   ```
+
+2. Install the plugin:
+
+   ```shell
+   /plugin install ascribe@ascribe
+   ```
 
 From a copy of the repository, add the copy's folder in place of `ascribed-dev/ascribe`.
 
-The plugin finds `ascribe` much as the VS Code extension does (see [Which `ascribe` it runs](../editor/index.md#which-ascribe-it-runs)), with an environment variable in place of the setting: the one `ASCRIBE_PATH` names, then the project's `node_modules/.bin/ascribe`, then `ascribe` on your path, where the extension would run the binary it bundles. So a project that pins its version with `npm install --save-dev @ascribed/cli` gets that version in every tool, whatever is installed globally.
+The plugin finds `ascribe` much as the VS Code extension does (see [Which `ascribe` it runs](../editor/index.md#which-ascribe-it-runs)), with an environment variable in place of the setting. It runs the one `ASCRIBE_PATH` names, then the project's `node_modules/.bin/ascribe`, then `ascribe` on your path, where the extension would run the binary it bundles. So a project that pins its version with `npm install --save-dev @ascribed/cli` gets that version in every tool, whatever is installed globally.
 
-The plugin has both kinds of manifest: `.claude-plugin/plugin.json`, which Copilot's CLI reads too, and the Agent Plugins `plugin.json`, which VS Code and Cursor read. To keep the language server's diagnostics out of the conversation on a project with many problems, see [the plugin's README](https://github.com/ascribed-dev/ascribe/tree/main/plugins/ascribe#readme); the stop hook still checks before Claude finishes.
+The plugin has both kinds of manifest: `.claude-plugin/plugin.json`, which Copilot's CLI reads too, and the Agent Plugins `plugin.json`, which VS Code and Cursor read. To keep the language server's problems out of the conversation on a project with many problems, see [the plugin's README]({repo}/tree/main/plugins/ascribe#readme); the stop hook still checks before Claude finishes.
 
 ### Which version of the plugin
 

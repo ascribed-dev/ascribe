@@ -119,10 +119,12 @@ fn tested(ctx: &Ctx, address: &Address, example: &Example, code: &CodeFiles) -> 
     let mut out = String::new();
     match example.status {
         ExampleStatus::Current => {
-            out.push_str(&format!(
-                "**Tested with** {}",
-                escape(example.tested.as_deref().unwrap_or_default())
-            ));
+            // An empty line, from `show-os = false` with no entries, says
+            // only that it's tested.
+            match example.tested.as_deref().unwrap_or_default() {
+                "" => out.push_str("**Tested**"),
+                tested => out.push_str(&format!("**Tested with** {}", escape(tested))),
+            }
             let names: Vec<&str> = example.current.iter().map(|o| o.name.as_str()).collect();
             out.push_str(&format!("\n\n{}", observations("current", &names)));
         }
@@ -394,6 +396,10 @@ pub(crate) fn complete_config(text: &str, offset: usize) -> Vec<CompletionItem> 
                     "test",
                     "The line of shell that tests the examples, run by `ascribe observe`",
                 ),
+                (
+                    "show-os",
+                    "Whether a page's tested line names the operating systems: `false` when the examples don't vary by platform",
+                ),
             ]
             .into_iter()
             .filter(|(key, _)| !written.contains(key))
@@ -527,10 +533,13 @@ mod tests {
 
     #[test]
     fn completes_the_keys_at_the_top() {
-        assert_eq!(labels("|"), ["include", "ignore", "test", "[environment]"]);
+        assert_eq!(
+            labels("|"),
+            ["include", "ignore", "test", "show-os", "[environment]"]
+        );
         assert_eq!(
             labels("include = [\"a/**\"]\nte|\n\n[environment]\n"),
-            ["ignore", "test"]
+            ["ignore", "test", "show-os"]
         );
         // Not in a value.
         assert!(labels("test = \"no|").is_empty());

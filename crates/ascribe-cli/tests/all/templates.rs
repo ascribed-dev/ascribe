@@ -447,8 +447,6 @@ title: \"Rotate keys\"
 description: \"Replace the keys Quill signs releases with, without a release going unsigned.\"
 ---
 
-## Overview
-
 This guide explains how to replace the keys {product} signs releases with.
 
 ## Before you start
@@ -467,7 +465,7 @@ Before you rotate the keys, ensure:
 
 ## See also
 
-* [Install {product}](../install.md)
+* [Install {product}](../index.md)
 ";
 
 /// The phase's goal, in a copy of `examples/getting-started`: eject the
@@ -486,7 +484,7 @@ fn a_page_copied_from_the_template_has_an_error_for_each_placeholder() {
     fs::create_dir_all(dir.path().join("docs/how-to")).unwrap();
     fs::write(dir.path().join("docs/how-to/rotate-keys.md"), &template).unwrap();
     // Linked to, so whether it's an orphan isn't in the way.
-    let install = dir.path().join("docs/install.md");
+    let install = dir.path().join("docs/index.md");
     let mut text = fs::read_to_string(&install).unwrap();
     text.push_str("\nTo change its keys, see [Rotate keys](how-to/rotate-keys.md).\n");
     fs::write(&install, text).unwrap();

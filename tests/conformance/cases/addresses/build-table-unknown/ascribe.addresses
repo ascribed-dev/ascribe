@@ -1,0 +1,8 @@
+version = 1
+
+[moved]
+
+[moved.docs]
+"/3.4/" = "index.md"
+
+[retired]

@@ -5,7 +5,7 @@ description: "The format of the `json` output: each page as the build resolved i
 permalink: json-output-contract
 ---
 
-Each build writes a `json` output beside its site and plain outputs: each page the build publishes, as the build resolved it, with every node's place in its source, for your own tools. This contract says what each page's document holds. The [output-layout contract](output-layout.md) says where the files are.
+Each build writes a `json` output beside its site and plain Markdown outputs: each page the build publishes, as the build resolved it, with every node's place in its source, for your own tools. This contract says what each page's document holds. The [output-layout contract](output-layout.md) says where the files are.
 
 | Who | Uses this contract to |
 |---|---|
@@ -75,13 +75,13 @@ A snippet's `tested` is present only when its source's `ascribe.examples.toml` m
 | `thematic_break` | |
 | `table` | `alignments`: each column's `none`, `left`, `center`, or `right`; `rows`: each `{header, cells}`, a cell being `{inlines}`, and a row's own `availability` when it has one |
 | `directive` | A line-form directive that survived: `name`, `attributes`, `title`, `primary`, `binding` (`own`, `heading`, `following_block`, `unbound`), `annotation` |
-| `operation` | An `@operation` that names an operation the spec has: `api`, `operation_id` when it has one, `method`, `path`, `summary` when it has one, `deprecated`, and `address`, the operation's in the published reference. Its `source` is the `@operation` line |
+| `operation` | An `@operation` that names an operation the OpenAPI spec has: `api`, `operation_id` when it has one, `method`, `path`, `summary` when it has one, `deprecated`, and `address`, the operation's in the published reference. Its `source` is the `@operation` line |
 | `container` | `name`, `attributes`, `title`, `children` |
 | `group` | `name`, `arms`: each `{label, attributes, title, span, children}` |
 
-An `@available` that survived the build is a `directive` with an `annotation`: `text` (the spec as shown; for a feature key, the spec it stands for), `display` (with the content model's labels), and `feature`. `attributes` is a list of `{key, values}` (a set has several values, a bare key none). A `title` and a text `primary` are inline lists. A `primary` is `{kind: "text", inlines}`, `{kind: "identifier", text}`, or `{kind: "line", text}`.
+An `@available` that survived the build is a `directive` with an `annotation`: `text` (the availability spec as shown; for a feature key, the availability spec it stands for), `display` (with the content model's labels), and `feature`. `attributes` is a list of `{key, values}` (a set has several values, a bare key none). A `title` and a text `primary` are inline lists. A `primary` is `{kind: "text", inlines}`, `{kind: "identifier", text}`, or `{kind: "line", text}`.
 
-An `@operation` whose link names no operation the spec has, which `ascribe check` reports, stays a `directive` block, with its link as its `identifier` primary.
+An `@operation` whose link names no operation the OpenAPI spec has, which `ascribe check` reports, stays a `directive` block, with its link as its `identifier` primary.
 
 A heading's `summary` is its section's: `form`, `text` for `@summary: text` and `paragraph` for `@summary` above a paragraph; `inlines`, the summary's text; and `source`, the `@summary` line for the text form and the paragraph for the other. The `@summary` line is a `directive` block too, where it's written, and the paragraph a `paragraph`.
 

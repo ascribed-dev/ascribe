@@ -1,0 +1,18 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[fragments]
+patterns = ["_*"]
+
+[types.how-to.frontmatter]
+title = "string"
+
+[types.concept.frontmatter]
+title = "string"
+
+[checks]
+how-to-steps-missing = "off"
+
+[builds.site]

@@ -22,6 +22,7 @@ use ascribe_core::{
     Applicability, DiagnosticSlug, FileId, Fix, Issue, Location, Related, Span, TextEdit,
     diagnostics,
 };
+use ascribe_model::TypeMatch;
 use ascribe_resolve::{IncludeSite, Project, ResolvedBlock, ResolvedKind, ResolvedPage};
 use ascribe_syntax::BlockKind;
 
@@ -46,6 +47,7 @@ pub(super) fn check_page(index: &Project, page: &ResolvedPage, links: &LinkProbl
     headings(index, page, &mut found);
     heading_levels(index, page, &mut found);
     title_heading(index, page, &mut found);
+    how_to_steps(index, page, &mut found);
     definitions(index, page, &mut found);
     link_ids(index, page, links, &mut found);
     summaries(index, page, &mut found);
@@ -382,6 +384,76 @@ fn title_heading(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
         issue,
         cause: (page.file, span, Arc::from([])),
     });
+}
+
+/// The content type whose pages `how-to-steps-missing` looks at.
+const HOW_TO: &str = "how-to";
+
+/// `how-to-steps-missing`: a page of the type `how-to` with no `@steps` and
+/// no heading numbered as a step, once includes are expanded, reported at its
+/// title.
+fn how_to_steps(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
+    let model = index.model();
+    if model.checks.is_off(diagnostics::HOW_TO_STEPS_MISSING) {
+        return;
+    }
+    let TypeMatch::One(ty) = model.type_of(page.frontmatter.as_ref()) else {
+        return;
+    };
+    if ty.name != HOW_TO {
+        return;
+    }
+    let mut steps = false;
+    page.visit(&mut |block| {
+        steps |= match &block.kind {
+            ResolvedKind::Leaf(leaf) => {
+                matches!(&leaf.kind, BlockKind::Directive(line) if line.name == STEPS)
+            }
+            ResolvedKind::Container { opener, .. } => opener.name == STEPS,
+            _ => false,
+        } || block
+            .heading
+            .as_ref()
+            .is_some_and(|ids| numbered(&ids.text));
+    });
+    if steps {
+        return;
+    }
+    let Some(file) = index.file(&page.path) else {
+        return;
+    };
+    let span = crate::across::title_span(file);
+    let issue = Issue::new(
+        diagnostics::HOW_TO_STEPS_MISSING,
+        Location::new(page.file, span),
+    );
+    out.push(Found {
+        issue,
+        cause: (page.file, span, Arc::from([])),
+    });
+}
+
+/// The directive that marks a list as a procedure (SPEC §4.6).
+const STEPS: &str = "steps";
+
+/// Whether a heading's text starts as a step's does: a number and `.`, `)`,
+/// or `:` and a space, as `1. Install`, or `Step` and a number, as `Step 1:
+/// Install`.
+fn numbered(text: &str) -> bool {
+    let text = text.trim_start();
+    if let Some(word) = text.get(..4)
+        && word.eq_ignore_ascii_case("step")
+    {
+        return text[4..]
+            .trim_start()
+            .starts_with(|c: char| c.is_ascii_digit());
+    }
+    // `1.5 features` is a version, not a step.
+    let digits = text.bytes().take_while(u8::is_ascii_digit).count();
+    let after = &text[digits..];
+    digits > 0
+        && after.starts_with(['.', ')', ':'])
+        && after[1..].chars().next().is_none_or(char::is_whitespace)
 }
 
 /// `glossary-definition-long`: on a glossary page, a term whose definition,

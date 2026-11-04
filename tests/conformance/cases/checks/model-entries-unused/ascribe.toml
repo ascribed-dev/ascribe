@@ -25,3 +25,7 @@ unused = "Nothing uses this"
 
 [glossary]
 pages = ["glossary.md"]
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

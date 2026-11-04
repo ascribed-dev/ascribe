@@ -1,4 +1,5 @@
 spec = "0.1"
 
 [checks]
+page-opening-missing = "off"
 github-alert = "off"

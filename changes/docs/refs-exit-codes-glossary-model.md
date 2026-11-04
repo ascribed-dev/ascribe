@@ -1,0 +1,1 @@
+- **`ascribe refs` says what an unknown prefix does, and the glossary's example names its model.** A target such as `foo:bar` is a path that doesn't exist, exiting with `1`. See [`ascribe refs`](docs/content/command/references.md).

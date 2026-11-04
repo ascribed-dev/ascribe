@@ -4,13 +4,17 @@ title: What to measure
 description: Where a team sees how search engines and AI agents treat its docs, since Ascribe sees no traffic, and which of the advice about them has evidence behind it.
 ---
 
-Ascribe builds your docs and checks them before they're deployed. It runs no server, sees no traffic, and calls no model, so it can't tell you how many people found a page through a search engine, or whether an assistant answered a question about your product correctly. This guide says where a team looks for those, and how much each piece of the advice you'll read about search and AI is worth.
+Ascribe builds your docs and checks them before they're deployed. It runs no server, sees no traffic, and calls no model, so it can't tell you how many people found a page through a search engine, or whether an assistant answered a question about your product correctly. This page says where a team looks for those, and how much each piece of the advice you'll read about search and AI is worth.
 
 ## What Ascribe tells you before a deploy
 
 Everything Ascribe knows about a page is in its record: its address, title, description, and listing, and where the listing comes from. The head of each page, the sitemap, `robots.txt`, and `llms.txt` are all written from the records, so they can't disagree with each other.
 
-- **`ascribe check`** reports what would go wrong for a reader that isn't a person: two pages with the same title or description, a title its page's own heading contradicts, a page kept out of search whose address `robots.txt` won't let a crawler fetch, a page too long for an agent to read in one fetch. Each is advice you can raise or turn off in [`[checks]`](../content-model/checks.md#22-checks).
+- **`ascribe check`** reports what would go wrong for a reader that isn't a person. Each is advice you can raise or turn off in [`[checks]`](../content-model/checks.md#22-checks):
+  - Two pages with the same title or description.
+  - A title its page's own heading contradicts.
+  - A page kept out of search whose address `robots.txt` won't let a crawler fetch.
+  - A page too long for an agent to read in one fetch.
 - **`ascribe report pages`** lists every page's record, and `--not-listed` the ones kept out of search, with why. It's what a team would otherwise crawl its own site to see. See [the project report](../checks/report.md#pages).
 - **`ascribe report delivery --site <URL>`** runs the delivery spec's checker on the published site, for what only a running server can answer: [Check what the site delivers to agents](#check-what-the-site-delivers-to-agents).
 
@@ -50,7 +54,7 @@ No report tells you whether an assistant answers questions about your product co
 
 ## What has evidence, and what doesn't
 
-Most of what's written about being found by AI has no evidence behind it, and some of it is contradicted. This is what the research behind Ascribe's choices found; it's the part of this guide most likely to be read as a promise, so it says how strong each finding is.
+Most of what's written about being found by AI has no evidence behind it, and some of it is contradicted. This is what the research behind Ascribe's choices found; it's the part of this page most likely to be read as a promise, so it says how strong each finding is.
 
 **Documented by the search engines themselves:** an accurate title and description for each page, different from every other page's; a canonical link; a sitemap. Ascribe writes each of these from the page records, and checks the first two.
 
@@ -71,6 +75,6 @@ Most of what's written about being found by AI has no evidence behind it, and so
 
 ## Related resources
 
-- [The project report](../checks/report.md): the pages a build lists or keeps out, and the rest of what `ascribe report` says.
+- [Act on the project report](../checks/report.md): the pages a build lists or keeps out, and the rest of what `ascribe report` says.
 - [`[crawlers]`](../content-model/output.md#18-crawlers): what each kind of AI crawler may do.
 - [Index your docs for your product's agents](product-index.md): giving your product's own agents the docs.

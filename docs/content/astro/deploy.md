@@ -24,7 +24,7 @@ A host serves `dist/` at the root of the address it gives the site, so where the
 
 - **The base path is where `dist/` is served.** With [`build`](reference.md#options), the integration gives Astro's `base` the project's `base-path`, and `astro build` writes a site that works only there. GitHub Pages serves a repository's site under its name, so `base-path` is `/<repository>/`. A host that serves `dist/` at the domain's root takes the docs at `base-path = "/"`, or under a path of a site with [a home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs), whose `base` stays `/`.
 - **The trailing slash.** With `trailing-slash = "never"`, the integration writes each page as `x.html`, which every host above serves at `x`; on Vercel, set `"cleanUrls": true` in `vercel.json`. With `"always"`, each page is `x/index.html`, which any host serves at `x/`.
-- **The host's files.** With `host = "netlify"`, the build writes `_headers` and `_redirects` at the root of `dist/` ([the host's files](../publishing/site.md#the-hosts-files)): the response headers that keep the Markdown versions of pages that aren't listed out of search, and the redirects from addresses [`ascribe.addresses`](../publishing/redirects.md) recorded a move from. Netlify and Cloudflare Pages read them. They're written only when Astro's `base` is `/`, since the host reads them only at its root; with another base, `astro build` prints their lines instead. A host that reads neither, such as GitHub Pages, sends no headers and forwards no moved address: [Serve the Markdown versions](serve-markdown.md) says what each needs.
+- **The host's files.** With `host = "netlify"`, the build writes `_headers` and `_redirects` at the root of `dist/` ([the host's files](../publishing/site.md#the-hosts-files)). `_headers` holds the response headers that keep the Markdown versions of pages that aren't listed out of search, and `_redirects` the redirects from addresses [`ascribe.addresses`](../publishing/redirects.md) recorded a move from. Netlify and Cloudflare Pages read them. They're written only when Astro's `base` is `/`, since the host reads them only at its root; with another base, `astro build` prints their lines instead. A host that reads neither, such as GitHub Pages, sends no headers and forwards no moved address: [Serve the Markdown versions](serve-markdown.md) says what each needs.
 - **`robots.txt`** is read only at the host's root, so it's written only when Astro's `base` is `/` ([`robots.txt`](../publishing/site.md#robotstxt)).
 
 Permalinks work on every host: each permalink's address is a page that forwards to its section, and on Netlify a redirect does it in one step ([permalinks on Netlify](../publishing/redirects.md#permalinks-on-netlify)).
@@ -188,11 +188,11 @@ Open the site at its address, and follow a link or two: a link that leads to the
 curl -sI https://docs.loom.example/guides/setup.md | grep -i '^link'
 ```
 
-Each pull request is checked before it reaches `main` by [Checks in CI](../checks/ci.md), which fails on warnings too, and on an address the docs published that a change lost.
+Each pull request is checked before it reaches `main` by [Check pull requests in CI](../checks/ci.md), which fails on warnings too, and on an address the docs published that a change lost.
 
 ## See also
 
-- [Astro](index.md#ways-to-publish): the ways to publish, and setting up the site.
+- [Publish a site with Astro](index.md#ways-to-publish): the ways to publish, and setting up the site.
 - [Serve the Markdown versions](serve-markdown.md): what a host does for agents, on Netlify, Cloudflare Pages, and nginx.
 - [Keep the addresses you've published](../publishing/redirects.md): the redirects the build writes when a page moves.
 - [Search engines and crawlers](../publishing/index.md): what the deployed site tells search engines and AI crawlers.

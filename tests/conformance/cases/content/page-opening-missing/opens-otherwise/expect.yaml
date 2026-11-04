@@ -1,0 +1,12 @@
+description: >-
+  A page whose first block after its title is an include, a heading, a list,
+  a table, or code is reported at that block, once.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics:
+  - {slug: page-opening-missing, file: include.md, line: 5, severity: advice}
+  - {slug: page-opening-missing, file: heading.md, line: 5}
+  - {slug: page-opening-missing, file: list.md, line: 5}
+  - {slug: page-opening-missing, file: table.md, line: 5}
+  - {slug: page-opening-missing, file: code.md, line: 5}

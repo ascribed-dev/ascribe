@@ -1,0 +1,18 @@
+# The terms settled in #1283, written one way everywhere.
+extends: substitution
+message: "Write '%s', not '%s'."
+level: warning
+ignorecase: false
+action:
+  name: replace
+swap:
+  content type: page type
+  plain output: plain Markdown output
+  plain-markdown output: plain Markdown output
+  '\bmarkdown\b': Markdown
+  directory: folder
+  directories: folders
+  lightbulb: light bulb
+  "[Cc]ommand palette": Command Palette
+  author: writer
+  authors: writers

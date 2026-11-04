@@ -11,12 +11,20 @@
         "label": "Getting started"
       },
       {
+        "href": "/docs/how-it-works/",
+        "label": "How Ascribe works"
+      },
+      {
         "href": "/docs/existing-docs/",
         "label": "Bring existing docs to Ascribe"
       },
       {
         "href": "/docs/install/",
-        "label": "Install"
+        "label": "Install Ascribe"
+      },
+      {
+        "href": "/docs/troubleshooting/",
+        "label": "Troubleshooting"
       },
       {
         "href": "/docs/glossary/",
@@ -27,6 +35,14 @@
   {
     "label": "Writing pages",
     "pages": [
+      {
+        "href": "/docs/writing/write-a-page/",
+        "label": "Write a page"
+      },
+      {
+        "href": "/docs/writing/write-it-once/",
+        "label": "Write it once"
+      },
       {
         "href": "/docs/writing/syntax/",
         "label": "Directive syntax"
@@ -62,11 +78,11 @@
     "pages": [
       {
         "href": "/docs/templates/",
-        "label": "Page templates"
+        "label": "Start pages from templates"
       },
       {
         "href": "/docs/templates/command/",
-        "label": "ascribe templates"
+        "label": "ascribe templates and ascribe new"
       }
     ]
   },
@@ -76,6 +92,10 @@
       {
         "href": "/docs/content-model/",
         "label": "ascribe.toml reference"
+      },
+      {
+        "href": "/docs/content-model/page-types/",
+        "label": "Define your page types and fields"
       },
       {
         "href": "/docs/content-model/content/",
@@ -100,6 +120,10 @@
       {
         "href": "/docs/content-model/glossary/",
         "label": "Set up a glossary"
+      },
+      {
+        "href": "/docs/content-model/keep-current/",
+        "label": "Keep pages current"
       }
     ]
   },
@@ -160,6 +184,10 @@
         "label": "ascribe report"
       },
       {
+        "href": "/docs/checks/vale-command/",
+        "label": "ascribe vale"
+      },
+      {
         "href": "/docs/checks/diagnostics/",
         "label": "Diagnostics"
       },
@@ -213,20 +241,20 @@
         "label": "The baseline"
       },
       {
+        "href": "/docs/checks/report/",
+        "label": "Act on the project report"
+      },
+      {
         "href": "/docs/checks/external-links/",
         "label": "Check external links"
       },
       {
-        "href": "/docs/checks/ci/",
-        "label": "Checks in CI"
-      },
-      {
         "href": "/docs/checks/vale/",
-        "label": "Prose, through Vale"
+        "label": "Check prose with Vale"
       },
       {
-        "href": "/docs/checks/report/",
-        "label": "The project report"
+        "href": "/docs/checks/ci/",
+        "label": "Check pull requests in CI"
       }
     ]
   },
@@ -235,7 +263,7 @@
     "pages": [
       {
         "href": "/docs/review/",
-        "label": "Review"
+        "label": "Review a pull request"
       },
       {
         "href": "/docs/review/how-it-works/",
@@ -281,7 +309,7 @@
     "pages": [
       {
         "href": "/docs/astro/",
-        "label": "Astro"
+        "label": "Publish a site with Astro"
       },
       {
         "href": "/docs/astro/deploy/",
@@ -323,6 +351,10 @@
       {
         "href": "/docs/publishing/redirects/",
         "label": "Keep the addresses you've published"
+      },
+      {
+        "href": "/docs/publishing/addresses/",
+        "label": "ascribe addresses"
       }
     ]
   },
@@ -352,7 +384,7 @@
     "pages": [
       {
         "href": "/docs/permalinks/",
-        "label": "Permalinks"
+        "label": "Link to the docs from your product"
       },
       {
         "href": "/docs/permalinks/command/",
@@ -427,7 +459,7 @@
     "pages": [
       {
         "href": "/docs/agents/",
-        "label": "Agents"
+        "label": "Set up your agent"
       },
       {
         "href": "/docs/agents/loop/",
@@ -451,11 +483,11 @@
       },
       {
         "href": "/docs/agents/claude-code/",
-        "label": "Claude Code"
+        "label": "Set up Claude Code"
       },
       {
         "href": "/docs/agents/copilot/",
-        "label": "GitHub Copilot"
+        "label": "Set up GitHub Copilot"
       },
       {
         "href": "/docs/agents/product-index/",
@@ -483,8 +515,16 @@
         "label": "Command reference"
       },
       {
+        "href": "/docs/command/init/",
+        "label": "ascribe init"
+      },
+      {
         "href": "/docs/command/questions/",
-        "label": "ascribe explain, model, outline, link, refs, rename, resolve, and search"
+        "label": "ascribe explain, model, outline, resolve, and search"
+      },
+      {
+        "href": "/docs/command/references/",
+        "label": "ascribe link, refs, and rename"
       },
       {
         "href": "/docs/command/site-output/",

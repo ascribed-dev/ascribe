@@ -8,8 +8,9 @@
 //! the working tree's as [`Here`]. Builds are matched by name. An address
 //! the base published and the build doesn't now is accounted for when:
 //!
-//! - `[moved]` has its source, or the address itself, and the entry leads
-//!   to a page a build publishes now;
+//! - `[moved]`, or the build's own table, `[moved.<build>]` by the name
+//!   it's declared with, has its source, or the address itself, and the
+//!   entry leads to a page a build publishes now;
 //! - `[retired]` has its source, or the address itself;
 //! - an availability mark takes its page out of this build while another
 //!   build publishes the page: the mark is the decision;
@@ -184,18 +185,6 @@ pub fn compare(here: &Here<'_>, base: &Base) -> Vec<Diagnostic> {
     } = *here;
     let now_by_name: HashMap<&str, &BuildAddresses> =
         now.iter().map(|b| (b.build.as_str(), b)).collect();
-    // Where a `[moved]` entry leads in the end counts only when a build
-    // publishes it.
-    let published = |value: &str| {
-        file.follow(value)
-            .as_deref()
-            .and_then(split_place)
-            .and_then(|(path, _)| RelPath::parse(path).ok())
-            .is_some_and(|path| now.iter().any(|b| b.publishes(&path)))
-    };
-    let accounted = |key: &str| {
-        file.retired.contains_key(key) || file.moved.get(key).is_some_and(|e| published(&e.value))
-    };
     let pairs = matched(file, base, now, index.model());
     let mut pages: BTreeMap<String, Lost> = BTreeMap::new();
     let mut anchors: BTreeMap<String, Lost> = BTreeMap::new();
@@ -216,10 +205,11 @@ pub fn compare(here: &Here<'_>, base: &Base) -> Vec<Diagnostic> {
         }
         let changes = changes(&before.settings, &after.settings);
         let has: HashSet<&str> = after.addresses.iter().map(|a| a.address.as_str()).collect();
+        let in_build = InBuild::of(file, declared_name(index.model(), &after.build), now);
         for address in &before.addresses {
             if has.contains(address.address.as_str())
-                || accounted(&address.source)
-                || accounted(&address.address)
+                || in_build.accounts_for(&address.source)
+                || in_build.accounts_for(&address.address)
             {
                 continue;
             }
@@ -325,6 +315,56 @@ pub fn compare(here: &Here<'_>, base: &Base) -> Vec<Diagnostic> {
         out.push(Diagnostic::from_issue(&issue));
     }
     out
+}
+
+/// `ascribe.addresses` as one build reads it: `[moved]` with its own
+/// table, and the keys its table retires by leading them to a retired
+/// entry.
+struct InBuild<'a> {
+    view: std::borrow::Cow<'a, AddressFile>,
+    retired: HashSet<&'a str>,
+    now: &'a [BuildAddresses],
+}
+
+impl<'a> InBuild<'a> {
+    fn of(file: &'a AddressFile, build: &str, now: &'a [BuildAddresses]) -> InBuild<'a> {
+        InBuild {
+            view: file.in_build(build),
+            retired: file
+                .retired_in_build(build)
+                .into_iter()
+                .map(|(key, _)| key)
+                .collect(),
+            now,
+        }
+    }
+
+    /// Whether an entry accounts for `key`: retired, or moved to a page a
+    /// build publishes now, where the entry ends.
+    fn accounts_for(&self, key: &str) -> bool {
+        let file = self.view.as_ref();
+        let published = |value: &str| {
+            file.follow(value)
+                .as_deref()
+                .and_then(split_place)
+                .and_then(|(path, _)| RelPath::parse(path).ok())
+                .is_some_and(|path| self.now.iter().any(|b| b.publishes(&path)))
+        };
+        self.retired.contains(key)
+            || file.retired.contains_key(key)
+            || file.moved.get(key).is_some_and(|e| published(&e.value))
+    }
+}
+
+/// The name the build `build` of `model` is declared with, whose table of
+/// `ascribe.addresses`, `[moved.<name>]`, it serves: a line's build's, or
+/// its own.
+pub(crate) fn declared_name<'a>(model: &'a ascribe_model::ContentModel, build: &'a str) -> &'a str {
+    model
+        .builds
+        .iter()
+        .find(|b| b.name == build)
+        .map_or(build, |b| b.declared_name())
 }
 
 /// Each of `base`'s builds, with the name of `now`'s it's compared with:

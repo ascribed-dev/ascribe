@@ -19,10 +19,10 @@ The pages here are [`examples/existing-docs`]({repo}/tree/main/examples/existing
 In the folder that holds `docs/`:
 
 ```sh
-npx ascribe init
+ascribe init
 ```
 
-When the pages are in another folder, name it, from the folder you run `init` in: `npx ascribe init --content-root guides`. It's the folder the pages are in, not the project's own, so the build's output stays out of it.
+When the pages are in another folder, name it, from the folder you run `init` in: `ascribe init --content-root guides`. It's the folder the pages are in, not the project's own, so the build's output stays out of it.
 
 `init` writes `ascribe.toml`, counts the pages it found, and checks them:
 
@@ -32,7 +32,7 @@ The `ascribe.toml` it writes for a folder of pages declares no page types. Every
 
 @snippet: code:crates/ascribe-cli/tests/output/init-existing-ascribe.toml
 
-In an empty folder, `init` declares the type `page` instead, which each page names; [`ascribe init`](install.md#cli-init) has both. `--templates`, which declares six types, is refused in a folder of pages, since each page would have to name one. Take the templates once the pages check clean, with [`ascribe templates eject`](templates/command.md#cli-templates-eject), then give each page `type:`, since the project declares types from then on.
+In an empty folder, `init` declares the type `page` instead, which each page names; [`ascribe init`](command/init.md#cli-init) has both. `--templates`, which declares six types, is refused in a folder of pages, since each page would have to name one. Take the templates once the pages check clean, with [`ascribe templates eject`](templates/command.md#cli-templates-eject), then give each page `type:`, since the project declares types from then on.
 
 ## Fix what the check finds
 
@@ -40,7 +40,7 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
 1. Apply the safe fixes:
 
    ```sh
-   npx ascribe check --fix --format concise
+   ascribe check --fix --format concise
    ```
 
    A page with no `title` that opens with a level-1 heading takes the heading as its title: the fix writes it in the frontmatter, and takes the heading out of the page, since the site shows the title in its place. Here that's `index.md` and `alerts.md`. What's left is listed, one line each, as `--format concise` prints it; without it, the check shows each problem with its line and its help:
@@ -57,30 +57,30 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
    ```
 
 3. Fix the links. A link in Ascribe names the file it goes to, and each output writes its address, so `[Install Lantern](../install.html)` becomes `[Install Lantern](../install.md)`. `ascribe check --code link-target-missing` lists every link that names no file.
-4. Put the advice off. Advice never fails the check: here it's the pages with no `description`, and one about `ascribe.addresses`, which step 5 explains and the baseline leaves out. To deal with the rest later, and have the check report only what's new, record it in `ascribe.baseline`:
+4. Record the remaining advice in a baseline. Advice never fails the check: here it's the pages with no `description`, and one about `ascribe.addresses`, which step 5 explains and the baseline leaves out. To deal with the rest later, and have the check report only what's new, record it in `ascribe.baseline`:
 
    ```sh
-   npx ascribe baseline write
+   ascribe baseline write
    ```
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-baseline.txt
 
-   See [The baseline](checks/baseline.md) for what it holds back, and how it shrinks as you fix each.
+   See [The baseline](checks/baseline.md) for what it baselines, and how it shrinks as you fix each.
 5. Check again:
 
    ```sh
-   npx ascribe check --format concise
+   ascribe check --format concise
    ```
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-check.txt
 
    No errors are left. The one advice, [`addresses-base-unreadable`](checks/diagnostics/project-checks.md#ASC257) (ASC257), says the check compared nothing with `ascribe.addresses`: the [base](publishing/redirects.md#addresses-base) it compares with has the pages and no project, so it published no address to keep. The base is where your branch left `main`, or, working on `main`, its last commit. Its help is about CI, where a base can't be read; here nothing is wrong.
 
-   The baseline doesn't hold it back: `baseline write` doesn't compare the addresses, so it never sees this advice, and doesn't record it. The advice goes once the base has the project, as the next step shows.
+   The baseline doesn't cover it: `baseline write` doesn't compare the addresses, so it never sees this advice, and doesn't record it. The advice goes once the base has the project, as the next step shows.
 6. Commit `ascribe.toml`, `ascribe.addresses`, `ascribe.baseline`, and the pages, and add `.ascribe/` to `.gitignore`. Committed on `main`, the base then has the project, and the check is clean:
 
    ```sh
-   npx ascribe check --format concise
+   ascribe check --format concise
    ```
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-committed.txt
@@ -144,7 +144,7 @@ Docusaurus keeps a copy of every page for each version in `versioned_docs/`, and
 
 ## See also
 
-- [`ascribe init`](install.md#cli-init): what it writes, and its options.
+- [`ascribe init`](command/init.md#cli-init): what it writes, and its options.
 - [`ascribe check`](checks/check.md): the check, its formats, and `--fix`.
 - [Frontmatter](writing/frontmatter.md): the keys every page can have.
 - [The `ascribe.toml` reference](content-model/index.md): types, and the fields they share.

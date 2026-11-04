@@ -1,0 +1,9 @@
+# A page whose first paragraph starts "Part of" opens with where it sits,
+# not with what it covers.
+extends: existence
+message: "Open the page with what it covers, not with 'Part of'."
+level: warning
+scope: raw
+nonword: true
+tokens:
+  - '\A(?:#[^\n]*\n+)?Part of\b'

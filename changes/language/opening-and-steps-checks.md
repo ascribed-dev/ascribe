@@ -1,0 +1,1 @@
+- **Two new content checks: a how-to with no steps, and a page that doesn't open with a paragraph.** Both are advice; the how-to, tutorial, and reference templates now open with a paragraph instead of a heading. See [Diagnostics: content checks](docs/content/checks/diagnostics/content-checks.md).

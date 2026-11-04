@@ -189,4 +189,4 @@ example-stale = "error"
 # to work on the docs, so without `in-check` a machine without it isn't told
 # so.
 [checks.vale]
-preset = "quiet"
+config = ".vale.ini"

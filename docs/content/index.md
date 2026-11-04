@@ -5,13 +5,15 @@ description: Guides and references for writing documentation with Ascribe, and t
 permalink: docs
 ---
 
-Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do. [Why Ascribe](https://ascribed-dev.com/why/) says what problems it answers, and which it doesn't.
+Ascribe checks and builds documentation written as code: Markdown pages with `@` directives, checked against a content model in `ascribe.toml`, and built into a website, plain Markdown, and JSON. Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do. [How Ascribe works](how-it-works.md) shows the whole system on one page: what you write, what the checks and builds do with it, and where the same checks run. [Why Ascribe](https://ascribed-dev.com/why/) says what problems it answers, and which it doesn't.
+
+@note: The docs write commands as `ascribe`. With `@ascribed/cli` installed in your project, run them as `npx ascribe` or `pnpm exec ascribe`; with the binary on your path, as written.
 
 ## What you need and what it doesn't do
 
 Ascribe needs:
 
-- **Node.js {node} or later, or none.** `@ascribed/cli` installs `ascribe` with npm or pnpm; Homebrew, the install script, and a release's archive put it on your path without Node ([Install](install.md)).
+- **Node.js {node} or later, or none.** `@ascribed/cli` installs `ascribe` with npm or pnpm; Homebrew, the install script, and a release's archive put it on your path without Node ([Install Ascribe](install.md)).
 - **A platform it runs on:** macOS on Apple silicon, Linux, or Windows, and not an Intel Mac ([Platforms](install.md#platforms)).
 - **VS Code, to write and review in the editor.** The extension is for VS Code; another editor gets the checks from [the language server](editor/language-server.md), without the preview.
 - **GitHub, for review comments.** Comments are the pull request's own, on GitHub or GitHub Enterprise Server, so review on another host shows what changed and no comments ([Signing in to GitHub](review/how-it-works.md#signing-in-to-github)).
@@ -30,7 +32,7 @@ A docs team sets Ascribe up in this order: the docs lead creates the project, th
 | Role | Owns | Installs | Starts from |
 |---|---|---|---|
 | Docs lead | `ascribe.toml` and `ascribe.nav`: the page types, phrases, builds, and the order of the sections | `@ascribed/cli` and the VS Code extension | [Getting started](getting-started.md), then [the `ascribe.toml` reference](content-model/index.md) and [Navigation](navigation/index.md) |
-| Engineer | The checks in CI, the HTML preview on pull requests, and the site | `@ascribed/cli` in CI, and `@ascribed/astro` in the site | [For engineers](#for-engineers), then [Astro](astro/index.md) |
+| Engineer | The checks in CI, the HTML preview on pull requests, and the site | `@ascribed/cli` in CI, and `@ascribed/astro` in the site | [For engineers](#for-engineers), then [Publish a site with Astro](astro/index.md) |
 | Writer | The pages | `@ascribed/cli` and the VS Code extension | [Getting started](getting-started.md), then [For writers](#for-writers) |
 | Reviewer | Comments on pull requests | Nothing: a browser and a GitHub account that can comment | [Reviewers who don't use VS Code](review/index.md#reviewers-who-dont-use-vs-code) |
 
@@ -41,7 +43,7 @@ A writer who reviews, or a reviewer with a checkout and VS Code, reviews in the 
 
 Keep the docs in the repository, checked like the code and changed with it.
 
-1. [Checks in CI](checks/ci.md): check every pull request with the command the editor runs.
+1. [Check pull requests in CI](checks/ci.md): check every pull request with the command the editor runs.
 2. [Show an example from the code](examples/snippets.md): take a page's code examples from tested files, so they change when the code does.
 3. [Report the pages whose examples changed](examples/drift.md): find the pages whose examples moved while their words didn't.
 4. [Attach the HTML preview to every pull request](review/ci-report.md): let anyone review a change as readers will see it, without a checkout.
@@ -53,10 +55,11 @@ Write and review in the editor, and write a thing once for every reader.
 
 1. [Editing](editor/index.md) and [the preview](editor/preview.md): the VS Code extension, its checks as you type, and the page as readers will see it.
 2. [Content that varies](writing/variants.md): one page for readers on different platforms or products.
-3. [Phrases](writing/inline.md#phrases) and [includes](writing/directives.md#include): write a name or a passage once, and use it on every page.
+3. [Write it once](writing/write-it-once.md): write a name once as a phrase and a passage once as a fragment, and use them on every page.
 4. [Set up a glossary](content-model/glossary.md) and [page templates](templates/index.md): link every page's terms to their definitions, and start a page of a known kind from a template.
-5. [Prose, through Vale](checks/vale.md) and [a published style guide](checks/vale.md#use-a-published-style-guide): check your prose as you save, and hold it to your style guide, such as Google's or Microsoft's.
+5. [Check prose with Vale](checks/vale.md) and [a published style guide](checks/vale.md#use-a-published-style-guide): check your prose as you save, and hold it to your style guide, such as Google's or Microsoft's.
 6. [Review in the preview](editor/review.md): what a change did, and a pull request's comments, beside the page.
+7. [Keep pages current](content-model/keep-current.md): give each page an owner and a date it's next due to be checked, and see which pages are overdue.
 
 ## For agent builders
 @id {permalink=true}: for-agent-builders
@@ -71,7 +74,8 @@ Give the agents that write your docs the project's rules and checks, and the age
 ## Start
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, see it, and publish it with Astro.
-- [Install](install.md): every way to install `ascribe`, with npm or on your path without Node.
+- [How Ascribe works](how-it-works.md): the whole system on one page, from the pages you write to the published site.
+- [Install Ascribe](install.md): every way to install `ascribe`, with npm or on your path without Node.
 
 ## Write
 
@@ -81,39 +85,39 @@ Give the agents that write your docs the project's rules and checks, and the age
 - [Content that varies](writing/variants.md): writing one page for readers on different platforms or products, with alternatives, availability, and a build for each audience.
 - [Memos](writing/memos.md): keeping the reason a page is written the way it is beside it, for the people and agents who change it, and never for its readers.
 - [Glossaries](content-model/glossary.md): setting up a glossary, so every page links the terms it uses to their definitions.
-- [Page templates](templates/index.md): starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it.
+- [Start pages from templates](templates/index.md): starting a page of a known kind, such as a how-to, from a template and a guide to what goes in it.
 - [Examples and drift](examples/index.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
 - [Link to your API reference](openapi/index.md): linking a guide to an operation in your OpenAPI spec, checked against the spec and written as the operation's address.
 - [Editing](editor/index.md): the VS Code extension, workspaces with several projects, and other editors.
 
 ## Check
 
-- [Checks in CI](checks/ci.md): checking every pull request with the same command the editor runs, and the formatting check, in GitHub Actions.
-- [Prose, through Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
-- [The project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to the published site, and running it every day in CI.
+- [Check pull requests in CI](checks/ci.md): checking every pull request with the same command the editor runs, and the formatting check, in GitHub Actions.
+- [Check prose with Vale](checks/vale.md): checking your pages' prose with Vale, in the editor and in `ascribe check`.
+- [Act on the project report](checks/report.md): what state the whole project is in, from the problems and pages it counts to the published site, and running it every day in CI.
 - [Diagnostics](checks/diagnostics.md): every problem Ascribe reports, with its code and fix.
 
 ## Review
 
-- [Review](review/index.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and commenting there.
+- [Review a pull request](review/index.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and commenting there.
 
 ## Publish
 
-- [Astro](astro/index.md): the ways to publish, and publishing a site with `@ascribed/astro`.
+- [Publish a site with Astro](astro/index.md): the ways to publish, and publishing a site with `@ascribed/astro`.
 - [Deploy the site](astro/deploy.md): building the site in CI and publishing it on GitHub Pages or Netlify, and what each host needs.
 - [Navigation](navigation/index.md): the order a project's sections and pages come in, from `ascribe.nav` or the default, and their labels, which every sidebar is drawn from.
 - [Search engines and crawlers](publishing/index.md): what a project tells search engines and AI crawlers about its pages, and what it delivers to agents.
 - [Keep the addresses you've published](publishing/redirects.md): recording where a page went when it moves or goes, so a link to its old address still leads somewhere.
-- [Permalinks](permalinks/index.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
+- [Link to the docs from your product](permalinks/index.md): giving a section an address your product can link to that keeps working when the docs move, checking those links in the product's CI, and moving, aliasing, or retiring one.
 - [Publish a site for each version](versions/index.md): building the docs of every version a reader can be on from one source, a site for each release line, and moving them on when a line ships.
 
 ## Agents
 
-- [Agents](agents/index.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
+- [Set up your agent](agents/index.md): helping an AI coding agent write and fix pages, with instructions it reads on its own and a skill that teaches it the check-and-fix loop.
 
 ## Reference
 
-- [`ascribe.toml` reference](content-model/index.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
+- [`ascribe.toml` reference](content-model/index.md): the content model: page types, dimensions, availability, phrases, widgets, and builds.
 - [Command reference](command/index.md): every `ascribe` command, its options, outputs, and exit codes.
 - [Files Ascribe writes](command/project-files.md): every file Ascribe puts in a project, and which to commit.
 - [Element library reference](astro/elements.md): the custom elements a site draws, and the CSS custom properties that theme them.

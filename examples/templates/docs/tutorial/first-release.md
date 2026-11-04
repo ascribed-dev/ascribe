@@ -4,8 +4,6 @@ title: "Publish your first release"
 description: "Publish a signed release of a project with Quill, from an empty folder to a release a reader can check."
 ---
 
-## Overview
-
 In this tutorial, you'll learn how to publish a signed release with Quill. It's for someone who has installed Quill and hasn't published with it yet.
 
 By the end of this tutorial, you'll be able to:

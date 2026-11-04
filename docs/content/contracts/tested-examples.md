@@ -21,12 +21,14 @@ For a source in another repository, the folder is its copies, `sources/<name>/`.
 | `include` | list of patterns | The files that are examples. Required, and not empty |
 | `ignore` | list of patterns | Files `include` matches that aren't examples |
 | `test` | string | The line of shell that tests them. Required by `ascribe observe`, and read by nothing else |
+| `show-os` | boolean | Whether the tested line names the operating systems (§5). `true` when it's left out |
 | `[environment]` | table | What to note about where the test ran: each entry a table with a `command` and an optional `label` |
 
 - **Patterns** are the content model's, as a source's `include` takes them, matched against a file's path from the folder. A file is an example when a pattern in `include` matches it and none in `ignore` does. Nothing in `examples.observations/` is an example, whatever `include` says.
 - **An `[environment]` entry's name** is a lowercase letter, then lowercase letters, digits, or hyphens. `os` and `arch` are noted in every observation, so a config can't declare them.
 - **`command`** is a line of shell whose first line of output is kept. It's required.
 - **`label`** is what a page shows before the entry's value: `Node` in "Node 24.9.0". Without one, it's the entry's name.
+- **`show-os = false`** is for examples whose output is the same on every platform: the observations still note the operating system, and only the tested line leaves it out.
 - **A key not in this table,** or in an entry, is an error, as in `ascribe.toml`.
 
 A config that can't be read is an error for `ascribe observe`, which exits 2, and the warning [`examples-config-invalid`](../checks/diagnostics/output-checks.md#ASC201) for `ascribe check`, at the source in `ascribe.toml`. Then none of the source's files is an example.
@@ -76,22 +78,22 @@ For a snippet of an example, the observations that can be read decide its status
 | stale | One or more list it, none with the hash it has now | Nothing | [`example-stale`](../checks/diagnostics/output-checks.md#ASC199), a warning |
 | unobserved | None lists it, or there's no observation | Nothing | [`example-unobserved`](../checks/diagnostics/output-checks.md#ASC200), advice |
 
-For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its diagnostic says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
+For a source in another repository, the observation and the file are the copies, so an example's status is what it was at the pin. Its problem says the fix is in that repository, and arrives with the next `ascribe sources update`. The observation usually lists more files than the docs have copies of, which is expected: only the files snippets use are copied.
 
 ## 5. The tested line
 
-A current example's code block carries `tested="…"` in its info string, after `title` when it has one ([SPEC §4.8]({repo}/blob/main/SPEC.md)). It's made from the observations current for the file: each of the config's `[environment]` entries one of them has a value for, in the config's order, as its label and its shown values, then `on` and the operating systems: `Node 24.9.0 and TypeScript 5.9.2 on Linux`. With no entries, it's the operating systems alone.
+A current example's code block carries `tested="…"` in its info string, after `title` when it has one ([SPEC §4.8]({repo}/blob/main/SPEC.md)). It's made from the observations current for the file: each of the config's `[environment]` entries one of them has a value for, in the config's order, as its label and its shown values, then `on` and the operating systems: `Node 24.9.0 and TypeScript 5.9.2 on Linux`. With no entries, it's the operating systems alone. With `show-os = false`, it's the entries alone, `Node 24.9.0 and TypeScript 5.9.2`, and with no entries as well it's empty, `tested=""`, which each output shows as "Tested" ([decision #1147]({repo}/blob/main/project-docs/decisions/1147-tested-line-without-os.md)).
 
 - **An entry is said once,** with each distinct shown value: `Node 22.4.0 and 24.9.0`. An entry only some of the observations have is said for those. Two entries, one of which lists values, are parted by a comma too: `Node 22.4.0 and 24.9.0, and TypeScript 5.9.2`.
 - **The values are in order:** by version when every one is a dotted number, comparing each number in turn, and by text otherwise, ignoring case.
 - **Past three values,** an entry is said as how many there are and the lowest and highest: `Node, 5 versions from 18.20.0 to 24.9.0`, or `values` when they aren't versions.
-- **The operating systems** are merged the same way, always listed: `on Linux and macOS`.
+- **The operating systems** are merged the same way: `on Linux and macOS`. They're listed unless the config's `show-os` is `false`.
 
 - **The shown value** is the first dotted number in the kept line, `24.9.0` from `v24.9.0`, or the whole line when it has none.
 - **The operating system** is `Linux`, `macOS`, or `Windows`, or the recorded name. The architecture isn't shown.
 - **A label or a value** has its control characters and runs of white space shown as one space, and is cut at 60 characters, with `…`. Each output escapes what it shows.
 
-The [site-render contract](site-render.md#51-a-tested-code-block) says how the site shows it, and the plain output writes "Tested with" and the line, and a full stop, on a line under the block.
+The [site-render contract](site-render.md#51-a-tested-code-block) says how the site shows it, and the plain Markdown output writes "Tested with" and the line, and a full stop, on a line under the block, or "Tested." when the line is empty.
 
 ## 6. In the JSON output
 

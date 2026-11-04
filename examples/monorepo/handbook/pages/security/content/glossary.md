@@ -4,6 +4,8 @@ title: Glossary
 description: The severity levels this handbook names.
 ---
 
+The severity levels the incident pages use, from the most severe.
+
 ## SEV1
 @term
 

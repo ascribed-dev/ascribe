@@ -188,8 +188,8 @@ test("the hero names the tools, each leading to the first pillar", async () => {
     "Reusable content",
     "Variants",
     "Versions",
-    "A glossary",
-    "Preview",
+    "Page types",
+    "Templates",
   ]);
   for (const href of await tools.evaluateAll((links) => links.map((a) => a.getAttribute("href")))) {
     expect(href).toBe("/#tools");
@@ -682,7 +682,7 @@ test("a link between pages lands on the page, and a glossary link on its heading
   const page = await open("/docs/getting-started/");
   await page.locator('article a[href="/docs/astro/"]').first().click();
   await page.waitForURL(`${server.url}/docs/astro/`);
-  expect(await page.locator("h1").textContent()).toBe("Astro");
+  expect(await page.locator("h1").textContent()).toBe("Publish a site with Astro");
 
   await page.goto(`${server.url}/docs/review/`);
   // A glossary link to a heading.
@@ -1079,7 +1079,10 @@ test("at phone width, nothing on Why Ascribe scrolls sideways, and it reads with
   const context = await browser.newContext({ javaScriptEnabled: false });
   const plain = await context.newPage();
   await plain.goto(server.url + "/why/");
-  for (const text of ["Examples stop matching the code", "No hosting."]) {
+  for (const text of [
+    "Examples stop matching the code",
+    "Ascribe hosts nothing. Whatever serves your site now serves it.",
+  ]) {
     expect(await plain.getByText(text, { exact: true }).first().isVisible(), text).toBe(true);
   }
   await context.close();

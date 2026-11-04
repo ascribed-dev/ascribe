@@ -16,4 +16,5 @@ live = ["1.0"]
 planned = ["1.1"]
 
 [checks]
+page-opening-missing = "off"
 available-same-in-every-line = "off"

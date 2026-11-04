@@ -1,0 +1,12 @@
+description: >-
+  A page of the type `how-to` with no `@steps` and no heading numbered as a
+  step is reported at its title, once includes are expanded. A page of
+  another type with no steps is not.
+spec: ["4.6"]
+tags: [page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics:
+      - {slug: how-to-steps-missing, file: install.md, line: 3, severity: advice}

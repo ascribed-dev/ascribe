@@ -21,10 +21,16 @@ In the source's folder, the one `[sources.<name>]` in `ascribe.toml` names with 
 - **`include`** lists the files that are examples, by the same patterns as a source's `include`, from this folder. **`ignore`** takes back files `include` matches.
 - **`test`** is a line of shell that tests them. It runs in this folder, as written, with `sh`, or `cmd` on Windows.
 - **`[environment]`** names what a reader wants to know about where the test ran. Each entry has a `command` whose first line is kept, and a `label`, the key when it has none. The page shows the label and the first dotted number in the line: `node --version` prints `v24.9.0`, shown as "Node 24.9.0". The operating system and architecture are always recorded, and only the system is shown.
+- **`show-os = false`** leaves the operating system out of the page, for examples whose output is the same on every platform: "Tested with Node 24.9.0". The observation still records it. With no `[environment]` entries either, the page says "Tested".
 
 An expected output is an example like any other: show it with a second `@snippet`, and have the test compare the program's output with it.
 
-The config goes at the source's root, the folder `path` names, and only the one there is read. When the tests live in a subfolder, such as `examples/` in a source whose `path` is `.`, either declare a source of their own, `[sources.examples]` with `path = "examples"`, and write their snippets with its name, or put the config at the source's root, with `include` and `test` written from there. A config below a source's root is read by no source, and [`examples-config-unread`](../checks/diagnostics/output-checks.md#ASC285) says so, in `ascribe check`, in the editor, and after `ascribe observe` writes its observation.
+The config goes at the source's root, the folder `path` names, and only the one there is read. When the tests live in a subfolder, such as `examples/` in a source whose `path` is `.`, do one of these:
+
+- Declare a source of their own, `[sources.examples]` with `path = "examples"`, and write their snippets with its name.
+- Put the config at the source's root, with `include` and `test` written from there.
+
+A config below a source's root is read by no source, and [`examples-config-unread`](../checks/diagnostics/output-checks.md#ASC285) says so, in `ascribe check`, in the editor, and after `ascribe observe` writes its observation.
 
 ## 2. Run the test and commit what it records
 
@@ -50,7 +56,7 @@ Like [every command that writes](../command/index.md#commands-that-write), `ascr
 
 ## 3. Show the example
 
-Nothing changes in the page. A `@snippet` of an example the observation lists, as the file is now, gets a caption on the site, and a line under it in the plain output:
+Nothing changes in the page. A `@snippet` of an example the observation lists, as the file is now, gets a caption on the site, and a line under it in the plain Markdown output:
 
 ```markdown
 @snippet: code:examples/greet.ts#greet
@@ -102,7 +108,13 @@ For a [source in another repository](docs-repository.md), the config and the obs
 
 ## Start from a repository
 
-Two repositories have all of this set up, to copy whole: examples as plain programs, each with the output it prints beside it, a test for each, the config, an observation for each of two versions of the runtime, and docs that show every example and its output with a tested line naming both. Their CI runs the tests weekly and on every pull request, builds the docs, and fails a pull request that changes an example without observing it again, with `ascribe observe --check`.
+Two repositories have all of this set up, to copy whole:
+
+- Examples as plain programs, each with the output it prints beside it, and a test for each.
+- The config, and an observation for each of two versions of the runtime.
+- Docs that show every example and its output, with a tested line naming both.
+
+Their CI runs the tests weekly and on every pull request, builds the docs, and fails a pull request that changes an example without observing it again, with `ascribe observe --check`.
 
 - [**tested-examples-node**](https://github.com/ascribed-dev/tested-examples-node): Node with TypeScript, tested with Node's own test runner, with `ascribe` from npm.
 - [**tested-examples-python**](https://github.com/ascribed-dev/tested-examples-python): Python, tested with pytest, with `ascribe` from the install script and no Node.

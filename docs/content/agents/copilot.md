@@ -1,6 +1,6 @@
 ---
 type: how-to
-title: GitHub Copilot
+title: Set up GitHub Copilot
 description: "Set Ascribe up for GitHub Copilot, in VS Code and as the cloud agent that works on GitHub."
 ---
 
@@ -31,8 +31,14 @@ Copilot's cloud agent works on GitHub, with no editor: you assign it an issue an
 
 ## How the setup steps install Ascribe
 
-The steps install Node.js and `@ascribed/cli` and run `ascribe --version`. When your project pins `@ascribed/cli` in a `package.json`, they install that folder's dependencies by its lockfile, without changing it (`npm ci`, `pnpm install --frozen-lockfile`, or `yarn install` with `--frozen-lockfile` for Yarn 1 and `--immutable` for later versions), and put on the path the `node_modules/.bin` the package manager installs `ascribe` to (in a workspace, the root's for npm and Yarn, and the package's own for pnpm), the same one the hooks run; the MCP server then runs the pinned binary, found from the repository's root with `git` as the hooks find it. Otherwise they install the version of `ascribe` that wrote them, globally. Yarn's Plug'n'Play, the default from Yarn 2 on, writes no `node_modules/.bin`, so with it they install the pinned version globally, and `sync` stops if that version isn't one npm can install, such as `workspace:*`.
+The steps install Node.js and `@ascribed/cli`, and run `ascribe --version`. When your project pins `@ascribed/cli` in a `package.json`:
 
-Projects in one repository that install the same way share one block of steps. When they install Ascribe in different ways, so the steps have a block for each, the JSON and the custom agent carry a server for each block, under names told apart as the blocks are: `ascribe` for a global install, and `ascribe-docs` for one from `docs/package.json` (`ascribe-pinned` from the root's). Syncing one project prints them all, as one document to paste in place of any `ascribe` server pasted before.
+- They install that folder's dependencies by its lockfile, without changing it: `npm ci`, `pnpm install --frozen-lockfile`, or `yarn install` with `--frozen-lockfile` for Yarn 1 and `--immutable` for later versions.
+- They put on the path the `node_modules/.bin` the package manager installs `ascribe` to, the same one the hooks run: in a workspace, the root's for npm and Yarn, and the package's own for pnpm.
+- The MCP server then runs the pinned binary, found from the repository's root with `git`, as the hooks find it.
+
+Otherwise they install the version of `ascribe` that wrote them, globally. Yarn's Plug'n'Play, the default from Yarn 2 on, writes no `node_modules/.bin`, so with it they install the pinned version globally, and `sync` stops if that version isn't one npm can install, such as `workspace:*`.
+
+Projects in one repository that install the same way share one block of steps. When they install Ascribe in different ways, the steps have a block for each, and the JSON and the custom agent carry a server for each block. The servers' names tell them apart as the blocks are: `ascribe` for a global install, and `ascribe-docs` for one from `docs/package.json` (`ascribe-pinned` from the root's). Syncing one project prints them all, as one document to paste in place of any `ascribe` server pasted before.
 
 Ascribe writes no prompt files for Copilot (`.github/prompts/`): the cloud agent doesn't load them, and in VS Code the MCP server's prompts do the same.

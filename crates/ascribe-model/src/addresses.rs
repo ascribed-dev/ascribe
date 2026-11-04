@@ -11,6 +11,7 @@
 //! entry, and reads it ([`AddressFile::parse`]) whenever it checks or builds
 //! a project. A project without one records nothing.
 
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
@@ -63,8 +64,13 @@ pub fn permalink_name(text: &str) -> Option<&str> {
 /// What `ascribe.addresses` records.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AddressFile {
-    /// `[moved]`: where each key's addresses lead now, by key.
+    /// `[moved]`: where each key's addresses lead now, by key, in every
+    /// build.
     pub moved: BTreeMap<String, Entry>,
+    /// `[moved.<build>]`: where each key's addresses lead now in the builds
+    /// declared with that name alone, by the build's name
+    /// ([`AddressFile::in_build`]).
+    pub builds: BTreeMap<String, BuildTable>,
     /// `[former]`: the settings the docs were published under before.
     pub former: Former,
     /// `[retired]`: why each key's addresses were removed, by key.
@@ -87,6 +93,26 @@ impl Entry {
     pub fn new(value: impl Into<String>) -> Entry {
         Entry {
             value: value.into(),
+            span: Span::empty(0),
+        }
+    }
+}
+
+/// `[moved.<build>]`: the `[moved]` entries one build serves, with every
+/// build's own.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuildTable {
+    /// Where each key's addresses lead now in the build, by key.
+    pub entries: BTreeMap<String, Entry>,
+    /// The table's name, the build's, for reporting; empty for a table not
+    /// read from a file.
+    pub span: Span,
+}
+
+impl Default for BuildTable {
+    fn default() -> Self {
+        BuildTable {
+            entries: BTreeMap::new(),
             span: Span::empty(0),
         }
     }
@@ -283,6 +309,35 @@ impl AddressFile {
         RecordedPermalinks { names }
     }
 
+    /// The reason each entry of `build`'s table, `[moved.<build>]`, that
+    /// leads to a retired entry, directly or by a chain, was retired: by
+    /// key. The builds declared as `build` serve each key's addresses as
+    /// retired, with that reason, as [`AddressFile::record_retired`] leaves
+    /// them.
+    pub fn retired_in_build(&self, build: &str) -> Vec<(&str, String)> {
+        let Some(table) = self.builds.get(build) else {
+            return Vec::new();
+        };
+        let view = self.in_build(build);
+        table
+            .entries
+            .iter()
+            .filter_map(|(key, entry)| match view.end_of(key, &entry.value) {
+                End::Retired(reason) => Some((key.as_str(), reason)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Whether the file has an entry for `key` where `build` reads it: in
+    /// `[moved]`, in `[retired]`, or, with `build`, in its table.
+    pub fn has_key(&self, build: Option<&str>, key: &str) -> bool {
+        self.entry(key).is_some()
+            || build
+                .and_then(|b| self.builds.get(b))
+                .is_some_and(|t| t.entries.contains_key(key))
+    }
+
     /// Where `key`'s `[moved]` entry, `value`, leads in the end.
     fn end_of(&self, key: &str, value: &str) -> End {
         let mut seen = vec![key.to_owned()];
@@ -371,20 +426,60 @@ impl AddressFile {
                 entry.value = format!("{new}#{id}");
             }
         }
+        for table in self.builds.values_mut() {
+            for entry in table.entries.values_mut() {
+                if entry.value == old {
+                    entry.value = new.to_owned();
+                } else if let Some(id) = entry
+                    .value
+                    .strip_prefix(old)
+                    .and_then(|rest| rest.strip_prefix('#'))
+                    .filter(|_| page)
+                {
+                    entry.value = format!("{new}#{id}");
+                }
+            }
+        }
         self.moved.insert(old.to_owned(), Entry::new(new));
         if !new.starts_with(PERMALINK_PREFIX) {
             self.moved.remove(new);
             self.retired.remove(new);
         }
         self.moved.retain(|key, entry| *key != entry.value);
+        for table in self.builds.values_mut() {
+            table.entries.remove(old);
+            if !new.starts_with(PERMALINK_PREFIX) {
+                table.entries.remove(new);
+            }
+            table.entries.retain(|key, entry| *key != entry.value);
+        }
+        self.builds.retain(|_, t| !t.entries.is_empty());
     }
 
     /// Records that `old` was retired, for `reason`, in place of any
-    /// `[moved]` entry for it. Each entry that led to `old`, or to one of
-    /// its headings, is retired with it, for the same reason: what it led
-    /// to is gone.
+    /// `[moved]` entry for it. Each entry of `[moved]` that led to `old`, or
+    /// to one of its headings, is retired with it, for the same reason: what
+    /// it led to is gone. An entry of a build's table that did keeps leading
+    /// to `old`, or, from a heading, to `old` itself: `[retired]` is every
+    /// build's, so the build retires its own address by leading it to the
+    /// retired entry, and serves it as retired, with the same reason
+    /// ([`AddressFile::retired_in_build`]).
     pub fn record_retired(&mut self, old: &str, reason: &str) {
         self.moved.remove(old);
+        for table in self.builds.values_mut() {
+            table.entries.remove(old);
+            for entry in table.entries.values_mut() {
+                if !old.contains('#')
+                    && entry
+                        .value
+                        .strip_prefix(old)
+                        .is_some_and(|rest| rest.starts_with('#'))
+                {
+                    entry.value = old.to_owned();
+                }
+            }
+        }
+        self.builds.retain(|_, t| !t.entries.is_empty());
         let leading: Vec<String> = self
             .moved
             .iter()
@@ -446,10 +541,74 @@ impl AddressFile {
         }
     }
 
-    /// Removes the entry for `key`, from whichever table has it.
+    /// Removes the entry for `key`, from whichever table has it, a build's
+    /// too.
     pub fn remove(&mut self, key: &str) {
         self.moved.remove(key);
         self.retired.remove(key);
+        for table in self.builds.values_mut() {
+            table.entries.remove(key);
+        }
+        self.builds.retain(|_, t| !t.entries.is_empty());
+    }
+
+    /// Removes the entry for `key` from `[moved.<build>]` with `build`, or
+    /// else from `[moved]` or `[retired]`.
+    pub fn remove_in(&mut self, build: Option<&str>, key: &str) {
+        match build {
+            Some(build) => {
+                if let Some(table) = self.builds.get_mut(build) {
+                    table.entries.remove(key);
+                    if table.entries.is_empty() {
+                        self.builds.remove(build);
+                    }
+                }
+            }
+            None => {
+                self.moved.remove(key);
+                self.retired.remove(key);
+            }
+        }
+    }
+
+    /// The file as the builds declared as `build` read it (SPEC §7.10):
+    /// `[moved]` with `[moved.<build>]`'s entries, and no build's table.
+    /// Every other build's entries are left out: they lead nowhere here.
+    pub fn in_build(&self, build: &str) -> Cow<'_, AddressFile> {
+        if self.builds.is_empty() {
+            return Cow::Borrowed(self);
+        }
+        let mut out = AddressFile {
+            moved: self.moved.clone(),
+            builds: BTreeMap::new(),
+            former: self.former.clone(),
+            retired: self.retired.clone(),
+        };
+        if let Some(table) = self.builds.get(build) {
+            for (key, entry) in &table.entries {
+                out.moved
+                    .entry(key.clone())
+                    .or_insert_with(|| entry.clone());
+            }
+        }
+        Cow::Owned(out)
+    }
+
+    /// Records that `old`, an address only the builds declared as `build`
+    /// published, moved to `new`: `[moved.<build>]`'s entry for it, in
+    /// place of any `[moved]` or `[retired]` one, which every build would
+    /// serve.
+    pub fn record_move_in(&mut self, build: &str, old: &str, new: &str) {
+        self.moved.remove(old);
+        self.retired.remove(old);
+        if old == new {
+            return;
+        }
+        self.builds
+            .entry(build.to_owned())
+            .or_default()
+            .entries
+            .insert(old.to_owned(), Entry::new(new));
     }
 
     /// The one edit that turns `text`, the file as it is, into the file as
@@ -472,6 +631,15 @@ impl AddressFile {
         out.push_str("\n[moved]\n");
         for (key, entry) in &self.moved {
             let _ = writeln!(out, "{} = {}", quoted(key), quoted(&entry.value));
+        }
+        for (build, table) in &self.builds {
+            if table.entries.is_empty() {
+                continue;
+            }
+            let _ = writeln!(out, "\n[moved.{}]", table_key(build));
+            for (key, entry) in &table.entries {
+                let _ = writeln!(out, "{} = {}", quoted(key), quoted(&entry.value));
+            }
         }
         if !self.former.is_empty() {
             out.push_str("\n[former]\n");
@@ -529,6 +697,19 @@ fn line_edit(before: &str, after: &str) -> TextEdit {
     TextEdit::replace(start..end, b[prefix..b.len() - suffix].concat())
 }
 
+/// A table's key as a header writes it: bare when TOML allows, else quoted.
+fn table_key(text: &str) -> String {
+    if !text.is_empty()
+        && text
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        text.to_owned()
+    } else {
+        quoted(text)
+    }
+}
+
 /// A TOML basic string.
 fn quoted(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 2);
@@ -546,6 +727,12 @@ fn quoted(text: &str) -> String {
     out.push('"');
     out
 }
+
+/// An entry read: its key, the key's place, and its value.
+type Read = (String, Span, String);
+
+/// A build's table read: its name, the name's place, and its entries.
+type Found = (String, Span, Vec<Read>);
 
 struct Reader {
     file: FileId,
@@ -603,34 +790,26 @@ impl Reader {
                 ),
             },
         }
-        for (key, span, value) in self.table(root, "moved") {
-            let permalink = key.starts_with(PERMALINK_PREFIX);
-            if split_place(&value).is_some() || (permalink && permalink_name(&value).is_some()) {
-                out.moved.insert(key, Entry { value, span });
-            } else if value.starts_with(PERMALINK_PREFIX) && !permalink {
-                self.problem(
-                    span,
-                    format!(
-                        "`{key}` moved to `{value}`, a permalink; only a permalink, `go:<name>`, moves to another"
-                    ),
-                );
-            } else if permalink && value.starts_with(PERMALINK_PREFIX) {
-                self.problem(
-                    span,
-                    format!(
-                        "`{key}` moved to `{value}`, which isn't a permalink's name: {NAME_RULE}"
-                    ),
-                );
-            } else {
-                self.problem(
-                    span,
-                    format!(
-                        "`{key}` moved to `{value}`, which isn't a file's path ending in `.md`, with `#` and an id for a heading"
-                    ),
-                );
+        let mut builds = Vec::new();
+        let moved = self.table(root, "moved", Some(&mut builds));
+        for (key, span, value) in moved {
+            if let Some(entry) = self.moved_entry(&key, span, value) {
+                out.moved.insert(key, entry);
             }
         }
-        for (key, span, reason) in self.table(root, "retired") {
+        for (build, build_span, found) in builds {
+            let mut table = BuildTable {
+                entries: BTreeMap::new(),
+                span: build_span,
+            };
+            for (key, span, value) in found {
+                if let Some(entry) = self.moved_entry(&key, span, value) {
+                    table.entries.insert(key, entry);
+                }
+            }
+            out.builds.insert(build, table);
+        }
+        for (key, span, reason) in self.table(root, "retired", None) {
             if reason.trim().is_empty() {
                 self.problem(span, format!("the retired address `{key}` has no reason"));
             } else if reason.trim() == RETIRED_PLACEHOLDER {
@@ -668,7 +847,64 @@ impl Reader {
                 );
             }
         }
+        // A build's table serves its entries with `[moved]`'s, and in place
+        // of none of `[retired]`'s: a key in both is twice.
+        for (build, table) in &out.builds {
+            for (key, entry) in &table.entries {
+                let other = out
+                    .moved
+                    .get(key)
+                    .map(|e| (e, format!("moved to `{}`", e.value)))
+                    .or_else(|| {
+                        out.retired
+                            .get(key)
+                            .map(|e| (e, format!("retired: “{}”", e.value)))
+                    });
+                if let Some((other, said)) = other {
+                    let later = if entry.span.start() > other.span.start() {
+                        entry.span
+                    } else {
+                        other.span
+                    };
+                    self.twice(
+                        later,
+                        key,
+                        &said,
+                        &format!("moved to `{}` in `[moved.{build}]`", entry.value),
+                    );
+                }
+            }
+        }
         out
+    }
+
+    /// `[moved]`'s entry for `key`, with `value`, when the value is a place
+    /// it can lead to.
+    fn moved_entry(&mut self, key: &str, span: Span, value: String) -> Option<Entry> {
+        let permalink = key.starts_with(PERMALINK_PREFIX);
+        if split_place(&value).is_some() || (permalink && permalink_name(&value).is_some()) {
+            return Some(Entry { value, span });
+        } else if value.starts_with(PERMALINK_PREFIX) && !permalink {
+            self.problem(
+                    span,
+                    format!(
+                        "`{key}` moved to `{value}`, a permalink; only a permalink, `go:<name>`, moves to another"
+                    ),
+                );
+        } else if permalink && value.starts_with(PERMALINK_PREFIX) {
+            self.problem(
+                span,
+                format!("`{key}` moved to `{value}`, which isn't a permalink's name: {NAME_RULE}"),
+            );
+        } else {
+            self.problem(
+                    span,
+                    format!(
+                        "`{key}` moved to `{value}`, which isn't a file's path ending in `.md`, with `#` and an id for a heading"
+                    ),
+                );
+        }
+        None
     }
 
     /// `addresses-key-twice` at `span`, for `key` with both its values.
@@ -699,7 +935,7 @@ impl Reader {
                 table = name.split(']').next().unwrap_or_default().trim();
                 continue;
             }
-            if !matches!(table, "moved" | "retired") {
+            if !matches!(table, "moved" | "retired") && !table.starts_with("moved.") {
                 continue;
             }
             let Some((key, value)) = key_line(trimmed) else {
@@ -712,7 +948,7 @@ impl Reader {
                 .unwrap_or(0);
             let span = Span::new(offset, offset + key_len);
             let said = |value: &str| {
-                if table == "moved" {
+                if table.starts_with("moved") {
                     format!("moved to `{value}`")
                 } else {
                     format!("retired: “{value}”")
@@ -733,41 +969,98 @@ impl Reader {
     }
 
     /// The entries of the table `key`, each a key the file can hold with a
-    /// string value; every other entry is a problem.
-    fn table(&mut self, root: &DeTable<'_>, key: &str) -> Vec<(String, Span, String)> {
-        let mut out = Vec::new();
+    /// string value; every other entry is a problem. In `[moved]`, an entry
+    /// whose value is a table is a build's, `[moved.<build>]`, and is put
+    /// in `builds`.
+    fn table(
+        &mut self,
+        root: &DeTable<'_>,
+        key: &str,
+        mut builds: Option<&mut Vec<Found>>,
+    ) -> Vec<(String, Span, String)> {
         let Some(value) = root.get(key) else {
-            return out;
+            return Vec::new();
         };
         let DeValue::Table(table) = value.get_ref() else {
             self.problem(
                 sp(value),
                 format!("`{key}` is {}, not a table", describe(value.get_ref())),
             );
-            return out;
+            return Vec::new();
         };
+        let mut out = Vec::new();
         for (name, span, value) in entries(table) {
-            if Key::parse(name).is_none() {
-                self.problem(
-                    span,
-                    format!(
-                        "`{name}` isn't a key `[{key}]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name"
-                    ),
-                );
+            if let (Some(builds), DeValue::Table(inner)) = (builds.as_deref_mut(), value.get_ref())
+            {
+                let table = format!("{key}.{name}");
+                let mut found = Vec::new();
+                for (inner_name, inner_span, inner_value) in entries(inner) {
+                    if let Some(entry) =
+                        self.entry_of(&table, inner_name, inner_span, inner_value, true)
+                    {
+                        found.push(entry);
+                    }
+                }
+                builds.push((name.to_owned(), span, found));
                 continue;
             }
-            match value.get_ref() {
-                DeValue::String(text) => out.push((name.to_owned(), span, text.to_string())),
-                other => self.problem(
-                    sp(value),
-                    format!(
-                        "the value of `{name}` in `[{key}]` is {}, not a string",
-                        describe(other)
-                    ),
-                ),
+            if let Some(entry) = self.entry_of(key, name, span, value, false) {
+                out.push(entry);
             }
         }
         out
+    }
+
+    /// The entry `name`, with `value`, of the table `table`, when it's a key
+    /// the file can hold with a string value. A build's table, `in_build`,
+    /// has no permalink: a permalink's name is every build's.
+    fn entry_of(
+        &mut self,
+        table: &str,
+        name: &str,
+        span: Span,
+        value: &toml::Spanned<DeValue<'_>>,
+        in_build: bool,
+    ) -> Option<(String, Span, String)> {
+        match Key::parse(name) {
+            None => {
+                let builds = if table == "moved" {
+                    ", or a build's name, with a table of that build's entries"
+                } else {
+                    ""
+                };
+                self.problem(
+                    span,
+                    format!(
+                        "`{name}` isn't a key `[{table}]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name{builds}"
+                    ),
+                );
+                return None;
+            }
+            Some(Key::Permalink(_)) if in_build => {
+                self.problem(
+                    span,
+                    format!(
+                        "`{name}` is a permalink, which every build answers to, so it goes in `[moved]`, not `[{table}]`"
+                    ),
+                );
+                return None;
+            }
+            Some(_) => {}
+        }
+        match value.get_ref() {
+            DeValue::String(text) => Some((name.to_owned(), span, text.to_string())),
+            other => {
+                self.problem(
+                    sp(value),
+                    format!(
+                        "the value of `{name}` in `[{table}]` is {}, not a string",
+                        describe(other)
+                    ),
+                );
+                None
+            }
+        }
     }
 
     fn former(&mut self, value: &toml::Spanned<DeValue<'_>>) -> Former {
@@ -1044,6 +1337,115 @@ mod tests {
     }
 
     #[test]
+    fn a_build_s_table_is_served_by_that_build_alone() {
+        let text = format!(
+            "{ADDRESSES_HEADER}version = 1\n\n[moved]\n\"guides/old.md\" = \"guides/new.md\"\n\n[moved.site]\n\"/3.4/install/\" = \"install.md\"\n\n[retired]\n"
+        );
+        let file = read(&text);
+        assert_eq!(file.moved.len(), 1);
+        assert_eq!(
+            file.builds["site"].entries["/3.4/install/"].value,
+            "install.md"
+        );
+        assert_eq!(file.to_toml(), text);
+        let site = file.in_build("site");
+        assert_eq!(site.moved.len(), 2);
+        assert!(site.builds.is_empty());
+        let cloud = file.in_build("cloud");
+        assert_eq!(cloud.moved.len(), 1);
+        assert!(!cloud.moved.contains_key("/3.4/install/"));
+    }
+
+    #[test]
+    fn a_move_in_a_build_replaces_every_build_s_entry() {
+        let mut file = read("version = 1\n[moved]\n\"/3.4/a/\" = \"a.md\"\n");
+        file.record_move_in("site", "/3.4/a/", "a.md");
+        assert!(file.moved.is_empty());
+        assert_eq!(file.builds["site"].entries["/3.4/a/"].value, "a.md");
+        // A page's move takes a build's entries that lead to it along.
+        file.record_move("a.md", "b.md");
+        assert_eq!(file.builds["site"].entries["/3.4/a/"].value, "b.md");
+        file.remove_in(Some("site"), "/3.4/a/");
+        assert!(file.builds.is_empty());
+        assert!(
+            file.to_toml()
+                .ends_with("[moved]\n\"a.md\" = \"b.md\"\n\n[retired]\n")
+        );
+    }
+
+    #[test]
+    fn retiring_a_page_leaves_a_build_s_entries_leading_to_it_retired_there() {
+        let mut file = read(
+            "version = 1\n[moved]\n\"/old/\" = \"install.md\"\n[moved.site]\n\"/3.4/install/\" = \"install.md\"\n\"/3.4/install/#npm\" = \"install.md#npm\"\n",
+        );
+        file.record_retired("install.md", "Gone");
+        // `[moved]`'s entry is retired for every build.
+        assert_eq!(file.retired["/old/"].value, "Gone");
+        // A build's entries keep leading to the retired page, so only that
+        // build serves them as retired.
+        assert_eq!(
+            file.builds["site"].entries["/3.4/install/"].value,
+            "install.md"
+        );
+        assert_eq!(
+            file.builds["site"].entries["/3.4/install/#npm"].value,
+            "install.md"
+        );
+        assert!(!file.retired.contains_key("/3.4/install/"));
+        assert_eq!(
+            file.retired_in_build("site"),
+            [
+                ("/3.4/install/", "Gone".to_owned()),
+                ("/3.4/install/#npm", "Gone".to_owned())
+            ]
+        );
+        assert!(file.retired_in_build("cloud").is_empty());
+        assert!(file.has_key(Some("site"), "/3.4/install/"));
+        assert!(!file.has_key(None, "/3.4/install/"));
+        assert!(!file.has_key(Some("cloud"), "/3.4/install/"));
+    }
+
+    #[test]
+    fn a_build_s_key_in_moved_or_retired_too_is_twice() {
+        let found = AddressFile::parse(
+            "version = 1\n[moved]\n\"/a/\" = \"b.md\"\n[moved.site]\n\"/a/\" = \"c.md\"\n",
+            FileId::new(0),
+        )
+        .expect_err("twice");
+        assert_eq!(found[0].slug, diagnostics::ADDRESSES_KEY_TWICE);
+        assert_eq!(found[0].arg("first"), Some("moved to `b.md`"));
+        assert_eq!(
+            found[0].arg("second"),
+            Some("moved to `c.md` in `[moved.site]`")
+        );
+        let in_table = AddressFile::parse(
+            "version = 1\n[moved.site]\n\"/a/\" = \"b.md\"\n\"/a/\" = \"c.md\"\n",
+            FileId::new(0),
+        )
+        .expect_err("twice in the table");
+        assert_eq!(in_table[0].slug, diagnostics::ADDRESSES_KEY_TWICE);
+        // Two builds may each have the key.
+        let file = read(
+            "version = 1\n[moved.site]\n\"/a/\" = \"b.md\"\n[moved.cloud]\n\"/a/\" = \"c.md\"\n",
+        );
+        assert_eq!(file.builds.len(), 2);
+    }
+
+    #[test]
+    fn a_build_s_table_has_no_permalink() {
+        assert_eq!(
+            bad("version = 1\n[moved.site]\n\"go:a\" = \"b.md\"\n"),
+            [
+                "`go:a` is a permalink, which every build answers to, so it goes in `[moved]`, not `[moved.site]`"
+            ]
+        );
+        assert_eq!(
+            bad("version = 1\n[moved.site]\n\"/a/\" = 1\n"),
+            ["the value of `/a/` in `[moved.site]` is a number, not a string"]
+        );
+    }
+
+    #[test]
     fn a_key_twice_names_both_values() {
         let found = AddressFile::parse(
             "version = 1\n[moved]\n\"a.md\" = \"b.md\"\n\"a.md\" = \"c.md\"\n",
@@ -1154,13 +1556,13 @@ mod tests {
         assert_eq!(
             bad("version = 1\n[moved]\n\"a.txt\" = \"b.md\"\n"),
             [
-                "`a.txt` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name"
+                "`a.txt` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name, or a build's name, with a table of that build's entries"
             ]
         );
         assert_eq!(
             bad("version = 1\n[moved]\n\"go:a/b\" = \"b.md\"\n"),
             [
-                "`go:a/b` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name"
+                "`go:a/b` isn't a key `[moved]` can have: a file's path ending in `.md`, with `#` and an id for a heading, an address starting with `/`, or `go:` and a permalink's name, or a build's name, with a table of that build's entries"
             ]
         );
         assert_eq!(

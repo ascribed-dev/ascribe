@@ -1,0 +1,1 @@
+- **A new how-to, Write it once, covers phrases and fragments.** It includes a fragment on several pages, or one section of it, says how a fragment's links resolve, and when a phrase, a fragment, or a variant fits. See [Write it once](docs/content/writing/write-it-once.md).

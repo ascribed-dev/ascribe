@@ -8,7 +8,7 @@ description: "Find the links to other sites that broke or moved, with `ascribe r
 
 ## Before you start
 
-Install lychee from [its releases](https://github.com/lycheeverse/lychee/releases), or with `cargo install lychee`, and check that `lychee --version` works in the shell you run `ascribe` from. When it isn't on your `PATH`, set `command` in [`[checks.links]`](../content-model/checks.md#checkslinks) to where it is, from the project root.
+Install lychee from [its releases](https://github.com/lycheeverse/lychee/releases), or with `cargo install lychee`, and check that `lychee --version` works in the shell you run `ascribe` from. When it isn't on your `PATH`, set `command` in [`[checks.links]`](../content-model/checks.md#checkslinks) to where it is, from the project's folder.
 
 ## Check the links
 
@@ -99,7 +99,7 @@ External links
 
 ## See also
 
-- [The project report](report.md): the rest of what `ascribe report` says about a project.
+- [Act on the project report](report.md): the rest of what `ascribe report` says about a project.
 - [`ascribe report`](report-command.md#cli-report): every option, and the JSON.
 - [`[checks.links]`](../content-model/checks.md#checkslinks): every setting.
 - [Files Ascribe writes](../command/project-files.md): the rest of `.ascribe/`.

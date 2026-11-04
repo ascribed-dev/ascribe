@@ -116,6 +116,31 @@ fn the_hover_shows_the_file_and_what_it_was_tested_with() {
 }
 
 #[test]
+fn the_hover_leaves_out_what_the_config_doesnt_show() {
+    let f = tested();
+    let config = read(&f, CONFIG).replace("test = ", "show-os = false\ntest = ");
+    f.write(CONFIG, &config);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let text = snippet_hover(&f, &mut client);
+    assert!(
+        text.contains("**Tested with** Node 22\\.22\\.0 and 24\\.21\\.0\n"),
+        "{text}"
+    );
+    // With no entries either, it says only that it's tested.
+    let bare = config
+        .split("[environment]")
+        .next()
+        .unwrap_or_default()
+        .to_owned();
+    f.write(CONFIG, &bare);
+    client.settle();
+    let text = snippet_hover(&f, &mut client);
+    assert!(text.contains("**Tested**\n"), "{text}");
+    assert!(!text.contains("Tested with"), "{text}");
+}
+
+#[test]
 fn the_hover_says_where_to_run_a_stale_example() {
     let f = tested();
     f.write(DEFAULT, &edited_hash(&read(&f, DEFAULT)));
@@ -365,7 +390,7 @@ fn an_open_config_completes_its_keys() {
     };
     assert_eq!(
         labels(&mut client, at(text, "\n\n\n", 1)),
-        ["ignore", "test"]
+        ["ignore", "test", "show-os"]
     );
     assert_eq!(labels(&mut client, at(text, ", }", 2)), ["command"]);
 }

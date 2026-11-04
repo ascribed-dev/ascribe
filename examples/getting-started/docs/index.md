@@ -4,6 +4,8 @@ title: Install Quill
 description: Install Quill with your package manager, and set it up.
 ---
 
+Install {product} with your package manager, then set it up for your project.
+
 @note {type=tip}: {product} {version} needs Node.js 22 or later.
 
 ## Install the package

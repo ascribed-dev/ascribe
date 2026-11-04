@@ -31,7 +31,7 @@ use std::thread;
 
 use crate::support::Client;
 use ascribe_check::{PageChecker, Project, check_file};
-use ascribe_core::{LineIndex, RelPath, Span, WideEncoding, WideLineCol};
+use ascribe_core::{LineIndex, RelPath, Span, WideEncoding, WideLineCol, diagnostics};
 use ascribe_model::Build;
 use ascribe_resolve::FileKind;
 use ascribe_syntax::{Block, BlockKind};
@@ -125,7 +125,13 @@ impl Reach {
         let mut all = check_file(project, file);
         all.extend(PageChecker::new(project).check_pages(build, &self.pages));
         let mut out = BTreeMap::new();
-        for d in all {
+        // An edit at the top of a page, such as inserting a note, makes it
+        // open with something other than a paragraph, which is the advice
+        // working, not the edit going wrong.
+        for d in all
+            .into_iter()
+            .filter(|d| d.slug != diagnostics::PAGE_OPENING_MISSING)
+        {
             let file = project
                 .file(d.location.file)
                 .map(|f| f.display_path.to_owned())

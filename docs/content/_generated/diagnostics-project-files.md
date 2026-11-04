@@ -115,11 +115,11 @@
 
 ### ASC269 `addresses-key-twice`
 @id {permalink=true}: ASC269
-@summary: A key written twice in a table, or in both `[moved]` and `[retired]`.
+@summary: A key written twice in a table, in both `[moved]` and `[retired]`, or in a build's table and either.
 
 [Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
 
-**When:** A key written twice in a table, or in both `[moved]` and `[retired]`.
+**When:** A key written twice in a table, in both `[moved]` and `[retired]`, or in a build's table and either.
 
 **Message:** `{key}` is in ascribe.addresses twice: \{first}, and \{second}
 
@@ -180,6 +180,20 @@
 **Message:** \{count} addresses are forwarded to \{value}, \{what}, so a reader who followed a link to one of them lands on a page without what they were looking for
 
 **Fix:** Forward each to the page that has what it had, with `ascribe addresses move <old> <new>`, or retire the ones nothing replaces, with `ascribe addresses retire <old> --reason "…"`. A redirect to an index or the home page is a not-found page that answers 200, which search engines treat as one.
+
+**Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
+
+### ASC289 `addresses-build-unknown`
+@id {permalink=true}: ASC289
+@summary: A build's table of `[moved]`, `[moved.<build>]`, naming a build `ascribe.toml` doesn't declare.
+
+[Error](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [choose](../checks/diagnostics.md#what-to-do-next) · [SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)
+
+**When:** A build's table of `[moved]`, `[moved.<build>]`, naming a build `ascribe.toml` doesn't declare.
+
+**Message:** `[moved.{build}]` names a build ascribe.toml doesn't declare, so no build writes its redirects; the builds are \{builds}
+
+**Fix:** Name the build whose line published the table's addresses, as it's declared in ascribe.toml: `site` for `site@3.4`. When the build was renamed, rename the table too. When the build is gone on purpose, remove the table: its addresses have nowhere to lead.
 
 **Read more:** [The file's checks](../publishing/redirects.md#the-files-checks) in the guide to keeping addresses.
 

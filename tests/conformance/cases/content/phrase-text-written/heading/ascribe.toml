@@ -8,5 +8,6 @@ api = "https://api.quill.dev/v3/"
 node = "24"
 
 [checks]
+page-opening-missing = "off"
 phrase-unused = "off"
 glossary-term-unused = "off"

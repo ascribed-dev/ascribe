@@ -22,6 +22,10 @@ content-root = "docs"
 path = "code"
 include = ["**/*.py", "**/*.txt"]
 ignore = ["private/**"]
+
+# The pages here open with a snippet.
+[checks]
+page-opening-missing = "off"
 "#;
 
 fn check(page: &str, files: &[(&str, &str)]) -> (Project, Vec<Diagnostic>) {

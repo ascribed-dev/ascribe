@@ -4,8 +4,6 @@ title: "Title"
 description: "{One sentence that says what a reader will have learned by the end of this tutorial.}"
 ---
 
-## Overview
-
 In this tutorial, you'll learn how to \{insert brief description of the main tutorial task}. This tutorial is intended for \{audience}. It assumes you have basic knowledge of:
 
 * Concept 1
