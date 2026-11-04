@@ -40,7 +40,7 @@ A link to an operation the spec marks `deprecated` is advice, `link-operation-de
 
 ## For agents
 
-`ascribe link` checks a link to an operation as it checks a link to a page, and answers with the operation: its API, its id, or its method and path, its summary, whether it's deprecated, and its address in the reference. An agent with no shell asks the same with the MCP tool `ascribe_link`. See [`ascribe link`](../command/questions.md#cli-link).
+`ascribe link` checks a link to an operation as it checks a link to a page, and answers with the operation: its API, its id, or its method and path, its summary, whether it's deprecated, and its address in the reference. An agent with no shell asks the same with the MCP tool `ascribe_link`. See [`ascribe link`](../command/references.md#cli-link).
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/link-operation.txt
 

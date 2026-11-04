@@ -102,7 +102,7 @@ pages = [
 [[sections]]
 folder = "command/"
 label = "The command"
-pages = ["questions.md", "site-output.md", "project-files.md"]
+pages = ["questions.md", "references.md", "site-output.md", "project-files.md"]
 
 # Contracts keep an order of their own, in a section at the end apart from the
 # guides.
