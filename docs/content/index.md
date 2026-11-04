@@ -5,7 +5,7 @@ description: Guides and references for writing documentation with Ascribe, and t
 permalink: docs
 ---
 
-Ascribe checks and builds documentation written as code: Markdown pages with `@` directives, checked against a content model in `ascribe.toml`, and built into a website, plain Markdown, and JSON. Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do. [Why Ascribe](https://ascribed-dev.com/why/) says what problems it answers, and which it doesn't.
+Ascribe checks and builds documentation written as code: Markdown pages with `@` directives, checked against a content model in `ascribe.toml`, and built into a website, plain Markdown, and JSON. Everyone starts with [Getting started](getting-started.md): it installs Ascribe, and writes, checks, builds, and previews a first page. From there, each path below is a few pages in order, for what you came to do. [How Ascribe works](how-it-works.md) shows the whole system on one page: what you write, what the checks and builds do with it, and where the same checks run. [Why Ascribe](https://ascribed-dev.com/why/) says what problems it answers, and which it doesn't.
 
 @note: The docs write commands as `ascribe`. With `@ascribed/cli` installed in your project, run them as `npx ascribe` or `pnpm exec ascribe`; with the binary on your path, as written.
 
@@ -74,6 +74,7 @@ Give the agents that write your docs the project's rules and checks, and the age
 ## Start
 
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, see it, and publish it with Astro.
+- [How Ascribe works](how-it-works.md): the whole system on one page, from the pages you write to the published site.
 - [Install Ascribe](install.md): every way to install `ascribe`, with npm or on your path without Node.
 
 ## Write

@@ -995,6 +995,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `existing-docs.md` | Bring existing docs to Ascribe | how-to |
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
+| `how-it-works.md` | How Ascribe works | concept |
 | `index.md` | Ascribe documentation | index |
 | `install.md` | Install Ascribe | how-to |
 | `navigation/index.md` | Navigation | reference |
