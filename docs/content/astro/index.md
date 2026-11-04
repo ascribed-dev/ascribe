@@ -46,6 +46,20 @@ pnpm add @ascribed/astro
 
 It brings `@ascribed/cli`, the `ascribe` command for your platform, and `@ascribed/elements`. Astro's image processing also needs `sharp` (`npm install sharp`) if your project doesn't have it.
 
+`astro build` and `astro dev` run the `ascribe` of the `@ascribed/cli` that `@ascribed/astro` depends on, which is always of the same version as `@ascribed/astro` (or the binary its [`binary` option](reference.md#options) names). The editor, CI, and `npx ascribe` run the project's own, the one [Getting started](../getting-started.md) installs. Keep the two packages on the same version, and the package manager installs one `@ascribed/cli` that both run; with two versions, the site and the check can disagree about a page. Upgrade them together:
+
+@variant {pm=npm}:
+```sh
+npm install @ascribed/astro@latest
+npm install --save-dev @ascribed/cli@latest
+```
+@variant {pm=pnpm}:
+```sh
+pnpm add @ascribed/astro@latest
+pnpm add --save-dev @ascribed/cli@latest
+```
+@end
+
 ### 2. Write `ascribe.toml`
 
 Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings are the site's routing, because Ascribe writes every link: the integration gives Astro its `site`, `base`, and `trailingSlash` from them, so `astro.config.mjs` can leave all three out ([a home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs) says how `base` can differ from `base-path`):
@@ -53,6 +67,20 @@ Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `
 @snippet: code:examples/astro-site/ascribe.toml#site
 
 The source pages go in `content/`. If your Ascribe project lives elsewhere, such as in a folder beside the site's, set the integration's `project` option to its directory (step 3). The [`ascribe.toml` reference](../content-model/index.md) has everything else it can declare.
+
+#### From Getting started
+@id: from-getting-started
+
+With the `ascribe.toml` from [Getting started](../getting-started.md), keep your file, and your pages where they are: its content root stays `docs`, so where this guide says `content/`, read `docs/`. Its `[consumer]` already has `site`, and the defaults are an `astro` profile, the docs at the site's root, and addresses that end in `/`. Add a line only for what you want otherwise, such as the two in the example above:
+
+```toml
+[consumer]
+site = "https://docs.example.com"
+base-path = "/docs/"        # add: the docs under /docs/, not at the site's root
+trailing-slash = "never"    # add: addresses without a final /
+```
+
+Set `base-path` before the pages' first commit if you can. Once a commit has them under another one, `ascribe check` reports that the change moved their addresses, as [`address-lost`](../checks/diagnostics/project-files.md#ASC255): see [before the first deploy](../publishing/redirects.md#before-the-first-deploy) for what to do when nothing was published.
 
 ### 3. Add the integration
 

@@ -424,3 +424,30 @@ fn getting_started_has_the_ascribe_addresses_init_writes() {
         .join("../../examples/getting-started/ascribe.addresses");
     assert_eq!(fs::read_to_string(example).unwrap(), written);
 }
+
+/// Getting started's first page is the one `ascribe init` says to write
+/// next, so a reader following both writes one page, the home page the
+/// Astro guide's site serves at its base path (#1246).
+#[test]
+fn getting_started_s_first_page_is_the_one_init_names() {
+    let dir = tempfile::tempdir().unwrap();
+    let output = ascribe(dir.path(), &["init"]);
+    assert_eq!(code_of(&output), 0, "{}", stderr(&output));
+    let said = stdout(&output);
+    let named = said
+        .lines()
+        .find_map(|line| line.strip_prefix("Next, write a first page, "))
+        .and_then(|rest| rest.split(',').next())
+        .unwrap_or_else(|| panic!("`ascribe init` names no first page:\n{said}"));
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/getting-started");
+    assert!(
+        example.join(named).is_file(),
+        "examples/getting-started has no {named}, the page `ascribe init` says to write"
+    );
+    let guide = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/content/getting-started.md");
+    let guide = fs::read_to_string(guide).unwrap();
+    assert!(
+        guide.contains(&format!("Create `{named}`")),
+        "Getting started doesn't say to create {named}, the page `ascribe init` names"
+    );
+}

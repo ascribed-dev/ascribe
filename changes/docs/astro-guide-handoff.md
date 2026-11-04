@@ -1,0 +1,1 @@
+- **Getting started hands off to the Astro guide cleanly.** Its first page is `docs/index.md`, as `ascribe init` says, and the guide says what to keep, which `@ascribed/cli` the site runs, and what to do about a `base-path` change before the first deploy. See [Publish a site with Astro](docs/content/astro/index.md).

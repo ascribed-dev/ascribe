@@ -90,9 +90,9 @@ Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when
 
 ## Write a page
 
-Create `docs/install.md`:
+Create `docs/index.md`, the page `ascribe init` named: the project's home page, which the site shows at its address.
 
-@snippet {lang=markdown}: code:examples/getting-started/docs/install.md
+@snippet {lang=markdown}: code:examples/getting-started/docs/index.md
 
 - `@note` is a callout; `{type=tip}` is its attribute.
 - `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one. See [Content that varies](writing/variants.md).
@@ -113,7 +113,7 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
 
-Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again. Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too.
+Create `docs/configure.md` with the same frontmatter fields as `index.md`, `type: page` among them, and check again: nothing is reported. The home page links to `configure.md`, so a reader finds it; a page that no other page links to or includes gets [`page-orphan`](checks/diagnostics/project-checks.md#ASC154) advice, which a link from a page about its topic answers. Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too.
 
 ## Format it
 
@@ -151,7 +151,7 @@ renders the build's pages as a site into `.ascribe/preview/`, with the sidebar, 
 previewing build `site` at http://127.0.0.1:4880/
 ```
 
-Open it in a browser to see `install.md` as a reader does, its note, its alternatives by package manager, and its steps. As you edit a page or `ascribe.toml`, it renders the pages again; reload to see the change. It needs nothing but the command: no Node, no editor, and no Astro. Ctrl-C stops it. The published site has its own look, which the next step gives it. See [`ascribe preview`](checks/check.md#cli-preview).
+Open it in a browser to see the home page as a reader does, its note, its alternatives by package manager, and its steps. As you edit a page or `ascribe.toml`, it renders the pages again; reload to see the change. It needs nothing but the command: no Node, no editor, and no Astro. Ctrl-C stops it. The published site has its own look, which the next step gives it. See [`ascribe preview`](checks/check.md#cli-preview).
 
 ## Publish it with Astro
 
@@ -159,8 +159,8 @@ Publishing the site is this guide's second half, on its own page: [Publish a sit
 
 @steps
 1. Create an Astro project: `npm create astro@latest`.
-2. Move `ascribe.toml` and `docs/` into it, beside `astro.config.mjs`.
-3. Follow the guide from its first step.
+2. Move `ascribe.toml`, `ascribe.addresses`, and `docs/` into it, beside `astro.config.mjs`.
+3. Follow the guide from its first step. At its step 2, keep your `ascribe.toml`, and add only the lines it shows [for a project from here](astro/index.md#from-getting-started).
 
 For an existing site, keep this project where it is, follow the guide in the Astro project, and set the integration's `project` option to this project's directory.
 
