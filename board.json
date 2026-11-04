@@ -8716,7 +8716,7 @@
     },
     {
       "content": {
-        "body": "## Ascribe report\n\n0 errors, 0 warnings, 2 advice.\n\n### External links\n\nChecked 36 addresses: asked about 5, and reused 31 answers, the oldest from 22 October.\n\n2 links to look at, 2 of them new since 2 November:\n\n- `content/_generated/crawlers.md:12`: [ASC169] `https://developer.amazon.com/amazonbot` moved permanently to `https://developer.amazon.com/docs/amazonbot/amazonbot.html`; link to the new address\n- `content/_generated/crawlers.md:17`: [ASC169] `https://developer.amazon.com/amazonbot` moved permanently to `https://developer.amazon.com/docs/amazonbot/amazonbot.html`; link to the new address\n\n### Delivery\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 25 pass, 2 warn, 1 skip.\n\n28 checks: 25 passing, 2 failing, none of them new since 2 November; 1 that failed on 2 November no longer fails.\n\nNothing for the hosting or Ascribe to change.\n\nAlso failing, about the pages: `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/41648494350)\n",
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 3 advice.\n\n### External links\n\nChecked 49 addresses: asked about 25, and reused 24 answers, the oldest from 22 October.\n\n3 links to look at, 3 of them new since 3 November:\n\n- `content/agents/measuring.md:72`: [ASC169] `https://developers.google.com/search/docs/crawling-indexing/google-user-triggered-fetchers` moved permanently to `https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers`; link to the new address\n- `content/agents/measuring.md:72`: [ASC169] `https://docs.perplexity.ai/guides/bots` moved permanently to `https://docs.perplexity.ai/docs/resources/perplexity-crawlers`; link to the new address\n- `content/checks/vale.md:102`: [ASC169] `https://vale.sh/hub/` moved permanently to `https://vale.sh/explorer`; link to the new address\n\n1 link the last run reported is fine now, or no longer in the pages.\n\n### Delivery\n\nThe delivery spec's checks on `https://ascribed-dev.com/docs/`: 25 pass, 2 warn, 1 skip.\n\n28 checks: 25 passing, 2 failing, none of them new since 3 November.\n\nNothing for the hosting or Ascribe to change.\n\nAlso failing, about the pages: `page-size-html`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/41843570011)\n",
         "number": 1200,
         "repository": "ascribed-dev/ascribe",
         "title": "Docs report: links and the published site",
@@ -9432,7 +9432,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1366"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
     },
     {
@@ -9999,8 +9999,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1289"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF0LAs",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1367"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Replace serde_yaml_ng with serde-saphyr"
     },
     {
@@ -10097,7 +10100,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1365"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "`ascribe check --vale --config docs` checks nothing: Vale gets the configuration as a relative path"
     },
     {
@@ -10153,7 +10156,7 @@
     },
     {
       "content": {
-        "body": "Left by #1283 (PR #1353). That PR settled the docs' terms and fixed every hand-written page. It left `docs/content/_generated/` alone, because that text comes from the code, and #1348's Vale rules skip `_generated/` for the same reason. So the generated pages still use the old terms. On `main` there are about 106 lines with them:\n\n| Old term | Settled term | Count | Mostly in |\n|---|---|---|---|\n| content type | page type | 51 | `diagnostics-pages.md`, `diagnostics-content-model.md`, `diagnostics-output-checks.md`, `json-report.md` |\n| directory | folder | 39 | `diagnostics-content-model.md`, `cli-rename-options.md`, `json-report.md` |\n| lightbulb | light bulb | 11 | `editor-actions.md` |\n| author | writer | 4 | `json-report.md` and others |\n| plain output | the plain Markdown output | 3 | `json-resolve.md`, `diagnostics-output-checks.md` |\n| put off, hold back | baseline | 3 | `json-report.md` |\n\nThe sources are `tests/conformance/diagnostics.toml` (each entry's summary, when, and fix), the commands' help (`crates/ascribe-cli/src/cli.rs`), the doc comments the JSON Schemas are generated from, and the editor's action titles (`packages/vscode/`).\n\n## Done when\n\n- Each source writes the settled term in the prose it generates: the diagnostics' summary, when, and fix fields, the commands' help, the schemas' `description`s, and the editor's action titles. The generated pages are re-blessed (`pnpm bless`).\n- Names stay as they are: `output-dir`, field and key names, and VS Code's **Content types** card.\n- **Diagnostic messages aren't changed in this PR.** They're the program's output, and #1353 left them on purpose. Whether they follow is its own question, and if they do, it's its own PR with `--accept`.\n- `docs/.vale.ini` stops skipping `_generated/` for the `Terms` rule, or a test fails if a generated page uses an old term, so the terms don't come back.",
+        "body": "Left by #1283 (PR #1353). That PR settled the docs' terms and fixed every hand-written page. It left `docs/content/_generated/` alone, because that text comes from the code, and #1348's Vale rules skip `_generated/` for the same reason. So the generated pages still use the old terms. On `main` there are about 106 lines with them:\n\n| Old term | Settled term | Count | Mostly in |\n|---|---|---|---|\n| content type | page type | 51 | `diagnostics-pages.md`, `diagnostics-content-model.md`, `diagnostics-output-checks.md`, `json-report.md` |\n| directory | folder | 39 | `diagnostics-content-model.md`, `cli-rename-options.md`, `json-report.md` |\n| lightbulb | light bulb | 11 | `editor-actions.md` |\n| author | writer | 4 | `json-report.md` and others |\n| plain output | the plain Markdown output | 3 | `json-resolve.md`, `diagnostics-output-checks.md` |\n| put off, hold back | baseline | 3 | `json-report.md` |\n\nThe sources are `crates/ascribe-core/data/diagnostics.toml` (each entry's summary, when, and fix; the registry moved there from `tests/conformance/`), the commands' help (`crates/ascribe-cli/src/cli.rs`), the doc comments the JSON Schemas are generated from, and the editor's action titles (`packages/vscode/`).\n\n## Done when\n\n- Each source writes the settled term in the prose it generates: the diagnostics' summary, when, and fix fields, the commands' help, the schemas' `description`s, and the editor's action titles. The generated pages are re-blessed (`pnpm bless`).\n- Names stay as they are: `output-dir`, field and key names, and VS Code's **Content types** card.\n- **Diagnostic messages aren't changed in this PR.** They're the program's output, and #1353 left them on purpose. Whether they follow is its own question, and if they do, it's its own PR with `--accept`.\n- `docs/.vale.ini` stops skipping `_generated/` for the `Terms` rule, or a test fails if a generated page uses an old term, so the terms don't come back.\n\nStart after #1261's second PR (#1366) merges, since both re-bless pages generated from the same schemas.",
         "number": 1361,
         "repository": "ascribed-dev/ascribe",
         "title": "Generated reference pages: use the settled terms at their source in the code",
