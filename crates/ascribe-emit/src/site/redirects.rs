@@ -27,7 +27,8 @@
 //!   A pair an entry writes comes first, and the first pair from an
 //!   address is the one written.
 //! - **`gone`:** each `[retired]` key's address, and its Markdown
-//!   version's, with the reason, and where the page saying so is served:
+//!   version's, with the reason, and each of the build's own table's whose
+//!   entry leads to a retired one, with that one's reason, and where the page saying so is served:
 //!   in [`GONE_FOLDER`] under the build's base path, at the key's page's
 //!   address from there, for each, under each base path.
 //!
@@ -124,6 +125,9 @@ pub fn redirects(
         return out;
     };
     // `[moved]`'s entries, with this build's table's, and no other build's.
+    // An entry of the build's own table that leads to a retired entry is
+    // the build's address retired, with that entry's reason.
+    let retired_here = file.retired_in_build(declared.declared_name());
     let file = file.in_build(declared.declared_name());
     let file = file.as_ref();
     let router = AstroRouter::from_consumer(&model.consumer);
@@ -229,7 +233,12 @@ pub fn redirects(
         had_agents,
         &mut pairs,
     );
-    for (key, entry) in &file.retired {
+    let retired = file
+        .retired
+        .iter()
+        .map(|(key, entry)| (key.as_str(), entry.value.clone()))
+        .chain(retired_here);
+    for (key, reason) in retired {
         let addresses = addresses_of(key);
         let Some((page, _)) = addresses.iter().find(|(_, markdown)| !markdown) else {
             continue;
@@ -241,8 +250,8 @@ pub fn redirects(
             }
             out.gone.push(Gone {
                 path,
-                reason: entry.value.clone(),
-                entry: key.clone(),
+                reason: reason.clone(),
+                entry: key.to_owned(),
                 page: page.clone(),
             });
         }

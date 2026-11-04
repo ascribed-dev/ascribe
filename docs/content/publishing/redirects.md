@@ -127,7 +127,7 @@ With the base read, `ascribe check` also checks that each entry of `ascribe.addr
 | [`addresses-soft-404`](../checks/diagnostics/project-files.md#ASC273) | Advice | Three addresses or more are forwarded to one index page or the home page |
 | [`addresses-build-unknown`](../checks/diagnostics/project-files.md#ASC289) | Error | A build's table, `[moved.<build>]`, names a build `ascribe.toml` doesn't declare, so no build writes its redirects |
 
-Retiring a page that entries lead to retires them with it, for the same reason, and moving a page takes the entries that lead to its headings with it.
+Retiring a page that entries lead to retires them with it, for the same reason, and moving a page takes the entries that lead to its headings with it. An entry of a build's table that led to the page keeps leading to it, so only that build shows its address as retired.
 
 To stop keeping the addresses on purpose, delete the file in a pull request of its own, whose check compares with its own head, `ascribe check --base HEAD`.
 

@@ -226,7 +226,10 @@ fn whether_kept(
         return Some(Diagnostic::from_issue(&issue));
     }
     let base = base?;
-    let in_base_file = base.file.as_ref().is_some_and(|f| f.entry(key).is_some());
+    let in_base_file = base
+        .file
+        .as_ref()
+        .is_some_and(|f| f.has_key(table.build, key));
     if matches!(parsed, Key::Address(_)) || in_base_file || !had.is_empty() {
         return None;
     }
@@ -369,6 +372,11 @@ fn chain(
     let file = here.file;
     let next = |value: &str| file.step(value);
     let first = next(value)?;
+    // An entry of a build's table leading straight to a retired entry is
+    // how a build retires its own address (`AddressFile::record_retired`).
+    if table.build.is_some() && file.retired.contains_key(value) {
+        return None;
+    }
     let issue = Issue::new(diagnostics::ADDRESSES_CHAIN, at)
         .with_arg("key", key.to_owned())
         .with_arg("value", value.to_owned());

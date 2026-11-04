@@ -629,3 +629,44 @@ fn a_build_s_entry_is_checked_against_that_build_and_fixed_in_its_table() {
         "{after}"
     );
 }
+
+#[test]
+fn a_build_s_entry_the_base_s_file_has_is_kept() {
+    let (found, _) = checked(
+        &[("index.md", PAGE)],
+        &[("index.md", PAGE)],
+        &[],
+        "[moved.cloud]\n\"keys.md\" = \"index.md\"\n",
+    );
+    // Without it in the base's file, the base never published `keys.md`.
+    assert_eq!(slugs(&found), ["addresses-entry-unpublished"]);
+    let now = project(&[("index.md", PAGE)]);
+    let builds = every_build(&now);
+    let text = file("[moved.cloud]\n\"keys.md\" = \"index.md\"\n").to_toml();
+    let here_file = AddressFile::parse(&text, FileId::new(1)).expect("a valid file");
+    let here = Here {
+        file: &here_file,
+        text: &text,
+        index: &now,
+        builds: &builds,
+    };
+    let mut base = Base::of(&project(&[("index.md", PAGE)]));
+    base.file = Some(here_file.clone());
+    assert!(entries(&here, Some(&base)).is_empty());
+}
+
+#[test]
+fn a_build_s_entry_leading_to_a_retired_page_retires_it_in_that_build() {
+    let base = [("setup.md", PAGE), ("index.md", PAGE)];
+    let now = [("index.md", PAGE)];
+    let text = "[moved.cloud]\n\"setup.md\" = \"gone.md\"\n[moved.self-managed]\n\"setup.md\" = \"gone.md\"\n[retired]\n\"gone.md\" = \"Removed.\"\n";
+    // Accounted for in each build, and not a chain to flatten.
+    let (found, _) = checked(&base, &now, &[], text);
+    assert!(
+        !found
+            .iter()
+            .any(|d| matches!(d.slug.as_str(), "address-lost" | "addresses-chain")),
+        "{:?}",
+        messages(&found)
+    );
+}

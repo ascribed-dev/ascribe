@@ -372,6 +372,16 @@ impl Moves {
                 };
                 Some((old.to_owned(), file.follow(&entry.value)?))
             }));
+            // A build's table's moves too, each as its build reads the file.
+            for (build, table) in &file.builds {
+                let view = file.in_build(build);
+                pairs.extend(table.entries.iter().filter_map(|(key, entry)| {
+                    let Some(Key::Source(old)) = Key::parse(key) else {
+                        return None;
+                    };
+                    Some((old.to_owned(), view.follow(&entry.value)?))
+                }));
+            }
         }
         let mut moves = Moves::default();
         for (old, new) in pairs {

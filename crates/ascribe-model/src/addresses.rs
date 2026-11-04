@@ -309,6 +309,35 @@ impl AddressFile {
         RecordedPermalinks { names }
     }
 
+    /// The reason each entry of `build`'s table, `[moved.<build>]`, that
+    /// leads to a retired entry, directly or by a chain, was retired: by
+    /// key. The builds declared as `build` serve each key's addresses as
+    /// retired, with that reason, as [`AddressFile::record_retired`] leaves
+    /// them.
+    pub fn retired_in_build(&self, build: &str) -> Vec<(&str, String)> {
+        let Some(table) = self.builds.get(build) else {
+            return Vec::new();
+        };
+        let view = self.in_build(build);
+        table
+            .entries
+            .iter()
+            .filter_map(|(key, entry)| match view.end_of(key, &entry.value) {
+                End::Retired(reason) => Some((key.as_str(), reason)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Whether the file has an entry for `key` where `build` reads it: in
+    /// `[moved]`, in `[retired]`, or, with `build`, in its table.
+    pub fn has_key(&self, build: Option<&str>, key: &str) -> bool {
+        self.entry(key).is_some()
+            || build
+                .and_then(|b| self.builds.get(b))
+                .is_some_and(|t| t.entries.contains_key(key))
+    }
+
     /// Where `key`'s `[moved]` entry, `value`, leads in the end.
     fn end_of(&self, key: &str, value: &str) -> End {
         let mut seen = vec![key.to_owned()];
@@ -428,11 +457,29 @@ impl AddressFile {
     }
 
     /// Records that `old` was retired, for `reason`, in place of any
-    /// `[moved]` entry for it. Each entry that led to `old`, or to one of
-    /// its headings, is retired with it, for the same reason: what it led
-    /// to is gone.
+    /// `[moved]` entry for it. Each entry of `[moved]` that led to `old`, or
+    /// to one of its headings, is retired with it, for the same reason: what
+    /// it led to is gone. An entry of a build's table that did keeps leading
+    /// to `old`, or, from a heading, to `old` itself: `[retired]` is every
+    /// build's, so the build retires its own address by leading it to the
+    /// retired entry, and serves it as retired, with the same reason
+    /// ([`AddressFile::retired_in_build`]).
     pub fn record_retired(&mut self, old: &str, reason: &str) {
         self.moved.remove(old);
+        for table in self.builds.values_mut() {
+            table.entries.remove(old);
+            for entry in table.entries.values_mut() {
+                if !old.contains('#')
+                    && entry
+                        .value
+                        .strip_prefix(old)
+                        .is_some_and(|rest| rest.starts_with('#'))
+                {
+                    entry.value = old.to_owned();
+                }
+            }
+        }
+        self.builds.retain(|_, t| !t.entries.is_empty());
         let leading: Vec<String> = self
             .moved
             .iter()
@@ -1324,6 +1371,38 @@ mod tests {
             file.to_toml()
                 .ends_with("[moved]\n\"a.md\" = \"b.md\"\n\n[retired]\n")
         );
+    }
+
+    #[test]
+    fn retiring_a_page_leaves_a_build_s_entries_leading_to_it_retired_there() {
+        let mut file = read(
+            "version = 1\n[moved]\n\"/old/\" = \"install.md\"\n[moved.site]\n\"/3.4/install/\" = \"install.md\"\n\"/3.4/install/#npm\" = \"install.md#npm\"\n",
+        );
+        file.record_retired("install.md", "Gone");
+        // `[moved]`'s entry is retired for every build.
+        assert_eq!(file.retired["/old/"].value, "Gone");
+        // A build's entries keep leading to the retired page, so only that
+        // build serves them as retired.
+        assert_eq!(
+            file.builds["site"].entries["/3.4/install/"].value,
+            "install.md"
+        );
+        assert_eq!(
+            file.builds["site"].entries["/3.4/install/#npm"].value,
+            "install.md"
+        );
+        assert!(!file.retired.contains_key("/3.4/install/"));
+        assert_eq!(
+            file.retired_in_build("site"),
+            [
+                ("/3.4/install/", "Gone".to_owned()),
+                ("/3.4/install/#npm", "Gone".to_owned())
+            ]
+        );
+        assert!(file.retired_in_build("cloud").is_empty());
+        assert!(file.has_key(Some("site"), "/3.4/install/"));
+        assert!(!file.has_key(None, "/3.4/install/"));
+        assert!(!file.has_key(Some("cloud"), "/3.4/install/"));
     }
 
     #[test]

@@ -1255,6 +1255,21 @@ fn retire_records_the_lines_addresses_in_the_addresses_file_and_the_build_redire
     let cloud = ascribe(dir.path(), &["addresses", "list", "--build", "cloud"]);
     assert_eq!(code_of(&cloud), 0, "{}", stderr(&cloud));
     assert!(!stdout(&cloud).contains("/1.0/"), "{}", stdout(&cloud));
+    // A build's entry that leads to a retired page is retired in that build
+    // alone.
+    write(
+        dir.path(),
+        "ascribe.addresses",
+        "version = 1\n\n[moved]\n\n[moved.site]\n\"/1.0/prod/\" = \"gone.md\"\n\n[retired]\n\"gone.md\" = \"Removed.\"\n",
+    );
+    let site = ascribe(dir.path(), &["addresses", "list", "--build", "site"]);
+    assert!(
+        stdout(&site).contains("/1.0/prod/ retired (/1.0/prod/): Removed."),
+        "{}",
+        stdout(&site)
+    );
+    let cloud = ascribe(dir.path(), &["addresses", "list", "--build", "cloud"]);
+    assert!(!stdout(&cloud).contains("/1.0/"), "{}", stdout(&cloud));
 }
 
 #[test]
