@@ -1,0 +1,1 @@
+- **A how-to for defining page types and their fields.** It walks from the implicit `page` type to two types with shared fields, and fixes what `ascribe check` reports. See [Define your page types and fields](docs/content/content-model/page-types.md).

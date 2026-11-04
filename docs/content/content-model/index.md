@@ -111,25 +111,24 @@ Two projects beside each other, such as a product's docs and its landing site, o
 
 @include: ../_fragments/content-model/types.md
 
+[Define your page types and fields](page-types.md) walks through declaring types and their fields in a project that has pages, and fixing what `ascribe check` reports.
+
 **The page title.** Every page type has `title`, a required `string` field, whether it declares it or not. It's the page's title everywhere Ascribe needs one: an empty link to the page shows it as its text, for one ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). Declaring it, in `[frontmatter]` or in a type's own `frontmatter`, changes only how it's read: it can accept phrases (§11), and code spans (§5.3). A declared `title` that's optional, has a default, or isn't a string is an error at the field (`model-field-reserved`).
 
-**Reserved keys.** These are reserved frontmatter keys. Any page can use them, whatever its type says, and each means what the table says; a type, or `[frontmatter]`, that declares one is an error (`model-field-reserved`). The frontmatter schemas the site output generates include them automatically, except the three that reach a site another way.
+**Reserved keys.** These are reserved frontmatter keys. Any page can use them, whatever its type says, and each means what the table says; a type, or `[frontmatter]`, that declares one is an error (`model-field-reserved`).
 
-| Key | What it is | In the site's generated schemas |
-|---|---|---|
-| `type` | The page's [content type](#4-typesname-and-fragments) | Included |
-| `available` | Where the page applies, and its lifecycle state, as [`@available`](../writing/directives.md#available) says for a section ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) | Included |
-| `variant` | The dimension values a [whole-page variant](../writing/frontmatter.md#whole-page-variants) is for ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) | Included |
-| `permalink` | A page's [permalink](../writing/frontmatter.md#a-pages-permalink) ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) | Included |
-| `listing` | [Listing a page](#listing-a-page), below | Left out: it reaches a site in the page's record (output-layout contract §1.3) |
-| `replaces` | The page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another) ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) | Left out: it reaches a site in the versions file (output-layout contract §1.5) |
-| `nav-label` | A page's name in the sidebar and the previous and next links ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) | Left out: it reaches a site in the navigation (output-layout contract §1.6) |
+| Key | What it is |
+|---|---|
+| `type` | The page's [content type](#4-typesname-and-fragments) |
+| `available` | Where the page applies, and its lifecycle state, as [`@available`](../writing/directives.md#available) says for a section ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) |
+| `variant` | The dimension values a [whole-page variant](../writing/frontmatter.md#whole-page-variants) is for ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) |
+| `permalink` | A page's [permalink](../writing/frontmatter.md#a-pages-permalink) ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) |
+| `listing` | [Listing a page](#listing-a-page), below |
+| `replaces` | The page [a page replaces](../writing/frontmatter.md#a-page-that-replaces-another) ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) |
+| `nav-label` | A page's name in the sidebar and the previous and next links ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)) |
+| `intended` | [Acknowledges a check's problem](../writing/directives.md#intended) ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)), on a page or a fragment |
 
-`intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](../writing/directives.md#intended), and since no output has it, the site's generated schemas leave it out. With the `astro` profile, a type can't declare `slug` either (`model-field-reserved`): Astro would take a page's `slug` as its entry id instead of its path, and publish the page at an address Ascribe never worked out.
-
-`formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
-
-`source` is reserved on page types too: the site output writes each page's path from the content root under it, for a layout's edit link, so a type must not declare it (`model-field-reserved`).
+A page type can't declare `formatted`, where the site output writes the formatted form of fields that set `inline` (§5.3), or `source`, where it writes each page's path for a layout's edit link (`model-field-reserved`). With the `astro` profile, it can't declare `slug` either, which Astro keeps for itself. Which of these keys a site's generated schemas include is in the [format contract](../contracts/content-model.md#4-typesname-and-fragments).
 
 ### Listing a page
 
