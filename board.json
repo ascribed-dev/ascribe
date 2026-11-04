@@ -9428,6 +9428,9 @@
         "documentation",
         "enhancement"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1366"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
@@ -10090,8 +10093,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1357"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF-RAA",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1365"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "`ascribe check --vale --config docs` checks nothing: Vale gets the configuration as a relative path"
     },
     {
@@ -10104,8 +10110,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1358"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF-RFo",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1362"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In review",
       "title": "Paragraph test: an indented paragraph that runs into the next list item is read as one paragraph"
     },
     {
@@ -10118,8 +10127,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1359"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF-RLM",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1363"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Permalinks list contract: say plainly which readers reject the three newer tables"
     },
     {
@@ -10132,8 +10144,11 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1360"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF-RQ8",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1364"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "agents/measuring.md: cite the studies behind each finding"
     },
     {
