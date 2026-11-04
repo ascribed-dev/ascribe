@@ -86,6 +86,10 @@
         "label": "ascribe.toml reference"
       },
       {
+        "href": "/docs/content-model/page-types/",
+        "label": "Define your page types and fields"
+      },
+      {
         "href": "/docs/content-model/content/",
         "label": "ascribe.toml: what pages hold"
       },

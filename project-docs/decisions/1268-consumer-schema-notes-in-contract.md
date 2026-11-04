@@ -1,0 +1,5 @@
+---
+section: The docs and the site
+---
+
+**How a page type reaches a generated consumer schema is said in the `ascribe.toml` format contract, not in the reference.** The reference's §4 says which frontmatter keys are reserved and what each means, and links to the contract for which of them a site's generated schemas include. The contract's §4 keeps that list, and now also says that a type's name names its schema in generated code (`reference-guide` is `referenceGuideSchema`, with the type `ReferenceGuide`), which the shared fragment said before. Nothing a loader or an emitter does changes. _Why:_ the reference is read by whoever designs a project's content model, and the generated schemas, Astro's entry ids, and the output-layout contract's sections are for whoever implements a loader or a site, as [decision #689a](689a-what-a-contract-page-holds.md) splits the two pages. _From:_ the docs review of 3 November 2026, Kyle, [issue #1268](https://github.com/ascribed-dev/ascribe/issues/1268), 4 November 2026.
