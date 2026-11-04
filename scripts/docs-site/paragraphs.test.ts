@@ -21,7 +21,14 @@ function tracked(...pathspecs: string[]): string[] {
     .filter((file) => file !== "");
 }
 
-/** A file's paragraphs, each with the line it starts on. */
+/** A line that opens a list item, a heading, a table, a quote, a tag, or a directive. */
+const OPENER = /^(\||#|>|<|@|[-*+] |\d+[.)] )/;
+
+/**
+ * A file's paragraphs, each with the line it starts on. A paragraph ends at a
+ * blank line, a fence, or a line that opens something else, so an indented
+ * paragraph of a list item ends where the next item starts (#1358).
+ */
 function paragraphs(text: string): { line: number; text: string }[] {
   const found: { line: number; text: string }[] = [];
   let current: string[] = [];
@@ -29,8 +36,8 @@ function paragraphs(text: string): { line: number; text: string }[] {
   let fence: string | null = null;
   const flush = (): void => {
     const first = current[0] ?? "";
-    const other = /^(\||#|>|<|@|[-*+] |\d+[.)] )/.test(first);
-    if (current.length > 0 && !other) found.push({ line: start, text: current.join(" ") });
+    if (current.length > 0 && !OPENER.test(first))
+      found.push({ line: start, text: current.join(" ") });
     current = [];
   };
   const lines = text
@@ -48,6 +55,7 @@ function paragraphs(text: string): { line: number; text: string }[] {
       flush();
       return;
     }
+    if (OPENER.test(trimmed)) flush();
     if (current.length === 0) start = i + 1;
     current.push(trimmed);
   });
@@ -61,6 +69,39 @@ function words(paragraph: string): number {
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
   return read.split(/\s+/).filter((word) => word !== "").length;
 }
+
+test("a list item, a heading, a table, a quote, or a directive ends the paragraph before it", () => {
+  const bulleted = [
+    "- **First.** A sentence.",
+    "",
+    "  A second paragraph of the first item.",
+    "- **Second.** Another item.",
+  ].join("\n");
+  expect(paragraphs(bulleted)).toEqual([
+    { line: 3, text: "A second paragraph of the first item." },
+  ]);
+
+  const ordered = [
+    "1. First.",
+    "",
+    "   A second paragraph of the first item.",
+    "2) Second.",
+    "",
+    "   A second paragraph of the second item.",
+    "10. Tenth.",
+  ].join("\n");
+  expect(paragraphs(ordered)).toEqual([
+    { line: 3, text: "A second paragraph of the first item." },
+    { line: 6, text: "A second paragraph of the second item." },
+  ]);
+
+  for (const opener of ["# Heading", "| a | b |", "> A quote.", "<details>", "@note"]) {
+    expect(paragraphs(`A paragraph.\n${opener}\n\nAnother.`)).toEqual([
+      { line: 1, text: "A paragraph." },
+      { line: 4, text: "Another." },
+    ]);
+  }
+});
 
 test(`no paragraph of the docs outside the contracts runs over ${MAX_WORDS} words`, () => {
   const long = tracked("docs/content/*.md")
