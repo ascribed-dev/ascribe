@@ -112,6 +112,10 @@
       {
         "href": "/docs/content-model/glossary/",
         "label": "Set up a glossary"
+      },
+      {
+        "href": "/docs/content-model/keep-current/",
+        "label": "Keep pages current"
       }
     ]
   },

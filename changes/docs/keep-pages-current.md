@@ -1,0 +1,1 @@
+- **A guide to keeping pages current.** It adds an owner and a recheck date to pages, shows overdue pages in `ascribe check` and the editor, and runs the report weekly in CI. See [Keep pages current](docs/content/content-model/keep-current.md).

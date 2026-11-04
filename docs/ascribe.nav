@@ -22,7 +22,7 @@ folder = "templates/"
 [[sections]]
 folder = "content-model/"
 label = "The content model"
-pages = ["page-types.md", "content.md", "variation.md", "output.md", "sources.md", "checks.md", "glossary.md"]
+pages = ["page-types.md", "content.md", "variation.md", "output.md", "sources.md", "checks.md", "glossary.md", "keep-current.md"]
 
 [[sections]]
 folder = "editor/"
