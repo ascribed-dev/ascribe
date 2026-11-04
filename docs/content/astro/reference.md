@@ -5,14 +5,14 @@ description: "What the Astro integration takes, what it does to a site, and what
 permalink: astro-reference
 ---
 
-Everything `@ascribed/astro` takes and does, once a site is set up: its options, what it adds to Astro's build and dev server, the components and functions a layout uses, several projects, versions, and permalinks in one site, the head, sitemap, `robots.txt`, and response headers it writes, review in the site preview, and styling. [Publish a site with Astro](index.md) sets a site up.
+This page lists everything `@ascribed/astro` takes and does once a site is set up: its options, what it adds to Astro's build and dev server, and the components and functions a layout uses. It also covers several projects, versions, and permalinks in one site, the head, sitemap, `robots.txt`, and response headers it writes, review in the site preview, and styling. [Publish a site with Astro](index.md) sets a site up.
 
 ## Options
 
 | Option | Meaning |
 |---|---|
 | `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required, unless `projects` is given. |
-| `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
+| `project` | The folder holding `ascribe.toml`, relative to the Astro root. By default, the root. |
 | `projects` | [Several projects](reference.md#several-projects): a list of entries, each `{ name, build, project }`, in place of `build` and `project`. |
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
 | `anchors` | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
@@ -22,9 +22,9 @@ Everything `@ascribed/astro` takes and does, once a site is set up: its options,
 
 ## What the integration does
 
-- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash` ([Troubleshooting](../troubleshooting.md#astro-site-mismatch)). In ascribe 0.2.0, Astro's `trailingSlash: "ignore"` agrees with either value; since ascribe 0.3.0, the integration replaces it, as below. `base-path` agrees with Astro's `base` when it's that path or, since ascribe 0.3.0, a path under it ([A home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs)).
+- **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash` ([Troubleshooting](../troubleshooting.md#astro-site-mismatch)). The integration replaces `trailingSlash: "ignore"`, as below. `base-path` agrees with Astro's `base` when it's that path or a path under it ([A home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs)).
 - **Gives Astro its `site`, `base`, and `trailingSlash`** from `[consumer]` when `astro.config.mjs` leaves them out, so the site's address is written once: `site`, `base-path`, and `trailing-slash`. A setting `astro.config.mjs` does give must still agree. With [`projects`](reference.md#several-projects), `base` stays the site's. Astro can't tell an integration a setting left out from one set to its default, so `base: "/"` and `trailingSlash: "ignore"` are replaced too. A `trailingSlash` it gives also ends the route of Astro's image endpoint, `image.endpoint.route`, the same way, as Astro does with its own setting, so images load in `astro dev`.
-- **Writes each page where a static host serves it at its address,** by Astro's `build.format`: with `trailing-slash = "never"`, it gives Astro `build.format: "file"`, so a page is written as `x.html` and served at `x`, not as `x/index.html`, which a host serves at `x/` and answers `x` with a redirect. With `"always"`, a page stays `x/index.html`. A `build.format` that disagrees fails the build; Astro's default, `"directory"`, is replaced for `"never"`, since it can't be told from a format left out. The home page is the output folder's `index.html` either way, so under a base path a host may still serve it at `/docs/`, not `/docs`.
+- **Writes each page where a static host serves it at its address,** by Astro's `build.format`. With `trailing-slash = "never"`, it gives Astro `build.format: "file"`, so a page is written as `x.html` and served at `x`. It isn't written as `x/index.html`, which a host serves at `x/`, answering `x` with a redirect. With `"always"`, a page stays `x/index.html`. A `build.format` that disagrees fails the build; Astro's default, `"directory"`, is replaced for `"never"`, since it can't be told from a format left out. The home page is the output folder's `index.html` either way, so under a base path a host may still serve it at `/docs/`, not `/docs`.
 - **Adds its Markdown plugin** to Astro's Markdown processor, to apply heading ids, image attributes, glossary terms' `data-ascribe-term`, and source anchors: to the default Sätteri processor's `hastPlugins`, or to a `unified()` processor's `rehypePlugins`. Both plugins are exported, as `@ascribed/astro/satteri` and `@ascribed/astro/rehype`, for a processor you configure yourself. Their types come from `satteri` and `@types/hast`, optional peer dependencies: a Sätteri processor already has the first, and a `unified()` one the second.
 - **Serves the files pages link to** (other than pages and images) at `<base-path>_ascribe/files/`, in `astro dev` and in the built site.
 - **Publishes the outputs for agents**, on by default with a `[consumer] site`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](agents.md)).
@@ -118,9 +118,9 @@ A page in its place is the page that replaces it there, or that it replaces, nea
 
 Each build lists its [permalinks](../permalinks/index.md) in the site output, `_ascribe/permalinks.json` ([output-layout contract §1.2](../contracts/output-layout.md#12-the-permalinks-list)), and the integration publishes a page at each address, in `astro build` and in `astro dev`, where a permalink you add or remove is served on the next rebuild, with no restart. The page:
 
-- forwards at once with a `<meta http-equiv="refresh">`, without a script, keeping a heading's anchor;
-- with a script, first takes the reader's choices from the address's parameters;
-- links to the same place, for a browser that doesn't follow;
+- forwards at once with a `<meta http-equiv="refresh">`, without a script, keeping a heading's anchor.
+- with a script, first takes the reader's choices from the address's parameters.
+- links to the same place, for a browser that doesn't follow.
 - is marked `noindex`, with a canonical link to where it leads, so search engines list the page and not the address.
 
 So it works on any static host. With `[consumer] host = "netlify"`, the host [forwards each address with a `301`](../publishing/redirects.md#permalinks-on-netlify) instead, and serves the page only for an address with a dimension's parameter. The page names its section's [Markdown and JSON](reference.md#help-entries) as its alternates, `<link rel="alternate">`, for an agent that reads it. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents. A retired permalink's page says what was there was removed from the docs, gives the reason, and links to the docs' home page, unless it was retired `--to` another page, where it forwards.
@@ -148,7 +148,10 @@ Each answers with the file narrowed to that one entry: `version`, `build`, and `
 
 Beside each, with `.md` in place of `.json`, `/docs/go/connect.md`, the integration serves the entry's section as Markdown: its title as a heading, then its `text`, the section as the plain output writes it. An agent reads the section a permalink names in one fetch, and a host that [answers content negotiation](serve-markdown.md#3-answer-content-negotiation) by trying the address with `.md` finds it for the permalink's address too. The JSON names it as its alternate, with a `Link` header in `astro dev` and in the build's headers list.
 
-Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, at `<path><name>.json` for the current line, where `path` is `_ascribe/permalinks.json`'s, and at `<base>go/<name>.json` for an older line, where `base` is the line's in `_ascribe/versions.json`, and the section as Markdown at each with `.md`.
+Another generator serves the same: for each name in a line's `help.json`, the file with that entry alone, and the section as Markdown at the same address with `.md`. The address is:
+
+- `<path><name>.json` for the current line, where `path` is `_ascribe/permalinks.json`'s.
+- `<base>go/<name>.json` for an older line, where `base` is the line's in `_ascribe/versions.json`.
 
 ### A permalink that isn't here
 @id: a-permalink-that-isnt-here

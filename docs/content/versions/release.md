@@ -4,7 +4,9 @@ title: "`ascribe versions`"
 description: "List a project's release lines, say what differs between two, release a line in one command, export one into a folder of HTML, and retire it from the source."
 ---
 
-The commands for a project's [release lines](lines.md): what they are, what differs between two, the release that makes a planned line live, the export that keeps a copy of a line once it leaves, and the retirement that takes it out of the source. [Publish a site for each version](index.md) and [Export and retire a line](archive.md) are the tasks they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [JSON reports: `ascribe versions`](../contracts/json-reports/versions.md).
+`ascribe versions` lists a project's [release lines](lines.md), says what differs between two, releases a planned line, exports a line into a folder of HTML once it leaves, and retires it from the source. [Publish a site for each version](index.md) and [Export and retire a line](archive.md) are the tasks the commands are used in, and the JSON each writes with `--format json` is in [JSON reports: `ascribe versions`](../contracts/json-reports/versions.md).
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe versions`
 @id {permalink=true}: cli-versions
@@ -16,7 +18,14 @@ Lists a project's release lines, says what differs between two, releases one, ex
 @id {permalink=true}: cli-versions-list
 @summary: Shows each target's release lines, newest first: whether each is current, live, planned, or archived, with its output, base path, and last day of support.
 
-Shows each target's lines, newest first: whether each is current, live, planned, or archived, the output and base path of each live line on each build versioned by the target, with how many pages it publishes, the last day of support from `ends`, and an archived line's address and the day it ended. It reads the project and builds nothing. In `examples/quill`:
+Shows each target's lines, newest first. For each line, it shows:
+
+- Whether each is current, live, planned, or archived.
+- The output and base path of each live line on each build versioned by the target, with how many pages it publishes.
+- The last day of support, from `ends`.
+- An archived line's address and the day it ended.
+
+It reads the project and builds nothing. In `examples/quill`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-list.txt
 
@@ -33,7 +42,13 @@ With `--format json`, it writes the same in the document its [schema](../contrac
 @id {permalink=true}: cli-versions-changes
 @summary: Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows added, removed, or changed.
 
-Says what differs between two lines of a target, from the marks alone, with nothing built: the pages, sections, blocks, and table rows that are in the second line and not the first (added), in the first and not the second (removed), and in both with a different state, such as deprecated in one (changed). Each is listed with its file and line, the page, the heading it's under, and its first line. A page whose own mark adds it is one entry, not an entry for each part of it. A page added in place of one removed, which `replaces` links it with either way, is one entry too: it's listed as added, and names the page it's in place of, which isn't listed as removed. `ascribe versions changes "self-managed 3.4" 3.5` in `examples/quill`:
+Says what differs between two lines of a target, from the marks alone, with nothing built. It lists the pages, sections, blocks, and table rows that are:
+
+- In the second line and not the first: added.
+- In the first and not the second: removed.
+- In both, with a different state, such as deprecated in one: changed.
+
+Each is listed with its file and line, the page, the heading it's under, and its first line. A page whose own mark adds it is one entry, not an entry for each part of it. A page added in place of one removed, which `replaces` links it with either way, is one entry too: it's listed as added, and names the page it's in place of, which isn't listed as removed. `ascribe versions changes "self-managed 3.4" 3.5` in `examples/quill`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-changes.txt
 
@@ -61,11 +76,17 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 @id {permalink=true}: cli-versions-release
 @summary: Releases a line: rewrites each `planned` mark for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target.
 
-Releases a line: rewrites each mark's [`planned`](../writing/directives.md#availability-specs) for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. [When a line ships](index.md#release-day) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. A feature's spec names its versions, so `planned` in one is left as it is. In a copy of `examples/quill` that plans 3.6, with a section marked `@available: self-managed planned`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do, `--next` adding 3.7 to `planned` so that `planned` names it from then on. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
+Releases a line: rewrites each mark's [`planned`](../writing/directives.md#availability-specs) for its target to the line's version, makes the line live, and archives the old current line where no build is versioned by the target. [When a line ships](index.md#release-day) has each step.
+
+It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. A feature's spec names its versions, so `planned` in one is left as it is.
+
+In a copy of `examples/quill` that plans 3.6, with a section marked `@available: self-managed planned`, `ascribe versions release "self-managed 3.6" --next 3.7 --dry-run` says what it would do, `--next` adding 3.7 to `planned` so that `planned` names it from then on. Its site is versioned, so 3.5 stays live, with an output of its own, `site@3.5`:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-release.txt
 
-When it archives the old current line, the marks that name a version in it say nothing any more: every line left has what they mark. It removes or rewrites each one [`available-same-in-every-line`](../checks/diagnostics/project-checks.md#ASC212) would report, as that check's fix does: a mark with nothing left to say goes, and one that still says something, such as a state or another target, keeps that alone, as `self-managed beta 3.5` becomes `self-managed beta`. A feature's spec is rewritten the same way. The text lists each with its file and line, and the JSON as `cleared` and `cleared_features`, so after it `ascribe check` reports no `available-same-in-every-line` for the archived line. A mark that said nothing before the release, naming an older line, is left for `ascribe check` to report. A badge build showed what these marks said, so the pages it drew a badge on are among the outputs the release changes.
+When it archives the old current line, the marks that name a version in it say nothing any more: every line left has what they mark. It removes or rewrites each one [`available-same-in-every-line`](../checks/diagnostics/project-checks.md#ASC212) would report, as that check's fix does: a mark with nothing left to say goes, and one that still says something, such as a state or another target, keeps that alone, as `self-managed beta 3.5` becomes `self-managed beta`. A feature's spec is rewritten the same way.
+
+The text lists each with its file and line, and the JSON as `cleared` and `cleared_features`, so after it `ascribe check` reports no `available-same-in-every-line` for the archived line. A mark that said nothing before the release, naming an older line, is left for `ascribe check` to report. A badge build showed what these marks said, so the pages it drew a badge on are among the outputs the release changes.
 
 It builds the project in memory before and after, and refuses when rewriting the marks or archiving the old line would change what a reader sees: both are meant to change nothing, so a change there is a mark the rewrite got wrong. What the release itself changes, each page whose content was planned and is now live, it lists by build. It writes nothing when it refuses, and `--dry-run` says what it would do and writes nothing.
 
@@ -95,13 +116,17 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 @id {permalink=true}: cli-versions-export
 @summary: Renders a line into a folder of HTML that needs nothing else, with a sidebar, a search box, and a contents page, working from a disk with no server.
 
-Renders a line, live or planned, into a folder of HTML that needs nothing else: every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, marked so crawlers leave it alone, working from a disk with no server. Its archive is a copy of the line to host once the line leaves the window; exporting a line doesn't make it archived, which [`retire`](#cli-versions-retire) does. [Export and retire a line](archive.md#archive-a-line) says what's in it, and the [archive contract](../contracts/archive.md) its layout. In a copy of `examples/quill`, `ascribe versions export "self-managed 3.4" --to archive/3.4 --current https://docs.quill.dev/` writes the archive and says what to add to `ascribe.toml` once it's hosted:
+Renders a line, live or planned, into a folder of HTML that needs nothing else, working from a disk with no server. The folder holds every page of the line with a statement of what it is, a sidebar with a search box, a contents page, and a print stylesheet, and is marked so crawlers leave it alone. Its archive is a copy of the line to host once the line leaves the window; exporting a line doesn't make it archived, which [`retire`](#cli-versions-retire) does. [Export and retire a line](archive.md#archive-a-line) says what's in it, and the [archive contract](../contracts/archive.md) its layout. In a copy of `examples/quill`, `ascribe versions export "self-managed 3.4" --to archive/3.4 --current https://docs.quill.dev/` writes the archive and says what to add to `ascribe.toml` once it's hosted:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-export.txt
 
-`--to` is from the current folder, and is a folder that's empty or one an archive was written in: writing again replaces the files its manifest lists, and nothing else. It refuses a folder with anything else in it, writing nothing there. It writes nothing into the project, runs the checks for the line's build first, and refuses when they find an error. A planned line's build is checked too, though `ascribe check` checks only the live lines, so the error names the build it found them in. Exporting the current line works, and the text says it's unusual. A link to a page the line doesn't have is written as its text, and the text names each one. The text says how large the search index is, and when it's over 8 MB, that a reader's first search waits for it to load; it's written whatever its size.
+`--to` is from the current folder, and is a folder that's empty or one an archive was written in: writing again replaces the files its manifest lists, and nothing else. It refuses a folder with anything else in it, writing nothing there.
 
-It was `ascribe versions archive` until this release, which named the copy for the state the line reaches only once it's retired. The old name still runs it, with a warning, for one more release, so a script or CI job that names it keeps working until you change it.
+It writes nothing into the project, runs the checks for the line's build first, and refuses when they find an error. A planned line's build is checked too, though `ascribe check` checks only the live lines, so the error names the build it found them in.
+
+Exporting the current line works, and the text says it's unusual. A link to a page the line doesn't have is written as its text, and the text names each one. The text says how large the search index is, and when it's over 8 MB, that a reader's first search waits for it to load; it's written whatever its size.
+
+It was once `ascribe versions archive`, a name for the state the line reaches only once it's retired. The old name still runs it, with a warning, so a script or CI job that names it keeps working until you change it.
 
 @include: ../_generated/cli-versions-export-options.md
 
@@ -121,7 +146,14 @@ With `--format json`, it writes the document its [schema](../contracts/json-repo
 @id {permalink=true}: cli-versions-retire
 @summary: Takes the oldest live line out of the window once its archive is hosted, rewrites the marks for its target, and says where each of its addresses should go.
 
-Takes the oldest live line out of the window once its archive is hosted: moves it from `live` to `archived` with its address and the day it ended, rewrites each mark for its target to the simplest spec that means the same in every line still live or planned, lists what no line has any more, and says where each of the line's addresses should go. [Export and retire a line](archive.md#retire-a-line) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In `examples/quill`, `ascribe versions retire "self-managed 3.4" --url https://archive.quill.dev/3.4/ --dry-run --show-unused` says what it would do:
+Takes the oldest live line out of the window once its archive is hosted. In one run, it:
+
+- Moves it from `live` to `archived`, with its address and the day it ended.
+- Rewrites each mark for its target to the simplest spec that means the same in every line still live or planned.
+- Lists what no line has any more.
+- Says where each of the line's addresses should go.
+
+[Export and retire a line](archive.md#retire-a-line) has each step. It edits `ascribe.toml` in place, keeping its comments and order, and each mark where it's written. In `examples/quill`, `ascribe versions retire "self-managed 3.4" --url https://archive.quill.dev/3.4/ --dry-run --show-unused` says what it would do:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/versions-retire.txt
 
@@ -131,11 +163,20 @@ It builds the project in memory before and after, and refuses when a live line's
 
 A page whose only change is the target's part of its availability lines, such as a cloud build's `self-managed (preview, 3.4+)` becoming `self-managed (preview)`, is the retirement doing its job: it's listed under its own heading, as `expected` in the JSON, and needs no `--force`. Any other change does, another target's part of the same line included. It writes only files git can put back as they were, as [`release`](#cli-versions-release) does, or anything with `--force`.
 
-It refuses a line that isn't live, which is why running it twice changes nothing the second time; the current line, and a live line that isn't the oldest; a line with no `--url`, since after the clean-up the source no longer holds what the line needs, so [`ascribe versions export`](#cli-versions-export) comes first; and a target no build is versioned by, whose list `release` already keeps to one live line. Like `release`, it's made in the project that writes the lines, when `[from]` takes them from there.
+It refuses:
 
-It deletes nothing unless it's told to. A page, section, block, or table row that no live or planned line has is listed with its file, line, and first line, and so is a mark that says nothing once rewritten: one for every target its scope allows, generally available, with nothing inside it relying on it. Such a mark still draws a badge, so the rewrite keeps it. `--show-unused` lists each, and `--remove-unused` deletes them, along with the `replaces` line of a page that replaced one it deletes. Both work on a line retired already.
+- A line that isn't live, which is why running it twice changes nothing the second time.
+- The current line, and a live line that isn't the oldest.
+- A line with no `--url`: after the clean-up the source no longer holds what the line needs, so [`ascribe versions export`](#cli-versions-export) comes first.
+- A target no build is versioned by, whose list `release` already keeps to one live line.
 
-Each address the line published goes to the same page in the current line, to the page that replaces it there, or to its page in the archive when the current line has neither. The text names the replaced pages, and the JSON lists every address. In a project with [`ascribe.addresses`](../publishing/redirects.md), each address that goes to a page in the current line is recorded there as a `[moved]` entry keyed by the address, so the build writes its redirect, and the text says how many; the JSON's `recorded` says whether they were. The archive's addresses aren't recorded, since an entry leads to a page of the project, and without the file nothing is: those are yours to add to the host's redirects.
+Like `release`, it's made in the project that writes the lines, when `[from]` takes them from there.
+
+It deletes nothing unless it's told to. A page, section, block, or table row that no live or planned line has is listed with its file, line, and first line, and so is a mark that says nothing once rewritten. Such a mark is one for every target its scope allows, generally available, with nothing inside it relying on it. It still draws a badge, so the rewrite keeps it. `--show-unused` lists each, and `--remove-unused` deletes them, along with the `replaces` line of a page that replaced one it deletes. Both work on a line retired already.
+
+Each address the line published goes to the same page in the current line, to the page that replaces it there, or to its page in the archive when the current line has neither. The text names the replaced pages, and the JSON lists every address.
+
+In a project with [`ascribe.addresses`](../publishing/redirects.md), each address that goes to a page in the current line is recorded there as a `[moved]` entry keyed by the address, so the build writes its redirect, and the text says how many. The JSON's `recorded` says whether they were. The archive's addresses aren't recorded, since an entry leads to a page of the project, and without the file nothing is: those are yours to add to the host's redirects.
 
 @include: ../_generated/cli-versions-retire-options.md
 

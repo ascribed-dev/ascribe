@@ -52,7 +52,11 @@ version = 1
 "reference/legacy-sync.md" = "The sync agent was removed in 4.0"
 ```
 
-- **`[moved]`:** where each key's addresses lead now. A key is a page's path from the content root, which stands for every address the page was published at, its Markdown version's too; a file's path, `#`, and a heading's id, with the file the `@id` is written in, a fragment's once for every page that includes it; `go:` and a [permalink](../permalinks/index.md)'s name, for one no heading or page declares any more; or an address from the host's root, starting with `/`, from before the project used Ascribe. A value is a page's path, and optionally `#` and a heading's id, or, for a `go:` key, `go:` and another permalink's name, which makes the key an alias of it ([when a section moves or goes away](../permalinks/index.md#moving-aliasing-and-retiring)).
+- **`[moved]`:** where each key's addresses lead now. A value is a page's path, and optionally `#` and a heading's id. For a `go:` key, it can instead be `go:` and another permalink's name, which makes the key an alias of it ([when a section moves or goes away](../permalinks/index.md#moving-aliasing-and-retiring)). A key is one of:
+  - A page's path from the content root, which stands for every address the page was published at, its Markdown version's too.
+  - A file's path, `#`, and a heading's id, with the file the `@id` is written in: a fragment's, once for every page that includes it.
+  - `go:` and a [permalink](../permalinks/index.md)'s name, for one no heading or page declares any more.
+  - An address from the host's root, starting with `/`, from before the project used Ascribe.
 - **`[moved.<build>]`:** a build's own entries, as `[moved]`'s, apart from a permalink: only the builds declared with that name write them, each of a line's builds by its build's name. A build writes `[moved]`'s entries and its own table's, and no other build's. [`ascribe versions retire`](../versions/archive.md#retire-a-line) writes the addresses a retired line published there, `[moved.site]` for `site@3.4`, so a build that never published the line doesn't redirect them.
 - **`[retired]`:** the addresses removed on purpose, each key as `[moved]`'s, with why. A reader who follows an old link gets [a page that says what was removed and why](#a-retired-addresss-page), answering 404; a retired permalink's address shows the reason.
 - **`[former]`:** the routing settings the docs were published under before, each oldest first: `base-path`, `permalink-path`, and `agents`, each a list of values, and `builds`, a table from a build's old name to its new one. [`ascribe check --fix` writes it](#a-settings-change) when a setting changes.
@@ -78,7 +82,12 @@ Moving a page back to where an entry says it was removes the entry. A page moved
 
 ## What the check reports
 
-With the file, `ascribe check` lists every address the base published, in each build, and every address the working tree publishes, and reports what the base had that nothing accounts for. A build's addresses are each page's, its Markdown version's, each heading's explicit `@id`, each [permalink](../permalinks/index.md)'s under the permalinks' path, and each `llms.txt` file's. An address is accounted for when the working tree still publishes it, when an entry of `[moved]`, or of the build's own table, leads it to a page a build publishes, when `[retired]` has it, or when an availability mark takes its page out of one build while another build publishes it.
+With the file, `ascribe check` lists every address the base published, in each build, and every address the working tree publishes, and reports what the base had that nothing accounts for. A build's addresses are each page's, its Markdown version's, each heading's explicit `@id`, each [permalink](../permalinks/index.md)'s under the permalinks' path, and each `llms.txt` file's. An address is accounted for when:
+
+- The working tree still publishes it.
+- An entry of `[moved]`, or of the build's own table, leads it to a page a build publishes.
+- `[retired]` has it.
+- An availability mark takes its page out of one build while another build publishes it.
 
 - **[`address-lost`](../checks/diagnostics/project-files.md#ASC255)**, a warning: a page's address, or its Markdown version's, once for each page, listing its addresses and, when it isn't every build, the builds. Forward it with `ascribe addresses move`, or retire it with `ascribe addresses retire`.
 - **[`anchor-lost`](../checks/diagnostics/project-files.md#ASC256)**, advice: a heading's explicit `@id` the base published on a page still published, which the page doesn't have now. A link to it lands at the top of the page, so it's advice for now. A generated id isn't kept: it changes with the heading's text.
@@ -93,7 +102,7 @@ Each is reported at `ascribe.addresses`. The comparison runs when `ascribe check
 
 ## In the editor
 
-The language server compares the addresses with the base's between checks, not as you type in a page: when the project loads, after a save, after a change on disk, as a page deleted in the Explorer or a `git checkout` is, and as you edit `ascribe.addresses`. Delete a page, and within seconds its lost addresses are in the Problems panel at `ascribe.addresses`, as [Check Every Build](../editor/problems.md#the-problems-panel) would put them, with their quick fixes, and the Project view's Health counts them under [Against the base](../editor/sidebar.md#addresses-lost). Check Every Build replaces them with its own when it runs. The server keeps the base's addresses for each base commit and version of Ascribe, so a comparison after the first doesn't read the base again.
+The language server compares the addresses with the base's between checks, not as you type in a page. It compares when the project loads, after a save, after a change on disk (a page deleted in the Explorer, or a `git checkout`), and as you edit `ascribe.addresses`. Delete a page, and within seconds its lost addresses are in the Problems panel at `ascribe.addresses`, as [Check Every Build](../editor/problems.md#the-problems-panel) would put them, with their quick fixes, and the Project view's Health counts them under [Against the base](../editor/sidebar.md#addresses-lost). Check Every Build replaces them with its own when it runs. The server keeps the base's addresses for each base commit and version of Ascribe, so a comparison after the first doesn't read the base again.
 
 Moving a page in the editor puts its entry in the same edit as the links it updates, unsaved in `ascribe.addresses` until you save: an entry you haven't saved counts, and **Undo** before you save takes back the move and its entry together. A page moved back after its entry is saved, as `git mv` would, leaves the entry, which [`addresses-entry-live`](../checks/diagnostics/project-files.md#ASC266) reports. On a page that old addresses lead to, This page's About lists each under [Also answers at](../editor/sidebar.md#old-addresses).
 
@@ -176,11 +185,17 @@ Set the routing settings in `[consumer]` before the pages' first commit, and the
 
 The base is what the docs published before: the merge base of the repository's default branch and `HEAD`, as a pull request shows its changes, or the revision `--base` names. `--base-exact` compares with that revision itself. It's read as [`ascribe diff`](../review/diff.md) reads it, so the checkout needs the history: in CI, `fetch-depth: 0`, as [Check pull requests in CI](../checks/ci.md#keep-the-addresses-youve-published) sets up.
 
-When the base can't be read, because the revision isn't there, as in a shallow clone, or there's history but no default branch to compare with, or `--base` names a base outside a repository, the rest of the check runs and [`addresses-base-unreadable`](../checks/diagnostics/project-checks.md#ASC257), a warning, says why, so a check that compared nothing never passes silently. A base with no project, as a project's first pull request has, published nothing to keep, and that's advice. Before the first commit, with no `--base`, nothing can have been published: a project outside a git repository, or in one with no commit yet, compares nothing, and the check doesn't say so, so a project `ascribe init` just started checks clean.
+The base can't be read when the revision isn't there, as in a shallow clone, when there's history but no default branch to compare with, or when `--base` names a base outside a repository. Then the rest of the check runs, and [`addresses-base-unreadable`](../checks/diagnostics/project-checks.md#ASC257), a warning, says why, so a check that compared nothing never passes silently. A base with no project, as a project's first pull request has, published nothing to keep, and that's advice. Before the first commit, with no `--base`, nothing can have been published: a project outside a git repository, or in one with no commit yet, compares nothing, and the check doesn't say so, so a project `ascribe init` just started checks clean.
 
 ## What the build writes
 
-Each build writes `_ascribe/redirects.json` in its site output, from `ascribe.addresses` alone: for each `[moved]` entry, and each of its own table's, a `301` from each address the key had, the page's and its Markdown version's, to where the value is now; for each `[former]` value, a `301` from each address under it to today's, as [a settings change](#a-settings-change) says; and for each `[retired]` entry, its addresses and the reason. The base isn't read, so a redirect stays once the base has moved past the move. Its format is in the [output-layout contract](../contracts/output-layout.md#18-the-redirects).
+Each build writes `_ascribe/redirects.json` in its site output, from `ascribe.addresses` alone:
+
+- For each `[moved]` entry, and each of its own table's, a `301` from each address the key had, the page's and its Markdown version's, to where the value is now.
+- For each `[former]` value, a `301` from each address under it to today's, as [a settings change](#a-settings-change) says.
+- For each `[retired]` entry, its addresses and the reason.
+
+The base isn't read, so a redirect stays once the base has moved past the move. Its format is in the [output-layout contract](../contracts/output-layout.md#18-the-redirects).
 
 ```console
 $ ascribe addresses list

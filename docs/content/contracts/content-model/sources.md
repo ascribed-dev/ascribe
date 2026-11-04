@@ -5,7 +5,7 @@ nav-label: "What pages draw from"
 description: "The normative contract for the content model's sources, with `ascribe.lock`, and APIs."
 ---
 
-Part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [what pages draw from](../../content-model/sources.md).
+These sections of the contract are the rules of `[sources.<name>]`, with `ascribe.lock` and the copies it pins, and of `[apis.<name>]`. They're part of the [`ascribe.toml` format contract](../content-model.md), whose [contents](../content-model.md#contents) list every section. What these keys are for, with examples, is in the reference's [what pages draw from](../../content-model/sources.md).
 
 ## 20. `[sources.<name>]`
 
@@ -13,7 +13,7 @@ A source is a folder outside the content root, or another repository, that a pag
 
 @include: ../../_generated/content-model-sources.md
 
-**Rules** (§25.8): a source MUST have exactly one of `path` and `git`, `branch` only with `git`, a URL `git` can be given, and a branch name `git` accepts (`model-source-remote`). `path` MUST be relative (`model-path-absolute`) and name a directory that exists (`model-source-path-missing`), inside the git repository the project is in, when it's in one (`model-source-outside-repository`). With no repository, the language server and `ascribe mcp` MUST read a source only inside what the user opened, a folder of the workspace or the folder `ascribe mcp` was started in, and report one outside it as `model-source-outside-repository` with the variant `opened`; a command reads a source wherever `path` leads. With `git`, `sources/` MUST be outside the content root (`model-source-remote`).
+**Rules** (§25.8): a source MUST have exactly one of `path` and `git`, `branch` only with `git`, a URL `git` can be given, and a branch name `git` accepts (`model-source-remote`). `path` MUST be relative (`model-path-absolute`) and name a folder that exists (`model-source-path-missing`), inside the git repository the project is in, when it's in one (`model-source-outside-repository`). With no repository, the language server and `ascribe mcp` MUST read a source only inside what the user opened, a folder of the workspace or the folder `ascribe mcp` was started in, and report one outside it as `model-source-outside-repository` with the variant `opened`; a command reads a source wherever `path` leads. With `git`, `sources/` MUST be outside the content root (`model-source-remote`).
 
 ### 20.1 `ascribe.lock` and the copies
 
@@ -42,7 +42,15 @@ missing = ["examples/quickstart.ts"]
 | `source[].files` | table | Each copy's path, relative to the source's folder, and the SHA-256 of its bytes: `sha256:` and 64 lowercase hexadecimal digits. |
 | `source[].missing` | array of strings | Optional. The paths, relative to the source's folder, that snippets named and that weren't in the repository at the commit, so weren't copied. No path is in both `files` and `missing`. |
 
-`check` reads the lock and the copies with the source files, and reports what doesn't match: a lock it can't read (`lock-invalid`); a pin of a source `ascribe.toml` doesn't declare with `git`, or declares with another `git` (`lock-source-unknown`); a copy that's missing or doesn't have its hash (`source-copy-changed`); a file in `sources/<name>/` the lock doesn't list (`source-copy-unlocked`); and a copy no snippet uses (`source-copy-unused`, a warning), which a tested examples' config or observation never is. A snippet that names a file with no copy is `snippet-file-missing`: its message says to run `ascribe sources fetch`, or, for a file the lock lists in `missing`, that the file isn't in the repository at the pinned commit, which `fetch` can't change. These are source-file diagnostics; see [the diagnostics reference](../../checks/diagnostics.md).
+`check` reads the lock and the copies with the source files, and reports what doesn't match:
+
+- A lock it can't read (`lock-invalid`).
+- A pin of a source `ascribe.toml` doesn't declare with `git`, or declares with another `git` (`lock-source-unknown`).
+- A copy that's missing or doesn't have its hash (`source-copy-changed`).
+- A file in `sources/<name>/` the lock doesn't list (`source-copy-unlocked`).
+- A copy no snippet uses (`source-copy-unused`, a warning). A tested examples' config or observation never is one.
+
+A snippet that names a file with no copy is `snippet-file-missing`: its message says to run `ascribe sources fetch`, or, for a file the lock lists in `missing`, that the file isn't in the repository at the pinned commit, which `fetch` can't change. These are source-file diagnostics; see [the diagnostics reference](../../checks/diagnostics.md).
 
 ---
 

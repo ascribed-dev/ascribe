@@ -5,7 +5,7 @@ description: Install Ascribe, write a first page, check it, build it, see it, an
 permalink: getting-started
 ---
 
-Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, builds, and previews a first page. Its second half, [Publish a site with Astro](astro/index.md), publishes the page as a site. To decide first whether Ascribe fits your docs, read [Why Ascribe](https://ascribed-dev.com/why/), and [what it needs and doesn't do](index.md#what-you-need-and-what-it-doesnt-do).
+Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This tutorial sets up a project and writes, checks, builds, and previews a first page. Its second half, [Publish a site with Astro](astro/index.md), publishes the page as a site. To decide first whether Ascribe fits your docs, read [Why Ascribe](https://ascribed-dev.com/why/), and [what it needs and doesn't do](index.md#what-you-need-and-what-it-doesnt-do).
 
 It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor checks as you write it, and a build of it ready for a site.
 
@@ -16,7 +16,7 @@ You need [Node.js](https://nodejs.org) {node} or later, on a [platform Ascribe r
 ## Install the command
 @memo: This section and the next are the two installs the landing page and the README show beside their link here (decision 86 in project-docs/decisions.md). Keep them first; scripts/docs-site/facts.test.ts fails when the copies differ.
 
-In your project's directory:
+In your project's folder:
 
 @variant {pm=npm}:
 ```sh
@@ -31,6 +31,8 @@ pnpm exec ascribe --version
 @end
 
 `@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. The latest release is {version}. To install it another way, such as without Node, see [Install Ascribe](install.md).
+
+@note: The docs write every command as `ascribe`. With `@ascribed/cli` in your project, as here, run it as `npx ascribe` (`pnpm exec ascribe` with pnpm); with the binary on your path, as `ascribe`.
 
 ## Install the editor
 
@@ -50,7 +52,7 @@ After you install it, its walkthrough, **Get Started with Ascribe**, shows the p
 @id {permalink=true}: create-ascribetoml
 
 @summary
-`ascribe.toml` is the content model: the project's schema. It marks the project root, and says what each kind of page must have in its frontmatter.
+`ascribe.toml` is the content model: the project's schema. It marks the project's folder, and says what each kind of page must have in its frontmatter.
 
 Start the project with the command:
 
@@ -78,9 +80,9 @@ The page below uses what most projects add next: a dimension the content varies 
 
 `values` are what a page writes, and `label` and `labels` are what readers see: the dimension's name, and each value's. The site's tabs read **npm**, **pnpm**, and **Yarn**; without `labels`, a tab shows the value as written, so the last would read **yarn**.
 
-The [`ascribe.toml` reference](content-model/index.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
+The [`ascribe.toml` reference](content-model/index.md) covers every section: page types and their frontmatter, availability, features, the glossary, project widgets, and builds.
 
-Add the output directory to `.gitignore`:
+Add the output folder to `.gitignore`:
 
 ```text
 .ascribe/
@@ -133,8 +135,8 @@ npx ascribe build
 
 Each build writes three outputs to `.ascribe/build/<build>/`:
 
-- `site/`: Markdown with web components, for Astro;
-- `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
+- `site/`: Markdown with web components, for Astro.
+- `plain/`: plain Markdown with everything resolved, for search indexes and LLMs.
 - `json/`: the resolved pages as JSON, for your own tools, in the format the [JSON output contract](contracts/json-output.md) gives.
 
 See [`ascribe build`](checks/check.md#cli-build) for its options, and the [command reference](command/index.md) for the rest.
@@ -145,7 +147,7 @@ See [`ascribe build`](checks/check.md#cli-build) for its options, and the [comma
 npx ascribe preview
 ```
 
-renders the build's pages as a site into `.ascribe/preview/`, with the sidebar, the page's contents, and search, and serves it on this computer. It prints the check's problems, then the address to open:
+`ascribe preview` renders the build's pages as a site into `.ascribe/preview/`, with the sidebar, the page's contents, and search, and serves it on this computer. It prints the check's problems, then the address to open:
 
 ```text
 previewing build `site` at http://127.0.0.1:4880/
@@ -155,14 +157,14 @@ Open it in a browser to see the home page as a reader does, its note, its altern
 
 ## Publish it with Astro
 
-Publishing the site is this guide's second half, on its own page: [Publish a site with Astro](astro/index.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
+Publishing the site is this tutorial's second half, on its own page: [Publish a site with Astro](astro/index.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
 
 @steps
 1. Create an Astro project: `npm create astro@latest`.
 2. Move `ascribe.toml`, `ascribe.addresses`, and `docs/` into it, beside `astro.config.mjs`.
 3. Follow the guide from its first step. At its step 2, keep your `ascribe.toml`, and add only the lines it shows [for a project from here](astro/index.md#from-getting-started).
 
-For an existing site, keep this project where it is, follow the guide in the Astro project, and set the integration's `project` option to this project's directory.
+For an existing site, keep this project where it is, follow the guide in the Astro project, and set the integration's `project` option to this project's folder.
 
 Either way:
 

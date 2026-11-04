@@ -174,7 +174,7 @@ An agent writing pages gets a check to run that always gives the same answer. An
 
 @call-to-action:
 @steps
-1. Install the command in your project's directory:
+1. Install the command in your project's folder:
 
    ```sh
    npm install --save-dev @ascribed/cli
@@ -195,7 +195,7 @@ Then follow [getting started]({site}/go/getting-started/) to set up a project an
 ## Plain files you can leave
 
 - A page is a Markdown file.
-- The [plain output]({site}/go/cli-build/) is CommonMark, with includes and phrases filled in.
+- The [plain Markdown output]({site}/go/cli-build/) is CommonMark, with includes and phrases filled in.
 - Ascribe hosts nothing and calls no model.
 - It's open source under the MPL.
 

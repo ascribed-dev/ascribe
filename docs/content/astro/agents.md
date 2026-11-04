@@ -32,9 +32,9 @@ An AI agent reading your docs does better with Markdown than with HTML, and with
    With [`[releases]`](../content-model/variation.md#121-releasestarget), `llms.txt`'s summary and each `.md`'s opening line also say which release the build describes, `This documentation describes Quill 2.4. Anything marked planned isn't in that release yet.`, so an agent helping someone on that release knows that a page without an availability mark applies to them.
 
 5. Open `llms.txt` at the base path, `http://localhost:4321/docs/llms.txt` in `astro dev`, and a page's `.md`.
-6. [Serve the Markdown versions](serve-markdown.md): what your host sends with them is the rest of the spec.
+6. [Serve the Markdown versions](serve-markdown.md): what your host sends with them is the rest of the Delivery Spec.
 
-Nothing is written at the host's root for a project under a path. With docs at `/docs/`, an agent reaches `/docs/llms.txt` through each page's pointer, and the spec's checker looks there as well as at `/llms.txt`. A site that wants a file at the root, such as one whose docs are somewhere else, puts its own in Astro's `public/`.
+Nothing is written at the host's root for a project under a path. With docs at `/docs/`, an agent reaches `/docs/llms.txt` through each page's pointer, and the Delivery Spec's checker looks there as well as at `/llms.txt`. A site that wants a file at the root, such as one whose docs are somewhere else, puts its own in Astro's `public/`.
 
 ## See also
 

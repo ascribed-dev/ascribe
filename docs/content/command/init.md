@@ -4,7 +4,9 @@ title: "`ascribe init`"
 description: "Start a project with its first `ascribe.toml` and `ascribe.addresses`: options, output, and exit codes."
 ---
 
-The command that starts a project. [Install Ascribe](../install.md#start-a-project) is the task it's used in. The options every command accepts are in the [command reference](index.md#options-every-command-accepts).
+`ascribe init` starts a project: it writes its first `ascribe.toml` and `ascribe.addresses`, and makes the folder its pages go in. [Install Ascribe](../install.md#start-a-project) is the task it's used in.
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe init`
 @id {permalink=true}: cli-init
@@ -26,13 +28,21 @@ Beside `ascribe.toml`, it writes `ascribe.addresses`, with no entries yet, so th
 
 With `--templates`, the six types are added after `page`, and the templates, their guides, Ascribe's notes, and `templates.lock` are written into `templates/`, as `eject` writes them. When a file is where one would be written, it's named, as `eject` names it, and nothing is written.
 
-`init` adds files, and changes one that's there only to add the templates to it, so it has little for git to refuse, but it's refused as every [command that writes](index.md#commands-that-write) does: a file it would change that git couldn't put back is named, and nothing is written, unless you pass `--force`. With `--dry-run`, it says what it would write and make, and writes nothing.
+Like every [command that writes](index.md#commands-that-write), `init` won't change a file git couldn't put back: it names the file and writes nothing, unless you pass `--force`. It adds files, and changes one that's there only to add the templates to it, so it has little for git to refuse. With `--dry-run`, it says what it would write and make, and writes nothing.
 
-It lists each file it wrote, `ascribe.toml` and then `ascribe.addresses` last, from the current folder; the content root, when it made it; with `--templates`, each type it added, as `eject` says it; then the next step, a first page in the content root and [`ascribe check`](../checks/check.md#cli-check); and last, the [Astro guide](../astro/index.md), to publish the pages as a site.
+It lists, from the current folder:
+
+- Each file it wrote, `ascribe.toml` and then `ascribe.addresses` last.
+- The content root, when it made it.
+- With `--templates`, each type it added, as `eject` says it.
+- The next step: a first page in the content root, and [`ascribe check`](../checks/check.md#cli-check).
+- Last, the [Astro guide](../astro/index.md), to publish the pages as a site.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init.txt
 
-**In a folder of pages.** When the content root holds pages already, `ascribe.toml` declares no page types, so the pages are of the implicit type `page` and none of them needs `type:`. In place of the type, it declares `description` as a field every page can have. `--templates`, whose types each page would have to name, is refused. Then it checks the pages, and says how many it found, how many have no `title` and how `ascribe check --fix` gives them one, what [`ascribe check`](../checks/check.md#cli-check) finds, by code, most first, and what to run next: `--fix`, then the most common code that's left, and [`ascribe baseline write`](../checks/baseline.md) when there's advice to put off. It exits with 0 whatever the check finds, since the project is there. [Bring existing docs to Ascribe](../existing-docs.md) goes through it, step by step:
+**In a folder of pages.** When the content root holds pages already, `ascribe.toml` declares no page types, so the pages are of the implicit type `page` and none of them needs `type:`. In place of the type, it declares `description` as a field every page can have. `--templates`, whose types each page would have to name, is refused.
+
+Then it checks the pages and says what it found: how many pages, how many have no `title` and how `ascribe check --fix` gives them one, and what [`ascribe check`](../checks/check.md#cli-check) finds, by code, most first. It ends with what to run next: `--fix`, then the most common code that's left, and [`ascribe baseline write`](../checks/baseline.md) when there's advice to record in a baseline. It exits with 0 whatever the check finds, since the project is there. [Bring existing docs to Ascribe](../existing-docs.md) goes through it, step by step:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing.txt
 

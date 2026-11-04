@@ -4,7 +4,9 @@ title: "`ascribe addresses`"
 description: "Keep `ascribe.addresses`: make it, record a move or a retired address, and list the redirects each build writes, with each command's options and output."
 ---
 
-The commands that keep `ascribe.addresses`, the record of where the addresses the docs published went. [Keep the addresses you've published](redirects.md) is the task they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+`ascribe addresses` keeps `ascribe.addresses`, the record of where the addresses the docs published went: it makes the file, records a move or a retired address, and lists the redirects each build writes. [Keep the addresses you've published](redirects.md) is the task the commands are used in.
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe addresses`
 @id {permalink=true}: cli-addresses
@@ -18,7 +20,7 @@ Keeps `ascribe.addresses`. Each takes `--format json`, and writes the document i
 
 Makes `ascribe.addresses`, with its header, its `version`, and empty tables. A file already there is left as it is, and it says so.
 
-In a project whose `ascribe.toml` still has `[permalinks]`, from before `ascribe.addresses` recorded permalinks, it moves the table's entries into the file, made or already there, and takes the table out of `ascribe.toml`, keeping the rest of the file as written: each of `[permalinks.retired]` as `go:<name>` in `[retired]`, or in `[moved]` to its `to` when it has one, and each of `[permalinks.aliases]` as `go:<name>` in `[moved]` to `go:` and the name it leads to. Run `ascribe permalinks sync` after, when the project has `ascribe.permalinks`. A base whose `ascribe.toml` still has the table is read as if it had been moved, so the move itself loses no address.
+In a project whose `ascribe.toml` still has `[permalinks]`, from before `ascribe.addresses` recorded permalinks, it moves the table's entries into the file, made or already there, and takes the table out of `ascribe.toml`, keeping the rest of the file as written. Each of `[permalinks.retired]` goes in `[retired]` as `go:<name>`, or in `[moved]` to its `to` when it has one. Each of `[permalinks.aliases]` goes in `[moved]` as `go:<name>`, leading to `go:` and the name it leads to. Run `ascribe permalinks sync` after, when the project has `ascribe.permalinks`. A base whose `ascribe.toml` still has the table is read as if it had been moved, so the move itself loses no address.
 
 @include: ../_generated/cli-addresses-init-options.md
 

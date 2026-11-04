@@ -28,7 +28,7 @@ archive/3.4/
 ```
 
 - **A page** is written at its source path from the content root with `.html` for its extension: `guide/index.md` is `guide/index.html`.
-- **An asset** a page uses, an image or a linked file, is copied to its mirrored path, as the plain output places it ([assets contract §3.1](assets.md#31-the-mirrored-path)), and referred to relatively.
+- **An asset** a page uses, an image or a linked file, is copied to its mirrored path, as the plain Markdown output places it ([assets contract §3.1](assets.md#31-the-mirrored-path)), and referred to relatively.
 - **The manifest,** `archive.manifest.json`, is a build's manifest ([output layout contract §3](output-layout.md#3-the-manifest)) with `build` the line's build, such as `site@3.4`, and `emitter` `archive`, listing every file above but itself and `.lock`.
 
 The folder is replaced by the output layout contract's rules: a file is written only where nothing that isn't Ascribe's is in the way, a file the previous manifest lists and this archive doesn't have is removed, and a file no manifest lists is never touched. A folder with anything in it besides `.lock` and no manifest isn't an archive Ascribe wrote, and is refused before anything is written there. The archive of a line is the same bytes when made twice from one commit.

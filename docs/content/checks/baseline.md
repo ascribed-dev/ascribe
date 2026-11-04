@@ -5,12 +5,12 @@ description: "Put a project's existing advice off for now with `ascribe.baseline
 permalink: baseline
 ---
 
-A project that turns on the [content checks](diagnostics/content-checks.md) can meet thousands of advice at once. The baseline puts them off for now: `ascribe baseline write` lists every advice the project has in `ascribe.baseline`, beside `ascribe.toml`, and from then on `ascribe check` holds those back, counts them, and reports only the advice that's new. The team fixes the backlog at its own pace, and `ascribe baseline prune` takes each fixed one out of the file.
+A project that turns on the [content checks](diagnostics/content-checks.md) can meet thousands of advice-level problems at once. The baseline puts them off for now: `ascribe baseline write` lists every advice-level problem the project has in `ascribe.baseline`, beside `ascribe.toml`, and from then on `ascribe check` holds those back, counts them, and reports only the advice that's new. The team fixes the backlog at its own pace, and `ascribe baseline prune` takes each fixed one out of the file.
 
 ```text
-$ npx ascribe baseline write
+$ ascribe baseline write
 wrote ascribe.baseline: 3412 problems in 1906 files, 3412 added; commit it with the docs
-$ npx ascribe check
+$ ascribe check
 checked 2061 files for every build, 2 with problems: 0 errors, 0 warnings, 2 advice, 3412 in the baseline
 ```
 
@@ -36,7 +36,7 @@ The language server reads `ascribe.baseline` as `ascribe check` does: the advice
 
 - **The hover** on a held-back problem's line says the baseline holds it, and what it is. It's the one place the editor shows it: a held-back problem isn't a diagnostic, so the panel and the squiggles leave it out.
 - **Its quick fix,** **Move out of the baseline, mark as intended, and write why**, is in the light bulb on that line (`Ctrl+.` / `Cmd+.`), for a review check's problem. In one edit, it takes the problem's entry out of `ascribe.baseline` and writes an [`@intended`](../writing/directives.md#intended) where the check says, such as above its block, with a placeholder reason for you to replace, as **Mark as intended, and write why** does. Save both files.
-- **An entry that matches nothing** is shown on `ascribe.baseline`, as `baseline-entry-unmatched` at its line, when the editor's build is every build the project has: with more builds, the editor doesn't see every problem the file lists, so [Check Every Build](../editor/problems.md#the-problems-panel) is where a stale entry shows. Vale's entries are never called stale in the editor, which checks the prose of open pages only, and neither are those of the checks it doesn't run, `image-unused` and `image-large`.
+- **An entry that matches nothing** is shown on `ascribe.baseline`, as `baseline-entry-unmatched` at its line, when the editor's build is every build the project has. With more builds, the editor doesn't see every problem the file lists, so [Check Every Build](../editor/problems.md#the-problems-panel) is where a stale entry shows. Vale's entries are never called stale in the editor, which checks the prose of open pages only, and neither are those of the checks it doesn't run, `image-unused` and `image-large`.
 - **A line that doesn't parse** is an error at that line of `ascribe.baseline`, and the editor holds nothing back until it's fixed.
 
 ## For agents
@@ -54,12 +54,12 @@ Keeps the project's baseline, `ascribe.baseline` beside `ascribe.toml`. The JSON
 @id {permalink=true}: cli-baseline-write
 @summary: Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none, so a problem is held back until it's fixed and pruned. Warnings and errors are never added.
 
-Adds every advice `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. The entries it had stay, so a problem is held back until it's fixed and pruned. Warnings and errors are never added: it says how many it skipped, and how to put one off. It writes the whole file in its own form, sorted, so running it twice gives the same file, byte for byte, and two people adding to it rarely change the same line.
+Adds every advice-level problem `ascribe check` reports to `ascribe.baseline`, and makes the file when there's none. The entries it had stay, so a problem is held back until it's fixed and pruned. Warnings and errors are never added: it says how many it skipped, and how to put one off. It writes the whole file in its own form, sorted, so running it twice gives the same file, byte for byte, and two people adding to it rarely change the same line.
 
 @include: ../_generated/cli-baseline-write-options.md
 
 ```text
-$ npx ascribe baseline write
+$ ascribe baseline write
 wrote ascribe.baseline: 3 problems in 2 files, 1 added; commit it with the docs
 skipped 1 warning, since a baseline holds advice only; to put one off, lower its check to "advice" in [checks] in ascribe.toml, then run `ascribe baseline write` again
 ```
@@ -78,7 +78,7 @@ Removes the entries of `ascribe.baseline` that match nothing the project has any
 @include: ../_generated/cli-baseline-prune-options.md
 
 ```text
-$ npx ascribe baseline prune
+$ ascribe baseline prune
 removed 1 entry that matched nothing from ascribe.baseline: 2 problems in 2 files left; commit it with the docs
 ```
 
@@ -95,13 +95,17 @@ removed 1 entry that matched nothing from ascribe.baseline: 2 problems in 2 file
 # ascribe baseline 1
 # Advice put off for now: ascribe baseline write adds, ascribe baseline prune removes.
 # check fingerprint order file
-description-too-long 3f9a2c1b9e0d4a77 0 guides/install.md
-link-text-generic 91c04e2d7b5a6f18 1 guides/install.md
+code-language-missing 3f9a2c1b9e0d4a77 0 docs/guides/install.md
+page-description-missing 91c04e2d7b5a6f18 0 docs/guides/install.md
 ```
 
 - **The first line** is `# ascribe baseline 1`: the format, and its version. A file of a later version is from a newer Ascribe.
-- **A line that starts with `#` is a comment**, and a blank line is ignored. A `#` anywhere else is part of the line: in a path it's just text, and a line with spaces before its `#` is read as an entry, so it doesn't parse. `ascribe baseline write` and `prune` write the file again in their own form, with their own comment, so a comment of yours isn't kept.
-- **An entry** is four fields, each separated from the next by one space: the check's name; the fingerprint, 16 lowercase hexadecimal digits; the order, a whole number from 0; and the file, last: the rest of the line after the third space, so a path with spaces needs no quoting. The file is from the project's folder, the one `ascribe.toml` is in, with `/`.
+- **A line that starts with `#` is a comment**, and a blank line is ignored. A `#` anywhere else is part of the line: in a path it's text, and a line with spaces before its `#` is read as an entry, so it doesn't parse. `ascribe baseline write` and `prune` write the file again in their own form, with their own comment, so a comment of yours isn't kept.
+- **An entry** is four fields, each separated from the next by one space:
+  1. The check's name.
+  2. The fingerprint: 16 lowercase hexadecimal digits.
+  3. The order: a whole number from 0.
+  4. The file, from the project's folder, the one `ascribe.toml` is in, with `/`. It's the rest of the line after the third space, so a path with spaces needs no quoting.
 - **The entries are sorted** by file, then check, then fingerprint, then order, so a file's entries are together, and a diff reads as a list of problems.
 
 **The fingerprint** is the first 16 hexadecimal digits of the SHA-256 of the text the problem is reported at, or of its line's text when it's reported at no text, with each run of spaces and line ends read as one space and the ends trimmed. **The order** tells apart problems with the same check, file, and fingerprint, as two links to one missing page in one paragraph: 0 for the first in the file, then 1, and so on.

@@ -4,7 +4,7 @@ title: Put your pages in order
 description: "Choose the order of a project's sections and pages and their labels, in `ascribe.nav` or by dragging in the editor."
 ---
 
-A site's sidebar, previous and next, `llms.txt`, and an archive all take their order from the project's [navigation](index.md). A project has one before you write anything, [the default order](index.md#the-default-order): in each section, its own page first, then its pages by content type and title. This guide is for when you want another: a page earlier in its section, a section first, or a shorter label.
+A site's sidebar, previous and next, `llms.txt`, and an archive all take their order from the project's [navigation](index.md). A project has one before you write anything, [the default order](index.md#the-default-order): in each section, its own page first, then its pages by page type and title. This guide is for when you want another: a page earlier in its section, a section first, or a shorter label.
 
 A section is a folder, and a page is in its folder's section. To put a page in another section, move the file, with [`ascribe rename`](../command/references.md#cli-rename) or in the editor; `ascribe.nav` only orders a section's pages. Links to the page and `ascribe.nav`'s names of it change with it.
 
@@ -52,6 +52,6 @@ A page that's [`listing: unlisted`](../content-model/index.md#listing-a-page) is
 ## See also
 
 - [Navigation](index.md), the file's keys, the default order, and its problems
-- [Move a site's own list to the navigation](site-list.md), for a site that `init` started in 0.3
+- [Move a site's own list to the navigation](site-list.md), for a site an earlier `init` started with a list of its own
 - [The sidebar](../astro/reference.md#sidebar), `sidebar()` and `neighbors()` in `@ascribed/astro`
 - [The navigation contract](../contracts/navigation.md), `_ascribe/nav.json` in the site output

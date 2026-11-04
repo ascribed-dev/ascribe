@@ -19,10 +19,10 @@ The pages here are [`examples/existing-docs`]({repo}/tree/main/examples/existing
 In the folder that holds `docs/`:
 
 ```sh
-npx ascribe init
+ascribe init
 ```
 
-When the pages are in another folder, name it, from the folder you run `init` in: `npx ascribe init --content-root guides`. It's the folder the pages are in, not the project's own, so the build's output stays out of it.
+When the pages are in another folder, name it, from the folder you run `init` in: `ascribe init --content-root guides`. It's the folder the pages are in, not the project's own, so the build's output stays out of it.
 
 `init` writes `ascribe.toml`, counts the pages it found, and checks them:
 
@@ -40,7 +40,7 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
 1. Apply the safe fixes:
 
    ```sh
-   npx ascribe check --fix --format concise
+   ascribe check --fix --format concise
    ```
 
    A page with no `title` that opens with a level-1 heading takes the heading as its title: the fix writes it in the frontmatter, and takes the heading out of the page, since the site shows the title in its place. Here that's `index.md` and `alerts.md`. What's left is listed, one line each, as `--format concise` prints it; without it, the check shows each problem with its line and its help:
@@ -57,10 +57,10 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
    ```
 
 3. Fix the links. A link in Ascribe names the file it goes to, and each output writes its address, so `[Install Lantern](../install.html)` becomes `[Install Lantern](../install.md)`. `ascribe check --code link-target-missing` lists every link that names no file.
-4. Put the advice off. Advice never fails the check: here it's the pages with no `description`, and one about `ascribe.addresses`, which step 5 explains and the baseline leaves out. To deal with the rest later, and have the check report only what's new, record it in `ascribe.baseline`:
+4. Record the remaining advice in a baseline. Advice never fails the check: here it's the pages with no `description`, and one about `ascribe.addresses`, which step 5 explains and the baseline leaves out. To deal with the rest later, and have the check report only what's new, record it in `ascribe.baseline`:
 
    ```sh
-   npx ascribe baseline write
+   ascribe baseline write
    ```
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-baseline.txt
@@ -69,7 +69,7 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
 5. Check again:
 
    ```sh
-   npx ascribe check --format concise
+   ascribe check --format concise
    ```
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-check.txt
@@ -80,7 +80,7 @@ In an empty folder, `init` declares the type `page` instead, which each page nam
 6. Commit `ascribe.toml`, `ascribe.addresses`, `ascribe.baseline`, and the pages, and add `.ascribe/` to `.gitignore`. Committed on `main`, the base then has the project, and the check is clean:
 
    ```sh
-   npx ascribe check --format concise
+   ascribe check --format concise
    ```
 
    @snippet {lang=text}: code:crates/ascribe-cli/tests/output/init-existing-committed.txt
