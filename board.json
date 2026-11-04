@@ -9432,7 +9432,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1366"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
     },
     {
