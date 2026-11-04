@@ -1,0 +1,1 @@
+- **The docs' first page says what Ascribe needs and what it doesn't do.** Node or the binary, the platforms, VS Code, GitHub, and Astro, and no translations, hosting, or other generators, with a link to Why Ascribe. See [Ascribe documentation](docs/content/index.md).
