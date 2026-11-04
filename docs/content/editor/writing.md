@@ -97,7 +97,8 @@ A problem with a code file's tags, a `-start` tag never closed, an `-end` with n
 - **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere:
   - The dimension's `labels` and `versionless`.
   - Every `@variant` attribute and `variant:` field.
-  - Every availability spec in pages, table rows, frontmatter, and `[features]`, and its `[releases.<target>]` table.
+  - Every availability spec in pages, table rows, frontmatter, and `[features]`.
+  - Its `[releases.<target>]` table, for a release target.
   - The builds' `variants`, `filter`, and `versions`.
 
   A target of the implicit `release` dimension is renamed from its `[releases.<target>]` header.
