@@ -9020,6 +9020,9 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1337"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "In progress",
       "title": "Review pairs an edited list item with a newly inserted one"
@@ -9261,7 +9264,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1330"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "`ascribe_version` has two formats across the commands' JSON"
     },
     {
@@ -9432,7 +9435,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1334"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Say what Ascribe needs and what it doesn't do"
     },
     {
@@ -9495,7 +9498,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1327"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Moving from Docusaurus, Starlight/MDX, MkDocs, or Hugo"
     },
     {
@@ -9516,7 +9519,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1333"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "In review",
       "title": "Writing pages: a \"Write a page\" how-to first, and the everyday directives before the spec order"
     },
     {
@@ -10016,8 +10019,11 @@
       "labels": [
         "bug"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1338"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "In progress",
       "title": "Copilot's setup steps put the package's `node_modules/.bin` on the path when npm or Yarn hoists `ascribe` to the workspace root"
     }
   ]
