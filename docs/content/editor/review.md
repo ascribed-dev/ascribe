@@ -18,9 +18,13 @@ A project that isn't in a git repository, a revision that doesn't exist, or `git
 
 ## The Review view
 
-While review is on for the active page's project, a **Review** view is second in the Ascribe sidebar, after Project, and it's gone once review stops. It lists the same pages as Changed Pages, the ones [`ascribe diff`](../review/diff.md#cli-diff) lists for the same base, under **Added**, **Changed**, and **Removed**: each by its title, with its counts, what it changed through when its own file didn't change (such as "via _fragments/requirements.md"), and how many open threads show on it, such as "3 changed · 1 open thread".
+While review is on for the active page's project, a **Review** view is second in the Ascribe sidebar, after Project, and it's gone once review stops. It lists the same pages as Changed Pages, the ones [`ascribe diff`](../review/diff.md#cli-diff) lists for the same base, under **Added**, **Changed**, and **Removed**. Each page shows:
 
-A page that moved is listed once, under **Changed**, with where it moved from, such as "Moved from guides/configure.md · no change to the page", and its diff compares its file with the one it moved from. Choosing a page opens it and its preview at its first change; a removed page has no file to open, so choosing it shows the page in the preview as it was at the base, with the review header saying so and no **As it will be** to switch to. Each page's diff button opens its own source changes: its file and the files it changed through. The pages follow your edits, saved or not.
+- Its title, and its counts.
+- What it changed through when its own file didn't change, such as "via _fragments/requirements.md".
+- How many open threads show on it, such as "3 changed · 1 open thread".
+
+A page that moved is listed once, under **Changed**, with where it moved from, such as "Moved from guides/configure.md · no change to the page", and its diff compares its file with the one it moved from. Choosing a page opens it and its preview at its first change. A removed page has no file to open, so choosing it shows the page in the preview as it was at the base. The review header says so, and has no **As it will be** to switch to. Each page's diff button opens its own source changes: its file and the files it changed through. The pages follow your edits, saved or not.
 
 **Problems on these pages**, the view's last group, lists the errors and warnings VS Code has for the changed pages' files, and nothing else; the eye button in the view's title bar adds advice. They're every problem on those pages, whether the branch made it or it was there before. Each opens its place.
 
@@ -31,7 +35,7 @@ The view's badge counts the comments you haven't submitted, and **Submit Review�
 
 **Ascribe: Open Source Changes** opens VS Code's diff of every changed source file at once: each changed page's file, and the fragments, pages, and `ascribe.toml` they changed through, each at the base against the working tree. A snippet's code file isn't among them. The base side comes from VS Code's Git extension, or from Ascribe's language server where the Git extension is off. VS Code's diff may repeat file headers past 30 files, so on a large branch a page's own diff button is the better way through.
 
-While review is on, **This page** has a **Review** section between About and Health: whether the branch changes the page, with its counts and what it changed through, or "this branch doesn't change it", and **Open threads**, the pull request's unresolved threads on the page or on a file it includes. Choosing a thread opens the page's preview at it.
+While review is on, **This page** has a **Review** section between About and Health. It says whether the branch changes the page, with its counts and what it changed through, or "this branch doesn't change it". Under it, **Open threads** lists the pull request's unresolved threads on the page or on a file it includes. Choosing a thread opens the page's preview at it.
 
 ## Comments in the preview
 

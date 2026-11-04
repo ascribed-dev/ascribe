@@ -16,7 +16,7 @@ One entry for each permalink the build publishes, and for each alias of one, key
 
 - **`title`:** the heading's text, or the page's title for a page's own permalink, as plain text.
 - **`summary`:** the section's [summary](#writing-summaries), when it has one; a page's own permalink has its description. Absent when there's none.
-- **`text`:** the whole section, as the plain Markdown output writes it: Markdown, with phrases and includes resolved, each variant arm under a heading of its own, availability as an `Available:` line, and each image as its alt text, since a product can't count on loading an image from the docs' site.
+- **`text`:** the whole section, as the plain Markdown output writes it. It's Markdown, with phrases and includes resolved, each variant arm under a heading of its own, and availability as an `Available:` line. Each image is its alt text, since a product can't count on loading an image from the docs' site.
 - **`choices`:** for a section with a switcher, the section with each arm chosen, keyed by dimension and value, such as `choices.pm.pnpm` (see [Show your reader's arm](#choosing-an-arm)).
 - **`address`:** the permalink's address, which a "Read more" link opens.
 - **`source`:** the page the section is on.

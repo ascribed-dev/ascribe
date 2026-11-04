@@ -98,7 +98,10 @@ Resolves a page for one build and writes it as the build's plain Markdown output
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/resolve.txt
 
-A variant group the build keeps more than one arm of, which the site shows as tabs, is written as the plain Markdown output writes it: a line saying so, `A reader sees one of the next 3 sections at a time, chosen by operating system.`, then each arm under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms.
+A variant group the build keeps more than one arm of, which the site shows as tabs, is written as the plain Markdown output writes it:
+
+1. A line saying so: `A reader sees one of the next 3 sections at a time, chosen by operating system.`
+2. Each arm, under a heading that names its dimension and value, such as `### Operating system: macOS`, or its title for labeled arms.
 
 When the build doesn't publish the page, it writes nothing to standard output, says why on standard error, and exits with `1`. A fragment isn't resolved on its own; resolve a page that includes it.
 
@@ -155,7 +158,11 @@ The query is one argument, and paths come after it. Words must all be in one blo
 - **Case.** Case is ignored, and nothing else is: `cafe` doesn't find "café". With `--case`, case is matched as written, so `ascribe search Vale --case` doesn't find "vale".
 - **Whole words.** A word matches inside a longer one, so `sync` finds "synchronize"; with `--word`, a word or a phrase matches only where the characters on either side of it aren't letters, digits, or `_`, so `ascribe search limit --word` finds "the rate limit." and not "limits".
 
-There are no regular expressions. To run a pattern over the text readers read, write the plain Markdown output with `ascribe build --emit plain` and use `grep` on it. That loses what `ascribe search` adds: `grep` names a line of the build's output, not the line of the source to edit; it can't say that a line came from a fragment, a phrase, or a snippet, or list a line many pages show once; and it reads one build's output at a time.
+There are no regular expressions. To run a pattern over the text readers read, write the plain Markdown output with `ascribe build --emit plain` and use `grep` on it. That loses what `ascribe search` adds:
+
+- `grep` names a line of the build's output, not the line of the source to edit.
+- It can't say that a line came from a fragment, a phrase, or a snippet, or list a line many pages show once.
+- It reads one build's output at a time.
 
 Paths after the query, from the current folder, keep the search to the pages in those folders, or to those pages: `ascribe search sidebar docs/content/navigation/`. A fragment's text counts for the pages there that show it, and its place lists only them. `--type how-to` keeps to the pages of that page type. A path that has no page or fragment of the project is an error, and when every word after the query could be one of its words, the message says to quote them with it.
 
@@ -235,9 +242,12 @@ With `--format json`, the document is a contract of its own, whose schema is in 
 Each place has its `file` from the project's folder, its `line`, and the `column` of the match's first character, in Unicode characters. A match of several words can span a whole code block, and `line` is the line its first word is on, within the block. The other fields:
 
 - `in` is what it is: `title`, `description`, `heading`, `text`, `table`, `code`, or `phrase`, a phrase's value at its line in `ascribe.toml`.
-- `text` is the block as a reader reads it: whole when it's at most 240 characters, and otherwise cut to about that many around the match's first character, at words, with `…` where it's cut, so a long code block or table row costs no more than a paragraph. `line` and `column` say where to read the rest.
+- `text` is the block as a reader reads it, whole when it's at most 240 characters. A longer block is cut to about that many around the match's first character, at words, with `…` where it's cut, so a long code block or table row costs no more than a paragraph. `line` and `column` say where to read the rest.
 - `match` is where the match is in `text`: its first character and the one after its last, in characters, ending where `text` is cut when the match runs past it.
-- `through` lists what the match reads through that the line doesn't spell, in order: `{"phrase": key}`, `{"title": page}` for a link with no text, which reads as the title of the page it links to, or the text of the heading it names (`page.md#id`), and `{"code": address}` for a snippet's code.
+- `through` lists what the match reads through that the line doesn't spell, in order:
+  - `{"phrase": key}` for a phrase.
+  - `{"title": page}` for a link with no text, which reads as the title of the page it links to, or as the text of the heading it names (`page.md#id`).
+  - `{"code": address}` for a snippet's code.
 - `arm` is the arm of a variant group the line is in, or null.
 
 `pages` names the pages that show the place, at most three, each with its `title`, the `heading` the place is under there and its `id`, and the `builds` that show it there. `pages_total` is how many pages show it; for a phrase, how many places in the source use it. `refs_command` is the `ascribe refs` command that lists them: for a phrase, and for a fragment's line on more pages than `pages` names; otherwise it's null. A snippet's code that can't be lined up with its file is at the first line the snippet shows, and `end_line` is the last; every other place's `end_line` is null.

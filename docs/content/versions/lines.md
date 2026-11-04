@@ -95,7 +95,7 @@ A site that isn't built with Astro has all a banner and a list of versions need 
 
 > Documentation for Self-managed 3.4. Support ends on 31 January 2027. See this page for 3.5.
 
-The last sentence links to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date, so a site can translate them. `Versions.astro`'s are `label`, `missing`, and `archived`.
+The last sentence links to the page in the current line, or the page that replaced it, and to the current line's home otherwise, as "See the documentation for 3.5." Each sentence's words are a property, so a site can translate them: `documentation`, `supportEnds`, `samePage`, and `home`, with `locale` for the date. `Versions.astro`'s are `label`, `missing`, and `archived`.
 
 The sidebar shows the pages of the page's own line when the layout passes the entry: `sidebar(entries, { entry })`, or, with a site's own list, `sidebar(entries, { nav, entry })`.
 

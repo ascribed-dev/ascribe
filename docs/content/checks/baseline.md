@@ -108,6 +108,6 @@ page-description-missing 91c04e2d7b5a6f18 0 docs/guides/install.md
   4. The file, from the project's folder, the one `ascribe.toml` is in, with `/`. It's the rest of the line after the third space, so a path with spaces needs no quoting.
 - **The entries are sorted** by file, then check, then fingerprint, then order, so a file's entries are together, and a diff reads as a list of problems.
 
-**The fingerprint** is the first 16 hexadecimal digits of the SHA-256 of the text the problem is reported at, or of its line's text when it's reported at no text, with each run of spaces and line ends read as one space and the ends trimmed. **The order** tells apart problems with the same check, file, and fingerprint, as two links to one missing page in one paragraph: 0 for the first in the file, then 1, and so on.
+**The fingerprint** is the first 16 hexadecimal digits of the SHA-256 of the text the problem is reported at, or of its line's text when it's reported at no text. Before hashing, each run of spaces and line ends is read as one space, and the ends are trimmed. **The order** tells apart problems with the same check, file, and fingerprint, as two links to one missing page in one paragraph: 0 for the first in the file, then 1, and so on.
 
 A line that doesn't parse is an error that names it, and `ascribe check`, `ascribe build`, and `ascribe report` don't run with a baseline they can't read: they exit with `2`, and say which line, as `ascribe baseline write` and `prune` do. Fix the line, or pass `--no-baseline`.
