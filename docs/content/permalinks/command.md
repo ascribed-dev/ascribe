@@ -4,7 +4,7 @@ title: "`ascribe permalinks`"
 description: "Keep a project's list of permalinks, check a product's names against it, and retire a permalink with a reason."
 ---
 
-The commands that keep a project's list of permalinks, check names against it, and retire permalinks. [Permalinks](index.md) is the task they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/addresses.md#ascribe-permalinks-sync).
+The commands that keep a project's list of permalinks, check names against it, and retire permalinks. [Link to the docs from your product](index.md) is the task they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/addresses.md#ascribe-permalinks-sync).
 
 ## `ascribe permalinks`
 @id {permalink=true}: cli-permalinks

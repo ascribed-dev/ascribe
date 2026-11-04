@@ -7,9 +7,17 @@ permalink: redirects
 
 A link to a page outlives the page's place in the docs: a bookmark, a search result, a product's help menu, an answer on a forum. Rename a folder or merge two pages, and every one of those links stops working unless someone decided where it should lead. `ascribe.addresses` is where that decision is written. With it, a move records itself, `ascribe check` reports an [address](../glossary.md#address) the docs published that nothing accounts for, and the build writes the redirects the host needs.
 
+To keep the addresses you've published:
+
+@steps
+1. [Turn it on](#turn-it-on): commit `ascribe.addresses` beside `ascribe.toml`.
+2. Move a page with `ascribe rename` or in the editor, which records the move ([What a move records](#what-a-move-records)). After a `git mv`, record it with [`ascribe addresses move`](addresses.md#cli-addresses-move).
+3. Check each pull request against its base, in CI as [Check pull requests in CI](../checks/ci.md#keep-the-addresses-youve-published) does, and [fix each lost address](#fix-a-lost-address) the check reports.
+4. Give your host the redirects each build writes ([What the build writes](#what-the-build-writes)).
+
 ## Turn it on
 
-A project [`ascribe init`](../install.md#cli-init) started has it already: init writes `ascribe.addresses` beside `ascribe.toml`, so commit it with the docs, and its addresses are kept from the first commit.
+A project [`ascribe init`](../command/init.md#cli-init) started has it already: init writes `ascribe.addresses` beside `ascribe.toml`, so commit it with the docs, and its addresses are kept from the first commit.
 
 A project started before that, or without `init`, makes the file beside `ascribe.toml`, and commits it with the docs:
 
@@ -66,7 +74,7 @@ recorded the move in ascribe.addresses
 "guides/my-setup.md" = "guides/setup.md"
 ```
 
-Moving a page back to where an entry says it was removes the entry. A page moved another way, as with `git mv`, is recorded with [`ascribe addresses move`](#cli-addresses-move), and a page removed on purpose with [`ascribe addresses retire`](#cli-addresses-retire).
+Moving a page back to where an entry says it was removes the entry. A page moved another way, as with `git mv`, is recorded with [`ascribe addresses move`](addresses.md#cli-addresses-move), and a page removed on purpose with [`ascribe addresses retire`](addresses.md#cli-addresses-retire).
 
 ## What the check reports
 
@@ -159,7 +167,7 @@ A second change composes with the first: under `base-path = ["/docs/", "/guide/"
 ## The base
 @id {permalink=true}: addresses-base
 
-The base is what the docs published before: the merge base of the repository's default branch and `HEAD`, as a pull request shows its changes, or the revision `--base` names. `--base-exact` compares with that revision itself. It's read as [`ascribe diff`](../review/diff.md) reads it, so the checkout needs the history: in CI, `fetch-depth: 0`, as [Checks in CI](../checks/ci.md#keep-the-addresses-youve-published) sets up.
+The base is what the docs published before: the merge base of the repository's default branch and `HEAD`, as a pull request shows its changes, or the revision `--base` names. `--base-exact` compares with that revision itself. It's read as [`ascribe diff`](../review/diff.md) reads it, so the checkout needs the history: in CI, `fetch-depth: 0`, as [Check pull requests in CI](../checks/ci.md#keep-the-addresses-youve-published) sets up.
 
 When the base can't be read, because the revision isn't there, as in a shallow clone, or there's history but no default branch to compare with, or `--base` names a base outside a repository, the rest of the check runs and [`addresses-base-unreadable`](../checks/diagnostics/project-checks.md#ASC257), a warning, says why, so a check that compared nothing never passes silently. A base with no project, as a project's first pull request has, published nothing to keep, and that's advice. Before the first commit, with no `--base`, nothing can have been published: a project outside a git repository, or in one with no commit yet, compares nothing, and the check doesn't say so, so a project `ascribe init` just started checks clean.
 
@@ -212,61 +220,7 @@ With `host = "netlify"`, the `_redirects` the build writes forwards each permali
 
 The lines come after the moves and the retired addresses, and the [output-layout contract](../contracts/output-layout.md#19-the-hosts-files) has their format. On another host, read `_ascribe/permalinks.json` and write the same rules for it.
 
-## `ascribe addresses`
-@id {permalink=true}: cli-addresses
-@summary: Keeps the project's record of where the addresses it published went, `ascribe.addresses`: makes it, records a move or a retired address, and lists the redirects each build writes.
+## See also
 
-Keeps `ascribe.addresses`. Each takes `--format json`, and writes the document its [schema](../contracts/json-reports/addresses.md#ascribe-addresses-init) describes. Each exits with `0` when it's done, and `2` when it couldn't run: the project doesn't load, or the file can't be read or written.
-
-### `ascribe addresses init`
-@id {permalink=true}: cli-addresses-init
-@summary: Makes `ascribe.addresses`, so moves are recorded and the check reports an address that's lost. A file already there is left alone.
-
-Makes `ascribe.addresses`, with its header, its `version`, and empty tables. A file already there is left as it is, and it says so.
-
-In a project whose `ascribe.toml` still has `[permalinks]`, from before `ascribe.addresses` recorded permalinks, it moves the table's entries into the file, made or already there, and takes the table out of `ascribe.toml`, keeping the rest of the file as written: each of `[permalinks.retired]` as `go:<name>` in `[retired]`, or in `[moved]` to its `to` when it has one, and each of `[permalinks.aliases]` as `go:<name>` in `[moved]` to `go:` and the name it leads to. Run `ascribe permalinks sync` after, when the project has `ascribe.permalinks`. A base whose `ascribe.toml` still has the table is read as if it had been moved, so the move itself loses no address.
-
-@include: ../_generated/cli-addresses-init-options.md
-
-### `ascribe addresses move`
-@id {permalink=true}: cli-addresses-move
-@summary: Records that a page, or a heading's id, moved, after a move made without Ascribe, so the build forwards its old addresses.
-
-Records that a page, or a heading's id, moved, after a move made without Ascribe, as with `git mv`. The old path is gone; the new one is a page of the project, or a heading on one. A permalink no heading declares any more, `go:<name>`, moves to a page or a heading, or to another permalink, `go:<name>`.
-
-```console
-$ ascribe addresses move guides/keys.md security/keys.md
-Recorded in ascribe.addresses: guides/keys.md moved to security/keys.md.
-```
-
-Each page's path is from the current folder or from the content root, and the entry is from the content root. So, from a repository's root whose project is in `docs/` with its content in `docs/content/`, `ascribe addresses move --config docs docs/content/guides/keys.md docs/content/security/keys.md` records the same entry, and so does `ascribe addresses retire` given such a path.
-
-**`--from-git`** records every move git sees between the base and the working tree whose old path is gone, one entry for each page, so a reorganization made with `git mv` is recorded at once. The base is chosen as `ascribe check` chooses it, with `--base` and `--base-exact`. Git sees a file that's renamed and added, as `git mv` leaves it, and only when the old and new files are mostly the same: a page rewritten as it moved is forwarded with `ascribe addresses move <old> <new>`.
-
-```console
-$ ascribe addresses move --from-git
-Recorded 1 move git sees: guides/setup.md → start/setup.md.
-```
-
-@include: ../_generated/cli-addresses-move-options.md
-
-### `ascribe addresses retire`
-@id {permalink=true}: cli-addresses-retire
-@summary: Records that a page, or a heading's id, was removed on purpose, and why.
-
-Records that a page, or a heading's id, or a permalink, `go:<name>`, was removed on purpose, with the reason, which is for whoever reads the file later.
-
-```console
-$ ascribe addresses retire reference/legacy-sync.md --reason "The sync agent was removed in 4.0"
-Recorded in ascribe.addresses: reference/legacy-sync.md was retired.
-```
-
-@include: ../_generated/cli-addresses-retire-options.md
-
-### `ascribe addresses list`
-@id {permalink=true}: cli-addresses-list
-@summary: Shows the redirects and retired addresses each build writes, and the entry each comes from. It changes nothing.
-
-Shows the redirects and retired addresses each build writes, as its `_ascribe/redirects.json` has them, and the entry of `ascribe.addresses` each comes from. It changes nothing.
-
-@include: ../_generated/cli-addresses-list-options.md
+- [`ascribe addresses`](addresses.md): each command's options and output.
+- [The redirects](../contracts/output-layout.md#18-the-redirects), in the output-layout contract: the format of `_ascribe/redirects.json`.

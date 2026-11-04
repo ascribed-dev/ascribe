@@ -40,7 +40,7 @@ npx ascribe check --stdin --path docs/guides/new.md < draft.md
 
 ### Checking the prose
 
-`--vale` reports Vale's `suggestion`, `warning`, and `error` alerts as advice, warnings, and errors, up to [`[checks.vale] max-level`](../content-model/checks.md#checksvale). Vale is given the prose alone, and a Vale that takes more than ten minutes is given up, as `prose-not-checked`. See [Prose, through Vale](vale.md).
+`--vale` reports Vale's `suggestion`, `warning`, and `error` alerts as advice, warnings, and errors, up to [`[checks.vale] max-level`](../content-model/checks.md#checksvale). Vale is given the prose alone, and a Vale that takes more than ten minutes is given up, as `prose-not-checked`. See [Check prose with Vale](vale.md).
 
 ### A quick check after each edit
 
@@ -64,7 +64,7 @@ It lists at most 50 problems. When there are more, the line before the summary s
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-github.txt
 
-A problem that spans lines has its first and last line, and no columns, which GitHub takes only on one line. It needs no permissions and no upload step, and [Checks in CI](ci.md) uses it. Without `--format`, the output is the text one, in GitHub Actions too.
+A problem that spans lines has its first and last line, and no columns, which GitHub takes only on one line. It needs no permissions and no upload step, and [Check pull requests in CI](ci.md) uses it. Without `--format`, the output is the text one, in GitHub Actions too.
 
 ### Checking one rule at a time
 
@@ -166,7 +166,7 @@ Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/bui
 
 | Output | What it is | For |
 |---|---|---|
-| `site` | Markdown with web components (`<ascribe-note>`, `<ascribe-tabs>`, and the rest), heading ids and image attributes as markers the Astro integration applies, and the generated Zod schema in `_ascribe/schema.ts` | An Astro site, through `@ascribed/astro` ([Astro](../astro/index.md)) |
+| `site` | Markdown with web components (`<ascribe-note>`, `<ascribe-tabs>`, and the rest), heading ids and image attributes as markers the Astro integration applies, and the generated Zod schema in `_ascribe/schema.ts` | An Astro site, through `@ascribed/astro` ([Publish a site with Astro](../astro/index.md)) |
 | `plain` | Fully resolved CommonMark with no HTML: notes as quotes, [variants](../glossary.md#variant) as labeled sections, availability as text, and links as absolute URLs | Search indexes, LLMs, and export |
 | `json` | The resolved tree of each page ([JSON output contract](../contracts/json-output.md)) | Your own tools |
 
@@ -204,7 +204,7 @@ When a page, a fragment, `ascribe.toml`, or a file a snippet takes code from cha
 
 @include: ../_generated/cli-preview-options.md
 
-The preview isn't the published site, which looks the way its Astro project styles it ([Astro](../astro/index.md)), and isn't the editor's page preview or site preview, two of the four [previews](../glossary.md#preview). Only this computer can open its address: it listens at `127.0.0.1` alone, answers only a request addressed to `127.0.0.1` or `localhost` with its port, so a web page elsewhere can't read it, and connects to nothing. It writes the preview in `.ascribe/`, which belongs in `.gitignore` ([Files Ascribe writes](../command/project-files.md)).
+The preview isn't the published site, which looks the way its Astro project styles it ([Publish a site with Astro](../astro/index.md)), and isn't the editor's page preview or site preview, two of the four [previews](../glossary.md#preview). Only this computer can open its address: it listens at `127.0.0.1` alone, answers only a request addressed to `127.0.0.1` or `localhost` with its port, so a web page elsewhere can't read it, and connects to nothing. It writes the preview in `.ascribe/`, which belongs in `.gitignore` ([Files Ascribe writes](../command/project-files.md)).
 
 | Code | Meaning |
 |---|---|

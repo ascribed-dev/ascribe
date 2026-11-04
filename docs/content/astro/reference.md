@@ -5,7 +5,7 @@ description: "What the Astro integration takes, what it does to a site, and what
 permalink: astro-reference
 ---
 
-Everything `@ascribed/astro` takes and does, once a site is set up: its options, what it adds to Astro's build and dev server, the components and functions a layout uses, several projects, versions, and permalinks in one site, the head, sitemap, `robots.txt`, and response headers it writes, review in the site preview, and styling. [Astro](index.md) sets a site up.
+Everything `@ascribed/astro` takes and does, once a site is set up: its options, what it adds to Astro's build and dev server, the components and functions a layout uses, several projects, versions, and permalinks in one site, the head, sitemap, `robots.txt`, and response headers it writes, review in the site preview, and styling. [Publish a site with Astro](index.md) sets a site up.
 
 ## Options
 
@@ -247,7 +247,7 @@ Astro's highlighting marks a block's language only as the `<pre>`'s `data-langua
 ## `ascribe-astro init`
 @id: init
 
-`npx @ascribed/astro init`, or `ascribe-astro init` where the package is installed, writes the files a site starts from ([Astro](index.md) says what each does).
+`npx @ascribed/astro init`, or `ascribe-astro init` where the package is installed, writes the files a site starts from ([Publish a site with Astro](index.md) says what each does).
 
 | Option | Meaning |
 |---|---|

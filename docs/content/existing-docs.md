@@ -32,7 +32,7 @@ The `ascribe.toml` it writes for a folder of pages declares no page types. Every
 
 @snippet: code:crates/ascribe-cli/tests/output/init-existing-ascribe.toml
 
-In an empty folder, `init` declares the type `page` instead, which each page names; [`ascribe init`](install.md#cli-init) has both. `--templates`, which declares six types, is refused in a folder of pages, since each page would have to name one. Take the templates once the pages check clean, with [`ascribe templates eject`](templates/command.md#cli-templates-eject), then give each page `type:`, since the project declares types from then on.
+In an empty folder, `init` declares the type `page` instead, which each page names; [`ascribe init`](command/init.md#cli-init) has both. `--templates`, which declares six types, is refused in a folder of pages, since each page would have to name one. Take the templates once the pages check clean, with [`ascribe templates eject`](templates/command.md#cli-templates-eject), then give each page `type:`, since the project declares types from then on.
 
 ## Fix what the check finds
 
@@ -144,7 +144,7 @@ Docusaurus keeps a copy of every page for each version in `versioned_docs/`, and
 
 ## See also
 
-- [`ascribe init`](install.md#cli-init): what it writes, and its options.
+- [`ascribe init`](command/init.md#cli-init): what it writes, and its options.
 - [`ascribe check`](checks/check.md): the check, its formats, and `--fix`.
 - [Frontmatter](writing/frontmatter.md): the keys every page can have.
 - [The `ascribe.toml` reference](content-model/index.md): types, and the fields they share.

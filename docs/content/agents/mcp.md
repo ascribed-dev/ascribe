@@ -33,7 +33,7 @@ This runs the `ascribe` on the host's path, which you install [on your path](../
 
 ### With `@ascribed/cli` in the project
 
-When `@ascribed/cli` is in the `package.json` at the repository's root, as [Install](../install.md#npm) sets up, the host can run that one instead. Put this in place of the `ascribe` server in step 2:
+When `@ascribed/cli` is in the `package.json` at the repository's root, as [Install Ascribe](../install.md#npm) sets up, the host can run that one instead. Put this in place of the `ascribe` server in step 2:
 
 @variant {pm=npm}:
 ```json

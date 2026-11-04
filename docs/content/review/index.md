@@ -1,7 +1,7 @@
 ---
 type: how-to
-title: Review
-description: Reviewing a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and commenting there.
+title: Review a pull request
+description: Review a pull request as readers will see it, in the page preview, the site preview, or the HTML preview from CI, and comment there.
 permalink: review-guide
 ---
 

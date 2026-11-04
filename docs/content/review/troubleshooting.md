@@ -4,7 +4,7 @@ title: Troubleshooting review
 description: What to do when review shows no pull request, no comments, or no marks, says the project has errors, or won't start.
 ---
 
-The problems you can meet reviewing a pull request with Ascribe, in the page preview, the site preview, or the HTML preview from CI, by what you see. [Review](index.md) says how review works when nothing's wrong.
+The problems you can meet reviewing a pull request with Ascribe, in the page preview, the site preview, or the HTML preview from CI, by what you see. [Review a pull request](index.md) says how review works when nothing's wrong.
 
 ## No pull request found
 
@@ -88,7 +88,7 @@ Review stops with a message.
 
 ## For more information
 
-- [Review](index.md): reviewing a pull request.
+- [Review a pull request](index.md): reviewing a pull request.
 - [How review works](how-it-works.md): what review compares, and how comments map to the pull request.
 - [Review in the site preview](site-preview.md): the site's side of review.
 - [Comments in the preview](../editor/review.md#comments-in-the-preview): the editor's side.

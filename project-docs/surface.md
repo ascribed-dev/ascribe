@@ -6,7 +6,7 @@ Everything a person or an agent touches, read from where the code declares it. I
 
 ## The command line
 
-For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale.md`, `docs/content/command/questions.md`, `docs/content/command/references.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/install.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/redirects.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/templates/index.md`, `docs/content/versions/release.md`.
+For people and agents. Read from `docs/content/_generated/cli-synopsis.md`, `docs/content/_generated/cli-global-options.md`, `docs/content/command/index.md`, `docs/content/agents/commands.md`, `docs/content/checks/baseline.md`, `docs/content/checks/check.md`, `docs/content/checks/report-command.md`, `docs/content/checks/vale-command.md`, `docs/content/command/init.md`, `docs/content/command/questions.md`, `docs/content/command/references.md`, `docs/content/editor/language-server.md`, `docs/content/examples/sources.md`, `docs/content/permalinks/command.md`, `docs/content/publishing/addresses.md`, `docs/content/review/diff.md`, `docs/content/templates/command.md`, `docs/content/versions/release.md`.
 
 | Command | What it's for | Arguments and options | `--format` |
 |---|---|---|---|
@@ -898,11 +898,11 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 
 | Page | Title | Type |
 |---|---|---|
-| `agents/claude-code.md` | Claude Code | how-to |
+| `agents/claude-code.md` | Set up Claude Code | how-to |
 | `agents/commands.md` | `ascribe agents` and `mcp` | reference |
-| `agents/copilot.md` | GitHub Copilot | how-to |
+| `agents/copilot.md` | Set up GitHub Copilot | how-to |
 | `agents/hooks.md` | Check an agent's edits with hooks | how-to |
-| `agents/index.md` | Agents | how-to |
+| `agents/index.md` | Set up your agent | how-to |
 | `agents/instructions.md` | Write the agent files | how-to |
 | `agents/loop.md` | Work with an agent | how-to |
 | `agents/mcp.md` | Set up the MCP server | how-to |
@@ -913,13 +913,13 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `astro/agents.md` | Publish for AI agents | how-to |
 | `astro/deploy.md` | Deploy the site | how-to |
 | `astro/elements.md` | Element library reference | reference |
-| `astro/index.md` | Astro | how-to |
+| `astro/index.md` | Publish a site with Astro | how-to |
 | `astro/more-than-docs.md` | Put the docs in a site with more than the docs | how-to |
 | `astro/reference.md` | `@ascribed/astro` reference | reference |
 | `astro/serve-markdown.md` | Serve the Markdown versions | how-to |
 | `checks/baseline.md` | The baseline | reference |
 | `checks/check.md` | `ascribe check`, `build`, `preview`, and `fmt` | reference |
-| `checks/ci.md` | Checks in CI | how-to |
+| `checks/ci.md` | Check pull requests in CI | how-to |
 | `checks/diagnostics.md` | Diagnostics | reference |
 | `checks/diagnostics/content-checks.md` | Diagnostics: content checks | reference |
 | `checks/diagnostics/content-model-builds.md` | Diagnostics: the content model's builds and site | reference |
@@ -932,9 +932,11 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `checks/diagnostics/sources.md` | Diagnostics: sources, memo files, and navigation | reference |
 | `checks/external-links.md` | Check external links | how-to |
 | `checks/report-command.md` | `ascribe report` | reference |
-| `checks/report.md` | The project report | how-to |
-| `checks/vale.md` | Prose, through Vale | how-to |
+| `checks/report.md` | Act on the project report | how-to |
+| `checks/vale-command.md` | `ascribe vale` | reference |
+| `checks/vale.md` | Check prose with Vale | how-to |
 | `command/index.md` | Command reference | reference |
+| `command/init.md` | `ascribe init` | reference |
 | `command/project-files.md` | Files Ascribe writes | reference |
 | `command/questions.md` | `ascribe explain`, `model`, `outline`, `resolve`, and `search` | reference |
 | `command/references.md` | `ascribe link`, `refs`, and `rename` | reference |
@@ -994,7 +996,7 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `getting-started.md` | Getting started | tutorial |
 | `glossary.md` | Glossary | reference |
 | `index.md` | Ascribe documentation | index |
-| `install.md` | Install | how-to |
+| `install.md` | Install Ascribe | how-to |
 | `navigation/index.md` | Navigation | reference |
 | `navigation/order.md` | Put your pages in order | how-to |
 | `navigation/site-list.md` | Move a site's own list to the navigation | how-to |
@@ -1006,18 +1008,19 @@ Pages of the site. Each command's `--help` is the same text as its options in th
 | `openapi/operation.md` | Show an operation in a page | how-to |
 | `permalinks/command.md` | `ascribe permalinks` | reference |
 | `permalinks/in-your-product.md` | Show the docs in your product | how-to |
-| `permalinks/index.md` | Permalinks | how-to |
+| `permalinks/index.md` | Link to the docs from your product | how-to |
+| `publishing/addresses.md` | `ascribe addresses` | reference |
 | `publishing/index.md` | Search engines and crawlers | concept |
 | `publishing/redirects.md` | Keep the addresses you've published | how-to |
 | `publishing/site.md` | The head, sitemap, `robots.txt`, and headers | reference |
 | `review/ci-report.md` | Attach the HTML preview to every pull request | how-to |
 | `review/diff.md` | `ascribe diff` and `drift` | reference |
 | `review/how-it-works.md` | How review works | concept |
-| `review/index.md` | Review | how-to |
+| `review/index.md` | Review a pull request | how-to |
 | `review/site-preview.md` | Review in the site preview | reference |
 | `review/troubleshooting.md` | Troubleshooting review | troubleshooting |
-| `templates/command.md` | `ascribe templates` | reference |
-| `templates/index.md` | Page templates | how-to |
+| `templates/command.md` | `ascribe templates` and `ascribe new` | reference |
+| `templates/index.md` | Start pages from templates | how-to |
 | `versions/archive.md` | Export and retire a line | how-to |
 | `versions/index.md` | Publish a site for each version | how-to |
 | `versions/lines.md` | Release lines | reference |
