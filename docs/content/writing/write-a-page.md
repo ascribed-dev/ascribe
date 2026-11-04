@@ -1,7 +1,7 @@
 ---
 type: how-to
 title: Write a page
-description: "Building one real page with what most pages use: a note, steps, a collapsible block, a link to another page, an image with a width, a phrase, and an include."
+description: "Build one real page with what most pages use: a note, steps, a collapsible block, a link to another page, an image with a width, a phrase, and an include."
 permalink: write-a-page
 ---
 

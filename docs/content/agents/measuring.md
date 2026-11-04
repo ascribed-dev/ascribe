@@ -71,6 +71,6 @@ Most of what's written about being found by AI has no evidence behind it, and so
 
 ## Related resources
 
-- [The project report](../checks/report.md): the pages a build lists or keeps out, and the rest of what `ascribe report` says.
+- [Act on the project report](../checks/report.md): the pages a build lists or keeps out, and the rest of what `ascribe report` says.
 - [`[crawlers]`](../content-model/output.md#18-crawlers): what each kind of AI crawler may do.
 - [Index your docs for your product's agents](product-index.md): giving your product's own agents the docs.

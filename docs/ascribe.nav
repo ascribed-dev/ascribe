@@ -18,6 +18,7 @@ pages = ["write-a-page.md", "syntax.md", "directives.md", "frontmatter.md", "inl
 
 [[sections]]
 folder = "templates/"
+label = "Page templates"
 
 [[sections]]
 folder = "content-model/"
@@ -45,6 +46,7 @@ label = "Checks and reports"
 
 [[sections]]
 folder = "review/"
+label = "Review"
 pages = ["how-it-works.md", "site-preview.md", "ci-report.md", "diff.md", "troubleshooting.md"]
 
 [[sections]]
@@ -65,7 +67,7 @@ pages = [
 
 [[sections]]
 folder = "publishing/"
-pages = ["site.md", "redirects.md"]
+pages = ["site.md", "redirects.md", "addresses.md"]
 
 [[sections]]
 folder = "versions/"
@@ -74,6 +76,7 @@ pages = ["archive.md", "lines.md", "release.md"]
 
 [[sections]]
 folder = "permalinks/"
+label = "Permalinks"
 
 [[sections]]
 folder = "examples/"
@@ -85,6 +88,7 @@ label = "OpenAPI"
 
 [[sections]]
 folder = "agents/"
+label = "Agents"
 pages = [
   "loop.md",
   "instructions.md",
@@ -102,7 +106,7 @@ pages = [
 [[sections]]
 folder = "command/"
 label = "The command"
-pages = ["questions.md", "site-output.md", "project-files.md"]
+pages = ["init.md", "questions.md", "site-output.md", "project-files.md"]
 
 # Contracts keep an order of their own, in a section at the end apart from the
 # guides.

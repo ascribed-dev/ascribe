@@ -76,6 +76,8 @@ version = 1
 "_generated/diagnostics-pages.md#ASC249" = "checks/diagnostics/sources.md#ASC249"
 "_generated/diagnostics-pages.md#ASC250" = "checks/diagnostics/sources.md#ASC250"
 "_generated/diagnostics-pages.md#ASC251" = "checks/diagnostics/sources.md#ASC251"
+"checks/vale.md#cli-vale" = "checks/vale-command.md#cli-vale"
+"checks/vale.md#cli-vale-eject" = "checks/vale-command.md#cli-vale-eject"
 "content-model/content.md#dimensions" = "content-model/variation.md#dimensions"
 "go:ASC073" = "content-model/index.md#41-page-types"
 "go:ASC178" = "content-model/output.md#19-permalinks"
@@ -84,6 +86,13 @@ version = 1
 "go:ASC181" = "go:ASC265"
 "go:cli-render" = "command/questions.md#cli-resolve"
 "go:cli-versions-archive" = "go:cli-versions-export"
+"install.md#cli-init" = "command/init.md#cli-init"
+"publishing/redirects.md#cli-addresses" = "publishing/addresses.md#cli-addresses"
+"publishing/redirects.md#cli-addresses-init" = "publishing/addresses.md#cli-addresses-init"
+"publishing/redirects.md#cli-addresses-list" = "publishing/addresses.md#cli-addresses-list"
+"publishing/redirects.md#cli-addresses-move" = "publishing/addresses.md#cli-addresses-move"
+"publishing/redirects.md#cli-addresses-retire" = "publishing/addresses.md#cli-addresses-retire"
+"templates/index.md#cli-new" = "templates/command.md#cli-new"
 "versions/release.md#cli-versions-archive" = "versions/release.md#cli-versions-export"
 
 [retired]

@@ -188,11 +188,11 @@ Open the site at its address, and follow a link or two: a link that leads to the
 curl -sI https://docs.loom.example/guides/setup.md | grep -i '^link'
 ```
 
-Each pull request is checked before it reaches `main` by [Checks in CI](../checks/ci.md), which fails on warnings too, and on an address the docs published that a change lost.
+Each pull request is checked before it reaches `main` by [Check pull requests in CI](../checks/ci.md), which fails on warnings too, and on an address the docs published that a change lost.
 
 ## See also
 
-- [Astro](index.md#ways-to-publish): the ways to publish, and setting up the site.
+- [Publish a site with Astro](index.md#ways-to-publish): the ways to publish, and setting up the site.
 - [Serve the Markdown versions](serve-markdown.md): what a host does for agents, on Netlify, Cloudflare Pages, and nginx.
 - [Keep the addresses you've published](../publishing/redirects.md): the redirects the build writes when a page moves.
 - [Search engines and crawlers](../publishing/index.md): what the deployed site tells search engines and AI crawlers.

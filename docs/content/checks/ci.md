@@ -1,6 +1,6 @@
 ---
 type: how-to
-title: Checks in CI
+title: Check pull requests in CI
 description: Check every pull request with the same command the editor runs, and the formatting check, in GitHub Actions.
 ---
 
@@ -8,9 +8,12 @@ The editor checks a page as you write it. CI checks every pull request the same 
 
 ## Add the workflow
 
-Add `.github/workflows/check.yml`, which installs the project's dependencies and runs `npx ascribe check --deny-warnings` and `npx ascribe fmt --check` on every pull request and on each push to `main`, and shows each problem on the pull request's lines, as a linter's are. It checks out the whole history and names the base, which the project's `ascribe.addresses` needs ([below](#keep-the-addresses-youve-published)):
+@steps
+1. Add `.github/workflows/check.yml`, which installs the project's dependencies and runs `npx ascribe check --deny-warnings` and `npx ascribe fmt --check` on every pull request and on each push to `main`, and shows each problem on the pull request's lines, as a linter's are. It checks out the whole history and names the base, which the project's `ascribe.addresses` needs ([below](#keep-the-addresses-youve-published)):
 
-@snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/getting-started/.github/workflows/check.yml#workflow
+   @snippet {lang=yaml, title=.github/workflows/check.yml}: code:examples/getting-started/.github/workflows/check.yml#workflow
+
+2. Commit it, and open a pull request. The check runs on it, and shows each problem on its line of the pull request.
 
 `npm ci` installs the `@ascribed/cli` your `package.json` pins, so CI runs the `ascribe` the editor and `npx ascribe` run, and a new release changes the check only when you move the pin. With pnpm, run `pnpm install --frozen-lockfile` and `pnpm exec ascribe`.
 
@@ -86,5 +89,5 @@ The same fields map onto a format your CI reads, such as a code quality or SARIF
 
 ## See also
 
-- [The project report](report.md): the whole project's state, every day in CI.
+- [Act on the project report](report.md): the whole project's state, every day in CI.
 - [Diagnostics](diagnostics.md): every problem Ascribe reports, and its fix.

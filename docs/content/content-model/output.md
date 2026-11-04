@@ -87,4 +87,4 @@ The list changes, as operators add bots and rename them. Ascribe's release proce
 
 `ascribe.toml` has no `[permalinks]` any more. What happened to a [permalink](../writing/directives.md#permalinks) that no heading or page declares now, retired with a reason, or moved to another permalink or to a page, is recorded in [`ascribe.addresses`](../publishing/redirects.md#ascribeaddresses), keyed `go:<name>`, with the rest of where the docs' addresses went ([SPEC §7.10]({repo}/blob/main/SPEC.md#710-the-addresses-file)). The [guide](../permalinks/index.md#moving-aliasing-and-retiring) says when to use each.
 
-[`ascribe addresses init`](../publishing/redirects.md#cli-addresses-init) moves a project's `[permalinks.retired]` and `[permalinks.aliases]` into `ascribe.addresses`, and removes the table. Until it does, the table is an error at the key that says so (`model-unknown-key`).
+[`ascribe addresses init`](../publishing/addresses.md#cli-addresses-init) moves a project's `[permalinks.retired]` and `[permalinks.aliases]` into `ascribe.addresses`, and removes the table. Until it does, the table is an error at the key that says so (`model-unknown-key`).

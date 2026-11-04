@@ -4,7 +4,7 @@ title: Review in the preview
 description: "Reviewing a change in the VS Code preview: what changed against a base, the Review view, and a pull request's comments."
 ---
 
-The preview can mark what changed against a git revision, the **base**: the [marks](../review/how-it-works.md#the-marks) that review shows in every place, on the page you're editing. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](../review/index.md) walks through reviewing a pull request, start to finish, and [How review works](../review/how-it-works.md) says what's compared and how comments map to the pull request; this page is the reference for the editor's part.
+The preview can mark what changed against a git revision, the **base**: the [marks](../review/how-it-works.md#the-marks) that review shows in every place, on the page you're editing. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review a pull request](../review/index.md) walks through reviewing a pull request, start to finish, and [How review works](../review/how-it-works.md) says what's compared and how comments map to the pull request; this page is the reference for the editor's part.
 
 **Ascribe: Start Review** turns it on for the active page's project. It asks for [the base](../review/how-it-works.md#what-review-compares): the base of your branch's pull request, when it has one, the default branch, or a branch, tag, or commit you type. The status bar shows **Review: off**, or the base, while an Ascribe page or the preview is active; click it to start review, or to list the changed pages once it's on.
 

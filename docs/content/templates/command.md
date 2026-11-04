@@ -1,10 +1,10 @@
 ---
 type: reference
-title: "`ascribe templates`"
-description: "List the page templates Ascribe carries, write them into a project with their content types, and say what's changed in the set since."
+title: "`ascribe templates` and `ascribe new`"
+description: "List the page templates Ascribe carries, write them into a project with their content types, say what's changed in the set since, and start a page from one."
 ---
 
-The commands that write the page templates into a project and say what's changed in them since. [Page templates](index.md) is the task they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/templates.md).
+The commands that write the page templates into a project, say what's changed in them since, and start a page from one. [Start pages from templates](index.md) is the task they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/templates.md).
 
 ## `ascribe templates`
 @id {permalink=true}: cli-templates
@@ -12,7 +12,7 @@ The commands that write the page templates into a project and say what's changed
 
 Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, which takes them as its [template and guide](../content-model/index.md#41-page-types) from `templates/templates.lock`. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
 
-The set has six templates, which `ascribe templates list` names. A page is started from a template with [`ascribe new`](index.md#cli-new), or the editor's **New Page**; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../install.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
+The set has six templates, which `ascribe templates list` names. A page is started from a template with [`ascribe new`](#cli-new), or the editor's **New Page**; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../command/init.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
 
 ### `ascribe templates list`
 @id {permalink=true}: cli-templates-list
@@ -126,3 +126,35 @@ With `--format json`, it writes the same in the document its [schema](../contrac
 | `0` | It ran, whatever it found |
 | `1` | With `--exit-code`, the set has changed a template the project took, or no longer has one; with `--diff`, the one named. Or `--diff` names a template of the set the project hasn't taken. |
 | `2` | It couldn't run: no `ascribe.toml`, one that doesn't load, or `--diff` with a name the set doesn't have |
+
+## `ascribe new`
+@id {permalink=true}: cli-new
+
+@summary
+Starts a page of a type from the type's template, with its `type` and `title` set, as a draft, as **New Page** does, and writes it where `PATH` says. It never writes over a file.
+
+```sh
+ascribe new how-to docs/guides --title "Rotate keys"
+```
+
+@include: ../_generated/cli-new-options.md
+
+`PATH` is from the current folder, in the content root: a page's path, ending in `.md`, or a folder, where the page is named for its title as a route's segment is, `docs/guides/rotate-keys.md` above. The folders it names are made. Without `--title`, the page keeps the template's title, to fill in with the rest, and `PATH` must name the page itself. A type with no template starts with its frontmatter alone: its type, the title, and each field it requires, empty.
+
+The page starts as a [draft](../writing/frontmatter.md#a-draft), with `draft: true` in its frontmatter, which no build publishes, so what it has left of its template is advice while you write it. Take the line out to publish it: from then on, a placeholder left in it is an error ([What's left to fill in](index.md#whats-left-to-fill-in)).
+
+It says where the page went, the type's guide to read before writing, and how many placeholders are left, which [`ascribe check`](../checks/check.md#cli-check) lists:
+
+```text
+wrote docs/guides/rotate-keys.md, a page of type `how-to`, from templates/how-to.md
+Read its guide before you write: templates/how-to.guide.md, templates/how-to.ascribe.md
+It has 13 placeholders left to fill in, which `ascribe check docs/guides/rotate-keys.md` lists
+It's a draft, with `draft: true`, which no build publishes: take the line out to publish it
+```
+
+With `--dry-run`, it says where the page would go and prints its text, and writes nothing. With `--format json`, it writes [one document](../contracts/json-reports/templates.md#ascribe-new) with the page's path, its text, and the count.
+
+| Exit code | Meaning |
+|---|---|
+| `0` | The page was written, or with `--dry-run` would be |
+| `2` | Nothing was written: a type the content model doesn't have, a path outside the content root, a file where the page would go, no title to name a page in a folder, or a template that can't be read |

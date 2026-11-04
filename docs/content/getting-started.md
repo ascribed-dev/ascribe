@@ -5,7 +5,7 @@ description: Install Ascribe, write a first page, check it, build it, see it, an
 permalink: getting-started
 ---
 
-Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, builds, and previews a first page. Its second half, [Astro](astro/index.md), publishes the page as a site. To decide first whether Ascribe fits your docs, read [Why Ascribe](https://ascribed-dev.com/why/), and [what it needs and doesn't do](index.md#what-you-need-and-what-it-doesnt-do).
+Ascribe is a toolchain for documentation written as code: Markdown with the structure docs need, checked as you write, and built into a website, plain Markdown, and JSON. This guide sets up a project and writes, checks, builds, and previews a first page. Its second half, [Publish a site with Astro](astro/index.md), publishes the page as a site. To decide first whether Ascribe fits your docs, read [Why Ascribe](https://ascribed-dev.com/why/), and [what it needs and doesn't do](index.md#what-you-need-and-what-it-doesnt-do).
 
 It's for someone new to Ascribe who knows Markdown and a terminal. By the end, you'll have a project with a content model, a page that the editor checks as you write it, and a build of it ready for a site.
 
@@ -30,7 +30,7 @@ pnpm exec ascribe --version
 ```
 @end
 
-`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. The latest release is {version}. To install it another way, such as without Node, see [Install](install.md).
+`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. The latest release is {version}. To install it another way, such as without Node, see [Install Ascribe](install.md).
 
 ## Install the editor
 
@@ -68,7 +68,7 @@ It writes the project's first `ascribe.toml` and `ascribe.addresses`, and makes 
 
 @snippet: code:examples/getting-started/ascribe.toml#init
 
-Every page is of the one type, `page`, and says so with `type: page` in its frontmatter, with a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Page templates](templates/index.md).
+Every page is of the one type, `page`, and says so with `type: page` in its frontmatter, with a `title` and a `description`. Output goes to `.ascribe/build/`, and there's one build, `site`. `ascribe init --templates` starts the project with six page types too, each with a template to start a page from; see [Start pages from templates](templates/index.md).
 
 ### Add what the page uses
 
@@ -86,7 +86,7 @@ Add the output directory to `.gitignore`:
 .ascribe/
 ```
 
-Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when it moves, so the addresses your docs publish keep working ([Keep the addresses you've published](publishing/redirects.md)). `ascribe check` compares it with the base's, so CI needs the history and the base: the workflow on [Checks in CI](checks/ci.md) has both. [Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
+Commit `ascribe.addresses`; Ascribe writes it. It records where a page went when it moves, so the addresses your docs publish keep working ([Keep the addresses you've published](publishing/redirects.md)). `ascribe check` compares it with the base's, so CI needs the history and the base: the workflow on [Check pull requests in CI](checks/ci.md) has both. [Files Ascribe writes](command/project-files.md) lists the other files Ascribe puts in a project, and which to commit.
 
 ## Write a page
 
@@ -113,7 +113,7 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
 
-Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again.
+Create `docs/configure.md` with the same frontmatter fields as `install.md`, `type: page` among them, and check again. Every diagnostic has a code, and the [diagnostics reference](checks/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too.
 
 ## Format it
 
@@ -155,7 +155,7 @@ Open it in a browser to see `install.md` as a reader does, its note, its alterna
 
 ## Publish it with Astro
 
-Publishing the site is this guide's second half, on its own page: [Astro](astro/index.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
+Publishing the site is this guide's second half, on its own page: [Publish a site with Astro](astro/index.md) adds Ascribe to an [Astro](https://astro.build) project, writes the site's files with one command, and ends with the site open in your browser. For a new site:
 
 @steps
 1. Create an Astro project: `npm create astro@latest`.
