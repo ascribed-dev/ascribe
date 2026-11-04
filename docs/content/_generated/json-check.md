@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/check.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/check.schema.json`]({repo}/blob/main/schemas/check.schema.json):
+[`schemas/check.schema.json`]({repo}/blob/v{version}/schemas/check.schema.json):
 
 ```json
 {
@@ -429,6 +429,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/check.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe check --format json` and `ascribe build --format json`\nwrite: one document, whatever the outcome. Fields can be added without a\nnew `schema_version`, so a reader ignores fields it doesn't know.",
   "properties": {

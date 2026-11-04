@@ -101,6 +101,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/sources-status.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe sources status --format json` writes: each source's pin and\nthe state of its copies, read from the files alone.",
   "properties": {

@@ -829,6 +829,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/model.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe model --format json` answers: the content model's sections,\nor the one asked for.",
   "properties": {

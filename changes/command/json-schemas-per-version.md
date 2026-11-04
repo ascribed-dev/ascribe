@@ -1,0 +1,1 @@
+- **`@ascribed/cli` ships the JSON Schemas of its version.** Each is `@ascribed/cli/schemas/<name>.schema.json`, with an `$id` at the release's tag, and the docs link that tag's schemas instead of `main`'s. See [the JSON report contract](docs/content/contracts/json-reports.md).

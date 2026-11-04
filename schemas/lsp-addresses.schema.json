@@ -27,6 +27,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/lsp-addresses.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The parameters of `ascribe/addresses`: what the last comparison found.\nSent once the project loads and after each change that compares again,\nwhen it, or a page's old addresses (This page's \"Also answers at\"),\ndiffer from what was sent last.",
   "properties": {

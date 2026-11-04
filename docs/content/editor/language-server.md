@@ -84,7 +84,7 @@ The action that applies a page's safe fixes has the kind `source.fixAll.ascribe`
 
 ## Ascribe's own requests
 
-Beside the standard requests, the server answers requests of its own, which the VS Code extension draws its views from. None is advertised as a capability: a client that wants one sends it. Each answers from the text the editor has, unsaved edits included, and each result's shape is a JSON Schema in the repository's [`schemas/`]({repo}/tree/main/schemas/) folder, generated from the code that answers it. [Their parameters](#lsp-requests) are below.
+Beside the standard requests, the server answers requests of its own, which the VS Code extension draws its views from. None is advertised as a capability: a client that wants one sends it. Each answers from the text the editor has, unsaved edits included, and each result's shape is a JSON Schema in the [`schemas/`]({repo}/tree/v{version}/schemas/) folder at the release's tag, generated from the code that answers it. [Their parameters](#lsp-requests) are below.
 
 | Request | What it answers | Its schema |
 |---|---|---|

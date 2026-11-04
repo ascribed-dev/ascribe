@@ -102,6 +102,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/fmt.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe fmt --format json` writes: one document. Fields can be\nadded without a new `schema_version`, so a reader ignores fields it\ndoesn't know.",
   "properties": {

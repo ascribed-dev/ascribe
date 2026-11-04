@@ -728,6 +728,7 @@
       ]
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/lsp-page.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The answer to `ascribe/page`. A document that isn't a page or a fragment\nof the project gets an empty answer: no `about`, no heading, and empty\nlists.",
   "properties": {

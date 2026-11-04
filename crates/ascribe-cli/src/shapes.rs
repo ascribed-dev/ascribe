@@ -9,6 +9,11 @@
 //! - the published schemas in the docs, `docs/content/_generated/json-*.md`,
 //!   which the JSON reports contract and the JSON output contract include.
 //!
+//! Each schema's `$id` is its address at the release's tag, written from the
+//! crate's version, so a release rewrites it with everything else that names
+//! the version (`scripts/release/version.ts`), and `@ascribed/cli` ships the
+//! same files.
+//!
 //! It fails when one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite
 //! them. To change what one says, change the Rust type and its doc comments.
 
@@ -24,6 +29,16 @@ use schemars::{Schema, SchemaGenerator};
 use serde_json::Value;
 
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes";
+
+/// The `$id` of `schemas/<file>.schema.json`: its address at this version's
+/// release tag, which never changes once the tag is pushed. The pattern
+/// `SCHEMA_ID` in `scripts/release/manifests.ts` reads it back.
+fn schema_id(file: &str) -> String {
+    format!(
+        "https://raw.githubusercontent.com/ascribed-dev/ascribe/v{}/schemas/{file}.schema.json",
+        env!("CARGO_PKG_VERSION")
+    )
+}
 
 /// A JSON document Ascribe writes.
 struct Shape {
@@ -508,6 +523,7 @@ fn schema(shape: &Shape) -> Value {
         .for_serialize()
         .into_generator();
     let mut schema = (shape.schema)(&mut generator).to_value();
+    schema["$id"] = schema_id(shape.file).into();
     schema["title"] = shape.title.into();
     plain_descriptions(&mut schema);
     no_integer_formats(&mut schema);
@@ -639,7 +655,7 @@ fn package_types(files: &[&str]) -> String {
                 add(&name, def);
             }
         }
-        for key in ["$schema", "title"] {
+        for key in ["$schema", "$id", "title"] {
             root.as_object_mut().unwrap().remove(key);
         }
         add(shape.title, root);
@@ -678,7 +694,7 @@ fn the_docs_show_the_published_schemas() {
         let fragment = format!(
             "@memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, \
              with schemas/{file}.schema.json; change the types, then run `{BLESS}` to rewrite it.\n\
-             [`schemas/{file}.schema.json`]({{repo}}/blob/main/schemas/{file}.schema.json):\n\n\
+             [`schemas/{file}.schema.json`]({{repo}}/blob/v{{version}}/schemas/{file}.schema.json):\n\n\
              ```json\n{schema}```\n",
             file = shape.file,
             schema = pretty(&schema(shape)),

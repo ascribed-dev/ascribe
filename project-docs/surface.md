@@ -815,6 +815,7 @@ What a site or a tool imports or runs:
 | `@ascribed/review/prompt` | An import |
 | `@ascribed/cli` | An import |
 | `@ascribed/cli/binary` | An import |
+| `@ascribed/cli/schemas/*` | An import |
 | `ascribe` | A program, from @ascribed/cli |
 
 ## The outputs

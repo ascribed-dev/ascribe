@@ -1,8 +1,9 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/addresses-init.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/addresses-init.schema.json`]({repo}/blob/main/schemas/addresses-init.schema.json):
+[`schemas/addresses-init.schema.json`]({repo}/blob/v{version}/schemas/addresses-init.schema.json):
 
 ```json
 {
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/addresses-init.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe addresses init --format json` writes.",
   "properties": {

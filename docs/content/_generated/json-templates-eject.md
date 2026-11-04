@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/templates-eject.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/templates-eject.schema.json`]({repo}/blob/main/schemas/templates-eject.schema.json):
+[`schemas/templates-eject.schema.json`]({repo}/blob/v{version}/schemas/templates-eject.schema.json):
 
 ```json
 {
@@ -149,6 +149,7 @@
       ]
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/templates-eject.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe templates eject` did: the files it wrote and the types it\nadded, or, when it refused anything, what it refused, and then it wrote\nnothing.",
   "properties": {

@@ -145,6 +145,7 @@
       ]
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/templates-eject.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe templates eject` did: the files it wrote and the types it\nadded, or, when it refused anything, what it refused, and then it wrote\nnothing.",
   "properties": {

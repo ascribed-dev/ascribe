@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/templates-list.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/templates-list.schema.json`]({repo}/blob/main/schemas/templates-list.schema.json):
+[`schemas/templates-list.schema.json`]({repo}/blob/v{version}/schemas/templates-list.schema.json):
 
 ```json
 {
@@ -23,6 +23,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/templates-list.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe templates list --format json` writes: the templates\nAscribe carries, and where they're from.",
   "properties": {

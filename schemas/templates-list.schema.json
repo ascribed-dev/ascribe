@@ -19,6 +19,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/templates-list.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe templates list --format json` writes: the templates\nAscribe carries, and where they're from.",
   "properties": {

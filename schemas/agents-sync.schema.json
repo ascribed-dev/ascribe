@@ -62,6 +62,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/agents-sync.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe agents sync --format json` writes: each file it writes,\nand what it has to say.",
   "properties": {

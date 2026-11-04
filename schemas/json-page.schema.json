@@ -1625,6 +1625,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/json-page.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "A page of the JSON output: the page as the build resolved it, with every\nnode's place in its source (the JSON output contract). Spans are UTF-8\nbyte offsets, `[start, end]`, from the start of the file, frontmatter\nincluded; lines count from 1.",
   "properties": {

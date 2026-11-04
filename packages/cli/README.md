@@ -17,6 +17,10 @@ The package ships the Ascribe skill, in the [Agent Skills](https://agentskills.i
 
 The package doesn't carry an index of Ascribe's docs, which [`ascribe agents index`](https://ascribed-dev.com/go/cli-agents-index/) writes for a product's `AGENTS.md`. An agent reads a package's README only when it's sent there, and what Ascribe's agents need is the skill and the rules `sync` writes, which they load on their own, and the commands that answer questions about the project in front of them.
 
+## The JSON Schemas
+
+The package ships the JSON Schemas of what the commands write with `--format json`, and of the JSON output's pages, for the version it is: `@ascribed/cli/schemas/<name>.schema.json`, such as `@ascribed/cli/schemas/check.schema.json`. Each schema's `$id` is its address at the release's tag, `https://raw.githubusercontent.com/ascribed-dev/ascribe/v<version>/schemas/<name>.schema.json`. The [JSON report contract](https://ascribed-dev.com/go/json-reports/) says what each one is for.
+
 ## Platforms
 
 The package is a small launcher, plus one optional dependency per platform that holds the native binary: macOS on Apple silicon, Linux (arm64 and x64, glibc 2.28 or later), and Windows (x64). Your package manager installs only your platform's. There's no install script. Intel Macs aren't supported.

@@ -1,4 +1,5 @@
 {
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/resolve-permalink.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe resolve go:<name> --format json` answers: the name's entry\nas the build's `_ascribe/help.json` writes it, with the file's `version`,\n`build`, and `line`.",
   "properties": {

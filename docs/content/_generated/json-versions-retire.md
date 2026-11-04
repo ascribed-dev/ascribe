@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/versions-retire.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/versions-retire.schema.json`]({repo}/blob/main/schemas/versions-retire.schema.json):
+[`schemas/versions-retire.schema.json`]({repo}/blob/v{version}/schemas/versions-retire.schema.json):
 
 ```json
 {
@@ -170,6 +170,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/versions-retire.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe versions retire --format json` writes: the line, its\naddress, the marks rewritten, what no line has any more, and where each\nof the line's addresses should go.",
   "properties": {

@@ -32,6 +32,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/versions-export.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe versions export --format json` writes: the line, the\nfolder, and what's in it.",
   "properties": {

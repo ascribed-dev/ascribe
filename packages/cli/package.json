@@ -21,6 +21,7 @@
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "files": [
     "dist",
+    "schemas",
     "skills"
   ],
   "bin": {
@@ -34,7 +35,8 @@
     "./binary": {
       "types": "./dist/binary.d.ts",
       "default": "./dist/binary.js"
-    }
+    },
+    "./schemas/*": "./schemas/*"
   },
   "engines": {
     "node": ">=24"

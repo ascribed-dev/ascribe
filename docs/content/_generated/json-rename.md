@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/rename.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/rename.schema.json`]({repo}/blob/main/schemas/rename.schema.json):
+[`schemas/rename.schema.json`]({repo}/blob/v{version}/schemas/rename.schema.json):
 
 ```json
 {
@@ -65,6 +65,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/rename.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe rename --format json` writes, and the MCP server's\n`ascribe_rename` gives.",
   "properties": {

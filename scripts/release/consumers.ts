@@ -13,7 +13,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
-import { npmPackages, root } from "./manifests.ts";
+import { npmPackages, root, stageSchemas } from "./manifests.ts";
 
 /**
  * The entry points in a package's `exports` that aren't JavaScript, such as a
@@ -41,6 +41,8 @@ function run(command: string, args: string[], cwd = root): boolean {
 function main(): void {
   const out = mkdtempSync(join(tmpdir(), "ascribe-packages-"));
   const failed: string[] = [];
+  // As a release packs it, `@ascribed/cli` with the schemas.
+  const stagedSchemas = stageSchemas();
   try {
     // The platform packages hold only a binary; these are the JavaScript ones.
     for (const pkg of npmPackages.filter(({ target }) => target === undefined)) {
@@ -68,6 +70,7 @@ function main(): void {
       if (!run("pnpm", attw)) failed.push(`${pkg.name}: Are the Types Wrong`);
     }
   } finally {
+    if (stagedSchemas !== undefined) rmSync(stagedSchemas, { recursive: true, force: true });
     rmSync(out, { recursive: true, force: true });
   }
   if (failed.length > 0) {

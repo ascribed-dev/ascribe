@@ -1,8 +1,9 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/resolve-permalink.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/resolve-permalink.schema.json`]({repo}/blob/main/schemas/resolve-permalink.schema.json):
+[`schemas/resolve-permalink.schema.json`]({repo}/blob/v{version}/schemas/resolve-permalink.schema.json):
 
 ```json
 {
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/resolve-permalink.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe resolve go:<name> --format json` answers: the name's entry\nas the build's `_ascribe/help.json` writes it, with the file's `version`,\n`build`, and `line`.",
   "properties": {

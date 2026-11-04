@@ -1,5 +1,5 @@
 @memo: Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/addresses-list.schema.json; change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes` to rewrite it.
-[`schemas/addresses-list.schema.json`]({repo}/blob/main/schemas/addresses-list.schema.json):
+[`schemas/addresses-list.schema.json`]({repo}/blob/v{version}/schemas/addresses-list.schema.json):
 
 ```json
 {
@@ -98,6 +98,7 @@
       "type": "object"
     }
   },
+  "$id": "https://raw.githubusercontent.com/ascribed-dev/ascribe/v0.4.5/schemas/addresses-list.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe addresses list --format json` writes.",
   "properties": {
