@@ -61,6 +61,11 @@ versionless = ["cloud"]
 [builds.site]
 variants = "switch"
 availability = "badge"
+
+[checks]
+# The pages open with a heading, so that every page's diagnostics stay the
+# ones a benchmark expects.
+page-opening-missing = "off"
 "#;
 
 /// The content root of [`MODEL`], relative to the project root.
