@@ -1,0 +1,1 @@
+- **The contracts and the editor's pages agree with the code.** They correct the `llms.txt` link format, the language server's four client commands, the sidebar's Recheck row, and where the Review view sits. See [The language server](docs/content/editor/language-server.md).

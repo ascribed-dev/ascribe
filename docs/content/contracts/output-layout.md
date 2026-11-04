@@ -154,7 +154,7 @@ In an older line of a versioned build (§1.5), a page's `canonical` is the route
 
 ### 1.4 The headers
 
-The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version ([content-model contract §15](content-model/output.md#15-consumer)) has no head to carry what its page's head says, and a help entry's own addresses (§1.7) are read by a product on another origin, so the host sends them, and the host is the site's: with `[consumer] host = "netlify"`, the build writes them in Netlify's format too (§1.9), which `@ascribed/astro` places at the site's root, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
+The site output holds `_ascribe/headers.json`: the response headers the build's files need from the host, as rules, each a path and the headers it gets. A Markdown version ([content-model contract §15](content-model/output.md#15-consumer)) has no head to carry what its page's head says, and a help entry's own addresses (§1.7) are read by a product on another origin, so the host sends them, and the host is the site's: with `[consumer] host = "netlify"`, the build writes them in Netlify's format too (§1.9), which `@ascribed/astro` places at the site's root, and a site built another way reads the list. It's `generated` in the manifest, and written for every build, with an empty list when the build publishes no Markdown versions and no permalinks, so a consumer can tell "no rules" from an Ascribe that doesn't write the file.
 
 ```json
 {

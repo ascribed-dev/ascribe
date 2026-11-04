@@ -42,7 +42,7 @@ The page is the template with its `type` and `title` set, and `draft: true`, so 
 
 **Ascribe: Go to Next Placeholder** selects the next thing the template left to fill in after the cursor: a frontmatter field still as the template has it, or a `\{placeholder}`, a whole one even when it runs across a paragraph and a list. After the last, it goes back to the first. They're the placeholders and fields [`template-placeholder-left`](../templates/index.md#whats-left-to-fill-in) reports, found the same way; the template's instructions aren't among them, since you read those rather than fill them in. To give it a key, open **Preferences: Open Keyboard Shortcuts** and search for `ascribe.nextPlaceholder`.
 
-A type with no template makes a page with its frontmatter: its `type`, the title, and each other field the type requires, empty.
+A type with no template makes a page with its frontmatter: its `type`, the title, each other field the type requires, empty, and `draft: true`.
 
 ## Memo files
 
