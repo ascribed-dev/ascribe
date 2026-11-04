@@ -389,6 +389,7 @@ vale = "checks/vale.md"
 variants = "writing/variants.md"
 versions = "versions/index.md"
 workspaces-with-several-projects = "editor/settings.md#workspaces-with-several-projects"
+write-a-page = "writing/write-a-page.md"
 
 [aliases]
 ASC179 = "ASC265"

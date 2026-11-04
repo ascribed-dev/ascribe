@@ -6,11 +6,9 @@ description: "How a directive is written: its line, attributes, forms, groups, t
 
 Ascribe source is CommonMark with a few additions: **directives**, lines that start with `@` and annotate the content around them; **title lines**, which give a directive a title; and **phrases**, reusable strings written `{key}`. Everything else is ordinary Markdown, and an Ascribe page read by a plain Markdown renderer still reads sensibly.
 
-This page is how a directive is written. Each built-in directive is in the [directive reference](directives.md), [phrases, links, and images](inline.md) are on a page of their own, and so is [frontmatter](frontmatter.md). Each section links to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
+This page is how a directive is written. Each built-in directive is in the [directive reference](directives.md), [phrases, links, and images](inline.md) are on a page of their own, and so is [frontmatter](frontmatter.md). Each section ends with a link to its part of the [Ascribe specification]({repo}/blob/main/SPEC.md), which has the exact rules.
 
 ## Directive lines
-
-([SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax), [§3.2]({repo}/blob/main/SPEC.md#32-recognition))
 
 A directive line has a name, optional attributes in braces, and an optional **primary** after a colon, the directive's one main value, such as a note's text or the file an `@include` brings in:
 
@@ -36,9 +34,9 @@ Spaces between the parts don't matter, and nothing else may be on the line: `@st
 
 Attributes written without their braces, as in `@note type=warning: You need Node 20.`, are the same error, and it's the one reported for the line: the errors that would follow from it, such as the note applying to the heading below, aren't. When the keys are the directive's attributes, the fix adds the braces (`@note {type=warning}: …`), and `ascribe check --fix` applies it when a primary follows the colon.
 
-## Attributes
+Specification: [§3.1]({repo}/blob/main/SPEC.md#31-syntax), [§3.2]({repo}/blob/main/SPEC.md#32-recognition).
 
-([SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes))
+## Attributes
 
 Attributes are `key=value` pairs in braces, separated by commas. They use the same syntax after a directive's name, after an image, and at the end of a table row's first cell ([table rows](directives.md#table-rows)).
 
@@ -56,9 +54,9 @@ Attributes are `key=value` pairs in braces, separated by commas. They use the sa
 
 A value's type comes from the directive's schema, never from how it looks: `3.10` is a string where the schema says string.
 
-### Code block info strings
+Specification: [§3.3]({repo}/blob/main/SPEC.md#33-attributes).
 
-([SPEC §3.3.1]({repo}/blob/main/SPEC.md#331-info-string-attributes))
+### Code block info strings
 
 A fenced code block's info string holds its language, then words, some of them `key=value` pairs Ascribe reads: `phrases`, `title`, `tested`, `request`, and `response`. They take no braces or commas, and a value with a space or a quote is quoted:
 
@@ -72,9 +70,9 @@ A fenced code block's info string holds its language, then words, some of them `
 
 A word that starts with one of these keys and `=` but isn't a pair, such as `phrases = true`, `Title=x`, or `title="connect.ts` with no closing quote, is a warning, because the block quietly loses what the pair meant. The quick fix writes the pair it was meant to be.
 
-## Forms: line and container
+Specification: [§3.3.1]({repo}/blob/main/SPEC.md#331-info-string-attributes).
 
-([SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms))
+## Forms: line and container
 
 A directive is either a single line, or a **container** that holds blocks until `@end`. The line itself says which: **a colon with nothing after it opens a container**; any other directive line is a single line.
 
@@ -93,11 +91,11 @@ It holds several paragraphs.
 - A trailing colon on a directive with no container form is an error, and so is a container-only directive (such as `@variant`) without one.
 - A text primary that happens to end in a colon is still a primary: `@note: Important:` is a one-line note.
 
-Containers may nest. Ascribe warns when they're more than two levels deep ([SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)).
+Containers may nest. Ascribe warns when they're more than two levels deep.
+
+Specification: [§3.5]({repo}/blob/main/SPEC.md#35-forms), [§3.10]({repo}/blob/main/SPEC.md#310-nesting).
 
 ## Groups
-
-([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups))
 
 Some directives, `@variant` among them, form **groups**: a run of openers of the same directive is one group of alternatives. Each opener starts an **arm** and ends the previous one, and one `@end` closes the whole group.
 
@@ -112,9 +110,9 @@ Point the agent at your server.
 
 A group can't be nested directly inside an arm of a group of the same directive. For `@variant`, put both dimensions on one arm instead.
 
-## Titles
+Specification: [§3.6]({repo}/blob/main/SPEC.md#36-groups).
 
-([SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles))
+## Titles
 
 A **title line** starts with `.` followed by a character that isn't a space or another `.`. It sits directly above a directive that takes a title (a note, `@details`, or a labeled `@variant` arm), with no blank line between.
 
@@ -130,9 +128,9 @@ You can run Quill in the browser with no local setup.
 
 The editor shows title lines distinctly, so a paragraph that accidentally became a title is easy to spot.
 
-## Binding: what a directive applies to
+Specification: [§3.7]({repo}/blob/main/SPEC.md#37-titles).
 
-([SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding))
+## Binding: what a directive applies to
 
 A directive in line form applies to something, according to its **binding**:
 
@@ -155,9 +153,9 @@ A directive in line form applies to something, according to its **binding**:
 
 The short version: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.** Two exceptions: a container `@memo` touches the block after its `@end`, and `@summary` without a colon describes its section from anywhere in it, by the paragraph it touches.
 
-## Lists and block quotes
+Specification: [§3.8]({repo}/blob/main/SPEC.md#38-binding).
 
-([SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes))
+## Lists and block quotes
 
 Directives follow CommonMark's container rules, like headings and code fences:
 
@@ -167,9 +165,9 @@ Directives follow CommonMark's container rules, like headings and code fences:
 - A directive indented four or more spaces past its container's content is part of an indented code block, and is text. Ascribe warns about that too.
 - Block quotes work the same way, with `>` in place of indentation.
 
-## Escapes
+Specification: [§3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes).
 
-([SPEC §2.3]({repo}/blob/main/SPEC.md#23-escapes))
+## Escapes
 
 Ascribe uses CommonMark's backslash escapes, so an escaped character renders as itself in any Markdown renderer:
 
@@ -181,10 +179,12 @@ Ascribe uses CommonMark's backslash escapes, so an escaped character renders as 
 
 They're rarely needed: a directive needs a known name at the start of a line, a phrase needs a declared key, and a title needs a directive on the next line.
 
-## Canonical form
+Specification: [§2.3]({repo}/blob/main/SPEC.md#23-escapes).
 
-([SPEC §8.3]({repo}/blob/main/SPEC.md#83-canonical-form))
+## Canonical form
 
 Ascribe accepts any spacing the syntax allows, and has one canonical spelling for each construct: one space between a name and `{`, no spaces inside braces or around `=` and `|`, attributes in the order their schema declares, values quoted only when needed, and no blank line between a directive and its block. `ascribe fmt` rewrites source into canonical form, changing only Ascribe constructs and never how a page renders; `ascribe fmt --check` reports files that would change.
 
 A general Markdown formatter that reflows paragraphs, such as Prettier with `proseWrap: always`, doesn't know that title and directive lines start new blocks, and joins them with the text below. Format Ascribe sources with `ascribe fmt`, and exclude them from other formatters.
+
+Specification: [§8.3]({repo}/blob/main/SPEC.md#83-canonical-form).
