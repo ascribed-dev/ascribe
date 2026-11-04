@@ -5,7 +5,7 @@ description: "Start a project in a folder of Markdown you already have, and take
 permalink: existing-docs
 ---
 
-Ascribe reads plain CommonMark, so a folder of Markdown is most of a project already. This guide starts a project around one, fixes what the first check finds, and shows what to rewrite in pages written for another tool: links, frontmatter, callouts, and heading ids.
+Ascribe reads plain CommonMark, so a folder of Markdown is most of a project already. This guide starts a project around one, fixes what the first check finds, and shows what to rewrite in pages written for another tool: links, frontmatter, callouts, heading ids, components, and a copy of the docs for each version.
 
 The pages here are [`examples/existing-docs`]({repo}/tree/main/examples/existing-docs): four pages in `docs/`, some with frontmatter and some without, and one link written to the `.html` file the old site published.
 
@@ -108,7 +108,39 @@ grep -rnE '^(:::|!!! )|\{#[^}]*\}\s*$|\[\[' docs/
 | A frontmatter key for the page's place in the sidebar | [`ascribe.nav`](navigation/order.md), which orders the pages and sections |
 | Any other frontmatter key | A field in `[frontmatter]` in `ascribe.toml`, such as `tags = "list(string)?"`, or nothing: a key `ascribe.toml` doesn't declare is reported |
 
-The callout types are `note`, `tip`, `important`, `warning`, and `caution`; `[notes]` in `ascribe.toml` declares others. Only `.md` files are pages: rename a `.mdx` file whose components you've replaced, and keep a file that isn't a page out of the content root, or in a folder whose name starts with `.`.
+The callout types are `note`, `tip`, `important`, `warning`, and `caution`; `[notes]` in `ascribe.toml` declares others. Only `.md` files are pages: rename a `.mdx` file once its components are replaced, as [the next section](#components-and-versions-from-another-tool) maps them, and keep a file that isn't a page out of the content root, or in a folder whose name starts with `.`.
+
+## Components and versions from another tool
+@id: components-and-versions-from-another-tool
+
+The check reports none of these either: an MDX component or a shortcode is text or raw HTML to Ascribe. Each one becomes a directive, a phrase, or a widget the project declares. [`examples/comparison`]({repo}/tree/main/examples/comparison) has one page written four ways, in Ascribe, Starlight MDX, Elastic's docs-builder, and Hugo, with a table that compares them construct by construct.
+
+### Tabs, steps, partials, and components
+
+| Docusaurus or Starlight (MDX) | MkDocs | Hugo | In Ascribe |
+|---|---|---|---|
+| `<Tabs>` with a `<TabItem>` for each tab; Starlight's `<Tabs syncKey>`, `<PackageManagerTabs>` | `=== "npm"` content tabs | `{{< tabs >}}` with a `{{< tab >}}` for each | A [`@variant`](writing/directives.md#variant) group: an arm for each tab, `@variant {pm=npm}:`, and one `@end`. Tabs that are always the same choice, such as the package manager, are a dimension in `ascribe.toml`, so a build can keep one arm; a one-off set of tabs is labeled arms, a title line such as `.Using Docker` above each `@variant:` |
+| `<Steps>` around an ordered list | A plain ordered list | A plain ordered list | [`@steps`](writing/directives.md#steps) on the line above the list, with no wrapper to close |
+| `import Partial from './_partial.mdx'` and `<Partial />` | `--8<-- "partial.md"` | `{{% include "partial.md" %}}` | [`@include: _partial.md`](writing/directives.md#include). A file whose name starts with `_` is a fragment, not a page, so Docusaurus's partials keep their names; rename the `.mdx` to `.md` |
+| `:::tip[Title]`, `:::tip Title`, or Starlight's `<Aside type="tip" title="Title">` | `!!! tip "Title"` | `> [!TIP]`, which the check reports, and `--fix` rewrites | A title line, then the note: `.Title` on the line above `@note {type=tip}`. Without a title, `@note {type=tip}: …` alone |
+| `<details>` with a `<summary>` | `??? note "Title"` | `{{< details >}}` | [`@details`](writing/directives.md#details), with the summary as its title line |
+| A value written into the page, such as a version | A `{{ variable }}` from `mkdocs-macros` | `{{% param "version" %}}` | A [phrase](glossary.md#phrase), `{version}`, declared once in `[phrases]`. In a code block, the fence opts in with `phrases=true` |
+| `<Badge>`, or a label saying where a section applies | | | [`@available`](writing/directives.md#available) under the heading, such as `@available: self-managed 3.4`, naming a target `ascribe.toml` declares |
+| Any other component the project wrote, such as `<Video>` | A Markdown extension or a macro | A shortcode of the project's own | A [project widget](writing/directives.md#project-widgets): a directive declared in `[widgets.<name>]`, such as `@quill-video {id=intro}`. The site writes it as a custom element with its name, for the site to define, and plain Markdown writes its fallback text |
+
+Markdown that isn't a directive stays as it's written: an ordered list stays an ordered list. A heading's id is `@id` on the line below it, as the table above rewrites it.
+
+### A copy of the docs for each version
+
+Docusaurus keeps a copy of every page for each version in `versioned_docs/`, and mike publishes a copy of a whole MkDocs site for each. Ascribe keeps one copy, and builds a site for each version from it:
+
+@steps
+1. Start from the newest copy, the one in `docs/`, and leave the others out of the content root.
+2. Where an older version's page differs, mark what's in some versions and not others with [`@available`](writing/directives.md#available): `@available: self-managed 3.5` under a heading that's new in 3.5, or `available:` in a page's frontmatter for a page that's new.
+3. List the versions a reader can be on in [`[releases]`](content-model/variation.md#121-releasestarget), as `live = ["3.4", "3.5"]`, and name it on the site's build, as `versions = "self-managed"`. Each live line gets its own output: the current line keeps the site's addresses, so turning versions on moves none, and each older one is under its number, as `/docs/3.4/`.
+4. For a version too old to rebuild, keep the site the old tool published, and list it under `archived` in `[releases]` with its address, so the live site lists it among the versions.
+
+[Publish a site for each version](versions/index.md) has each step, from listing the lines to moving them on when a version ships.
 
 ## See also
 
