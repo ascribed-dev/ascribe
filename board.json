@@ -8725,7 +8725,7 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhD4OdE",
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Backlog",
       "title": "Docs report: links and the published site"
     },
     {
@@ -9429,7 +9429,7 @@
         "enhancement"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "In progress",
       "title": "JSON Schemas: give them an `$id`, publish them per version, and show their fields as tables"
     },
     {
@@ -10079,6 +10079,76 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Copilot's setup steps put the package's `node_modules/.bin` on the path when npm or Yarn hoists `ascribe` to the workspace root"
+    },
+    {
+      "content": {
+        "body": "Found while doing #1287 (PR #1348).\n\nWith a relative `--config`, Ascribe hands Vale the project's configuration as a relative path, but runs Vale in a scratch folder. From there the path doesn't resolve, so Vale finds no configuration and silently reports nothing.\n\n```sh\n# in the repository's root, on main\nascribe check --vale --config docs        # no prose problems reported\nascribe check --vale --config \"$PWD/docs\" # reports the docs' Vale alerts\n```\n\n`docs/` has its own `.vale.ini` since #1348, so the first command should report the same alerts as the second. The Vale call is in `crates/ascribe-report/src/prose/` (`vale.rs`, `setup.rs`).\n\n## Done when\n\n- `ascribe check --vale --config <relative folder>` reports the same prose problems as the same command with the folder's absolute path, for a preset and for a project's own `.vale.ini`.\n- Vale finding no configuration is reported as an error rather than as a clean result, if Ascribe can tell.\n- A test in `crates/ascribe-cli/tests/all/vale.rs` runs `check --vale` with a relative `--config` from outside the project.",
+        "number": 1357,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe check --vale --config docs` checks nothing: Vale gets the configuration as a relative path",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1357"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF-RAA",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "`ascribe check --vale --config docs` checks nothing: Vale gets the configuration as a relative path"
+    },
+    {
+      "content": {
+        "body": "Found while doing #1279 (PR #1352).\n\n`scripts/docs-site/paragraphs.test.ts` holds every paragraph under 150 words. Its `paragraphs()` ends a paragraph only at a blank line or a fence. Take a list item with a second, indented paragraph, followed straight away by the next item and no blank line between them. The test joins the indented paragraph, the next item, and anything after it into one paragraph, and counts all their words together.\n\n```markdown\n- **First.** A sentence.\n\n  A second paragraph of the first item.\n- **Second.** Another item.\n```\n\nHere the test reads \"A second paragraph of the first item. - **Second.** Another item.\" as one paragraph. PR #1352 worked around it in commit 2392fe48, by turning the three places it hit (`checks/report.md`, `content-model/output.md`, `editor/sidebar.md`) into list items of their own. The test itself is unchanged.\n\n## Done when\n\n- A line that opens a list item, a heading, a table, a quote, or a directive ends the paragraph before it, whether or not a blank line comes first.\n- A test of `paragraphs()` covers the example above, and an ordered list (`1.`, `2)`).\n- The test still passes on `docs/content/`.",
+        "number": 1358,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Paragraph test: an indented paragraph that runs into the next list item is read as one paragraph",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1358"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF-RFo",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "Paragraph test: an indented paragraph that runs into the next list item is read as one paragraph"
+    },
+    {
+      "content": {
+        "body": "Left by #1285 (PR #1354, commit 46293ee7), because a contract edit needs a decision recorded with it.\n\n`docs/content/contracts/permalinks-list.md`, §1, the paragraph after the table bullets, now reads:\n\n> The three tables were added to version 1: a list without them is a list with none, and a version of Ascribe that predates one reports a list with it as invalid rather than misread it.\n\n\"A version of Ascribe that predates one\" makes the reader work out that \"one\" is a table, and \"it\" could be either the list or the table. The rule underneath is unchanged: a reader older than a table rejects a list that has it.\n\n## Done when\n\n- The sentence says the same rule plainly, for instance: \"a version of Ascribe from before a table was added reports a list that has that table as invalid, rather than misread it.\"\n- No numbered section, id, or rule changes. The pull request names [decision #1288](../blob/main/project-docs/decisions/1288-contract-prose-edits.md) as the decision that allows the edit, which is how the change record passes.",
+        "number": 1359,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Permalinks list contract: say plainly which readers reject the three newer tables",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1359"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF-RLM",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "Permalinks list contract: say plainly which readers reject the three newer tables"
+    },
+    {
+      "content": {
+        "body": "Left by #1285 (PR #1354) as research rather than a prose fix.\n\nThe \"What the research found\" part of `docs/content/agents/measuring.md` states figures and findings without naming where they come from. The page itself says this part is \"the part most likely to be read as a promise\", and none of these has a link:\n\n- the `llms.txt` pointer on each Markdown page cutting an agent's fetches of addresses that don't exist from 2.23 to 0.11 per task, \"in one controlled benchmark\"\n- a compact docs index in `AGENTS.md` (about 8 KB) taking \"one vendor's evaluation\" from 53% to 100%\n- agents' fetch tools cutting a page off at around 100,000 characters\n- Google saying its search doesn't use `llms.txt`, and \"one study of 137,000 domains\" in which 97% of the files got no requests in a month\n- \"a matched test\" finding no significant gain from structured data\n- Google documenting no length limits for titles and descriptions, and listing the number and order of headings among the things not to focus on\n- no major operator having committed to honoring \"no AI\" markers, and crawlers that document they may ignore `robots.txt`\n\n## Done when\n\n- Each finding links its source: the study, the vendor's write-up, or the search engine's documentation.\n- A finding whose source can't be found is taken out, or reworded to say only what can be cited.\n- The figures match their sources.",
+        "number": 1360,
+        "repository": "ascribed-dev/ascribe",
+        "title": "agents/measuring.md: cite the studies behind each finding",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1360"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF-RQ8",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "agents/measuring.md: cite the studies behind each finding"
+    },
+    {
+      "content": {
+        "body": "Left by #1283 (PR #1353). That PR settled the docs' terms and fixed every hand-written page. It left `docs/content/_generated/` alone, because that text comes from the code, and #1348's Vale rules skip `_generated/` for the same reason. So the generated pages still use the old terms. On `main` there are about 106 lines with them:\n\n| Old term | Settled term | Count | Mostly in |\n|---|---|---|---|\n| content type | page type | 51 | `diagnostics-pages.md`, `diagnostics-content-model.md`, `diagnostics-output-checks.md`, `json-report.md` |\n| directory | folder | 39 | `diagnostics-content-model.md`, `cli-rename-options.md`, `json-report.md` |\n| lightbulb | light bulb | 11 | `editor-actions.md` |\n| author | writer | 4 | `json-report.md` and others |\n| plain output | the plain Markdown output | 3 | `json-resolve.md`, `diagnostics-output-checks.md` |\n| put off, hold back | baseline | 3 | `json-report.md` |\n\nThe sources are `tests/conformance/diagnostics.toml` (each entry's summary, when, and fix), the commands' help (`crates/ascribe-cli/src/cli.rs`), the doc comments the JSON Schemas are generated from, and the editor's action titles (`packages/vscode/`).\n\n## Done when\n\n- Each source writes the settled term in the prose it generates: the diagnostics' summary, when, and fix fields, the commands' help, the schemas' `description`s, and the editor's action titles. The generated pages are re-blessed (`pnpm bless`).\n- Names stay as they are: `output-dir`, field and key names, and VS Code's **Content types** card.\n- **Diagnostic messages aren't changed in this PR.** They're the program's output, and #1353 left them on purpose. Whether they follow is its own question, and if they do, it's its own PR with `--accept`.\n- `docs/.vale.ini` stops skipping `_generated/` for the `Terms` rule, or a test fails if a generated page uses an old term, so the terms don't come back.",
+        "number": 1361,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Generated reference pages: use the settled terms at their source in the code",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1361"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhF-Rh4",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Ready",
+      "title": "Generated reference pages: use the settled terms at their source in the code"
     }
   ]
 }
