@@ -4,9 +4,7 @@ title: "Title"
 description: "{One sentence that says what a reader can do once they've followed this page.}"
 ---
 
-## Overview
 @memo: Optional: Specify when and why your user might want to perform the task.
-
 This guide explains how to \{insert a brief description of the task}.
 
 ## Before you start

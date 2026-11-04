@@ -2,3 +2,7 @@ spec = "0.1"
 
 [checks.summary-long]
 limit = 40
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

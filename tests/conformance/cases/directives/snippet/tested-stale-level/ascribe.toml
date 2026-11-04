@@ -7,4 +7,5 @@ content-root = "files"
 path = "code"
 
 [checks]
+page-opening-missing = "off"
 example-stale = "advice"

@@ -2,3 +2,6 @@ spec = "0.1"
 
 [project]
 content-root = "files"
+
+[checks]
+page-opening-missing = "off"

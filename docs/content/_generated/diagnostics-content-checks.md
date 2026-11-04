@@ -299,12 +299,12 @@
 @id {permalink=true}: ASC292
 @summary: A page's first block after its title is something other than a paragraph written in the page, such as an `@include`, a heading, or a list.
 
-[Advice, off by default](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
+[Advice](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
 
 **When:** A page's first block after its title is something other than a paragraph written in the page: an `@include`, a heading, a list, a table, code, a quote, or a directive. A level-1 heading that repeats the title, a memo, an HTML comment, and a directive that binds to the block below it, such as `@summary` or `@available`, are passed over. A fragment, and a page with nothing after its frontmatter, aren't looked at.
 
 **Message:** this page opens with \{first}, not a paragraph; open the page with a sentence that says what it covers
 
-**Fix:** Write a paragraph at the top of the page, before its first heading, list, or include, saying what the page covers and who it's for. A reader who lands on the page from a search sees it first, and so does an agent, which may read no further. When the page's opening is in a fragment, write the sentence in the page and include the rest after it. The check is off unless the project turns it on: `[checks] page-opening-missing = "advice"`.
+**Fix:** Write a paragraph at the top of the page, before its first heading, list, or include, saying what the page covers and who it's for. A reader who lands on the page from a search sees it first, and so does an agent, which may read no further. When the page's opening is in a fragment, write the sentence in the page and include the rest after it.
 
 **Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.

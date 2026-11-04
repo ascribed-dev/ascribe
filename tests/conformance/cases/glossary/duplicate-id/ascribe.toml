@@ -5,3 +5,7 @@ content-root = "files"
 
 [glossary]
 pages = ["glossary.md", "more.md"]
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

@@ -43,6 +43,7 @@ glossary-term-unused = "off"
 image-unused = "off"
 image-large = "off"
 title-duplicate = "off"
+page-opening-missing = "off"
 "#;
 
 /// The same, without a build that keeps everything, so `edge` is never

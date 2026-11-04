@@ -5,6 +5,3 @@ content-root = "files"
 
 [fragments]
 patterns = ["_*"]
-
-[checks]
-page-opening-missing = "advice"

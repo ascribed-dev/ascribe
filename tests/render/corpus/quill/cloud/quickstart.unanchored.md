@@ -1,3 +1,5 @@
+Try Quill on a page of your own docs before you install anything.
+
 ## Try in the browser <ascribe-attributes id="try-in-browser"></ascribe-attributes>
 
 Open the playground at play.quill.dev and paste a page of your docs.

@@ -4,6 +4,8 @@ title: "Quill's commands"
 description: "Every command Quill has, with what it does and an example of each."
 ---
 
+Every command Quill has, with what it does, what it takes, and an example of each.
+
 ## Commands
 
 | Command | Description | Argument | Example |

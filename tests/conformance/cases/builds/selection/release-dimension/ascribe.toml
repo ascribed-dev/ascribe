@@ -15,3 +15,7 @@ live = ["0.4"]
 
 [builds.agent]
 variants = { release = "agent" }
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

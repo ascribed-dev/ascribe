@@ -26,8 +26,8 @@ expression: text
       "explicit": true,
       "source": {
         "file": "keys.md",
-        "span": [102, 117],
-        "lines": [7, 7]
+        "span": [222, 237],
+        "lines": [9, 9]
       }
     },
     {
@@ -38,8 +38,8 @@ expression: text
       "explicit": true,
       "source": {
         "file": "keys.md",
-        "span": [187, 201],
-        "lines": [12, 12]
+        "span": [307, 321],
+        "lines": [14, 14]
       }
     },
     {
@@ -50,13 +50,35 @@ expression: text
       "explicit": true,
       "source": {
         "file": "keys.md",
-        "span": [580, 602],
-        "lines": [23, 23]
+        "span": [700, 722],
+        "lines": [25, 25]
       }
     }
   ],
   "assets": [],
   "blocks": [
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "The Quill agent signs in with an API key. Create one for each machine that runs it, and rotate them on a schedule.",
+          "span": [102, 220]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [102, 220],
+        "lines": [7, 7]
+      },
+      "substitutions": [
+        {
+          "span": [106, 115],
+          "key": "product",
+          "value": "Quill"
+        }
+      ]
+    },
     {
       "type": "heading",
       "level": 2,
@@ -68,13 +90,13 @@ expression: text
         {
           "type": "text",
           "value": "Create a key",
-          "span": [105, 117]
+          "span": [225, 237]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [102, 117],
-        "lines": [7, 7]
+        "span": [222, 237],
+        "lines": [9, 9]
       }
     },
     {
@@ -90,8 +112,8 @@ expression: text
       "annotation": null,
       "source": {
         "file": "keys.md",
-        "span": [118, 133],
-        "lines": [8, 8]
+        "span": [238, 253],
+        "lines": [10, 10]
       }
     },
     {
@@ -100,7 +122,7 @@ expression: text
         {
           "type": "text",
           "value": "Sign in to Quill Cloud and open ",
-          "span": [135, 163]
+          "span": [255, 283]
         },
         {
           "type": "strong",
@@ -108,25 +130,25 @@ expression: text
             {
               "type": "text",
               "value": "Settings → Keys",
-              "span": [165, 182]
+              "span": [285, 302]
             }
           ],
-          "span": [163, 184]
+          "span": [283, 304]
         },
         {
           "type": "text",
           "value": ".",
-          "span": [184, 185]
+          "span": [304, 305]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [135, 185],
-        "lines": [10, 10]
+        "span": [255, 305],
+        "lines": [12, 12]
       },
       "substitutions": [
         {
-          "span": [146, 153],
+          "span": [266, 273],
           "key": "cloud",
           "value": "Quill Cloud"
         }
@@ -143,13 +165,13 @@ expression: text
         {
           "type": "text",
           "value": "Rotate keys",
-          "span": [190, 201]
+          "span": [310, 321]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [187, 201],
-        "lines": [12, 12]
+        "span": [307, 321],
+        "lines": [14, 14]
       }
     },
     {
@@ -165,8 +187,8 @@ expression: text
       "annotation": null,
       "source": {
         "file": "keys.md",
-        "span": [202, 218],
-        "lines": [13, 13]
+        "span": [322, 338],
+        "lines": [15, 15]
       }
     },
     {
@@ -175,17 +197,17 @@ expression: text
         {
           "type": "text",
           "value": "Generate a new key, put it in ",
-          "span": [444, 474]
+          "span": [564, 594]
         },
         {
           "type": "code",
           "value": "quill.yaml",
-          "span": [474, 486]
+          "span": [594, 606]
         },
         {
           "type": "text",
           "value": ", and restart the agent. To install the agent first, see ",
-          "span": [486, 543]
+          "span": [606, 663]
         },
         {
           "type": "link",
@@ -202,25 +224,25 @@ expression: text
             {
               "type": "text",
               "value": "Install the agent",
-              "span": [543, 577]
+              "span": [663, 697]
             }
           ],
-          "span": [543, 577]
+          "span": [663, 697]
         },
         {
           "type": "text",
           "value": ".",
-          "span": [577, 578]
+          "span": [697, 698]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [444, 578],
-        "lines": [21, 21]
+        "span": [564, 698],
+        "lines": [23, 23]
       },
       "links": [
         {
-          "span": [543, 577],
+          "span": [663, 697],
           "kind": "link",
           "destination": "install-agent.md#install-agent",
           "target": {
@@ -244,13 +266,13 @@ expression: text
         {
           "type": "text",
           "value": "Sign webhook events",
-          "span": [583, 602]
+          "span": [703, 722]
         }
       ],
       "source": {
         "file": "keys.md",
-        "span": [580, 602],
-        "lines": [23, 23]
+        "span": [700, 722],
+        "lines": [25, 25]
       },
       "availability": {
         "text": "self-managed 3.5",
@@ -268,7 +290,7 @@ expression: text
         "feature": null,
         "source": {
           "file": "keys.md",
-          "span": [622, 650]
+          "span": [742, 770]
         }
       }
     },
@@ -285,8 +307,8 @@ expression: text
       "annotation": null,
       "source": {
         "file": "keys.md",
-        "span": [603, 621],
-        "lines": [24, 24]
+        "span": [723, 741],
+        "lines": [26, 26]
       },
       "availability": {
         "text": "self-managed 3.5",
@@ -304,7 +326,7 @@ expression: text
         "feature": null,
         "source": {
           "file": "keys.md",
-          "span": [622, 650]
+          "span": [742, 770]
         }
       }
     },
@@ -325,66 +347,7 @@ expression: text
       },
       "source": {
         "file": "keys.md",
-        "span": [622, 650],
-        "lines": [25, 25]
-      },
-      "availability": {
-        "text": "self-managed 3.5",
-        "display": "self-managed (GA, 3.5+)",
-        "targets": [
-          {
-            "target": "self-managed",
-            "dimension": "deployment",
-            "states": ["ga"],
-            "versions": ["3.5"],
-            "text": "self-managed (GA, 3.5+)"
-          }
-        ],
-        "scope": "section",
-        "feature": null,
-        "source": {
-          "file": "keys.md",
-          "span": [622, 650]
-        }
-      }
-    },
-    {
-      "type": "paragraph",
-      "inlines": [
-        {
-          "type": "text",
-          "value": "A key also signs the events the agent sends to your ",
-          "span": [652, 704]
-        },
-        {
-          "type": "link",
-          "destination": "/webhooks/",
-          "title": null,
-          "target": {
-            "type": "page",
-            "page": "webhooks.md",
-            "id": null,
-            "url": "/webhooks/",
-            "text_filled": false
-          },
-          "children": [
-            {
-              "type": "text",
-              "value": "webhooks",
-              "span": [705, 713]
-            }
-          ],
-          "span": [704, 727]
-        },
-        {
-          "type": "text",
-          "value": ".",
-          "span": [727, 728]
-        }
-      ],
-      "source": {
-        "file": "keys.md",
-        "span": [652, 728],
+        "span": [742, 770],
         "lines": [27, 27]
       },
       "availability": {
@@ -403,12 +366,71 @@ expression: text
         "feature": null,
         "source": {
           "file": "keys.md",
-          "span": [622, 650]
+          "span": [742, 770]
+        }
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "A key also signs the events the agent sends to your ",
+          "span": [772, 824]
+        },
+        {
+          "type": "link",
+          "destination": "/webhooks/",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "webhooks.md",
+            "id": null,
+            "url": "/webhooks/",
+            "text_filled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "webhooks",
+              "span": [825, 833]
+            }
+          ],
+          "span": [824, 847]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [847, 848]
+        }
+      ],
+      "source": {
+        "file": "keys.md",
+        "span": [772, 848],
+        "lines": [29, 29]
+      },
+      "availability": {
+        "text": "self-managed 3.5",
+        "display": "self-managed (GA, 3.5+)",
+        "targets": [
+          {
+            "target": "self-managed",
+            "dimension": "deployment",
+            "states": ["ga"],
+            "versions": ["3.5"],
+            "text": "self-managed (GA, 3.5+)"
+          }
+        ],
+        "scope": "section",
+        "feature": null,
+        "source": {
+          "file": "keys.md",
+          "span": [742, 770]
         }
       },
       "links": [
         {
-          "span": [704, 727],
+          "span": [824, 847],
           "kind": "link",
           "destination": "webhooks.md",
           "target": {

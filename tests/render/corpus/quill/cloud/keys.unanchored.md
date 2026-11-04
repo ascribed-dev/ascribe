@@ -1,3 +1,5 @@
+The Quill agent signs in with an API key. Create one for each machine that runs it, and rotate them on a schedule.
+
 ## Create a key <ascribe-attributes id="create-key"></ascribe-attributes>
 
 Sign in to Quill Cloud and open **Settings → Keys**.

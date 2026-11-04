@@ -9,3 +9,7 @@ template = "templates/tutorial.md"
 [types.tutorial.frontmatter]
 title = "string"
 description = "string"
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"

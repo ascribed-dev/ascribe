@@ -247,7 +247,7 @@ fn anchors_mark_the_site_output_and_the_manifest_says_so() {
     let page = read(&built.join("site/quickstart.md"));
     assert!(
         page.contains(
-            "<!--ascribe-anchor tag=\"h2\" source=\"quickstart.md:7-7\"-->\n## Try in the browser"
+            "<!--ascribe-anchor tag=\"h2\" source=\"quickstart.md:9-9\"-->\n## Try in the browser"
         ),
         "{page}"
     );

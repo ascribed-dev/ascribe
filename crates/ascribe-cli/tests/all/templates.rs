@@ -447,8 +447,6 @@ title: \"Rotate keys\"
 description: \"Replace the keys Quill signs releases with, without a release going unsigned.\"
 ---
 
-## Overview
-
 This guide explains how to replace the keys {product} signs releases with.
 
 ## Before you start

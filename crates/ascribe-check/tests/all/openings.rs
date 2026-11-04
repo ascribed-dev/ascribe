@@ -31,7 +31,6 @@ title = "string"
 [checks]
 page-orphan = "off"
 fragment-unused = "off"
-page-opening-missing = "advice"
 "#;
 
 fn project_with(model: &str, files: &[(&str, &str)]) -> Project {
@@ -122,10 +121,11 @@ fn a_page_of_any_type_with_nothing_but_frontmatter_has_no_opening_to_check() {
 }
 
 #[test]
-fn the_opening_check_is_off_unless_named() {
-    let model = MODEL.replace("page-opening-missing = \"advice\"\n", "");
-    let p = project_with(&model, &[("a.md", &page("concept", "## Install"))]);
+fn the_opening_check_is_on_unless_turned_off() {
+    let off = MODEL.replace("[checks]\n", "[checks]\npage-opening-missing = \"off\"\n");
+    let p = project_with(&off, &[("a.md", &page("concept", "## Install"))]);
     assert!(check_files(&p).is_empty(), "{:#?}", check_files(&p));
+    assert_eq!(opening("## Install").len(), 1);
 }
 
 #[test]

@@ -3,3 +3,7 @@ spec = "0.1"
 [types.page.frontmatter]
 title = "string"
 summary = { type = "string?", role = "description" }
+
+# This case isn't about how its pages open.
+[checks]
+page-opening-missing = "off"
