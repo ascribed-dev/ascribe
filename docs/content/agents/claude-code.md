@@ -30,7 +30,7 @@ The plugin has both kinds of manifest: `.claude-plugin/plugin.json`, which Copil
 
 ### Which version of the plugin
 
-The plugin's version is the release of Ascribe it comes from, and its skill and commands are written for that release's `ascribe`. It runs whichever `ascribe` it finds, as above, so when a project pins an older `ascribe`, a command or a step of the skill can be one that version doesn't have. Added without a tag, the plugin is the one on `main`, which carries the latest release's version, and Claude Code updates it when the next release changes that version.
+The plugin's version is the release of Ascribe it comes from, and its skill and commands are written for that release's `ascribe`. It runs whichever `ascribe` it finds, as above, so when a project pins an older `ascribe`, a command or a step of the skill can be one that version doesn't have. Added without a tag, the plugin is the one on `main`, which changes version at each release. To get the new version, run `/plugin marketplace update ascribe`, or turn on auto-update for the marketplace in `/plugin`, under Marketplaces, and Claude Code gets it on its own.
 
 ### Keep the plugin to your release
 

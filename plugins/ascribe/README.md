@@ -33,7 +33,7 @@ Then add it in Claude Code in a terminal (its VS Code extension doesn't offer `/
 /plugin install ascribe@ascribe
 ```
 
-The plugin's version is the release's, and it's written for that release's `ascribe`. To match it to the `ascribe` you run, add its release's tag instead, `ascribed-dev/ascribe#v<version>`, where `<version>` is what `ascribe --version` prints. Added without a tag, the plugin is `main`'s, and Claude Code updates it when a release changes its version. From a copy of the repository, add the copy's folder: `/plugin marketplace add ./`.
+The plugin's version is the release's, and it's written for that release's `ascribe`. To match it to the `ascribe` you run, add its release's tag instead, `ascribed-dev/ascribe#v<version>`, where `<version>` is what `ascribe --version` prints. Added without a tag, the plugin is `main`'s, which changes version at each release: get it with `/plugin marketplace update ascribe`, or on its own once you turn on auto-update for the marketplace in `/plugin`, under Marketplaces. From a copy of the repository, add the copy's folder: `/plugin marketplace add ./`.
 
 Use the plugin or a project's own hook entries (`ascribe agents sync --with-hook`), not both, or Claude hears about each problem twice. Claude Code doesn't start a plugin's language server in a cloud session; a project that works there writes its own entries, which Claude Code reads from the repository.
 
