@@ -50,6 +50,10 @@ pub struct Server {
     /// The `node_modules/.bin` that holds a pinned `ascribe`, from the
     /// repository's root; `None` for one installed globally.
     pub bin: Option<String>,
+    /// The folder of the `package.json` that pins it, from the
+    /// repository's root, empty for the root; `None` for a global install.
+    /// In a workspace npm or Yarn installs to its root, this isn't `bin`'s.
+    pub package: Option<String>,
 }
 
 /// The one server of a project that installs Ascribe this way, before its
@@ -60,6 +64,10 @@ pub fn server_of(install: &Install) -> Server {
         bin: match install {
             Install::Global { .. } => None,
             Install::Pinned { bin, .. } => Some(bin.clone()),
+        },
+        package: match install {
+            Install::Global { .. } => None,
+            Install::Pinned { package, .. } => Some(package.clone()),
         },
     }
 }
@@ -134,7 +142,16 @@ pub fn servers(steps: &str) -> Vec<Server> {
             name = format!("{base}-{n}");
             n += 1;
         }
-        servers.push(Server { name, bin });
+        // The block's name says whose `package.json` pins it.
+        let package = match block
+            .strip_prefix(BLOCK)
+            .and_then(|rest| rest.strip_prefix(':'))
+        {
+            None => None,
+            Some("pinned") => Some(String::new()),
+            Some(folder) => Some(folder.to_owned()),
+        };
+        servers.push(Server { name, bin, package });
     }
     servers
 }
@@ -568,18 +585,10 @@ pub fn agent_md(servers: &[Server]) -> String {
             let each: Vec<String> = servers
                 .iter()
                 .map(|server| {
-                    let from = match server
-                        .bin
-                        .as_deref()
-                        .map(|bin| bin.strip_suffix("node_modules/.bin"))
-                    {
+                    let from = match server.package.as_deref() {
                         None => "installs it globally".to_owned(),
-                        Some(Some("")) => "installs it from the root's `package.json`".to_owned(),
-                        Some(Some(folder)) => format!("installs it from `{folder}package.json`"),
-                        Some(None) => format!(
-                            "runs it from `{}`",
-                            server.bin.as_deref().unwrap_or_default()
-                        ),
+                        Some("") => "installs it from the root's `package.json`".to_owned(),
+                        Some(folder) => format!("installs it from `{folder}/package.json`"),
                     };
                     format!("`{}` for a project that {from}", server.name)
                 })
@@ -817,6 +826,7 @@ jobs:
             [Server {
                 name: "ascribe".to_owned(),
                 bin: Some("docs/node_modules/.bin".to_owned()),
+                package: Some("docs".to_owned()),
             }]
         );
         let two = place(Some(&one), "ascribe:copilot", &global());
