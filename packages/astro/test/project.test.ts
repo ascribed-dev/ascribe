@@ -8,6 +8,7 @@ import {
   normalizeBase,
   readProject,
   supplyBuildFormat,
+  supplyImageRoute,
   supplyRouting,
 } from "../src/project.js";
 
@@ -216,6 +217,22 @@ describe("supplyRouting", () => {
     expect(supplyRouting([bare, docs], unset, false).supplied.site).toBe("https://a.example");
     // The profile's default, which Ascribe writes its links with.
     expect(supplyRouting([bare], unset, true).supplied).toEqual({ trailingSlash: "always" });
+  });
+});
+
+describe("supplyImageRoute", () => {
+  it("ends the image endpoint's route the way a supplied trailingSlash says", () => {
+    // Astro ended it for its own trailingSlash, "ignore", before the integration ran.
+    expect(supplyImageRoute("always", "/_image")).toBe("/_image/");
+    expect(supplyImageRoute("never", "/_image")).toBeUndefined();
+    expect(supplyImageRoute("never", "/_image/")).toBe("/_image");
+    expect(supplyImageRoute("always", "/custom/images")).toBe("/custom/images/");
+  });
+
+  it("leaves the route alone when Ascribe supplies no trailingSlash", () => {
+    expect(supplyImageRoute(undefined, "/_image")).toBeUndefined();
+    expect(supplyImageRoute("ignore", "/_image/")).toBeUndefined();
+    expect(supplyImageRoute("always", "/_image/")).toBeUndefined();
   });
 });
 
