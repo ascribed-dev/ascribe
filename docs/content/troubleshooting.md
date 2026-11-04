@@ -12,7 +12,7 @@ The problems you can meet installing Ascribe, checking in CI, building with Astr
 `npx ascribe` or `pnpm exec ascribe` stops with:
 
 ```text
-@ascribed/cli could not find its native package @ascribed/cli-linux-x64 (…). Reinstall @ascribed/cli for linux/x64, and ensure optional dependencies are enabled.
+@ascribed/cli could not find its native package @ascribed/cli-linux-x64 (…). Reinstall @ascribed/cli for linux/x64, and ensure optional dependencies are enabled. The package manager must not omit optional dependencies.
 ```
 
 **Cause.** `@ascribed/cli` installs the binary for your platform as an optional dependency, and your package manager left it out. That happens with `--no-optional` or `--omit=optional`, with `optional=false` in `.npmrc`, or with a lockfile written on another platform. It also happens on a platform Ascribe has no binary for ([Platforms](install.md#platforms)).
@@ -55,7 +55,7 @@ the addresses weren't compared with the base: …
 ## `ascribe diff`: no merge base
 @id: no-merge-base
 
-`ascribe diff`, or `ascribe drift`, exits with `2` and one of these:
+`ascribe diff` exits with `2` and one of these:
 
 ```text
 error: this clone doesn't have enough history to find where the branch left `main`: fetch more of it (in GitHub Actions, `fetch-depth: 0` on actions/checkout), or pass --base-exact to compare with `main` itself
@@ -68,6 +68,8 @@ error: `main` and HEAD share no history, so there's no merge base to compare wit
 
 - **A shallow clone:** fetch the history. In GitHub Actions, give `actions/checkout` `fetch-depth: 0`.
 - **No shared history:** pass `--base-exact`, to compare with the base itself.
+
+`ascribe drift` stops the same way, and its messages leave out `--base-exact`, which it doesn't have. Fetch the history, or pass a `--base` that shares history with `HEAD`.
 
 ## `astro build`: `site` doesn't match
 @id: astro-site-mismatch
