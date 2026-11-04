@@ -20,6 +20,7 @@ Paths are from the folder that holds `ascribe.toml`, except where a row says the
 | File | What writes it | Commit it |
 |---|---|---|
 | `.ascribe/build/` | [`ascribe build`](../checks/check.md#cli-build), and `@ascribed/astro` when it builds. It's the default output directory; `[project] output-dir` puts it elsewhere ([output layout](../contracts/output-layout.md)). | No |
+| `.ascribe/preview/` | [`ascribe preview`](../checks/check.md#cli-preview): the build's pages rendered as HTML, which it serves on this computer and renders again as you edit. | No |
 | `.ascribe/vale/` | `ascribe check` and the editor, when they run Vale: a preset's configuration, and the vocabulary of the project's own words ([Prose, through Vale](../checks/vale.md#the-projects-own-words)). | No |
 | `.ascribe/cache/` | [`ascribe report links`](../checks/report-command.md#cli-report), which keeps the answers it reuses in `.ascribe/cache/links/` ([Answers it reuses](../checks/external-links.md#answers-it-reuses)). | No |
 | `.ascribe/history/` | `ascribe report links`, which keeps in `.ascribe/history/links.json` the last day each address answered, the day it started failing, and whether it was reported ([Links that answered before](../checks/external-links.md#links-that-answered-before)), and [`ascribe report`](../checks/report-command.md#cli-report), which keeps in `.ascribe/history/report.json` what its `problems` and `delivery` sections found, to say what's new next time ([What's new](../checks/report.md#whats-new-since-the-last-report)). | No |
@@ -56,6 +57,10 @@ A file you commit is a record, not a cache. Without `ascribe.lock` and `sources/
 
 ## Files of yours that Ascribe changes
 
-A few commands change files you wrote, in place, and only when you run them: `ascribe vale eject` changes `ascribe.toml`, keeping its comments, and `ascribe addresses init` takes its `[permalinks]` out, and `ascribe templates eject` adds to its end; [`ascribe fmt`](../checks/check.md#cli-fmt), [`ascribe rename`](questions.md#cli-rename), and `ascribe check --fix` change your pages, and `ascribe rename` changes `ascribe.toml` and `ascribe.nav` too, keeping their comments; the editor's **Pages** view changes `ascribe.nav` as you drag in it; and the editor's quick fixes change the file the problem is in.
+A few commands change files you wrote, in place, and only when you run them:
+
+- `ascribe.toml`: `ascribe vale eject` changes it, keeping its comments; `ascribe addresses init` takes its `[permalinks]` out; `ascribe templates eject` adds to its end; and `ascribe rename` changes it, keeping its comments.
+- Your pages: [`ascribe fmt`](../checks/check.md#cli-fmt), [`ascribe rename`](questions.md#cli-rename), and `ascribe check --fix` change them, and the editor's quick fixes change the file the problem is in.
+- `ascribe.nav`: `ascribe rename` changes it, keeping its comments, and the editor's **Pages** view changes it as you drag in it.
 
 Outside the project, Ascribe keeps the repositories `ascribe sources` fetches, and the agents' hooks keep a check server's files, in a folder of your user's cache folder. Nothing there needs committing or keeping.

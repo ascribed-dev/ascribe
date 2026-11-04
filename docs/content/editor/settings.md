@@ -4,7 +4,7 @@ title: Editor workspaces, settings, tasks, and commands
 description: "How the VS Code extension handles a workspace with several projects, Project Settings, its tasks, and its settings and commands."
 ---
 
-How the [VS Code extension](index.md) works in a workspace that holds more than one Ascribe project, the project's own settings, the tasks it runs, and every setting and command it adds.
+This page says how the [VS Code extension](index.md) works in a workspace with more than one Ascribe project, what Project Settings shows, which tasks it runs, and every setting and command it adds.
 
 ## Workspaces with several projects
 @id {permalink=true}: workspaces-with-several-projects
@@ -33,7 +33,7 @@ Each project runs its own `ascribe`, found as [Which `ascribe` it runs](index.md
 
 A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when something asks for the project: choosing it in **Switch Project** or the Project view, a command run on it, or **Check Every Build**.
 
-A change on disk starts nothing: a branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was, with no problems in the Problems panel and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`.
+A change on disk starts nothing. A branch switch, a pull, a test run that rewrites files, or an agent that writes files without opening them leaves a project that hasn't started as it was: no problems in the Problems panel, and "not checked yet" in **Switch Project**. Opening the window starts nothing either, and neither does adding an `ascribe.toml`.
 
 Once a server is running, it follows changes on disk to its project's files. A server runs until you close the window or delete its `ascribe.toml` or its folder, and its problems leave the Problems panel with it. A server that doesn't stop when asked is killed, with any process it started, and none outlives the window. A project nothing opens costs nothing.
 
@@ -47,7 +47,7 @@ Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 
 Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](sidebar.md#the-status-bar) names that project. The sidebar shows it too, and [Switch Project](sidebar.md#switch-project) lists them all and shows another in the sidebar until a file of another project is active. **Restart Language Server** restarts every project's server that has started. [Commands](settings.md#commands) has the details.
 
-Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
+Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is `Ascribe`.
 
 A channel's name is set when the channel is first needed, usually when its project's server first starts. So if a workspace with one project gains a second, the first project's channel keeps the name `Ascribe`, beside `Ascribe (<other project>)`, until you reload the window.
 
@@ -61,11 +61,15 @@ The tab opens from the Command Palette, from the gear in the [Project view](side
 
 ### Finding a setting
 
-The search at the top looks in every setting's name, its key, and its whole description, so a word from any sentence of what a setting does finds it, and so does a check's name or what it reports. Each word you type must be there, in any case. **Set in ascribe.toml** keeps to what the file sets. On the left, the sections list the tables, the parts of the project, and the checks; click one to go to it. A section with nothing that matches is left out of the list. The tab keeps the search, the filter, and where you were while you look at another tab.
+The search at the top looks in every setting's name, its key, and its whole description, so a word from any sentence of what a setting does finds it, and so does a check's name or what it reports.
+
+Each word you type must be there, in any case. **Set in ascribe.toml** keeps to what the file sets. On the left, the sections list the tables, the parts of the project, and the checks; click one to go to it. A section with nothing that matches is left out of the list. The tab keeps the search, the filter, and where you were while you look at another tab.
 
 ### What the tab shows
 
-Each setting shows its name, its key (`[consumer] trailing-slash`), what it does, its default, and where the file sets it, as a link to the line (`ascribe.toml:12`), or that the file leaves it out. A bar beside a setting marks one the file sets, as VS Code's Settings editor marks what's changed. The tab shows every setting that's a switch, a choice, a number, or a short text, under a heading for its table (`[project]`, `[consumer]`, `[editor]`, and the rest), in the order of the [content model reference](../content-model/index.md). A table or a list is the file's to edit, and a part of the project with a name of its own, such as a content type or a build, is a card that opens the file at it.
+Each setting shows its name, its key (`[consumer] trailing-slash`), what it does, its default, and where the file sets it, as a link to the line (`ascribe.toml:12`), or that the file leaves it out. A bar beside a setting marks one the file sets, as VS Code's Settings editor marks what's changed.
+
+The tab shows every setting that's a switch, a choice, a number, or a short text, under a heading for its table (`[project]`, `[consumer]`, `[editor]`, and the rest), in the order of the [content model reference](../content-model/index.md). A table or a list is the file's to edit, and a part of the project with a name of its own, such as a content type or a build, is a card that opens the file at it.
 
 ### Changing a value
 
@@ -75,7 +79,7 @@ A setting the file leaves out is shown with its default, and changing it adds it
 
 ### Content types, builds, and the rest
 
-A content type, a dimension, a release target, a build, and a source are tables of their own, which the file holds as text for a reviewer to read. Each is a card under its section, **Content types**, **Dimensions**, **Releases**, **Builds**, or **Sources**, with its name, its table (`[types.guide]`), the keys the file sets in it, and its line. **Edit in ascribe.toml** opens the file at its table. `[frontmatter]`, the fields every content type shares, is a card of its own, first under **Content types**, with the fields it declares. Phrases, features, and glossary terms are added, renamed, and found in the [Content model view](sidebar.md#content-model), which **Open Content model** shows.
+A page type, a dimension, a release target, a build, and a source are tables of their own, which the file holds as text for a reviewer to read. Each is a card under its section, **Content types**, **Dimensions**, **Releases**, **Builds**, or **Sources**, with its name, its table (`[types.guide]`), the keys the file sets in it, and its line. **Edit in ascribe.toml** opens the file at its table. `[frontmatter]`, the fields every page type shares, is a card of its own, first under **Content types**, with the fields it declares. Phrases, features, and glossary terms are added, renamed, and found in the [Content model view](sidebar.md#content-model), which **Open Content model** shows.
 
 ### Checks
 

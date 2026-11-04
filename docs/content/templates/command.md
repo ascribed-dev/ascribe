@@ -1,16 +1,18 @@
 ---
 type: reference
 title: "`ascribe templates`"
-description: "List the page templates Ascribe carries, write them into a project with their content types, and say what's changed in the set since."
+description: "List the page templates Ascribe carries, write them into a project with their page types, and say what's changed in the set since."
 ---
 
-The commands that write the page templates into a project and say what's changed in them since. [Page templates](index.md) is the task they're used in. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts), and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/templates.md).
+`ascribe templates` lists the page templates Ascribe carries, writes them into a project with a page type for each, and says what's changed in the set since. [Page templates](index.md) is the task the commands are used in, and the JSON each writes with `--format json` is in [their JSON reports' schemas](../contracts/json-reports/templates.md).
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe templates`
 @id {permalink=true}: cli-templates
-@summary: Writes the page templates Ascribe carries into a project, as its own files, and declares a content type for each.
+@summary: Writes the page templates Ascribe carries into a project, as its own files, and declares a page type for each.
 
-Writes the page templates Ascribe carries into a project, as the project's own files, and declares a content type for each, which takes them as its [template and guide](../content-model/index.md#41-page-types) from `templates/templates.lock`. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
+Writes the page templates Ascribe carries into a project, as the project's own files, and declares a page type for each, which takes them as its [template and guide](../content-model/index.md#41-page-types) from `templates/templates.lock`. The templates are [The Good Docs Project](https://www.thegooddocsproject.dev/template)'s, converted into Ascribe pages, as [Where the templates come from](index.md#where-the-templates-come-from) says.
 
 The set has six templates, which `ascribe templates list` names. A page is started from a template with [`ascribe new`](index.md#cli-new), or the editor's **New Page**; the template names its type in its frontmatter, as the page must. `eject` adds to a project, and never starts one: [`ascribe init --templates`](../install.md#cli-init) does, with the set. `status` says what's changed in the set since the project's copy, and changes nothing.
 
@@ -68,7 +70,14 @@ Its frontmatter has the fields the template's has, apart from `type`, each a str
 
 A project that declares types has each page name one, so its pages that named none, which were of `page`, now need `type: page`: `eject` lists them, and `ascribe check` reports each with a fix that adds it.
 
-Beside the templates, it writes `templates.lock`: for each template, the files written, with a hash of each as written, their template and guide under `files` and Ascribe's notes under `ascribe-files`, then their repository, tag, commit, and license, their summary of the type, and the version of Ascribe that wrote it. A later `eject` adds to it. Commit it with the templates, and don't edit it: the types take their templates from it, and a file it names that isn't there is the type's error, `model-type-template`.
+Beside the templates, it writes `templates.lock`, with an entry for each template:
+
+- The files written, with a hash of each as written: their template and guide under `files`, and Ascribe's notes under `ascribe-files`.
+- Their repository, tag, commit, and license.
+- Their summary of the type.
+- The version of Ascribe that wrote it.
+
+A later `eject` adds to it. Commit it with the templates, and don't edit it: the types take their templates from it, and a file it names that isn't there is the type's error, `model-type-template`.
 
 A project that declares a template's type already, with its own frontmatter, takes the template for it with `--keep-type`:
 
@@ -76,11 +85,24 @@ A project that declares a template's type already, with its own frontmatter, tak
 ascribe templates eject reference --keep-type
 ```
 
-It writes the same files and `templates.lock`, and leaves `ascribe.toml` as it is: the type takes its template and guide from the lock. With `--to` another folder, it adds only `template` and `guide` to the type's table, after its last entry, leaving its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it. It refuses a type written as an inline or a dotted table, which it can't add a line to, rather than a table under a `[types.<name>]` header of its own; a type that names a `template` or a `guide` already, or takes them from the lock; and a type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check. It names the field.
+It writes the same files and `templates.lock`, and leaves `ascribe.toml` as it is: the type takes its template and guide from the lock. With `--to` another folder, it adds only `template` and `guide` to the type's table, after its last entry, leaving its frontmatter, its other keys, and every comment as they are. A template whose type isn't declared is added as without it.
+
+With `--keep-type`, it refuses three kinds of type, naming the field for the third:
+
+- A type written as an inline or a dotted table, rather than a table under a `[types.<name>]` header of its own, since it can't add a line to one.
+- A type that names a `template` or a `guide` already, or takes them from the lock.
+- A type whose frontmatter doesn't declare each field the template's frontmatter has as a string, since no page started from the template would check.
 
 It checks everything before it writes anything. A type `ascribe.toml` declares already, without `--keep-type`, a file where one would be written, and a name the set doesn't have are each named, on standard error, and then nothing is written. So is an `ascribe.toml` or a `templates.lock` git couldn't put back, as every [command that writes](../command/index.md#commands-that-write) does, unless you pass `--force`. With `--dry-run`, it says what it would write, and writes nothing. Without `ascribe.toml`, it says so, and that `ascribe init --templates` starts a project with the templates.
 
-It lists each file it wrote, `ascribe.toml` last, from the current folder; each type it added, with the fields it declared as the project's other types do; the pages that name no type, up to ten, which `ascribe check` reports until each has its `type:`; each type it kept, with the keys it left as they were; and how to start a page. In a project `ascribe init` started:
+It lists what it did, then how to start a page:
+
+- Each file it wrote, `ascribe.toml` last, from the current folder.
+- Each type it added, with the fields it declared as the project's other types do.
+- The pages that name no type, up to ten, which `ascribe check` reports until each has its `type:`.
+- Each type it kept, with the keys it left as they were.
+
+In a project `ascribe init` started:
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/templates-eject.txt
 
@@ -106,7 +128,7 @@ Says what's changed in the templates since the project took them: for each one, 
 
 `templates.lock` keeps a hash of each file as `eject` wrote it, and that's what tells the two apart: when the set's text isn't what was written, the set changed it; when the project's file isn't, the project did. A template can be both. A file the set changed and the project didn't is listed with what's different by section: each heading the set added, removed, or changed the text under, with `the start` for what comes before the first heading. A file that's gone is `deleted`. Line endings a checkout changed to CRLF aren't a change.
 
-It finds a template's entry in the `templates.lock` in `templates/`, or beside the template a type names, and finds the templates a project took from the lock's entries and from the types named as the set's templates are. When there's no lock, it's one `eject` didn't write, or it has no entry for a type of the set's, it says so, and says what it can from the files alone: whether each is the same as the set's or different, without telling who changed it.
+It finds a template's entry in the `templates.lock` in `templates/`, or beside the template a type names, and finds the templates a project took from the lock's entries and from the types named as the set's templates are. When there's no lock, the lock is one `eject` didn't write, or it has no entry for a type of the set's, it says so. Then it says what it can from the files alone: whether each is the same as the set's or different, without telling who changed it.
 
 With `--diff NAME`, it prints only the change to that template, as a unified diff from the project's files to the set's, for each file the set has changed since the copy. When the project hasn't changed its copy, that's the upstream change itself; when it has, or the lock remembers nothing of the file, it says so on standard error, since the diff then undoes the project's changes too.
 

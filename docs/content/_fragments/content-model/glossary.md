@@ -22,7 +22,7 @@ A plan for turning a flag on for a growing share of users: by percentage, by seg
 
 - **The term** is the heading's text, and **its id** is the heading's id, which the site output's `data-ascribe-term` names. An `@id` keeps the id when the heading's text changes.
 - **The definition** is the paragraph that opens the section, after the heading's directives, as plain text, with the build's phrases. A paragraph a fragment brings in counts, and a section that opens with a `@variant` group has the paragraph each alternative opens with, in the builds that keep it. The site output shows it as the link's title, and the editor on hover; the JSON output lists it with each use. Keep it to a sentence or two, and put the rest in a second paragraph.
-- **A term follows its section in each build.** A build that removes the section, by `@available` or by a variant, has no such term, and a build that removes only its paragraph leaves it without a definition: either way, the build doesn't link it.
+- **A term follows its section in each build.** A build that removes the section, by `@available` or by a variant, has no such term. A build that removes only its paragraph leaves it without a definition. Either way, the build doesn't link it.
 - `@term`'s attributes override the glossary's settings for the term:
 
 | Attribute | Type | Default | Description |

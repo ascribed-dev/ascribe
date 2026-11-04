@@ -4,7 +4,7 @@ title: "`ascribe.toml`: checks and the editor"
 description: "How the content model sets the checks' levels and the editor's build, what an absent section means, and how the file is validated."
 ---
 
-Part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section. The exact rules are in the contract's [checks and the editor](../contracts/content-model/checks.md).
+These sections of `ascribe.toml` set how loudly each check speaks and which build the editor shows, and this page also says what an absent section means and how the file is validated. It's part of the [`ascribe.toml` reference](index.md), whose [contents](index.md#contents) list every section; the exact rules are in the contract's [checks and the editor](../contracts/content-model/checks.md).
 
 ## 22. `[checks]`
 @id {permalink=true}: 22-checks
@@ -24,7 +24,14 @@ Each key is a check's name, as the [diagnostics reference](../checks/diagnostics
 
 @include: ../_generated/content-model-checks.md
 
-Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Four have one, `limit`: for `page-size`, a whole number of characters above 0, `50_000` unless set; for `image-large`, a size, as a number of bytes or a string such as `"1.5 MB"` (a kilobyte is 1,000 bytes), `"500 KB"` unless set; for `memo-long`, a whole number of characters above 0, `2_000` unless set; and for `summary-long`, a whole number of characters above 0, `300` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](../checks/diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. Four have one, `limit`:
+
+- `page-size`: a whole number of characters above 0, `50_000` unless set.
+- `image-large`: a size, as a number of bytes or a string such as `"1.5 MB"` (a kilobyte is 1,000 bytes), `"500 KB"` unless set.
+- `memo-long`: a whole number of characters above 0, `2_000` unless set.
+- `summary-long`: a whole number of characters above 0, `300` unless set.
+
+`[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
 
 For example, a site whose sidebar lists every page doesn't need to hear about pages nothing links to, and a team that wants smaller images can lower the limit:
 
@@ -39,7 +46,7 @@ limit = "200 KB"
 
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`; `off` turns a check off altogether. A check raised to `"error"` fails the check and stops the build, as an error does, though the page is still valid by the specification, and a review check raised this way can still be acknowledged. [Quieting a problem](../checks/check.md#quieting-a-problem) compares `[checks]` with the other ways to quiet one.
 
-A check the diagnostics reference marks off by default, such as `summary-missing`, is off until `[checks]` names it: with a level, it's reported at that level, and as a table without one, such as `[checks.summary-long]` with only a `limit`, at its default level ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)).
+A check the diagnostics reference marks off by default, such as `summary-missing`, is off until `[checks]` names it. Named with a level, it's reported at that level. Named as a table without one, such as `[checks.summary-long]` with only a `limit`, it's reported at its default level ([Setting a check's level](../checks/diagnostics.md#setting-a-checks-level)).
 
 In VS Code, the sidebar's [This page](../editor/sidebar.md#this-page) shows a page's size against `page-size`'s limit, measured the same way, whether or not the page is over it.
 

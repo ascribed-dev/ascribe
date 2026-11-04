@@ -11,7 +11,7 @@ description: "Turn a problem, a review comment, or a changed page into a prompt 
 @steps
 1. Choose where prompts go with the [`ascribe.agents.promptTarget`](../editor/settings.md#editor-settings) setting: the clipboard (the default), to paste into any agent, or VS Code's chat, a Claude Code tab, or Cursor's chat, with the prompt in its input.
 2. Build a prompt:
-   - On a problem, the lightbulb (`Ctrl+.`, or `Cmd+.` on macOS) offers **Prompt agent: fix this problem**, after the problem's quick fixes. A problem with a safe quick fix is quicker to fix with it.
+   - On a problem, the light bulb (`Ctrl+.`, or `Cmd+.` on macOS) offers **Prompt agent: fix this problem**, after the problem's quick fixes. A problem with a safe quick fix is quicker to fix with it.
    - **Ascribe: Prompt Agent to Fix This File** builds one prompt for the active file's problems, and **Ascribe: Prompt Agent to Fix This Project** one for the project's. The Command Palette shows them when there are problems.
 3. Read the prompt where it lands, and send it.
 
@@ -42,14 +42,14 @@ A prompt about a page names the [memo files](../writing/memo-files.md) about it,
 
 A [personal memo](../writing/memo-files.md#personal-memos) is listed in prompts made on the machine that has it, marked as personal. Each list stops at ten memos, and says how many more there are and the `ascribe outline` command that lists them.
 
-A page whose own `@memo` says it's [generated](../writing/directives.md#memo) is told apart in every prompt about its problems: the prompt says the file is generated and not to edit it, with the memo's text, which names what to change instead and the command that writes the file again.
+A page whose own `@memo` says it's [generated](../writing/directives.md#memo) is told apart in every prompt about its problems. The prompt says the file is generated and not to edit it, and gives the memo's text, which names what to change instead and the command that writes the file again.
 
 ## In review
 
 While you [review](../review/index.md) a pull request, **Prompt agent** hands your agent a review comment, or the change itself:
 
 - **On a comment.** Each thread beside the page has **Prompt agent**, which asks your agent to address the comment: the thread's file and lines, the block's text from the file on disk, and the comments. **Comments** lists every thread, with **Prompt agent: all open** for the open ones, two lines each. In the source editor, a thread's title bar has **Prompt Agent** too.
-- **On the page.** **More review actions** (**⋯**) in the preview's header has **Prompt agent: review this page**, which asks your agent to review what the change does to the page as readers see it, and, when the page changed through a fragment, **Prompt agent: check this fragment's pages**, which asks it to check that the new text fits every page that shows it.
+- **On the page.** **More review actions** (**⋯**) in the preview's header has two. **Prompt agent: review this page** asks your agent to review what the change does to the page as readers see it. When the page changed through a fragment, **Prompt agent: check this fragment's pages** asks it to check that the new text fits every page that shows it.
 
 In VS Code, these go where `ascribe.agents.promptTarget` says. The site preview copies them, since a page in your browser can't reach your editor, and says "Prompt copied". The [HTML preview](../review/diff.md#the-html-report) has **Copy prompt** for each page. A prompt about the change asks your agent for a report, not edits: you decide what changes.
 

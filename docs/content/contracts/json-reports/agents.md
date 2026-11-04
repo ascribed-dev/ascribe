@@ -5,7 +5,7 @@ nav-label: "`ascribe agents`"
 description: "The JSON Schemas of what `ascribe agents index`, `sync`, and `prompt` write with `--format json`."
 ---
 
-Part of the [JSON report contract](../json-reports.md), whose rules every document here follows.
+The JSON Schemas of what `ascribe agents index`, `sync`, and `prompt` write with `--format json`. Each document follows the rules of the [JSON report contract](../json-reports.md).
 
 ## `ascribe agents index`
 

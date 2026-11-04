@@ -27,7 +27,7 @@ A page's listing is one of three values, from open to closed:
 | `unquoted` | Listed, and asks not to be quoted (`nosnippet`): a search result, or an AI answer inside a search product, shows no text from it. It's in `llms.txt` and the sitemap. It asks nothing of a crawler gathering training data. |
 | `unlisted` | Asks not to be listed (`noindex`), and isn't offered: it's out of `llms.txt`, the sitemap, and the [navigation](../navigation/index.md#what-a-build-shows), so no sidebar drawn from it shows the page. It's still built, at its address, with its Markdown version. |
 
-A page sets its own in its frontmatter. A rule in `[listing]` sets it for the whole site, a folder, or a content type, so a folder can be kept out of search without a change to any of its pages. A rule only restricts: a page's listing is the strictest of its own and the rules it's under, and a page that sets a looser one is an error.
+A page sets its own in its frontmatter. A rule in `[listing]` sets it for the whole site, a folder, or a page type, so a folder can be kept out of search without a change to any of its pages. A rule only restricts: a page's listing is the strictest of its own and the rules it's under, and a page that sets a looser one is an error.
 
 ## What crawlers are told
 
@@ -39,7 +39,7 @@ What each choice costs:
 - **Disallowing `search`** takes the site out of those AI search products' answers, which is the point of being crawled by them: a site opted out of OpenAI's search crawler isn't shown in ChatGPT's search answers, for one. It doesn't touch Google's or Bing's search, whose AI answers are drawn from their ordinary index, which only a page's listing keeps a page out of. `ascribe check` says what it costs (`crawlers-disallowed`).
 - **Disallowing `on-request`** asks assistants not to fetch a page when a person asks about it, so they answer from what they already have, or from another site. Several operators say their fetcher may not follow it, since a person asked (see [crawlers by purpose](../content-model/output.md#crawlers-by-purpose)), and [Google's own fetchers](https://developers.google.com/crawling/docs/crawlers-fetchers/google-user-triggered-fetchers) for its agents generally ignore `robots.txt` and have no token, so they aren't listed. `ascribe check` says what it costs (`crawlers-disallowed`).
 
-**Keep a page out of search with its listing, not a `Disallow` line.** A crawler that follows `robots.txt` and is told not to fetch a page never reads that page's head, so it can't see that the page asks not to be listed, and a search engine can list the address alone. `ascribe check` says so when a page that isn't listed is at an address a search crawler may not fetch (`listing-disallowed`).
+**Keep a page out of search with its listing, not a `Disallow` line.** A crawler that follows `robots.txt` and is told not to fetch a page never reads that page's head. So it can't see that the page asks not to be listed, and a search engine can list the address alone. `ascribe check` says so when a page that isn't listed is at an address a search crawler may not fetch (`listing-disallowed`).
 
 A host's or a CDN's own settings for bots can block a crawler before it reads `robots.txt`, whatever the file says, and can allow it in spite of it. Those are the host's, not Ascribe's: check them when a crawler you allowed can't reach the site.
 

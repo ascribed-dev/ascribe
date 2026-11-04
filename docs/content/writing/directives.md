@@ -5,7 +5,7 @@ description: "Each built-in directive: what it does, its attributes, and its rul
 permalink: directives
 ---
 
-What each built-in directive does, its attributes, and its rules. How a directive is written, and what it applies to, is in [directive syntax](syntax.md), and [Write a page](write-a-page.md) builds a page with the ones most pages use.
+This page has each built-in directive: what it does, its attributes, and its rules. How a directive is written, and what it applies to, is in [directive syntax](syntax.md), and [Write a page](write-a-page.md) builds a page with the ones most pages use.
 
 ## Most used
 
@@ -73,7 +73,7 @@ Includes another file, or one heading's section of it, in place.
 - Included headings keep the levels they're written with.
 - An include cycle is an error.
 
-A page's includes can expand it only so far, far beyond any real page: the include in the page's own file that takes it past the limit is an error, `include-limit`, whose message gives the limit, and it and every include after it on the page are left out.
+A page's includes can expand it only so far, far beyond any real page. The include in the page's own file that takes it past the limit is an error, `include-limit`, whose message gives the limit. It and every include after it on the page are left out.
 
 A link names the page that includes a fragment, never the fragment, and can name a heading the fragment brings in ([links](inline.md#links)).
 
@@ -278,8 +278,11 @@ Takes a code example from a file outside the content, and puts it in the page as
   - A symbolic link that leads out of the source is named by the file it leads to, through a source that includes it.
   - A file of a source in another repository is copied by `ascribe sources fetch`. When it isn't in the repository at the pinned commit, because it was moved or deleted there, name it where it is now, or change the code and move the pin with `ascribe sources update`.
 - Without `#<region>`, the snippet is the whole file.
-- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`), or for a file known by its name, the language of its name (`dockerfile` for `Dockerfile`, `makefile` for `Makefile`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
-- It's a block, allowed wherever a code block is: in a list item, a note, or a variant's arm. A `@note`, `@details`, or widget directly above it applies to it.
+- **Attributes:**
+  - `lang` sets the code block's language. Without it, the language is the file's extension (`toml` for `ascribe.toml`), or, for a file known by its name, the language of its name (`dockerfile` for `Dockerfile`, `makefile` for `Makefile`).
+  - `title` gives the code block a title.
+  - `phrases=true` substitutes phrases in the code, as in a fence that opts in ([phrases](inline.md#phrases)).
+- It's a block, allowed wherever a code block is: in a list item, a note, or a variant's arm. A following-block directive directly above it applies to it: `@note`, `@details`, `@available`, `@intended`, `@memo`, or a widget.
 
 A region is marked in the code with [Bluehawk](https://github.com/mongodb-university/Bluehawk)'s tags in comments, `:snippet-start: <name>` and `:snippet-end:`: [mark a region in the code](../examples/snippets.md#2-mark-a-region-in-the-code) has the tags and the comments they're read in.
 
@@ -407,7 +410,7 @@ It rewrites each mark's `planned` for its target to the line's version.
 - **One per section,** `summary-repeated`. A subsection's summary is its own. A `@summary` with no text before a page's first heading is the summary of the page's opening.
 - **In a fragment,** a summary is the summary of the section it lands in, on each page that includes it.
 - **Not in a variant arm,** whether it's written there or an include brings it in: `summary-in-variant`, since a summary can't differ by arm. Write one at the top of the section that holds for every arm.
-- **In the outputs,** the text form writes nothing in the site and plain outputs, and the paragraph of the other form is written as it would be without it. The JSON output gives the section's heading its `summary`. A summary's text isn't searched for [glossary terms](inline.md#glossary-terms).
+- **In the outputs,** the text form writes nothing in the site and plain Markdown outputs, and the paragraph of the other form is written as it would be without it. The JSON output gives the section's heading its `summary`. A summary's text isn't searched for [glossary terms](inline.md#glossary-terms).
 - **Nothing is guessed.** A section without `@summary` has no summary, whatever its first paragraph says.
 
 Specification: [§4.12]({repo}/blob/main/SPEC.md#412-summary).
@@ -420,11 +423,11 @@ Puts an operation of an API that `ascribe.toml` declares in `[apis]` in the page
 @operation: ../api/openapi.yaml#getUser
 ```
 
-- **The primary,** the text after the colon, is a link to an operation, as a link's destination names one: the OpenAPI file's path from the page (or from the content root, starting with `/`), `#`, and the operation's `operationId`, or, for an operation with no id, its method in lowercase and its path, `#delete/users/{id}` ([links to operations](inline.md#links)).
+- **The primary,** the text after the colon, is a link to an operation, written as a link's destination is ([links to operations](inline.md#links)): the OpenAPI file's path from the page (or from the content root, starting with `/`), `#`, and the operation's `operationId`. An operation with no id is named by its method in lowercase and its path, `#delete/users/{id}`.
 - It's checked as that link is: an operation the spec doesn't have is `link-operation-missing`, and one named by its method and path that has an id is advice, `link-operation-by-path`. Anything that isn't a link to an operation of a declared API, a page, another file, the spec with no `#`, or a URL, is an error, `operation-link-not-operation`.
 - **What it shows:** `GET /users/{id}: Get a user`, with `(deprecated)` after it when the spec marks the operation deprecated. Never the operation's parameters, request, or responses.
-- It's a block, so a `@note`, `@available`, or widget directly above it applies to it.
-- **In the outputs,** the site output writes an `<ascribe-operation>` element holding the link, the plain output the line, and the JSON output a block of type `operation`.
+- It's a block, so a following-block directive directly above it, such as `@note` or `@available`, applies to it.
+- **In the outputs,** the site output writes an `<ascribe-operation>` element holding the link, the plain Markdown output the line, and the JSON output a block of type `operation`.
 
 [Show an operation in a page](../openapi/operation.md) has the rest.
 

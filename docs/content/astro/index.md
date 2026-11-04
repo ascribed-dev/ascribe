@@ -5,11 +5,11 @@ description: "The ways to publish an Ascribe project, and setting up an Astro si
 permalink: astro-guide
 ---
 
-`@ascribed/astro` publishes an Ascribe project as an [Astro](https://astro.build) site. It runs `ascribe build --emit site` before Astro loads content, gives you a content collection of the built pages with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro's table of contents and image processing still work), loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
+`@ascribed/astro` publishes an Ascribe project as an [Astro](https://astro.build) site. It runs `ascribe build --emit site` before Astro loads content, and gives you a content collection of the built pages, with a schema generated from `ascribe.toml`. It applies heading ids and image attributes in Astro's own Markdown pipeline, so Astro's table of contents and image processing still work, loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
 
 It supports Astro 7.3.5 and later 7.x releases.
 
-This guide sets a site up. [The `@ascribed/astro` reference](reference.md) has its options, its components, and everything it does in `astro build` and `astro dev`.
+This guide sets a site up, in an Astro project you have. [The `@ascribed/astro` reference](reference.md) has its options, its components, and everything it does in `astro build` and `astro dev`.
 
 ## Ways to publish
 @id: ways-to-publish
@@ -24,9 +24,16 @@ Ascribe checks and builds a project's pages; a site generator publishes them. Th
 
 **Astro** is the way Ascribe builds for and tests. The integration renders the pages, and publishes, from the same build, each page's head, the sitemap and `robots.txt`, the outputs for agents, permalinks, every line of a versioned build, and a host's files. [Set up a site](#set-up-a-site) below, then [deploy it](deploy.md).
 
-**Your own generator** reads what `ascribe build --emit site` writes, which the contracts fix: each changes only by a decision recorded with the change, so a generator can rely on it as `@ascribed/astro` does. The pages are CommonMark with Ascribe's elements, which the [site-render contract](../contracts/site-render.md) says how to render, with [`@ascribed/elements`](elements.md) for their script and styles; the [output-layout contract](../contracts/output-layout.md) says where each file is, the page records among them; and the [navigation contract](../contracts/navigation.md) gives the sidebar. A page's address is the one the `astro` profile gives it, the only [consumer profile](../content-model/output.md#consumer) there is, so the generator's routes follow it. What the integration does beyond rendering is the generator's to do, from the same files: [the head, sitemap, and `robots.txt`](../publishing/site.md), [the permalinks' pages](reference.md#permalinks), and the outputs for agents, copied from the plain output ([`[consumer]`](../content-model/output.md#consumer)).
+**Your own generator** reads what `ascribe build --emit site` writes, which the contracts fix: each changes only by a decision recorded with the change, so a generator can rely on it as `@ascribed/astro` does.
 
-**`ascribe preview`** renders the pages as HTML with a sidebar and search, to read them as a site without Astro, and isn't for a published site: it serves only the computer it runs on, renders a page with errors as far as it goes, and writes none of what a site tells search engines and agents ([`ascribe preview`](../checks/check.md#cli-preview)). [`ascribe versions export`](../versions/archive.md) renders the same HTML into a folder that needs nothing else, as an archive of a release line that's leaving the live versions, and every page in it asks not to be listed.
+- The pages are CommonMark with Ascribe's elements. The [site-render contract](../contracts/site-render.md) says how to render them, with [`@ascribed/elements`](elements.md) for their script and styles.
+- The [output-layout contract](../contracts/output-layout.md) says where each file is, the page records among them.
+- The [navigation contract](../contracts/navigation.md) gives the sidebar.
+- A page's address is the one the `astro` profile gives it, the only [consumer profile](../content-model/output.md#consumer) there is, so the generator's routes follow it.
+
+What the integration does beyond rendering is the generator's to do, from the same files: [the head, sitemap, and `robots.txt`](../publishing/site.md), [the permalinks' pages](reference.md#permalinks), and the outputs for agents, copied from the plain Markdown output ([`[consumer]`](../content-model/output.md#consumer)).
+
+**`ascribe preview`** renders the pages as HTML with a sidebar and search, to read them as a site without Astro ([`ascribe preview`](../checks/check.md#cli-preview)). It isn't for a published site: it serves only the computer it runs on, renders a page with errors as far as it goes, and writes none of what a site tells search engines and agents. [`ascribe versions export`](../versions/archive.md) renders the same HTML into a folder that needs nothing else, as an archive of a release line that's leaving the live versions, and every page in it asks not to be listed.
 
 ## Set up a site
 
@@ -48,11 +55,11 @@ It brings `@ascribed/cli`, the `ascribe` command for your platform, and `@ascrib
 
 ### 2. Write `ascribe.toml`
 
-Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings are the site's routing, because Ascribe writes every link: the integration gives Astro its `site`, `base`, and `trailingSlash` from them, so `astro.config.mjs` can leave all three out ([a home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs) says how `base` can differ from `base-path`):
+Put `ascribe.toml` in the Astro project's root, beside `astro.config.mjs`. Its `[consumer]` settings are the site's routing, because Ascribe writes every link. The integration gives Astro its `site`, `base`, and `trailingSlash` from them, so `astro.config.mjs` can leave all three out ([a home page in front of the docs](more-than-docs.md#a-home-page-in-front-of-the-docs) says how `base` can differ from `base-path`):
 
 @snippet: code:examples/astro-site/ascribe.toml#site
 
-The source pages go in `content/`. If your Ascribe project lives elsewhere, such as in a folder beside the site's, set the integration's `project` option to its directory (step 3). The [`ascribe.toml` reference](../content-model/index.md) has everything else it can declare.
+The source pages go in `content/`. If your Ascribe project lives elsewhere, such as in a folder beside the site's, set the integration's `project` option to its folder (step 3). The [`ascribe.toml` reference](../content-model/index.md) has everything else it can declare.
 
 ### 3. Add the integration
 
@@ -80,7 +87,7 @@ It writes `src/content.config.ts`, `src/pages/[...slug].astro`, `src/layouts/Doc
 
 @snippet {title=src/content.config.ts}: code:examples/astro-site/src/content.config.ts
 
-The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`, in the directory holding `ascribe.toml`. Importing it by path keeps its exact types, so `entry.data` is typed from your content types. If you change `[project] output-dir`, the build, or the integration's `project`, change this line too.
+The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`, in the folder holding `ascribe.toml`. Importing it by path keeps its exact types, so `entry.data` is typed from your page types. If you change `[project] output-dir`, the build, or the integration's `project`, change this line too.
 
 If the Ascribe project is outside the Astro root (`project: "../docs"`), import the copy of the schema the integration writes inside it instead, `.astro/integrations/_ascribed_astro/schema.ts`, which is `../.astro/integrations/_ascribed_astro/schema.ts` from `src/content.config.ts`, as `init --project` does. The schema imports `astro/zod`, which TypeScript can only find from inside the Astro project, so type-checking (`astro check`, `tsc`) fails on the original there; Astro's own build works with either. The integration updates the copy after each build.
 
@@ -102,7 +109,7 @@ A layout loads the element library, and shows the sidebar, the page's availabili
 
 #### The stylesheet
 
-`src/styles/docs.css`, which the layout imports, gives it a readable column in the system's font, the sidebar beside the page on a wide screen and behind a **Menu** on a phone, the table of contents beside the page where there's room and above it where there isn't, and both color schemes, as the reader's system is. Its colors and spaces are the element library's `--ascribe-*` properties, so setting one restyles the layout and the elements together ([Element library reference](elements.md)); the page's background and text are the browser's own light or dark.
+`src/styles/docs.css`, which the layout imports, gives it a readable column in the system's font, and both color schemes, as the reader's system is. It puts the sidebar beside the page on a wide screen and behind a **Menu** on a phone, and the table of contents beside the page where there's room and above it where there isn't. Its colors and spaces are the element library's `--ascribe-*` properties, so setting one restyles the layout and the elements together ([Element library reference](elements.md)); the page's background and text are the browser's own light or dark.
 
 It's a starting point, not a theme: change it as you like. To style the site from scratch, delete the file and its `import` line in the layout; the layout's markup reads in order without it.
 

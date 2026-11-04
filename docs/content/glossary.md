@@ -51,7 +51,7 @@ Each build is declared in [`[builds.<name>]`](content-model/output.md#16-buildsn
 ## Content model
 @term {aliases="content models"}
 
-A project's schema, `ascribe.toml`: its content types, dimensions, phrases, and builds.
+A project's schema, `ascribe.toml`: its page types, dimensions, phrases, and builds.
 
 [The content model](content-model/index.md) documents each of its sections.
 
@@ -121,7 +121,7 @@ The [page preview](#page-preview) is in the editor; the [site preview](#site-pre
 ## Recheck date
 @term {aliases="recheck dates"}
 
-When a page is next due to be read against what it describes: its field with the `recheck-date` role, which [`recheck-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today. It was the review date, with the role `review-date` and the check `review-overdue`, and both old names still work for a release.
+When a page is next due to be read against what it describes: its field with the `recheck-date` role, which [`recheck-overdue`](checks/diagnostics/content-checks.md#ASC153) compares with today. It was the review date, with the role `review-date` and the check `review-overdue`, and both old names still work, for now.
 
 See [Field roles](content-model/index.md#54-field-roles).
 

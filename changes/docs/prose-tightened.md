@@ -1,0 +1,1 @@
+- **Every docs page opens with what it covers, and no page names a release in prose.** Long sentences became lists, commands are written as `ascribe` outside Getting started and Install, and statements the November review found false are corrected. See [the docs](docs/content/index.md).

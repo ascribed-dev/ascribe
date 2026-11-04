@@ -4,7 +4,9 @@ title: "`ascribe diff` and `drift`"
 description: "Compare a project's output with another revision, and find sources that drifted."
 ---
 
-The commands that compare a project with another revision of itself. The options every command accepts are in the [command reference](../command/index.md#options-every-command-accepts).
+`ascribe diff` and `ascribe drift` compare a project with another revision of itself: what changed on each page, as readers see it, and which pages' code examples changed while their words didn't.
+
+@include: ../_fragments/command-options.md
 
 ## `ascribe diff`
 @id {permalink=true}: cli-diff
@@ -16,7 +18,7 @@ Shows what changed between a git revision and the working tree, as readers will 
 
 The argument is a page, not a revision as in `git diff main`: the revision goes in `--base`. When the argument isn't a file of the project but is a revision git knows, the error says which `--base` compares with it: `ascribe diff main` names `--base main`. `ascribe drift`, which takes no argument, says the same of a revision given as one.
 
-The other side is the working tree: the files on disk, committed or not, as `ascribe build` would read them now. Unsaved editor changes aren't included. The base is read from git, `ascribe.toml` included, so a change to the content model is compared too; if the project didn't exist at the base, every page is added. `ascribe diff` needs `git` on the path, and nothing else: no network and no GitHub account. It runs `git` so that the repository can't make it run a command of its own: with no file system monitor, and taking a bare repository only when one is named, never a folder in the project shaped like one, where `git` says it can't use the repository.
+The other side is the working tree: the files on disk, committed or not, as `ascribe build` would read them now. Unsaved editor changes aren't included. The base is read from git, `ascribe.toml` included, so a change to the content model is compared too; if the project didn't exist at the base, every page is added. `ascribe diff` needs `git` on the path, and nothing else: no network and no GitHub account. It runs `git` so that the repository can't make it run a command of its own: with no file system monitor, and taking a bare repository only when one is named. A folder in the project shaped like one is never taken, and `git` says it can't use the repository.
 
 The text output lists each build's changed pages with counts, and where a change comes from when it isn't only the page's own file. A page that changed the same way in every build that publishes it is said once, first, "in every build" (or "in every build that publishes it", when some don't), and each build lists its other pages:
 
@@ -70,7 +72,7 @@ warning: the working tree has 3 errors; `ascribe check` lists them
 ascribe diff --format html > review.html
 ```
 
-It lists the changed pages of each build, and marks a page that changed only through something it uses ("via `_fragments/prereqs.md`"), and a page that moved with where it moved from, its "As it was" rendered from there; with more than one build changed, a picker switches between them. Each page is rendered as it is now, the way the editor's page preview renders it, without the site's layout, with review's [marks](how-it-works.md#the-marks):
+It lists the changed pages of each build. A page that changed only through something it uses is marked with it ("via `_fragments/prereqs.md`"), and a page that moved with where it moved from, its "As it was" rendered from there. With more than one build changed, a picker switches between them. Each page is rendered as it is now, the way the editor's page preview renders it, without the site's layout, with review's [marks](how-it-works.md#the-marks):
 
 ![The HTML preview in a browser, with the list of changed pages above a page whose changed, added, removed, and moved paragraphs are marked.](../images/html-report-light.png){scheme=light}
 ![The HTML preview in a browser, with the list of changed pages above a page whose changed, added, removed, and moved paragraphs are marked.](../images/html-report-dark.png){scheme=dark}
@@ -87,11 +89,11 @@ The preview renders at most 300 changed pages; the rest are listed by name, and 
 
 ### The agent prompt
 
-`--format prompt` writes a prompt that asks your agent to review the change as readers will see it, in the [agent prompt format](../agents/commands.md#what-a-prompt-says), and writes nothing when nothing changed. Without a PAGE, it's about every changed page, grouped by build when more than one changed. With a PAGE, it's about that page in the first build it changed in, listing each change with its source lines; for a fragment, or any other file pages changed through, it's about the pages that show it, and asks the agent to check that the new text fits each. A PAGE that isn't a file of the project, at the base or now, is a usage error.
+`--format prompt` writes a prompt that asks your agent to review the change as readers will see it, in the [agent prompt format](../agents/commands.md#what-a-prompt-says), and writes nothing when nothing changed. Without a PAGE, it's about every changed page, grouped by build when more than one changed. With a PAGE, it's about that page in the first build it changed in, listing each change with its source lines. For a fragment, or any other file pages changed through, it's about the pages that show it, and asks the agent to check that the new text fits each. A PAGE that isn't a file of the project, at the base or now, is a usage error.
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-prompt.txt
 
-The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its paths and commands (`ascribe resolve`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML preview's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
+The prompt asks for a report, not edits: a review reads the change, and its writer decides what to do. Its paths and commands (`ascribe resolve`, `git diff`, `ascribe diff`) are written from the folder `ascribe diff` was run in, which it names once, with the base, the build, and `--config` as this run had them. The HTML preview's **Copy prompt** gives the same prompt, and the editor's **Prompt agent** gives it from the repository's root.
 
 ### Diff JSON
 
@@ -102,7 +104,7 @@ The prompt asks for a report, not edits: a review reads the change, and its auth
 | `schema_version` | number | `1` |
 | `ascribe_version` | string | The release of `ascribe` that wrote the report, as `0.4.5` |
 | `base` | object | `requested`: the revision asked for, or the default branch used. `commit`: the commit it names. `merge_base`: the merge base with `HEAD` that was compared with, or `null` with `--base-exact`. |
-| `repository` | object | `root`: the repository's top-level directory. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
+| `repository` | object | `root`: the repository's top-level folder. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
 | `working_tree_errors` | number | How many errors `ascribe check` finds in the working tree for the builds compared (with the same `--build` options). The comparison runs either way. |
 | `blocks_omitted` | boolean | Only with `--pages-only`, and then `true`: each page's `changes` is empty, and its `counts` still count them. |
 | `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order. |
@@ -136,13 +138,13 @@ Each change:
 | `parent` | object | For a removed block, and for a moved block's old place: the block it was inside, as it is now. Absent at the top of the page. |
 | `text` | string | For a removed block: its text, whitespace collapsed |
 
-A block is a heading, paragraph, code block, table, list, list item, block quote, directive, container, group, or a group's arm; changes inside a list, a container, or an arm are listed on the blocks inside it, so a one-word change in a step marks that step's paragraph. A line-form directive that renders as an element around the block after it (`@note`, `@steps`, `@details`, a widget) is one block with that block inside it, from the directive's line through the block's last, like the element.
+A block is a heading, paragraph, code block, table, list, list item, block quote, directive, container, group, or a group's arm. Changes inside a list, a container, or an arm are listed on the blocks inside it, so a one-word change in a step marks that step's paragraph. A line-form directive that renders as an element around the block after it (`@note`, `@steps`, `@details`, a widget) is one block with that block inside it, from the directive's line through the block's last, like the element.
 
 A block's `source` is `<path>:<first>-<last>`: the file its text is written in, relative to the content root with each path segment percent-encoded (except ASCII letters, digits, `-`, `.`, `_`, and `~`), and its first and last lines, from 1. `via` lists the includes it came through, outermost first, each `<path>:<line>`; it's empty for a block written in the page itself. These are the same strings the site output's source anchors carry, so a tool can find a block in a rendered page.
 
 @snippet {phrases=true}: code:crates/ascribe-cli/tests/output/diff.json
 
-How blocks are matched: blocks are compared by their content without positions, so moving a block down the file or rewrapping it is no change. Blocks that didn't stay are paired, in order, with a block of the same kind whose words overlap by at least half, or that keeps its words whole with words added or taken away at one end, as **changed**; a block that matches nothing is **added** or **removed**, and a removed block identical to an added one elsewhere on the page is **moved**. A block over about 2,500 words gets no word ranges, and a list or container with over 1,000 blocks in it that changed is marked changed as a whole.
+How blocks are matched: blocks are compared by their content without positions, so moving a block down the file or rewrapping it is no change. Blocks that didn't stay are paired, in order, with a block of the same kind whose words overlap by at least half, or that keeps its words whole with words added or taken away at one end, as **changed**. A block that matches nothing is **added** or **removed**, and a removed block identical to an added one elsewhere on the page is **moved**. A block over about 2,500 words gets no word ranges, and a list or container with over 1,000 blocks in it that changed is marked changed as a whole.
 
 ## `ascribe drift`
 @id {permalink=true}: cli-drift
@@ -152,7 +154,9 @@ Lists the pages whose code examples changed between a git revision and the worki
 
 @include: ../_generated/cli-drift-options.md
 
-The base is found as `ascribe diff` finds it, and the other side is the working tree. A snippet's region is taken from its file on both sides and compared as text, dedented, with trailing spaces trimmed, so an edit elsewhere in the file, a region that only moved, or a change of indent isn't a change. A renamed file is followed. A region the file didn't have at the base is a new example, not a changed one. Then, for each page with a changed example, it compares the page itself as `ascribe diff` does, apart from its snippets: the page changed when its own file did, or when anything else it uses did, such as a fragment it includes or a phrase in `ascribe.toml`.
+The base is found as `ascribe diff` finds it, and the other side is the working tree. A snippet's region is taken from its file on both sides and compared as text, dedented, with trailing spaces trimmed, so an edit elsewhere in the file, a region that only moved, or a change of indent isn't a change. A renamed file is followed. A region the file didn't have at the base is a new example, not a changed one.
+
+Then, for each page with a changed example, it compares the page itself as `ascribe diff` does, apart from its snippets. The page changed when its own file did, or when anything else it uses did, such as a fragment it includes or a phrase in `ascribe.toml`.
 
 The pages come in up to three groups:
 
