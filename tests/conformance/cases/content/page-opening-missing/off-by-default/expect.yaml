@@ -1,0 +1,6 @@
+description: >-
+  The check is off unless `[checks]` names it.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics: []

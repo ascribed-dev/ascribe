@@ -1,0 +1,1 @@
+- **Two new content checks: a how-to with no steps, and a page that doesn't open with a paragraph.** `how-to-steps-missing` is on as advice; `page-opening-missing` is off unless `[checks]` turns it on. See [Diagnostics: content checks](docs/content/checks/diagnostics/content-checks.md).

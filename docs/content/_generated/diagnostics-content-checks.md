@@ -280,3 +280,31 @@
 **Fix:** Write the phrase in braces, as `{product}`, where the page means its value, so the page changes when `ascribe.toml` does: a version, a URL, or a name written out goes stale at the next release. The fix does it, and is safe for a value that can't be an ordinary word: one with a space or a symbol in it, such as a version or a URL. A heading that takes the phrase needs an `@id` too, so its link stays the same when the value changes. Where the text means what it says whatever the value becomes, as a changelog's version does, acknowledge it with `@intended {check=phrase-text-written}` above its block.
 
 **Read more:** [Phrases](../writing/inline.md#phrases) in the phrases and links reference.
+
+### ASC291 `how-to-steps-missing`
+@id {permalink=true}: ASC291
+@summary: A page of the content type named `how-to` has no `@steps` and no heading numbered as a step.
+
+[Advice](../checks/diagnostics.md#severity) · [page level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
+
+**When:** A page of the content type named `how-to` has no `@steps` and no heading that starts with a step's number, such as `1. Install` or `Step 1: Install`, once includes are expanded. A page of any other type isn't looked at.
+
+**Message:** this how-to has no steps; write the task as a numbered list under `@steps`, so readers and agents can follow it a step at a time
+
+**Fix:** Write what the reader does as a numbered list, one action to a step, starting each with a verb, and put `@steps` on the line above it: the site numbers it as a procedure and an agent reads it as one. A task long enough for a section to each step can number its headings instead, as `## 1. Install`. A how-to that has no steps may be another type of page: a concept that explains, or a reference to look things up in.
+
+**Read more:** [`@steps`](../writing/directives.md#steps) in the directive reference.
+
+### ASC292 `page-opening-missing`
+@id {permalink=true}: ASC292
+@summary: A page's first block after its title is something other than a paragraph written in the page, such as an `@include`, a heading, or a list.
+
+[Advice, off by default](../checks/diagnostics.md#severity) · [file level](../checks/diagnostics.md#file-level-and-page-level) · next step: [write](../checks/diagnostics.md#what-to-do-next) · [configurable](../checks/diagnostics.md#setting-a-checks-level) in `[checks]` · Ascribe's own, not in SPEC
+
+**When:** A page's first block after its title is something other than a paragraph written in the page: an `@include`, a heading, a list, a table, code, a quote, or a directive. A level-1 heading that repeats the title, a memo, an HTML comment, and a directive that binds to the block below it, such as `@summary` or `@available`, are passed over. A fragment, and a page with nothing after its frontmatter, aren't looked at.
+
+**Message:** this page opens with \{first}, not a paragraph; open the page with a sentence that says what it covers
+
+**Fix:** Write a paragraph at the top of the page, before its first heading, list, or include, saying what the page covers and who it's for. A reader who lands on the page from a search sees it first, and so does an agent, which may read no further. When the page's opening is in a fragment, write the sentence in the page and include the rest after it. The check is off unless the project turns it on: `[checks] page-opening-missing = "advice"`.
+
+**Read more:** [`[checks]`](../content-model/checks.md#22-checks) in the `ascribe.toml` reference.

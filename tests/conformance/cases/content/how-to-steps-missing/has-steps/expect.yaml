@@ -1,0 +1,11 @@
+description: >-
+  A how-to has steps when it has `@steps`, written in the page or brought in
+  by an include, or a heading that starts as a step does, such as `1. Install`
+  or `Step 2: Sign in`.
+spec: ["4.6"]
+tags: [page-check, include]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

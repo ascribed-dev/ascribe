@@ -184,6 +184,11 @@ build = "site"
 # observe` in the repository's root and commit what it writes.
 example-stale = "error"
 
+# A page opens with a sentence saying what it covers, not straight into an
+# include, a heading, or a list: a reader from a search, and an agent, read
+# the opening first.
+page-opening-missing = "advice"
+
 # Prose checks through Vale, in the editor, for whoever has Vale 3.16 or
 # later installed; `ascribe check --vale` runs them too. Vale isn't needed
 # to work on the docs, so without `in-check` a machine without it isn't told

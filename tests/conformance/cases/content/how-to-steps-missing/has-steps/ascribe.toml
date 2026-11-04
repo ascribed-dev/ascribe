@@ -1,0 +1,19 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[fragments]
+patterns = ["_*"]
+
+[types.how-to.frontmatter]
+title = "string"
+
+[types.concept.frontmatter]
+title = "string"
+
+[checks]
+# Nothing links these pages.
+page-orphan = "off"
+
+[builds.site]
