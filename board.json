@@ -10261,8 +10261,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1376"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Move serde-saphyr to 2.1.1 once it's published, and drop the deny.toml ignore"
     }
   ]
