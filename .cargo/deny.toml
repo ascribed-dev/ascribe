@@ -11,12 +11,7 @@
 # with the issue as the reason:
 #   ignore = [{ id = "RUSTSEC-0000-0000", reason = "#123" }]
 yanked = "deny"
-ignore = [
-  # Yanked for a regression we don't hit (an empty stream into a collection).
-  # 2.0 lacks the YAML 1.2 number options ascribe_core::yaml sets, so this
-  # stays until 2.1.1 is on crates.io.
-  { crate = "serde-saphyr@2.1.0", reason = "#1369" },
-]
+ignore = []
 
 [licenses]
 # The licenses in the tree today, by name. A crate under any other license
