@@ -10184,8 +10184,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1372"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In review",
       "title": "Fuzz: parse crashes (01ba4719c80b)"
     },
     {
@@ -10201,8 +10204,11 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1372"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "In progress",
       "title": "Fuzz: model crashes (01ba4719c80b)"
     },
     {
@@ -10218,9 +10224,26 @@
       "labels": [
         "rust"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1372"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "In progress",
+      "title": "Fuzz: format crashes (01ba4719c80b)"
+    },
+    {
+      "content": {
+        "body": "The nightly canary failed, so `next` stays on the newest canary that passed.\n\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/42027463475) on `ba3947e1326bea1107fd5aef02c318424e3f20eb`. Failed jobs:\n\n- build / pack\n",
+        "number": 1373,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Canary failed",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1373"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhGRP8U",
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
-      "title": "Fuzz: format crashes (01ba4719c80b)"
+      "title": "Canary failed"
     }
   ]
 }
