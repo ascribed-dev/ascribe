@@ -118,9 +118,6 @@ export const SKILL_VERSION = /^ {2}ascribe-version: "([^"]+)"$/m;
  */
 export const schemasDir = "schemas";
 
-/** The docs' copies of the published schemas, which shapes.rs generates too. */
-const schemaFragmentsDir = "docs/content/_generated";
-
 /**
  * A schema's `$id`, with the version as its one group: its address at the
  * release's tag, as `schema_id` in `crates/ascribe-cli/src/shapes.rs` writes it.
@@ -153,13 +150,13 @@ export function stageSchemas(): string | undefined {
   return staged;
 }
 
-/** Every file that holds a schema's `$id`: the schemas, and the docs' copies. */
+/**
+ * Every file that holds a schema's `$id`: the schemas alone. The docs' pages
+ * for them, `docs/content/_generated/json-*.md`, are field tables that link
+ * the schema at `v{version}` and carry no `$id` to rewrite.
+ */
 export function schemaFiles(): string[] {
-  const schemas = schemaNames().map((name) => `${schemasDir}/${name}`);
-  const fragments = readdirSync(join(root, schemaFragmentsDir))
-    .filter((name) => name.startsWith("json-") && name.endsWith(".md"))
-    .map((name) => `${schemaFragmentsDir}/${name}`);
-  return [...schemas, ...fragments].sort();
+  return schemaNames().map((name) => `${schemasDir}/${name}`);
 }
 
 /** A file that carries the version, and the version it says. */

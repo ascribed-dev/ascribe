@@ -3,11 +3,13 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CANARY,
+  SCHEMA_ID,
   VERSION,
   canaryVersion,
   npmPackages,
   relockWorkspace,
   root,
+  schemaFiles,
   targets,
   unreleasedSection,
   vsixEntry,
@@ -182,6 +184,33 @@ describe("the platforms", () => {
     };
     expect(matrix("build")).toEqual(targets.map(({ target, exe }) => `${target} ${exe}`));
     expect(matrix("smoke")).toEqual(names);
+  });
+});
+
+// A release rewrites the version in each file `schemaFiles` lists, and the
+// version check reads it back, so a file listed without an `$id` fails both.
+describe("schemaFiles", () => {
+  const read = (path: string): string => readFileSync(join(root, path), "utf8");
+
+  it("lists the schemas, each holding an $id", () => {
+    const files = schemaFiles();
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      expect(file).toMatch(/^schemas\/[\w-]+\.schema\.json$/);
+      expect(SCHEMA_ID.exec(read(file))?.[2], file).toBeDefined();
+    }
+  });
+
+  it("leaves out the docs' generated schema pages, which hold no $id", () => {
+    const dir = "docs/content/_generated";
+    const pages = readdirSync(join(root, dir)).filter(
+      (name) => name.startsWith("json-") && name.endsWith(".md"),
+    );
+    expect(pages.length).toBeGreaterThan(0);
+    for (const name of pages) {
+      expect(SCHEMA_ID.test(read(`${dir}/${name}`)), name).toBe(false);
+      expect(schemaFiles()).not.toContain(`${dir}/${name}`);
+    }
   });
 });
 
