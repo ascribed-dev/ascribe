@@ -10170,6 +10170,57 @@
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Done",
       "title": "Generated reference pages: use the settled terms at their source in the code"
+    },
+    {
+      "content": {
+        "body": "The nightly fuzz run of `parse` failed. [The run](https://github.com/ascribed-dev/ascribe/actions/runs/42016891340) keeps the input as the artifact `fuzz-parse` for 30 days.\n\n**Signature** `01ba4719c80b`:\n\n```text\n\n```\n\n<details><summary>What the run printed: the panic, or the end of the log</summary>\n\n```text\n^[[1m^[[92m    Updating^[[0m crates.io index\n^[[1m^[[91merror^[[0m: failed to select a version for the requirement `serde-saphyr = \"^2.1\"`\n  version 2.1.0 is yanked\nlocation searched: crates.io index\nrequired by package `ascribe-core v0.4.5 (/home/runner/work/ascribe/ascribe/crates/ascribe-core)`\n    ... which satisfies path dependency `ascribe-core` of package `ascribe-fuzz v0.0.0 (/home/runner/work/ascribe/ascribe/fuzz)`\nError: failed to build fuzz script: ASAN_OPTIONS=\"detect_odr_violation=0\" RUSTFLAGS=\" -Cpasses=sancov-module -Cllvm-args=-sanitizer-coverage-level=4 -Cllvm-args=-sanitizer-coverage-inline-8bit-counters -Cllvm-args=-sanitizer-coverage-pc-table -Cllvm-args=-sanitizer-coverage-trace-compares --cfg fuzzing -Cllvm-args=-simplifycfg-branch-fold-threshold=0 -Zsanitizer=address -Cllvm-args=-sanitizer-coverage-stack-depth -Cdebug-assertions -Ccodegen-units=1\" \"cargo\" \"build\" \"--manifest-path\" \"/home/runner/work/ascribe/ascribe/fuzz/Cargo.toml\" \"--target\" \"x86_64-unknown-linux-gnu\" \"--release\" \"--config\" \"profile.release.debug=\\\"line-tables-only\\\"\" \"--bin\" \"parse\"\n```\n\n</details>\n",
+        "number": 1369,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Fuzz: parse crashes (01ba4719c80b)",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1369"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhGP7-w",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Fuzz: parse crashes (01ba4719c80b)"
+    },
+    {
+      "content": {
+        "body": "The nightly fuzz run of `model` failed. [The run](https://github.com/ascribed-dev/ascribe/actions/runs/42016891340) keeps the input as the artifact `fuzz-model` for 30 days.\n\n**Signature** `01ba4719c80b`:\n\n```text\n\n```\n\n<details><summary>What the run printed: the panic, or the end of the log</summary>\n\n```text\n^[[1m^[[92m    Updating^[[0m crates.io index\n^[[1m^[[91merror^[[0m: failed to select a version for the requirement `serde-saphyr = \"^2.1\"`\n  version 2.1.0 is yanked\nlocation searched: crates.io index\nrequired by package `ascribe-core v0.4.5 (/home/runner/work/ascribe/ascribe/crates/ascribe-core)`\n    ... which satisfies path dependency `ascribe-core` of package `ascribe-fuzz v0.0.0 (/home/runner/work/ascribe/ascribe/fuzz)`\nError: failed to build fuzz script: ASAN_OPTIONS=\"detect_odr_violation=0\" RUSTFLAGS=\" -Cpasses=sancov-module -Cllvm-args=-sanitizer-coverage-level=4 -Cllvm-args=-sanitizer-coverage-inline-8bit-counters -Cllvm-args=-sanitizer-coverage-pc-table -Cllvm-args=-sanitizer-coverage-trace-compares --cfg fuzzing -Cllvm-args=-simplifycfg-branch-fold-threshold=0 -Zsanitizer=address -Cllvm-args=-sanitizer-coverage-stack-depth -Cdebug-assertions -Ccodegen-units=1\" \"cargo\" \"build\" \"--manifest-path\" \"/home/runner/work/ascribe/ascribe/fuzz/Cargo.toml\" \"--target\" \"x86_64-unknown-linux-gnu\" \"--release\" \"--config\" \"profile.release.debug=\\\"line-tables-only\\\"\" \"--bin\" \"model\"\n```\n\n</details>\n",
+        "number": 1370,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Fuzz: model crashes (01ba4719c80b)",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1370"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhGP8BE",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Fuzz: model crashes (01ba4719c80b)"
+    },
+    {
+      "content": {
+        "body": "The nightly fuzz run of `format` failed. [The run](https://github.com/ascribed-dev/ascribe/actions/runs/42016891340) keeps the input as the artifact `fuzz-format` for 30 days.\n\n**Signature** `01ba4719c80b`:\n\n```text\n\n```\n\n<details><summary>What the run printed: the panic, or the end of the log</summary>\n\n```text\n^[[1m^[[92m    Updating^[[0m crates.io index\n^[[1m^[[91merror^[[0m: failed to select a version for the requirement `serde-saphyr = \"^2.1\"`\n  version 2.1.0 is yanked\nlocation searched: crates.io index\nrequired by package `ascribe-core v0.4.5 (/home/runner/work/ascribe/ascribe/crates/ascribe-core)`\n    ... which satisfies path dependency `ascribe-core` of package `ascribe-fuzz v0.0.0 (/home/runner/work/ascribe/ascribe/fuzz)`\nError: failed to build fuzz script: ASAN_OPTIONS=\"detect_odr_violation=0\" RUSTFLAGS=\" -Cpasses=sancov-module -Cllvm-args=-sanitizer-coverage-level=4 -Cllvm-args=-sanitizer-coverage-inline-8bit-counters -Cllvm-args=-sanitizer-coverage-pc-table -Cllvm-args=-sanitizer-coverage-trace-compares --cfg fuzzing -Cllvm-args=-simplifycfg-branch-fold-threshold=0 -Zsanitizer=address -Cllvm-args=-sanitizer-coverage-stack-depth -Cdebug-assertions -Ccodegen-units=1\" \"cargo\" \"build\" \"--manifest-path\" \"/home/runner/work/ascribe/ascribe/fuzz/Cargo.toml\" \"--target\" \"x86_64-unknown-linux-gnu\" \"--release\" \"--config\" \"profile.release.debug=\\\"line-tables-only\\\"\" \"--bin\" \"format\"\n```\n\n</details>\n",
+        "number": 1371,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Fuzz: format crashes (01ba4719c80b)",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1371"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhGP8DU",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Fuzz: format crashes (01ba4719c80b)"
     }
   ]
 }
