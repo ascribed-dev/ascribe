@@ -10188,7 +10188,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1372"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In review",
+      "status": "Done",
       "title": "Fuzz: parse crashes (01ba4719c80b)"
     },
     {
@@ -10208,7 +10208,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1372"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Fuzz: model crashes (01ba4719c80b)"
     },
     {
@@ -10228,7 +10228,7 @@
         "https://github.com/ascribed-dev/ascribe/pull/1372"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "In progress",
+      "status": "Done",
       "title": "Fuzz: format crashes (01ba4719c80b)"
     },
     {
@@ -10241,9 +10241,29 @@
         "url": "https://github.com/ascribed-dev/ascribe/issues/1373"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhGRP8U",
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1374"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Canary failed"
+    },
+    {
+      "content": {
+        "body": "#1372 keeps `serde-saphyr` at 2.1.0, which is yanked, because 2.0.0 lacks `leading_zero_numbers_as_strings` and `underscored_numbers_as_strings`, which `ascribe_core::yaml` sets. It lists `serde-saphyr@2.1.0` under `ignore` in `.cargo/deny.toml`, and that silences the check that would otherwise remind us.\n\nUpstream tagged 2.1.1 on 2026-11-05 (it fixes the empty-stream regression 2.1.0 was yanked for), but it isn't on crates.io yet.\n\n**Done when:**\n- 2.1.1 (or a later 2.x that isn't yanked and has both options) is on crates.io.\n- The workspace `Cargo.toml` asks for it, and `Cargo.lock` and `fuzz/Cargo.lock` both pin it.\n- The `serde-saphyr@2.1.0` entry is gone from `.cargo/deny.toml`'s `ignore`, and `cargo deny --locked check advisories` passes.\n- Any output change from the move is named with `--accept`.\n\nTouches: `Cargo.toml`, `Cargo.lock`, `fuzz/Cargo.lock`, `.cargo/deny.toml`.",
+        "number": 1375,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Move serde-saphyr to 2.1.1 once it's published, and drop the deny.toml ignore",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1375"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzhGRunM",
+      "labels": [
+        "rust"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Move serde-saphyr to 2.1.1 once it's published, and drop the deny.toml ignore"
     }
   ]
 }
