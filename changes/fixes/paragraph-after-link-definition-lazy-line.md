@@ -1,0 +1,1 @@
+- **Fixed:** A paragraph after a link reference definition no longer starts on a lazy line's spaces.
