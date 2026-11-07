@@ -85,6 +85,10 @@ fn directives_in_every_container() {
         "[ref]: /x\n   Indented paragraph.\n",
         "[ref]: /x 'title'\n  next\n",
         "> [ref]: /x\n>  quoted\n",
+        // A lazy continuation line after a definition in a block quote (#1377).
+        ">[i]:e\n e",
+        "> [multi]:\n>   {api}events\n  \"le\"\n  \"Title\"\n",
+        "- > [ref]: /x\n   \t lazy\n",
         // Link reference definitions: titles, several lines, containers, escapes.
         "[a]: /x\n[b]: <{api}y z> 'title'\n[c]:\n  {api}z\n  (t)\n\ntext\n",
         "- [a]: {api}x \"t\"\n  [b]: \\{x}\n\n  @note: after\n> [c]:\n> /y\n> \"z\"\n",

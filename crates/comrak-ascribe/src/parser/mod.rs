@@ -1920,6 +1920,12 @@ where
                 || !node_matches!(container, NodeValue::BlockQuote | NodeValue::Document))
             && node_matches!(self.current, NodeValue::Paragraph)
         {
+            // ASCRIBE: a lazy continuation line starts at its text, as any
+            // other paragraph line does, so its line offset is the text's. Left
+            // on its indent, a paragraph whose definitions are taken from the
+            // start began on the spaces (#1377).
+            let count = self.first_nonspace - self.offset;
+            self.advance_offset(line, count, false);
             self.add_line(self.current, line);
         } else {
             while !self.current.same_node(last_matched_container) {

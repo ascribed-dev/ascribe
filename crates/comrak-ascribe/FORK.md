@@ -51,11 +51,12 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | | | `NodeValue::accepts_lines` | An Ascribe line takes its own line |
 | | | `Node::can_contain_type` | An Ascribe line contains only its primary's paragraph |
 | `src/parser/options.rs` | 1 | `Extension` | The `ascribe: Option<Arc<AscribeOptions>>` option, after `front_matter_delimiter` |
-| `src/parser/mod.rs` | 16 | module list | `mod ascribe;` |
+| `src/parser/mod.rs` | 17 | module list | `mod ascribe;` |
 | | | `check_open_blocks_inner` | An Ascribe line stays open while its primary's paragraph does, and a raw container's opener until a line that's only `@end` at its indent (`continues_raw_container`) |
 | | | `open_new_blocks` | `handle_ascribe_line` in the chain of block starts, between block quotes and ATX headings |
 | | | `open_new_blocks` | No block starts inside a raw container's opener, as none does in a code block (`holds_raw_lines`; changed condition) |
 | | | `add_text_to_container` | A blank line in a raw container doesn't make its list loose, as one in a fenced code block doesn't |
+| | | `add_text_to_container` | A lazy continuation line is added from its first non-space character, as every other paragraph line is (upstream adds it with its indent, so when link reference definitions are taken from before it, the paragraph starts on the spaces, [#1377](https://github.com/ascribed-dev/ascribe/issues/1377)). The inline parser drops a line's leading whitespace either way, so the output is the same. **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
 | | | `detect_setext_heading` | A text primary never becomes a setext heading (changed condition) |
 | | | `detect_table` | A text primary never becomes a table header (changed condition) |
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |

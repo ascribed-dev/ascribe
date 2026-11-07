@@ -6,8 +6,10 @@
 //! lines too early. The fork moves the start down to the first line's text, and drops the
 //! definitions' lines from the node's line offsets, which the inline parser
 //! indexes from that line (two `// ASCRIBE:` hunks in `src/parser/mod.rs`,
-//! `finalize_borrowed` and `handle_setext_heading`). These tests fail if a
-//! merge from upstream drops that. Both hunks are candidates to send upstream; see `FORK.md`.
+//! `finalize_borrowed` and `handle_setext_heading`), and a lazy continuation
+//! line starts at its text, as other paragraph lines do (`add_text_to_container`).
+//! These tests fail if a merge from upstream drops that. The hunks are
+//! candidates to send upstream; see `FORK.md`.
 
 use comrak_ascribe::nodes::{Node, NodeValue};
 use comrak_ascribe::{Arena, Options, parse_document};
@@ -121,4 +123,12 @@ fn a_paragraph_after_a_definition_starts_at_its_first_lines_text() {
 #[test]
 fn a_setext_heading_after_a_definition_starts_at_its_first_lines_text() {
     assert_eq!(start("[foo]: /url\n  bar\n===\n", is_heading), (2, 3));
+}
+
+#[test]
+fn a_paragraph_after_a_definition_starts_at_a_lazy_lines_text() {
+    // The new first line is a lazy continuation, indented and outside the
+    // block quote the definition is in (#1377).
+    assert_eq!(start(">[i]:e\n e", is_paragraph), (2, 2));
+    assert_eq!(start("> [foo]: /url\n   bar\n", is_paragraph), (2, 4));
 }
