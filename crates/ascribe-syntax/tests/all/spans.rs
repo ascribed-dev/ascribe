@@ -172,6 +172,12 @@ fn directives_in_every_container() {
         "a\\|b \\| c\r\nx\r\nb | j\r\n- | -\r\n",
         "> `a\\|b`\n> x\n> b j\n> --|\n",
         "@n b\0\0\0\\|n b\n--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\|--\nbn- n- j\n--|",
+        // A backslash escaped in a table cell doesn't escape the pipe after
+        // it, so the inlines after `\\|` aren't a byte late (#1380).
+        "y||\n-|-\n\\\\|*\0*",
+        "a | b\n- | -\n\\\\| *c* | `d`\n",
+        "a | b\n- | -\n\\\\\\| *c* \\\\\\\\| **d**\n",
+        "| a |\n| - |\n| x \\\\\\\\|y *z* |\n",
     ] {
         assert_exact("container case", source);
     }
