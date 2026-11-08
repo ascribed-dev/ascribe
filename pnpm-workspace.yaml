@@ -11,3 +11,11 @@ allowBuilds:
   "@scarf/scarf": false
   "@vscode/vsce-sign": false
   esbuild: false
+# Security fixes for transitive dependencies whose parents pin a vulnerable
+# version, so neither Dependabot nor `pnpm update` can raise them. Each is
+# scoped to the parent that pins it; remove an entry once that parent allows
+# the fixed version.
+overrides:
+  # postman-collection 4.5.0 (from Stoplight Elements' http-spec) pins
+  # lodash 4.17.21 exactly: GHSA-r5fr-rjxr-66jc, GHSA-xxjr-mmjv-4gpg.
+  "postman-collection>lodash": "^4.18.1"
