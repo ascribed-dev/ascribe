@@ -376,7 +376,9 @@ impl<'a> Converter<'a> {
 
     /// comrak parses a table cell after replacing each `\|` with `|`, so the
     /// positions it reports for the cell's inlines fall one byte short for
-    /// every `\|` before them. This puts them back.
+    /// every `\|` before them. This puts them back. A backslash escaped by
+    /// the one before it escapes nothing, so `\\|` keeps both its
+    /// backslashes, as comrak's `unescape_pipes` reads it (#1380).
     fn correct_cell_offsets(&self, cell: Span, inlines: &mut [Inline]) {
         let source = self.text(cell);
         if !source.contains("\\|") {
@@ -389,6 +391,10 @@ impl<'a> Converter<'a> {
         while i < bytes.len() {
             if bytes[i] == b'\\' && bytes.get(i + 1) == Some(&b'|') {
                 map.push(i);
+                i += 2;
+            } else if bytes[i] == b'\\' && bytes.get(i + 1) == Some(&b'\\') {
+                map.push(i);
+                map.push(i + 1);
                 i += 2;
             } else {
                 map.push(i);

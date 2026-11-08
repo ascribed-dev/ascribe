@@ -1,0 +1,1 @@
+- **Fixed:** Inline spans in a table cell after `\\|` are no longer a byte late.
