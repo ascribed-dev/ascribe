@@ -1,1 +1,1 @@
-- **Fixed:** Inline spans in a table cell after `\|` and a character of more than one byte no longer start inside that character.
+- **Fixed:** Inline spans in a table cell no longer start inside a multi-byte character after `\|`.
