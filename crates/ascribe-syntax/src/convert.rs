@@ -33,6 +33,7 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
         options,
         issues: Vec::new(),
         depth: 0,
+        cell: None,
     };
     let frontmatter = root
         .first_child()
@@ -82,6 +83,25 @@ struct Converter<'a> {
     issues: Vec<Issue>,
     /// How many blocks and inlines are open above the node being converted.
     depth: usize,
+    /// The table cell whose inlines are being converted, while they are.
+    cell: Option<CellOffsets>,
+}
+
+/// comrak parses a table cell after replacing each `\|` with `|`, so the
+/// columns it reports for the cell's inlines count the bytes of that text,
+/// not of the source. This maps them back to the source before an offset
+/// is moved to a character's boundary. Moved first, an offset just past a
+/// `\|` and a character of several bytes fell inside that character in the
+/// source, was moved past it, and was then corrected again (#1382).
+struct CellOffsets {
+    /// The cell's line, as comrak counts them.
+    line: usize,
+    /// The cell's first byte, in the source.
+    start: usize,
+    /// The cell's end, in the source.
+    end: usize,
+    /// `map[u]` is the offset from `start` of offset `u` in comrak's text.
+    map: Vec<usize>,
 }
 
 impl<'a> Converter<'a> {
@@ -97,13 +117,25 @@ impl<'a> Converter<'a> {
     /// The offset of the first byte of the character at `pos`.
     fn start_of(&self, pos: LineColumn) -> usize {
         let offset = self.line_start(pos.line) + pos.column.saturating_sub(1);
-        self.floor(offset)
+        self.floor(self.in_cell(pos.line, offset))
     }
 
     /// The offset just past the character at `pos`.
     fn end_of(&self, pos: LineColumn) -> usize {
         let offset = self.line_start(pos.line) + pos.column;
-        self.ceil(offset)
+        self.ceil(self.in_cell(pos.line, offset))
+    }
+
+    /// The source offset of `offset`, when it's one comrak reported in the
+    /// table cell being converted.
+    fn in_cell(&self, line: usize, offset: usize) -> usize {
+        match &self.cell {
+            Some(cell) if cell.line == line && offset >= cell.start => cell
+                .map
+                .get(offset - cell.start)
+                .map_or(cell.end, |mapped| cell.start + mapped),
+            _ => offset,
+        }
     }
 
     fn floor(&self, mut offset: usize) -> usize {
@@ -350,8 +382,9 @@ impl<'a> Converter<'a> {
                                 .children()
                                 .map(|cell| {
                                     let span = self.span(cell);
-                                    let mut inlines = self.inlines(cell);
-                                    self.correct_cell_offsets(span, &mut inlines);
+                                    self.cell = self.cell_offsets(cell, span);
+                                    let inlines = self.inlines(cell);
+                                    self.cell = None;
                                     TableCell { span, inlines }
                                 })
                                 .collect(),
@@ -374,17 +407,15 @@ impl<'a> Converter<'a> {
         out.push(Block { span, kind });
     }
 
-    /// comrak parses a table cell after replacing each `\|` with `|`, so the
-    /// positions it reports for the cell's inlines fall one byte short for
-    /// every `\|` before them. This puts them back. A backslash escaped by
-    /// the one before it escapes nothing, so `\\|` keeps both its
+    /// How to map the offsets comrak reports in a table cell back to the
+    /// source, when the cell has a `\|` comrak replaced. A backslash escaped
+    /// by the one before it escapes nothing, so `\\|` keeps both its
     /// backslashes, as comrak's `unescape_pipes` reads it (#1380).
-    fn correct_cell_offsets(&self, cell: Span, inlines: &mut [Inline]) {
+    fn cell_offsets(&self, node: Node<'_>, cell: Span) -> Option<CellOffsets> {
         let source = self.text(cell);
         if !source.contains("\\|") {
-            return;
+            return None;
         }
-        // `map[u]` is the offset in the source of offset `u` in the unescaped text.
         let mut map = Vec::with_capacity(source.len() + 1);
         let bytes = source.as_bytes();
         let mut i = 0;
@@ -402,12 +433,12 @@ impl<'a> Converter<'a> {
             }
         }
         map.push(source.len());
-        let fix = |offset: usize| -> usize {
-            let relative = offset.saturating_sub(cell.start());
-            let mapped = map.get(relative).copied().unwrap_or(source.len());
-            self.ceil(cell.start() + mapped)
-        };
-        fix_offsets(inlines, &fix);
+        Some(CellOffsets {
+            line: node.data().sourcepos.start.line,
+            start: cell.start(),
+            end: cell.end(),
+            map,
+        })
     }
 
     /// The info string's span on a fence's opening line.
@@ -921,29 +952,6 @@ fn clamp_inlines(inlines: &mut Vec<Inline>, limit: usize) {
             }
             InlineKind::Link(link) => clamp_inlines(&mut link.children, limit),
             InlineKind::Image(image) => clamp_inlines(&mut image.children, limit),
-            _ => {}
-        }
-    }
-}
-
-/// Applies `fix` to the start and end of every span in `inlines`.
-fn fix_offsets(inlines: &mut [Inline], fix: &dyn Fn(usize) -> usize) {
-    let span = |s: Span| Span::new(fix(s.start()), fix(s.end()));
-    for inline in inlines {
-        inline.span = span(inline.span);
-        match &mut inline.kind {
-            InlineKind::Emphasis(children) | InlineKind::Strong(children) => {
-                fix_offsets(children, fix);
-            }
-            InlineKind::Link(link) => {
-                link.label = link.label.map(span);
-                fix_offsets(&mut link.children, fix);
-            }
-            InlineKind::Image(image) => {
-                image.label = image.label.map(span);
-                image.alt = span(image.alt);
-                fix_offsets(&mut image.children, fix);
-            }
             _ => {}
         }
     }

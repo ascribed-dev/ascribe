@@ -178,6 +178,12 @@ fn directives_in_every_container() {
         "a | b\n- | -\n\\\\| *c* | `d`\n",
         "a | b\n- | -\n\\\\\\| *c* \\\\\\\\| **d**\n",
         "| a |\n| - |\n| x \\\\\\\\|y *z* |\n",
+        // A character of several bytes after `\|` in a cell doesn't move the
+        // inline after it into the character (#1382).
+        ":\n:-\n\\|\u{feff}[]()",
+        "a | b\n- | -\n\\|é *c* | \\|日本 `d` [e](f)\n",
+        "| a |\n| - |\n| \\|😀![x](y.png) \\\\\\|ü **z** |\n",
+        "---\ntitle: Home\n---\n\n![Inline](p.png)\n\n![Attrs](p.png){width=600, height=---ie\n-ie:\n:-\n\u{3}title: T-\\|\u{feff}[InliPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPne](p.png)\n\n![Attrs](p.png){width=600, height=488}\n\n!e)\n\n<img src=\"m\n.\n",
     ] {
         assert_exact("container case", source);
     }
