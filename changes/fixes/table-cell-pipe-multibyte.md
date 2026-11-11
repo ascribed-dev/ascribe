@@ -1,0 +1,1 @@
+- **Fixed:** Inline spans in a table cell no longer start inside a multi-byte character after `\|`.
