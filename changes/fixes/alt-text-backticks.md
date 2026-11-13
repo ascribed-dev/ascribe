@@ -1,0 +1,1 @@
+- **Fixed:** An image's alt text no longer comes out empty after backticks earlier in its paragraph.

@@ -532,6 +532,46 @@ fn a_bracket_in_a_nested_destination_or_title_does_not_end_the_alt_text() {
 }
 
 #[test]
+fn a_backtick_run_comrak_reads_as_text_does_not_end_the_alt_text() {
+    // #1387: comrak reads the ``` `` ``` after `[` as text, because of the
+    // backticks before the image, but in the image's source alone it opens
+    // a code span through the `]`, and the alt text came out empty.
+    for (source, alt, form, label) in [
+        ("`a``b```)``![``](``)", "``", LinkForm::Inline, None),
+        ("`a``b```)``![x ``y](z``)", "x ``y", LinkForm::Inline, None),
+        (
+            "`a``b```)``![``][r]\n\n[r]: ``\n",
+            "``",
+            LinkForm::Full,
+            Some("r"),
+        ),
+        // The fuzz input, minimized.
+        (
+            "`m``\0````````)``![````````](````````)",
+            "````````",
+            LinkForm::Inline,
+            None,
+        ),
+    ] {
+        let d = doc(source);
+        let image = only_image(&d);
+        assert_eq!(cut(source, image.alt), alt, "{source:?}");
+        assert_eq!(image.form, form, "{source:?}");
+        assert_eq!(image.label.map(|l| cut(source, l)), label, "{source:?}");
+    }
+    let source = "`a``b```)``[``](``)";
+    let d = doc(source);
+    let link = paragraph(&d)
+        .iter()
+        .find_map(|i| match &i.kind {
+            InlineKind::Link(l) => Some(l),
+            _ => None,
+        })
+        .expect("a link");
+    assert_eq!(link.form, LinkForm::Inline);
+}
+
+#[test]
 fn attributes_use_the_directive_grammar() {
     let source = "![a](s.png \"Title\"){width=\"6 0\", height = 400 , loading=eager|lazy}\n";
     let d = doc(source);
