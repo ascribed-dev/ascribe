@@ -885,21 +885,24 @@ impl<'a> Converter<'a> {
     }
 
     fn link(&mut self, node: Node<'_>, link: &NodeLink, span: Span) -> Link {
-        let (form, label) = self.link_form(span, false);
+        let children = self.inlines(node);
+        let close = self.closing_bracket(span, 0, &children);
+        let (form, label) = self.link_form(span, false, close);
         Link {
             form,
             destination: link.url.clone(),
             title: (!link.title.is_empty()).then(|| link.title.clone()),
             label,
             destination_phrases: Vec::new(),
-            children: self.inlines(node),
+            children,
         }
     }
 
     fn image(&mut self, node: Node<'_>, link: &NodeLink, span: Span) -> Image {
-        let (form, label) = self.link_form(span, true);
-        let text = self.text(span);
-        let alt = match matching_bracket(text, 1) {
+        let children = self.inlines(node);
+        let close = self.closing_bracket(span, 1, &children);
+        let (form, label) = self.link_form(span, true, close);
+        let alt = match close {
             Some(close) => Span::new(span.start() + 2, span.start() + close),
             None => Span::empty(span.start() + 2),
         };
@@ -909,20 +912,42 @@ impl<'a> Converter<'a> {
             title: (!link.title.is_empty()).then(|| link.title.clone()),
             label,
             alt,
-            children: self.inlines(node),
+            children,
             destination_phrases: Vec::new(),
             attributes: None,
         }
     }
 
-    /// Which form a link or image was written in, from its source.
-    fn link_form(&self, span: Span, image: bool) -> (LinkForm, Option<Span>) {
+    /// The index in the link's or image's source of the `]` that closes
+    /// its text, which opens at `open`. comrak has already decided which
+    /// backtick runs in the text open code spans, and that depends on the
+    /// backticks before the link as well, which `matching_bracket` doesn't
+    /// see: a run it reads as opening a code span that runs past the `]`
+    /// can be text to comrak (#1387). The text's inlines are what comrak
+    /// read, so the `]` is never before the end of the last one.
+    fn closing_bracket(&self, span: Span, open: usize, children: &[Inline]) -> Option<usize> {
+        let text = self.text(span);
+        let found = matching_bracket(text, open);
+        let Some(floor) = children
+            .last()
+            .map(|last| last.span.end().saturating_sub(span.start()))
+        else {
+            return found;
+        };
+        match found {
+            Some(close) if close >= floor => Some(close),
+            _ => text.get(floor..)?.find(']').map(|at| floor + at),
+        }
+    }
+
+    /// Which form a link or image was written in, from its source and the
+    /// `]` that closes its text.
+    fn link_form(&self, span: Span, image: bool, close: Option<usize>) -> (LinkForm, Option<Span>) {
         let text = self.text(span);
         if !image && text.starts_with('<') {
             return (LinkForm::Autolink, None);
         }
-        let open = usize::from(image);
-        let Some(close) = matching_bracket(text, open) else {
+        let Some(close) = close else {
             return (LinkForm::Inline, None);
         };
         let rest = &text[close + 1..];
