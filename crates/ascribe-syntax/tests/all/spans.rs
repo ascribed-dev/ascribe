@@ -89,6 +89,14 @@ fn directives_in_every_container() {
         ">[i]:e\n e",
         "> [multi]:\n>   {api}events\n  \"le\"\n  \"Title\"\n",
         "- > [ref]: /x\n   \t lazy\n",
+        // A setext underline after definitions that were all of a paragraph's
+        // text (#1392); the first is the fuzz crash, minimized.
+        "[a]:a\n -",
+        "[r]: p.png\n  --\n  |\n--|--\n]: p.png\n",
+        "  [a]:a\n -\nb",
+        "> [a]:a\n>   ===\n",
+        "- [a]: /x\n    -\n  text\n",
+        "[a]: /x\r\n[b]: /y\r\n   ---\r\n",
         // Link reference definitions: titles, several lines, containers, escapes.
         "[a]: /x\n[b]: <{api}y z> 'title'\n[c]:\n  {api}z\n  (t)\n\ntext\n",
         "- [a]: {api}x \"t\"\n  [b]: \\{x}\n\n  @note: after\n> [c]:\n> /y\n> \"z\"\n",

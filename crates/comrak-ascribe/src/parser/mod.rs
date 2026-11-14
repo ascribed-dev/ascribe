@@ -1402,7 +1402,10 @@ where
             let ast = &mut *ast;
             // ASCRIBE: definitions taken from the start of the heading's text
             // move its first line down, and its line offsets with it (see
-            // `finalize_borrowed`).
+            // `finalize_borrowed`). When they were all of it, there's no
+            // heading: the paragraph goes on with this line, added from its
+            // first non-space character, so it starts there too, not at the
+            // definitions' column (#1392).
             let lines_before = ascribe::line_endings(&ast.content);
             let has_content = self.resolve_reference_link_definitions(
                 &mut ast.content,
@@ -1412,6 +1415,9 @@ where
             ast.sourcepos.start.line += taken;
             ast.line_offsets.drain(..taken.min(ast.line_offsets.len()));
             ascribe::start_at_first_line(ast, taken);
+            if !has_content {
+                ast.sourcepos.start.column = self.first_nonspace + 1;
+            }
             has_content
         };
         if has_content {

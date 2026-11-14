@@ -1,0 +1,1 @@
+- **Fixed:** A paragraph after link reference definitions no longer starts on an indented line's spaces.
