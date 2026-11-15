@@ -45,11 +45,12 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 |---|---|---|---|
 | `src/lib.rs` | 2 | module list | `pub mod ascribe;` |
 | | | re-exports | `parse_document_with_definitions` |
-| `src/nodes.rs` | 5 | `NodeValue` | The `AscribeLine(Box<NodeAscribeLine>)` variant, after `FrontMatter` |
+| `src/nodes.rs` | 6 | `NodeValue` | The `AscribeLine(Box<NodeAscribeLine>)` variant, after `FrontMatter` |
 | | | `NodeValue::block` | An Ascribe line is a block |
 | | | `NodeValue::xml_node_name` | `ascribe_line` |
 | | | `NodeValue::accepts_lines` | An Ascribe line takes its own line |
 | | | `Node::can_contain_type` | An Ascribe line contains only its primary's paragraph |
+| | | `Ast::line_offsets` | A public getter for the private `line_offsets`: where each of a block's lines starts after its containers' markers. `ascribe-syntax` places a text primary's lines with it, since only the block parser knows whether a `>` is a marker or a lazy line's text ([#1394](https://github.com/ascribed-dev/ascribe/issues/1394)) |
 | `src/parser/options.rs` | 1 | `Extension` | The `ascribe: Option<Arc<AscribeOptions>>` option, after `front_matter_delimiter` |
 | `src/parser/mod.rs` | 17 | module list | `mod ascribe;` |
 | | | `check_open_blocks_inner` | An Ascribe line stays open while its primary's paragraph does, and a raw container's opener until a line that's only `@end` at its indent (`continues_raw_container`) |
@@ -84,7 +85,7 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | `src/tests/core.rs` | 1 | `link_sourcepos_newline_*_between_dest_and_title` | The three links end at their `)` on the second line, as `close_bracket_match` now places them ([#1220](https://github.com/ascribed-dev/ascribe/issues/1220)) |
 | `src/tests/pathological.rs` | 1 | `pathological_emphases` | A 10 second timeout, was 4: the debug build passed 4 seconds on CI's Linux runner ([#157](https://github.com/ascribed-dev/ascribe/issues/157)) |
 
-In total: 96 lines added and 6 changed in 9 upstream source files (54 of the added lines are code; the rest are comments), in 25 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
+In total: 106 lines added and 6 changed in 9 upstream source files (57 of the added lines are code; the rest are comments), in 26 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
 
 Raw containers added 10 lines and changed 6 in `parser/mod.rs`, in 3 hunks (the `AscribeLine` arm of `check_open_blocks_inner` split by `raw_container`, a condition in `open_new_blocks`, and an arm in `add_text_to_container`), with the scanner and the hooks in Ascribe's own two files. They add no node and no `NodeValue` variant: the opener's `NodeAscribeLine` carries `raw_container`.
 

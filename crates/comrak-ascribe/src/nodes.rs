@@ -972,6 +972,16 @@ impl Ast {
             line_offsets: Vec::new(),
         }
     }
+
+    // ASCRIBE: where each of a block's lines starts, after its containers' markers.
+    /// For each line of the block's content, the byte column in the source
+    /// line where that content starts, after the markers and indent of the
+    /// containers the line is in. A paragraph's lazy continuation line starts
+    /// at its first non-space character. The inline parser places inlines with
+    /// these offsets.
+    pub fn line_offsets(&self) -> &[usize] {
+        &self.line_offsets
+    }
 }
 
 /// The type of a node within the document.

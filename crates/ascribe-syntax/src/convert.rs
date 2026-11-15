@@ -717,7 +717,7 @@ impl<'a> Converter<'a> {
 
     fn text_primary(&mut self, paragraph: Node<'_>) -> TextPrimary {
         let span = self.trimmed(self.span(paragraph));
-        let lines = self.content_lines(span);
+        let lines = self.content_lines(span, paragraph.data().line_offsets());
         self.scan_unknown(span, true);
         TextPrimary {
             span,
@@ -736,8 +736,11 @@ impl<'a> Converter<'a> {
     }
 
     /// The lines of `span` with container prefixes and trailing whitespace
-    /// removed.
-    fn content_lines(&self, span: Span) -> Vec<Span> {
+    /// removed. `columns` are the block parser's: where each line's content
+    /// starts, after the markers of the containers it continues. Only the
+    /// block parser knows which `>` is a marker: a lazy continuation line's
+    /// `>` indented four spaces is text (#1394).
+    fn content_lines(&self, span: Span, columns: &[usize]) -> Vec<Span> {
         let text = self.text(span);
         let mut lines = Vec::new();
         let mut offset = 0;
@@ -745,7 +748,11 @@ impl<'a> Converter<'a> {
             let start = if n == 0 {
                 0
             } else {
-                offset + (line.len() - strip_prefix(line).len())
+                let skipped = match columns.get(n).and_then(|&c| line.get(c..)) {
+                    Some(rest) => line.len() - rest.trim_start_matches([' ', '\t']).len(),
+                    None => line.len() - strip_prefix(line).len(),
+                };
+                offset + skipped
             };
             let content = line.trim_end_matches([' ', '\t']);
             let end = (offset + content.len()).max(start);

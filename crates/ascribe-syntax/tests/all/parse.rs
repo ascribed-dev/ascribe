@@ -155,6 +155,32 @@ fn a_text_primary_in_a_quote_or_list_has_clean_lines() {
 }
 
 #[test]
+fn a_lazy_line_keeps_a_quote_marker_its_indent_makes_text() {
+    // Indented four spaces, a lazy line's `>` can't start a block quote, so
+    // it's the line's text, not a marker to strip (#1394).
+    for (source, expected) in [
+        ("@note: a\n    > b\n", ["a", "> b"]),
+        ("@note: ]\n    >", ["]", ">"]),
+        ("> @note: a\n>     > b\n", ["a", "> b"]),
+        ("> @note: a\n>  b\n", ["a", "b"]),
+    ] {
+        let d = doc(source);
+        let block = match &d.blocks[0].kind {
+            BlockKind::BlockQuote(q) => &q.children[0],
+            _ => &d.blocks[0],
+        };
+        let BlockKind::Directive(line) = &block.kind else {
+            panic!("a directive in {source:?}");
+        };
+        let Some(PrimaryValue::Text(p)) = &line.primary else {
+            panic!("a text primary in {source:?}");
+        };
+        let lines: Vec<_> = p.lines.iter().map(|l| cut(source, *l)).collect();
+        assert_eq!(lines, expected, "{source:?}");
+    }
+}
+
+#[test]
 fn identifier_and_line_primaries() {
     let (d, line) = directive("@include {heading=false}: guides/setup.md#install\n");
     assert!(d.issues.is_empty());

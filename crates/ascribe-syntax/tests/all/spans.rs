@@ -97,6 +97,14 @@ fn directives_in_every_container() {
         "> [a]:a\n>   ===\n",
         "- [a]: /x\n    -\n  text\n",
         "[a]: /x\r\n[b]: /y\r\n   ---\r\n",
+        // A lazy line of a text primary that is only a `>` indented four
+        // spaces, which is text, not a marker (#1394); the first is the fuzz
+        // crash, minimized.
+        "@note: ]\n    >",
+        "@note: a\n    > b\n    >\n",
+        "> @note: a\n>     >\n",
+        "- @note: a\n      >\n",
+        "@note: a\n\t>\r\n  b\n",
         // Link reference definitions: titles, several lines, containers, escapes.
         "[a]: /x\n[b]: <{api}y z> 'title'\n[c]:\n  {api}z\n  (t)\n\ntext\n",
         "- [a]: {api}x \"t\"\n  [b]: \\{x}\n\n  @note: after\n> [c]:\n> /y\n> \"z\"\n",
