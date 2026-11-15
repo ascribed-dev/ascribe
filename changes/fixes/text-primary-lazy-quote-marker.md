@@ -1,0 +1,1 @@
+- **Fixed:** A directive's text no longer reads a `>` indented four spaces as a quote marker. Its line positions are now right.
