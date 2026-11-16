@@ -1,0 +1,8 @@
+description: >-
+  An image's block in a table cell ends at the cell's `|`, so a `}` in the
+  next cell doesn't close it.
+spec: ["3.3", "5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-syntax, file: index.md, line: 7}

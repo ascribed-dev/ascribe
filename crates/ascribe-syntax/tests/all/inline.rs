@@ -720,6 +720,64 @@ fn a_block_never_continues_onto_the_next_line() {
 }
 
 #[test]
+fn a_block_never_continues_into_the_next_table_cell() {
+    // The cell ends at the `|`, so the block isn't closed in it and stays
+    // text; reading on to the `}` past it made the image overlap the `{a`
+    // after it and run past its cell (#1396; the first is the fuzz crash
+    // as `cargo fuzz tmin` left it).
+    for (source, text) in [
+        ("![](){|}\n-|-", "{"),
+        ("![](){\"\"|\"\"}\n-|-\n", "{\"\""),
+        ("| ![a](s.png){w=\"|\"} |\n|-|-|\n", "{w=\""),
+        ("| x |\n|-|\n| ![a](s.png){w=1|y} |\n", "{w=1"),
+    ] {
+        let d = doc(source);
+        let BlockKind::Table(t) = &d.blocks[0].kind else {
+            panic!("a table in {source:?}");
+        };
+        let cell = t
+            .rows
+            .iter()
+            .flat_map(|r| &r.cells)
+            .find(|c| {
+                c.inlines
+                    .iter()
+                    .any(|i| matches!(i.kind, InlineKind::Image(_)))
+            })
+            .expect("a cell with the image");
+        let InlineKind::Image(image) = &cell.inlines[0].kind else {
+            panic!("{source:?}");
+        };
+        assert!(image.attributes.is_none(), "{source:?}");
+        assert!(slugs(&d).contains(&"attribute-syntax"), "{source:?}");
+        let InlineKind::Text(t) = &cell.inlines[1].kind else {
+            panic!("{source:?}");
+        };
+        assert_eq!(t, text, "{source:?}");
+    }
+}
+
+#[test]
+fn a_block_closed_in_its_table_cell_is_the_images() {
+    let source = "| ![a](s.png){w=1} | b |\n|-|-|\n| ![c](t.png){w=\"2\"} | d |\n";
+    let d = doc(source);
+    assert!(d.issues.is_empty(), "{:?}", d.issues);
+    let BlockKind::Table(t) = &d.blocks[0].kind else {
+        panic!()
+    };
+    let images: Vec<_> = t
+        .rows
+        .iter()
+        .map(|r| {
+            let image = &r.cells[0].inlines[0];
+            assert!(matches!(&image.kind, InlineKind::Image(i) if i.attributes.is_some()));
+            cut(source, image.span)
+        })
+        .collect();
+    assert_eq!(images, ["![a](s.png){w=1}", "![c](t.png){w=\"2\"}"]);
+}
+
+#[test]
 fn an_image_after_a_directive_line_and_in_a_text_primary() {
     let source = "@note: See ![a](s.png){w=1} and {p}.\n";
     let d = doc(source);

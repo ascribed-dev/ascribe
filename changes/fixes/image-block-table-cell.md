@@ -1,0 +1,1 @@
+- **Fixed:** An image's attribute block in a table cell ends at the cell's `|`. A `}` in the next cell no longer closes it.
