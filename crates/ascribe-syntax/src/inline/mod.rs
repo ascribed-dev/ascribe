@@ -51,6 +51,7 @@ pub(crate) fn extend(
         file,
         issues,
         escaped: Vec::new(),
+        cell_end: None,
     };
     pass.blocks(blocks);
     pass.definitions(definitions);
@@ -63,6 +64,10 @@ struct Pass<'a> {
     file: FileId,
     issues: &'a mut Vec<Issue>,
     escaped: Vec<Phrase>,
+    /// Where the text the fork parsed the current inlines from ends, when
+    /// that's before their line does: a table cell's end, at its `|`. An
+    /// image's attribute block can't run past it (see `image_attributes`).
+    cell_end: Option<usize>,
 }
 
 impl Pass<'_> {
@@ -90,7 +95,9 @@ impl Pass<'_> {
                         self.row_attributes(row);
                     }
                     for cell in &mut row.cells {
+                        self.cell_end = Some(cell.span.end());
                         self.inlines(&mut cell.inlines);
+                        self.cell_end = None;
                     }
                 }
             }

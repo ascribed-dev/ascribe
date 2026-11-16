@@ -24,7 +24,11 @@ impl Pass<'_> {
             return;
         };
         let at = inline.span.end();
-        let Some(rest) = self.source.get(at..) else {
+        // In a table cell, the fork parsed only the cell's text, so a block
+        // isn't closed by a `}` past the cell's `|`: `![](){a|b}` leaves
+        // `{a` as text in its cell (#1396).
+        let end = self.cell_end.unwrap_or(self.source.len());
+        let Some(rest) = self.source.get(at..end.max(at)) else {
             return;
         };
         if let Some(len) = image_attributes_len(rest) {
