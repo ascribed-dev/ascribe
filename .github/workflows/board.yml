@@ -20,6 +20,14 @@ name: Board
 # read the board unless asked: on 11 October 2026 triage's thirty moves, each
 # followed by a read, ran into the limit.
 #
+# A read also says who opened each open issue and whether triage may take it:
+# an item's `content.author` is the login, and `content.approved` is true when
+# that login is listed in .github/triage-authors.txt or the issue has the label
+# `triage approved`. An open Backlog issue that isn't approved gets the label
+# `needs human`, so the maintainer sees it instead of triage moving it; the
+# label comes off once it's approved. These come from the repository's REST
+# API on the job's own token, a call per hundred open issues, not GraphQL.
+#
 # The token is the secret PROJECT_BOARD_TOKEN: a fine-grained token owned by
 # `ascribed-dev` with Organization → Projects: read and write. The job's own
 # token can't reach an organization's projects. project-docs/outside.md lists
@@ -41,9 +49,11 @@ on:
         default: false
 
 permissions:
-  # To push `board`, and to find an issue's URL.
+  # To push `board`, to find an issue's URL and author, and to read
+  # .github/triage-authors.txt.
   contents: write
-  issues: read
+  # To label an issue `needs human`.
+  issues: write
   pull-requests: read
 
 concurrency:
@@ -96,17 +106,67 @@ jobs:
         if: inputs.issue == '' || inputs.read
         env:
           GH_TOKEN: ${{ secrets.PROJECT_BOARD_TOKEN }}
+          REPO_TOKEN: ${{ github.token }}
         run: |
           gh project view "$NUMBER" --owner "$OWNER" --format json > project.json
           gh project field-list "$NUMBER" --owner "$OWNER" --format json --limit 100 > fields.json
           gh project item-list "$NUMBER" --owner "$OWNER" --format json --limit 1000 > items.json
+          # The accounts triage may take issues from, lowercased, as GitHub's
+          # logins don't distinguish case; from the commit this run is on.
+          GH_TOKEN=$REPO_TOKEN gh api -H "Accept: application/vnd.github.raw" \
+            "repos/$GITHUB_REPOSITORY/contents/.github/triage-authors.txt?ref=$GITHUB_SHA" > triage-authors.txt
+          sed 's/#.*//' triage-authors.txt | tr -s '[:space:]' '\n' | grep -v '^$' \
+            | jq -R 'ascii_downcase' | jq -s . > allowed.json
+          [ "$(jq length allowed.json)" -gt 0 ] || { echo "::error::.github/triage-authors.txt lists no account."; exit 1; }
+          # Each open issue's author and labels, which the board doesn't list.
+          GH_TOKEN=$REPO_TOKEN gh api --paginate "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100" \
+            --jq '.[] | select(.pull_request == null) | {number, author: .user.login, labels: [.labels[].name]}' \
+            | jq -s 'map({key: (.number | tostring), value: .}) | from_entries' > authors.json
           # Sorted, so the branch's diffs show what moved and nothing else.
-          jq -n --slurpfile p project.json --slurpfile f fields.json --slurpfile i items.json '{
-            project: ($p[0] | {id, number, title, url, shortDescription}),
-            fields: ($f[0].fields | sort_by(.name)),
-            items: ($i[0].items | sort_by(.content.repository // "", .content.number // 0, .id))
-          }' > board.json
+          jq -n --slurpfile p project.json --slurpfile f fields.json --slurpfile i items.json \
+            --slurpfile a authors.json --slurpfile allowed allowed.json --arg repo "$GITHUB_REPOSITORY" '
+            def annotate:
+              if .content.type == "Issue" and .content.repository == $repo
+                then $a[0][.content.number | tostring] as $x
+                | if $x then .content.author = $x.author
+                    | .content.approved = (($allowed[0] | index($x.author | ascii_downcase)) != null
+                        or ($x.labels | index("triage approved")) != null)
+                  else . end
+                else . end;
+            {
+              project: ($p[0] | {id, number, title, url, shortDescription}),
+              fields: ($f[0].fields | sort_by(.name)),
+              items: ($i[0].items | map(annotate) | sort_by(.content.repository // "", .content.number // 0, .id))
+            }' > board.json
           echo "$(jq '.items | length' board.json) items on the board." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Flag issues for the maintainer
+        if: inputs.issue == '' || inputs.read
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # An open Backlog issue from an account triage doesn't take issues
+          # from gets `needs human`; one that has the label and is approved
+          # now loses it. Labels on issues that aren't in Backlog stay as they
+          # are, since a person has moved them.
+          jq -r '.items[] | select(.content.approved == false and .status == "Backlog") | .content.number' board.json > flag.txt
+          jq -r --slurpfile a authors.json '.items[] | select(.content.approved == true)
+            | select($a[0][.content.number | tostring].labels | index("needs human")) | .content.number' board.json > clear.txt
+          if [ -s flag.txt ]; then
+            # Created once, the first time it's needed; it exists after that.
+            gh api -X POST "repos/$GITHUB_REPOSITORY/labels" -f name="needs human" -f color=d93f0b \
+              -f description="Opened by an account triage doesn't take issues from: the maintainer decides" > /dev/null 2>&1 || true
+          fi
+          while read -r issue; do
+            if ! jq -e --arg n "$issue" '.[$n].labels | index("needs human")' authors.json > /dev/null; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$issue/labels" -f 'labels[]=needs human' > /dev/null
+              echo "Labeled #$issue \`needs human\`: $(jq -r --arg n "$issue" '.[$n].author' authors.json) isn't in .github/triage-authors.txt." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done < flag.txt
+          while read -r issue; do
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$issue/labels/needs%20human" > /dev/null
+            echo "Took \`needs human\` off #$issue, which triage may now take." >> "$GITHUB_STEP_SUMMARY"
+          done < clear.txt
 
       - name: Write board.json to the branch
         if: inputs.issue == '' || inputs.read

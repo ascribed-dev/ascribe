@@ -1,0 +1,10 @@
+# The GitHub accounts whose issues triage may move to Ready on its own.
+#
+# One login per line; case doesn't matter, and `#` starts a comment. An open
+# Backlog issue opened by anyone else gets the label `needs human` from
+# board.yml, and triage leaves it alone until a maintainer either moves it
+# themselves or adds the label `triage approved` to hand it to triage.
+#
+# board.yml reads this file from the branch it runs on, which is `main`, so an
+# account is added by a pull request like any other change.
+KyleBlankRollins
