@@ -23,6 +23,8 @@ gh api 'repos/ascribed-dev/ascribe/contents/board.json?ref=board' --jq .content 
 jq -r '.items[] | select(.status == "Ready") | "#\(.content.number) \(.content.title)"' board.json
 ```
 
+An open issue's `content` also has `author`, its login, and `approved`, true when [`.github/triage-authors.txt`](../../../.github/triage-authors.txt) lists that login or the issue has the label `triage approved`. Triage takes only approved issues; a read labels an unapproved Backlog issue `needs human` for the maintainer. To let triage take issues from another account, add its login to that file in a pull request.
+
 A run writes `board.json` only when the board changed, so the file can be older than the run. That's expected; it's still current.
 
 ## Move a card
@@ -39,7 +41,7 @@ A move doesn't read the board, so `board.json` stays as it was; add `read: "true
 
 The coordinator moves cards from Ready to In progress, up to the project's limit. Cards that change the same files at once make their implementors merge `main` over and over, renumber, and sometimes build the same fix twice, so it also holds back a card that would collide:
 
-- **Read the card's `Touches:` line** in triage's report ([the `triage` skill](../triage/SKILL.md), step 6) before starting it.
+- **Read the card's `Touches:` line** in triage's report ([the `triage` skill](../triage/SKILL.md), step 7) before starting it.
 - **Don't start a card while an In progress card names the same module.** Start it once that card's pull request is merged. Two cards in different modules of one crate can run together; the line names modules so that they can.
 - **Start a plan's phases in order,** each once the one before is merged, unless the plan says two can run at once.
 
