@@ -99,7 +99,7 @@ When turning rules off isn't enough, say to add a style package or rules of your
 
 ## Use a published style guide
 
-Vale publishes packages of rules for the common style guides, such as `Google`, `Microsoft`, and `RedHat` ([Vale's package hub](https://vale.sh/hub/)). To check your pages against one, take the preset as your own configuration, name the package in it, and have Vale download it:
+Vale publishes packages of rules for the common style guides, such as `Google`, `Microsoft`, and `RedHat` ([Vale's package hub](https://vale.sh/explorer)). To check your pages against one, take the preset as your own configuration, name the package in it, and have Vale download it:
 
 @steps
 1. Write the preset out as your own configuration:
