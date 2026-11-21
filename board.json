@@ -9984,16 +9984,14 @@
         "repository": "ascribed-dev/ascribe",
         "title": "Docs review, 3 November 2026",
         "type": "Issue",
-        "url": "https://github.com/ascribed-dev/ascribe/issues/1288",
-        "author": "KyleBlankRollins",
-        "approved": true
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1288"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhF0Bdg",
       "labels": [
         "documentation"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Done",
       "title": "Docs review, 3 November 2026"
     },
     {
