@@ -8723,7 +8723,7 @@
         "type": "Issue",
         "url": "https://github.com/ascribed-dev/ascribe/issues/1200",
         "author": "github-actions[bot]",
-        "approved": false
+        "approved": true
       },
       "id": "PVTI_lADOFAMH984BmgbCzhD4OdE",
       "labels": [
@@ -10420,17 +10420,18 @@
         "repository": "ascribed-dev/ascribe",
         "title": "Fuzz: model crashes (c608c16743b9)",
         "type": "Issue",
-        "url": "https://github.com/ascribed-dev/ascribe/issues/1401",
-        "author": "github-actions[bot]",
-        "approved": false
+        "url": "https://github.com/ascribed-dev/ascribe/issues/1401"
       },
       "id": "PVTI_lADOFAMH984BmgbCzhKshTU",
       "labels": [
         "rust",
         "needs human"
       ],
+      "linked pull requests": [
+        "https://github.com/ascribed-dev/ascribe/pull/1403"
+      ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Ready",
+      "status": "Done",
       "title": "Fuzz: model crashes (c608c16743b9)"
     }
   ]
