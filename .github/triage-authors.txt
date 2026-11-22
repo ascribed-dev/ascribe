@@ -8,3 +8,6 @@
 # board.yml reads this file from the branch it runs on, which is `main`, so an
 # account is added by a pull request like any other change.
 KyleBlankRollins
+# The repository's own workflows, which open the nightly fuzz-crash issues and
+# the docs report. Its login as the REST API gives it, `[bot]` included.
+github-actions[bot]
