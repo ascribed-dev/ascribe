@@ -10426,7 +10426,8 @@
       },
       "id": "PVTI_lADOFAMH984BmgbCzhKshTU",
       "labels": [
-        "rust"
+        "rust",
+        "needs human"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
       "status": "Backlog",
