@@ -1,0 +1,8 @@
+description: >-
+  A pattern's `{a,b}` groups expand to at most 256 patterns, the product of
+  each group's alternatives. One that expands to more isn't a valid pattern.
+spec: ["2.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-pattern-syntax, file: ascribe.toml, line: 5}

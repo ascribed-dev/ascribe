@@ -1154,3 +1154,26 @@ fn the_implicit_dimension_is_labeled_release_unless_set_and_only_exists_when_nee
     .unwrap();
     assert!(m.dimensions.iter().all(|d| !d.implicit));
 }
+
+/// The nightly fuzz run's timeout (#1401), minimized: an `include` pattern
+/// whose sixteen `{…}` groups would expand to 65,536 patterns.
+/// It's reported at once instead.
+#[test]
+fn a_pattern_with_too_many_alternatives_is_reported_quickly() {
+    let text = "spec = \"0.1\"\n\
+\n\
+[project]\n\
+content-root = \"files\"\n\
+\n\
+[sources.code]\n\
+path = \"code\"\n\
+include = [\"**/*wwwwww~~~~~~~~~~~~~~~~~~~~yyyyyyyYYYYYYYYYY\u{feff}YYYwwwwww {Jw,.}w1111111111111111111YYYYY\u{feff}YYYwwwwww {Jw,.}w11111111111111111111YYYYY\u{feff}YYYw{wwwJww w,.}w11111111111111111111111111111~~~~~~yyyyyyyYYYYYYYYYY\u{feff}YYYwwwwww {Jw,.}w1111111YYYYY\u{feff}YYYwwwwww {Jw,.}w1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111122222222 {Jw,.}wwp11111111111111111111111A1111111{Jw,.}wwpwYYYYYYYYYw11111111111111w {Jw,.}w1111111111111111111YYYYY\u{feff}YYYwwwwww {Jw,.}w1111111111111111111111~~~~~~~~~~~~~~~~~yyyyyyyYYYYYYYYYY\u{feff}YYYwwwwww {Jw,.}w1111111111111111111YYYYY\u{feff}YYYwwwwww {Jw,.}w11111111111111111111YYYYY\u{feff}YYYw{wwwJww w,.}w11111111111111111111111111111~~~~~~yyyyyyyYYYYYYYYYY\u{feff}YYYwwwwww {Jw,.}w1111111YYYYY\u{feff}YYYwwwwww {Jw,.}w1111111111111111111111111111YYYYYYYYYw1111111111111111111~~~~~yyyyYYYYYYYYYY\u{feff}YYYwwwwww {Jw,.}w111111111111111111111111111111111111111111111111111111111111111111111111A1111111{Jw,.}wwpwYYYYYYYYYwYYiY,Y ths no**\"]\n\
+";
+    let issues = load_str(text, FileId::new(0)).unwrap_err();
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.slug.as_str() == "model-pattern-syntax"),
+        "{issues:#?}"
+    );
+}

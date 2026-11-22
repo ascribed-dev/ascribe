@@ -1,0 +1,1 @@
+- **A pattern's `{a,b}` groups expand to at most 256 patterns.** One past it is reported as an invalid pattern, where it had stalled loading `ascribe.toml`. See [Paths and patterns](docs/content/content-model/index.md).

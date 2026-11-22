@@ -1,0 +1,5 @@
+spec = "0.1"
+
+# Nine two-way groups expand to 512 patterns, past the limit of 256.
+[fragments]
+patterns = ["{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}.md"]
