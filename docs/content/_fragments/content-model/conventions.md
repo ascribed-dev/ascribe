@@ -45,7 +45,7 @@ Names are case-sensitive and spelled exactly as declared ([SPEC §4.4]({repo}/bl
   | `*` | Any run of characters within one path segment, not including `/` |
   | `**` | Any number of whole segments, including none. It's only ever a whole segment (`a/**/b`, `a/**`, `**/b`) |
   | `?` | Any one character except `/` |
-  | `{a,b}` | Either alternative. Alternatives don't nest |
+  | `{a,b}` | Either alternative. Alternatives don't nest, and a pattern's groups expand to at most 256 patterns: `{a,b}/{x,y,z}` is 6 |
   | `\` | Escapes the next character |
 
   Every other character matches itself. A pattern doesn't start with `/`, and has no `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets. The exception is a source's `include` and `ignore` (§20), which are matched against any file's path relative to the source's folder.

@@ -350,6 +350,11 @@ fn cases() -> Vec<Case> {
         ),
         case(
             "model-pattern-syntax",
+            None,
+            "spec = \"0.1\"\n[fragments]\npatterns = [\"{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}\"] #!\n",
+        ),
+        case(
+            "model-pattern-syntax",
             Some("leading-slash"),
             "spec = \"0.1\"\n[fragments]\npatterns = [\"/includes/**\"] #!\n",
         ),

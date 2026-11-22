@@ -98,46 +98,77 @@ impl Pattern {
     }
 }
 
+/// The most alternatives a pattern's `{a,b}` groups may expand to: the
+/// product of each group's count. Past it, compiling and matching would
+/// grow with the product, which doubles with each two-way group.
+const MAX_ALTERNATIVES: usize = 256;
+
 /// Splits `{a,b}` alternatives (no nesting) into separate patterns.
 /// Escaped characters are kept escaped.
 fn expand_braces(source: &str) -> Result<Vec<String>, PatternError> {
-    let chars: Vec<char> = source.chars().collect();
-    let mut i = 0;
-    let mut open: Option<usize> = None;
-    while i < chars.len() {
-        match chars[i] {
-            '\\' => i += 1,
+    // The pattern as literal runs and groups, in order: one pass, so the
+    // work is linear in the pattern before anything is expanded.
+    let mut parts: Vec<Vec<String>> = Vec::new();
+    let mut literal = String::new();
+    let mut group: Option<String> = None;
+    let mut chars = source.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' => {
+                let text = group.as_mut().unwrap_or(&mut literal);
+                text.push(c);
+                if let Some(next) = chars.next() {
+                    text.push(next);
+                }
+            }
             '{' => {
-                if open.is_some() {
+                if group.is_some() {
                     return Err(PatternError::Syntax(
                         "alternatives in {…} can't nest".into(),
                     ));
                 }
-                open = Some(i);
+                parts.push(vec![std::mem::take(&mut literal)]);
+                group = Some(String::new());
             }
             '}' => {
-                let Some(start) = open else {
+                let Some(inner) = group.take() else {
                     return Err(PatternError::Syntax("`}` without a matching `{`".into()));
                 };
-                let prefix: String = chars[..start].iter().collect();
-                let suffix: String = chars[i + 1..].iter().collect();
-                let inner: String = chars[start + 1..i].iter().collect();
-                let mut out = Vec::new();
-                for option in split_unescaped(&inner, ',') {
-                    for rest in expand_braces(&format!("{option}{suffix}"))? {
-                        out.push(format!("{prefix}{rest}"));
-                    }
-                }
-                return Ok(out);
+                parts.push(split_unescaped(&inner, ','));
             }
-            _ => {}
+            _ => group.as_mut().unwrap_or(&mut literal).push(c),
         }
-        i += 1;
     }
-    if open.is_some() {
+    if group.is_some() {
         return Err(PatternError::Syntax("`{` without a matching `}`".into()));
     }
-    Ok(vec![source.to_owned()])
+    parts.push(vec![literal]);
+
+    let count = parts
+        .iter()
+        .try_fold(1usize, |n, options| n.checked_mul(options.len()))
+        .filter(|n| *n <= MAX_ALTERNATIVES);
+    if count.is_none() {
+        return Err(PatternError::Syntax(format!(
+            "its {{…}} alternatives expand to more than {MAX_ALTERNATIVES} patterns"
+        )));
+    }
+    let mut out = vec![String::new()];
+    for options in &parts {
+        out = match options.as_slice() {
+            [only] => {
+                for prefix in &mut out {
+                    prefix.push_str(only);
+                }
+                out
+            }
+            _ => out
+                .iter()
+                .flat_map(|prefix| options.iter().map(move |o| format!("{prefix}{o}")))
+                .collect(),
+        };
+    }
+    Ok(out)
 }
 
 fn push_last(out: &mut [String], c: char) {
@@ -290,6 +321,42 @@ mod tests {
         assert!(may("{a,b}/*.md", "b") && !may("{a,b}/*.md", "c"));
         assert!(!may("a/*.md", "a/b.md/c"));
         assert!(may("a/*.md", ""));
+    }
+
+    #[test]
+    fn several_groups_match_every_combination() {
+        let p = Pattern::new("{a,b}/{x,y,z}/*.{md,txt}").unwrap();
+        assert_eq!(p.alternatives.len(), 12);
+        for path in ["a/x/1.md", "b/z/2.txt", "a/y/3.txt"] {
+            assert!(p.matches(path), "{path}");
+        }
+        for path in ["c/x/1.md", "a/w/1.md", "a/x/1.rs", "a/1.md"] {
+            assert!(!p.matches(path), "{path}");
+        }
+        assert!(m("{a/b,c}/*.md", "a/b/x.md") && m("{a/b,c}/*.md", "c/x.md"));
+        assert!(m("x{,y}.md", "x.md") && m("x{,y}.md", "xy.md"));
+        assert!(m("\\{a,b\\}.md", "{a,b}.md") && !m("\\{a,b\\}.md", "a.md"));
+        assert!(m("{a\\,b,c}.md", "a,b.md") && m("{a\\,b,c}.md", "c.md"));
+    }
+
+    #[test]
+    fn alternatives_are_capped() {
+        // 2^8 = 256 is the most; one more two-way group is past it.
+        let groups = |n: usize| "{a,b}".repeat(n);
+        assert_eq!(Pattern::new(&groups(8)).unwrap().alternatives.len(), 256);
+        assert!(matches!(
+            Pattern::new(&groups(9)),
+            Err(PatternError::Syntax(detail)) if detail.contains("more than 256")
+        ));
+        // So many groups that the product overflows still fails fast.
+        assert!(matches!(
+            Pattern::new(&groups(200)),
+            Err(PatternError::Syntax(_))
+        ));
+        // A group of one multiplies nothing, however many there are.
+        let p = Pattern::new(&format!("{}.md", "{a}".repeat(10_000))).unwrap();
+        assert_eq!(p.alternatives.len(), 1);
+        assert!(p.matches(&format!("{}.md", "a".repeat(10_000))));
     }
 
     #[test]
