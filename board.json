@@ -10430,7 +10430,7 @@
         "needs human"
       ],
       "repository": "https://github.com/ascribed-dev/ascribe",
-      "status": "Backlog",
+      "status": "Ready",
       "title": "Fuzz: model crashes (c608c16743b9)"
     }
   ]
