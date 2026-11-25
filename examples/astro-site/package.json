@@ -14,18 +14,18 @@
   "dependencies": {
     "@ascribed/astro": "workspace:*",
     "@ascribed/cli": "workspace:*",
-    "astro": "7.4.2",
+    "astro": "7.4.13",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
-    "@astrojs/markdown-remark": "7.3.4",
-    "@stoplight/elements": "9.0.29",
+    "@astrojs/markdown-remark": "7.3.10",
+    "@stoplight/elements": "9.0.30",
     "@types/node": "^24.19.2",
     "@types/turndown": "5.0.6",
-    "afdocs": "0.22.2",
-    "axe-core": "^4.14.0",
-    "playwright-core": "^1.64.1",
-    "redoc": "3.0.1",
-    "turndown": "7.2.4"
+    "afdocs": "0.23.0",
+    "axe-core": "^4.14.1",
+    "playwright-core": "^1.65.1",
+    "redoc": "3.2.0",
+    "turndown": "7.2.5"
   }
 }
