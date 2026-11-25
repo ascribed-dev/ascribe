@@ -1832,7 +1832,7 @@
   },
   "dependencies": {
     "smol-toml": "^1.9.1",
-    "vscode-languageclient": "^11.0.0"
+    "vscode-languageclient": "^11.0.1"
   },
   "devDependencies": {
     "@ascribed/elements": "workspace:*",
@@ -1842,11 +1842,11 @@
     "@types/vscode": "~1.138.0",
     "@vscode/codicons": "^0.0.45",
     "@vscode/test-electron": "^3.1.0",
-    "@vscode/vsce": "^4.0.0",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.2",
     "mocha": "^12.0.3",
-    "playwright-core": "^1.64.1",
-    "vscode-languageserver": "^11.0.0",
+    "playwright-core": "^1.65.1",
+    "vscode-languageserver": "^11.0.1",
     "vscode-languageserver-textdocument": "^1.0.16",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.2.0"
